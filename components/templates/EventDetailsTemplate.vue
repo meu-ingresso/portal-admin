@@ -1,15 +1,16 @@
 <template>
-  <div class="event-details">
+  <v-container class="event-details">
     <EventDetailsHeader
       :title="event.title"
       :status-text="event.statusText"
       :location="event.location"
       :date="event.date"
+      :promoters="event.promoters"
     />
     <EventStatistics :statistics="event.statistics" />
-    <div class="event-details-title">Suas Vendas</div>
+    <EventSales :sales="event.sales" />
     <EventTickets :tickets="event.tickets" />
-  </div>
+  </v-container>
 </template>
 
 <script>

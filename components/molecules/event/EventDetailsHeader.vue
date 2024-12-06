@@ -1,10 +1,10 @@
 <template>
   <div class="event-details-header">
-    <div class="event-title-wrapper">
+    <div class="event-title-wrapper mb-2">
       <div class="event-title">{{ title }}</div>
       <v-icon>mdi-circle-small</v-icon>
       <StatusBadge :text="statusText" />
-      <PromotersBadge :count="5" />
+      <PromotersBadge :count="promoters" />
     </div>
 
     <p>{{ location }}</p>
@@ -20,6 +20,7 @@ export default {
     statusText: { type: String, required: true },
     location: { type: String, required: true },
     date: { type: String, required: true },
+    promoters: { type: Number, required: true },
   },
   computed: {
     formattedDate() {

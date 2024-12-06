@@ -16,7 +16,14 @@ export default class Event extends VuexModule {
     }
 
     public get $selectedEvent() {
-        return this.selectedEvent;
+
+        if (!this.selectedEvent)
+            return null;
+
+        return {
+            ...this.selectedEvent,
+            location: `${this.selectedEvent.address.street}, ${this.selectedEvent.address.number} - ${this.selectedEvent.address.neighborhood}, ${this.selectedEvent.address.city.name} - ${this.selectedEvent.address.city.state.name}`
+        };
     }
 
     public get $isLoading() {
@@ -97,6 +104,8 @@ export default class Event extends VuexModule {
             'address:city:state',
             'category',
             'attachments',
+            'collaborators',
+            'coupons'
         ];
 
 

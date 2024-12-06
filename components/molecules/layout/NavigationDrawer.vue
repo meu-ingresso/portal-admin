@@ -6,7 +6,11 @@
     clipped
     app
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
-    <v-list>
+    <v-list class="py-0">
+      <v-list-item v-if="inEventDetail" class="event-detail-image">
+        <v-img :src="selectedEventBanner"></v-img>
+      </v-list-item>
+
       <div v-for="(item, i) in getSidebar" :key="i">
         <v-tooltip v-if="$_miniVariant" right>
           <template #activator="{ on, attrs }">
@@ -55,11 +59,11 @@
 </template>
 
 <script>
-import Vue from 'vue';
+import { event } from '@/store';
 import { eventsSideBar } from '@/utils/events-sidebar';
 import { monthlyMovementsSideBar } from '@/utils/monthly-movement-sidebar';
 
-export default Vue.extend({
+export default {
   props: {
     miniVariant: {
       type: Boolean,
@@ -80,12 +84,39 @@ export default Vue.extend({
       return this.$route.meta.name;
     },
 
+    inEventDetail() {
+      return this.currentRouteMetaName === 'eventsDetails';
+    },
+
+    selectedEventBanner() {
+      const selectedEvent = event.$selectedEvent;
+      if (!selectedEvent) return null;
+      
+      const banner = selectedEvent.attachments.find((attach) => attach.type === 'image' && attach.name === 'banner');
+      return banner ? banner.image_url : '';
+    },
+
+    routerParams() {
+      return this.$route.params;
+    },
+
     getSidebar() {
       const routePath = this.currentPath;
       const routeMetaName = this.currentRouteMetaName;
 
-      if (routeMetaName === 'event-id') {
-        return eventsSideBar;
+      if (routeMetaName === 'eventsDetails') {
+        const eventId = this.routerParams.id;
+
+        return eventsSideBar.map((item) => {
+          if (item.to === '/events/:id') {
+            return {
+              ...item,
+              to: `/events/${eventId}`,
+            };
+          }
+
+          return item;
+        });
       } else if (routePath.startsWith('/reports')) {
         return monthlyMovementsSideBar;
       }
@@ -125,7 +156,7 @@ export default Vue.extend({
   },
 
   methods: {},
-});
+};
 </script>
 
 <style scoped lang="scss">
@@ -137,6 +168,10 @@ export default Vue.extend({
   height: 100vh !important;
   top: 80px !important;
   background-color: var(--tertiary) !important;
+  color: var(--black-text) !important;
+  font-weight: 400 !important;
+  font-size: 16px !important;
+  font-display: var(--font-family-poppins-bold) !important;
 }
 
 .navigationMobile {
@@ -149,9 +184,16 @@ export default Vue.extend({
   border-top-right-radius: 38px;
   border-bottom-right-radius: 38px;
   color: white;
+  font-size: 16px !important;
+  font-display: var(--font-family-poppins-bold) !important;
 }
 
 .active-item::before {
   opacity: 0 !important;
+}
+
+.event-detail-image{
+  margin: 8px;
+  padding: 0;
 }
 </style>

@@ -3,7 +3,7 @@ export const eventsSideBar = [
     icon: 'mdi-calendar-month-outline',
     iconActive: 'mdi-calendar-month',
     title: 'Painel do Evento',
-    to: '/event/:id/dashboard',
+    to: '/events/:id',
     needPermissions: false,
   },
   {

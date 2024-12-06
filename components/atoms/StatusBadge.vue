@@ -1,5 +1,5 @@
 <template>
-  <v-chip :color="color" outlined class="status-badge">
+  <v-chip :color="color" text-color="white" class="status-badge">
     {{ text }}
   </v-chip>
 </template>
@@ -12,7 +12,18 @@ export default {
 
   computed: {
     color() {
-      return this.text === 'Ativo' ? 'success' : 'error';
+
+      switch (this.text) {
+        case 'Publicado':
+          return '#0DBB73';
+        case 'Rascunho':
+          return '#E0700D';
+        case 'Aguardando Aprovação':
+          return 'warning';
+        default:
+          return 'warning';
+      }
+
     },
   }
 };

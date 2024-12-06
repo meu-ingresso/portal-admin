@@ -1,15 +1,19 @@
 <template>
-  <div>
-    <div class="event-tickets-title">Ingressos Vendidos</div>
-    <TicketRow
-      v-for="ticket in tickets"
-      :key="ticket.id"
-      :name="ticket.name"
-      :price="ticket.price"
-      :status-text="ticket.status.name"
-      :sold="ticket.total_quantity - ticket.remaining_quantity"
-      :total="ticket.total_quantity" />
-  </div>
+  <v-row class="mb-4">
+    <v-col cols="12">
+      <div class="event-tickets-title">Ingressos Vendidos</div>
+    </v-col>
+    <v-col cols="12">
+      <TicketRow
+        v-for="ticket in tickets"
+        :key="ticket.id"
+        :name="ticket.name"
+        :price="ticket.price"
+        :status="ticket.status"
+        :sold="ticket.sold"
+        :total="ticket.total" />
+    </v-col>
+  </v-row>
 </template>
 
 <script>
