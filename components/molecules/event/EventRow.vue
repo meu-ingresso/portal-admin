@@ -1,7 +1,7 @@
 <template>
-  <v-row class="event-row">
+  <v-row class="event-row cursor-pointer" @click="goToEventDetail">
     <v-col cols="1" class="event-status">
-      <EventStatusBadge :text="statusText" />
+      <StatusBadge :text="statusText" />
     </v-col>
     <v-col cols="2">
       <v-img :src="image" class="event-image"></v-img>
@@ -26,6 +26,7 @@
 import { formatDateTimeToBr, formatRealValue } from '@/utils/formatters';
 export default {
   props: {
+    eventId: { type: String, required: true },
     title: { type: String, required: true },
     date: { type: String, required: true },
     location: { type: String, required: true },
@@ -46,14 +47,22 @@ export default {
     formatToMoney(value) {
       return formatRealValue(value);
     },
+    goToEventDetail() {
+       this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.eventId } });
+    },
   },
 };
 </script>
 
 <style scoped>
+.event-row:hover {
+  transform: scale(1.005);
+}
+
 .event-row {
+  transition: transform 0.3s ease;
   margin-bottom: 16px;
-  background-color: #521f8e0d;
+  background-color: var(--tertiary);
   border-radius: 8px;
   padding-top: 8px;
   padding-bottom: 8px;

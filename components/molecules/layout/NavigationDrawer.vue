@@ -86,7 +86,7 @@ export default Vue.extend({
 
       if (routeMetaName === 'event-id') {
         return eventsSideBar;
-      } else if (routePath.startsWith('/monthly-movement')) {
+      } else if (routePath.startsWith('/reports')) {
         return monthlyMovementsSideBar;
       }
 
@@ -136,7 +136,7 @@ export default Vue.extend({
 .navigation {
   height: 100vh !important;
   top: 80px !important;
-  background-color: #7c28c60d;
+  background-color: var(--tertiary) !important;
 }
 
 .navigationMobile {

@@ -17,7 +17,7 @@ export const eventTopBar = [
         icon: 'mdi-account-outline',
         iconActive: 'mdi-account',
         title: 'Relatórios',
-        to: '/users',
+        to: '/reports',
         needPermissions: true,
     },
     {

@@ -31,8 +31,9 @@ export default {
       selectedFilter: 'all',
       filters: [
         { text: 'Todos', value: 'all' },
-        { text: 'Ativos', value: 'Ativo' },
-        { text: 'Inativos', value: 'Inativo' },
+        { text: 'Publicado', value: 'Publicado' },
+        { text: 'Rascunho', value: 'Rascunho' },
+        { text: 'Aguardando Aprovação', value: 'Aguardando Aprovação' },
       ],
     };
   },
@@ -62,6 +63,7 @@ export default {
   font-weight: 700;
   margin-bottom: 20px;
   color: var(--black-text);
+  font-family: var(--font-family-poppins-bold);
 }
 .actions {
   margin-bottom: 20px;

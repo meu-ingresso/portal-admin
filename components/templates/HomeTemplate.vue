@@ -29,8 +29,7 @@ export default {
   font-weight: 700;
   margin-bottom: 20px;
   color: var(--black-text);
-  margin-bottom: 36px;
-}
+  font-family: var(--font-family-poppins-bold);}
 .home-template {
   max-width: 1280px;
 }
