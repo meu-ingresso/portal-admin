@@ -1,43 +1,40 @@
 <template>
   <v-app v-if="isValid">
-    <v-app-bar
-      color="white"
-      clipped-left
-      dense
-      fixed
-      app
-      :class="isMobile ? 'headerMobile' : 'header'">
-      <MenuLogo
-        :mini-variant="miniVariant"
-        :drawer="drawer"
-        @change-drawer="changeDrawer"
-        @change-miniVariant="changeMiniVariant" />
-
-      <menu-chevron
-        :mini-variant="miniVariant"
-        :drawer="drawer"
-        @change-mini-variant="changeMiniVariant"
-        @change-drawer="changeDrawer" />
-
-      <!-- NOME DA ROTA -->
-      <span
-        v-if="getRoute && !getRoute.meta.isEdit"
-        :class="isMobile ? 'routeNameMobile' : 'routeName'"
-        class="route">
-        {{ getRoute.name }}
-      </span>
-      <!-- FIM NOME DA ROTA -->
-
-      <v-spacer />
-
-      <AccountMenu />
-    </v-app-bar>
-
     <NavigationDrawer
       :mini-variant="miniVariant"
       :drawer="drawer"
       @change-mini-variant="changeMiniVariant"
       @change-drawer="changeDrawer" />
+
+    <v-app-bar
+      color="primary"
+      clipped-left
+      dense
+      fixed
+      app
+      :class="isMobile ? 'headerMobile' : 'header'">
+      <div class="header-content">
+        <MenuLogo
+          class="header-img"
+          :click-to-home="true"
+          :mini-variant="miniVariant"
+          :drawer="drawer"
+          @change-drawer="changeDrawer"
+          @change-miniVariant="changeMiniVariant" />
+
+        <div class="content-menus">
+          <div v-for="(item, index) in topBarItems" :key="index" class="topbar-item">
+            <v-btn :to="item.to" class="topbar-button" :title="item.title" depressed plain tile>
+              <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
+            </v-btn>
+          </div>
+        </div>
+
+        <v-spacer />
+
+        <AccountMenu />
+      </div>
+    </v-app-bar>
 
     <v-main>
       <v-container>
@@ -49,7 +46,10 @@
 
 <script>
 import Vue from 'vue';
+import { auth } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
+import { defaultTopBar } from '@/utils/default-topbar';
+import { eventTopBar } from '@/utils/event-topbar';
 
 export default Vue.extend({
   name: 'LayoutDefault',
@@ -79,11 +79,25 @@ export default Vue.extend({
     getUserLogged() {
       return !!this.$cookies.get('user_logged');
     },
+
+    currentPath() {
+      return this.$route.path;
+    },
+
+    topBarItems() {
+      const routePath = this.currentPath;
+
+      if (routePath.startsWith('/events')) {
+        return eventTopBar;
+      }
+
+      return defaultTopBar;
+    },
   },
 
   mounted() {
     if (!this.getUserLogged || !this.getUserToken || this.getUserToken === '') {
-      this.$router.push('/login');
+      auth.login({ email: 'viniciusadrianomachado@gmail.com' });
       return;
     } else {
       this.$set(this, 'isValid', true);
@@ -94,7 +108,7 @@ export default Vue.extend({
       this.$set(this, 'miniVariant', true);
     } else {
       this.$set(this, 'drawer', true);
-      this.$set(this, 'miniVariant', true);
+      this.$set(this, 'miniVariant', false);
     }
   },
 
@@ -129,11 +143,31 @@ export default Vue.extend({
   margin-top: 0px;
 }
 
-.headerMobile {
-  height: 50px !important;
+.header-content {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin-top: 12px;
+  align-items: center;
 }
 
-.header {
-  height: 80px !important;
+.header-img {
+  width: 230px;
+  display: flex;
+  justify-content: center;
+}
+
+.content-menus {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.topbar-item {
+  margin-right: 16px;
+}
+
+.topbar-button {
+  color: white;
 }
 </style>

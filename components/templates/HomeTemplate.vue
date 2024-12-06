@@ -1,57 +1,37 @@
 <template>
-  <div>
-    <div class="text-center">
-      <Title text="Access Global Logistics" class="mt-4"> </Title>
-    </div>
-    <br />
-    <br />
+  <v-container class="home-template">
+    <div class="home-template-title">{{ getTitle }}</div>
+    <EventCardList :events="events" />
 
     <v-row>
-      <span class="ml-5">
-        Olá! <span class="cl-blue bold"> Seja bem-vindo(a), {{ getUsername }}! </span>
-      </span>
+      <v-col cols="12" class="d-flex justify-center">
+        <SeeMoreButton text="Ver mais eventos" :to="'/events'" />
+      </v-col>
     </v-row>
-    <v-row class="mt-7">
-      <span class="ml-5">
-        Qualquer dificuldade que encontre ou tiver uma dúvida/sugestão, basta entrar em
-        contato com o time de desenvolvimento através do e-mail:
-        <a href="mailto:desenvolvimento@accesslogistics.com.br" class="cl-blue bold">
-          desenvolvimento@accesslogistics.com.br</a
-        >.
-      </span>
-    </v-row>
-    <v-row>
-      <span class="ml-5">
-        Contamos com sua <span class="cl-blue bold"> cooperação </span> para
-        aprimorararmos as funcionalidades e
-        <span class="cl-blue bold"> entregar mais para você</span>. Vamos juntos alcançar
-        o melhor resultado, de forma <span class="cl-blue bold"> ágil </span> e
-        <span class="cl-blue bold">assertiva</span>.
-      </span>
-    </v-row>
-
-    <v-row class="mt-7">
-      <Lottie path="./animations/infos.json" height="300" width="300" />
-    </v-row>
-
-    <v-row> </v-row>
-  </div>
+  </v-container>
 </template>
 
 <script>
-import Vue from 'vue';
-
-export default Vue.extend({
-  data() {
-    return {};
+export default {
+  props: {
+    events: { type: Array, required: true },
   },
-
   computed: {
-    getUsername() {
-      return this.$cookies.get('username');
+    getTitle() {
+      return 'Bem-vindo, ' + this.$cookies.get('username');
     },
   },
-
-  async mounted() {},
-});
+};
 </script>
+<style scoped>
+.home-template-title {
+  font-size: 40px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--black-text);
+  margin-bottom: 36px;
+}
+.home-template {
+  max-width: 1280px;
+}
+</style>

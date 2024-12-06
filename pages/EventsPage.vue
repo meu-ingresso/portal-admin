@@ -1,22 +1,16 @@
 <template>
-  <div>
-    <HomeTemplate :events="events" />
-    <Toast />
-  </div>
+  <EventsTemplate :events="events"/>
 </template>
-
 <script>
 import { event } from '@/store';
 export default {
-  name: 'HomePage',
-
   computed: {
     events() {
-      return event.$eventList
+      return event.$eventList;
     },
     isLoadingEvents() {
-      return event.$isLoading
-    }
+      return event.$isLoading;
+    },
   },
 
   async mounted() {

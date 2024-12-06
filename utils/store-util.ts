@@ -7,30 +7,14 @@ import Toast from '@/store/toast';
 import Filter from '@/store/filter';
 import Loading from '@/store/loading';
 import User from '@/store/user';
-import Bob from '@/store/bob';
-import Modal from '@/store/modal';
-import Container from '@/store/container';
-import Shipowner from '@/store/shipowner';
-import HeadSoft from '@/store/headSoft';
-import Role from '@/store/role';
-import Permission from '@/store/permission';
-import RolePermission from '@/store/rolePermission';
-import Tariff from '@/store/tariff';
+import Event from '@/store/event';
 
 let auth: Auth;
 let toast: Toast;
 let filter: Filter;
 let loading: Loading;
 let user: User;
-let bob: Bob;
-let modal: Modal;
-let container: Container;
-let shipowner: Shipowner;
-let headSoft: HeadSoft;
-let role: Role;
-let permission: Permission;
-let rolePermission: RolePermission;
-let tariff: Tariff;
+let event: Event;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -38,15 +22,7 @@ const initializeStores = (store: Store<any>) => {
   filter = getModule(Filter, store);
   loading = getModule(Loading, store);
   user = getModule(User, store);
-  bob = getModule(Bob, store);
-  modal = getModule(Modal, store);
-  container = getModule(Container, store);
-  shipowner = getModule(Shipowner, store);
-  headSoft = getModule(HeadSoft, store);
-  role = getModule(Role, store);
-  permission = getModule(Permission, store);
-  rolePermission = getModule(RolePermission, store);
-  tariff = getModule(Tariff, store);
+  event = getModule(Event, store);
 };
 
 export {
@@ -56,13 +32,5 @@ export {
   filter,
   loading,
   user,
-  bob,
-  modal,
-  container,
-  shipowner,
-  headSoft,
-  role,
-  permission,
-  rolePermission,
-  tariff,
+  event
 };

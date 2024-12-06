@@ -14441,10 +14441,14 @@ html.overflow-y-hidden {
   padding: 4px 16px;
 }
 
-.v-toolbar__content .v-btn.v-btn--icon.v-size--default,
+/* .v-toolbar__content .v-btn.v-btn--icon.v-size--default,
 .v-toolbar__extension .v-btn.v-btn--icon.v-size--default {
   height: 48px;
   width: 48px;
+} */
+
+.v-toolbar__content{
+  height: auto !important;
 }
 
 .v-application--is-ltr .v-toolbar__content > .v-btn.v-btn--icon:first-child,

@@ -1,11 +1,11 @@
 {
-  "name": "web_app",
+  "name": "meuingresso_admin",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "API_HOST=http://localhost:1221 nuxt",
+    "dev": "nuxt",
     "dev:shared": "nuxt  --hostname 0.0.0.0",
-    "build": "API_HOST=http://localhost:1221 nuxt build",
+    "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
     "lint:js": "eslint --ext \".js,.ts,.vue\" --ignore-path .gitignore .",

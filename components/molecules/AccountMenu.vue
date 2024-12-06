@@ -85,12 +85,8 @@ v::deep.theme--light.v-icon {
   color: var(--black) !important;
 }
 
-.avatar {
-  margin-top: 30px;
-}
-
 .chevronDown {
   margin-left: -5px;
-  color: var(--primary);
+  color: white;
 }
 </style>

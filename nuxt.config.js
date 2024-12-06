@@ -8,7 +8,7 @@ export default {
   },
 
   head: {
-    title: 'Access Global',
+    title: 'Meu Ingresso - ADMIN',
     htmlAttrs: {
       lang: 'en',
     },
@@ -53,9 +53,10 @@ export default {
       dark: false,
       themes: {
         light: {
-          primary: '#023f88',
+          primary: '#521F8E',
           secondary: '#ed1b34',
           success: '#2651f2',
+          black: '#1B1B1B'
         },
       },
     },

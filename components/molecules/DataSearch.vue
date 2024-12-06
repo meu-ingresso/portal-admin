@@ -2,24 +2,32 @@
   <div :class="`d-flex justify-space-between`">
     <v-text-field
       :value="$_search"
-      append-icon="mdi-magnify"
       :label="label"
+      :placeholder="placeHolder"
       type="text"
       dense
+      rounded
       outlined
+      hide-details
       class="search"
-      background-color="#f4f4f4"
-      @input="
-        ($event) => {
-          updateSearch($event);
-        }
-      " />
+      @input="updateSearch">
+      <template v-slot:prepend-inner>
+        <div class="prepend-inner-slot">
+          <v-icon class="mt-2" color="primary">mdi-magnify</v-icon>
+        </div>
+      </template>
+      <template v-slot:append>
+        <div class="append-slot">
+          <v-divider vertical class="mr-4 ml-4 divider-primary"></v-divider>
+          <DefaultButton text="Buscar" @click="doSearch" />
+        </div>
+      </template>
+    </v-text-field>
   </div>
 </template>
 
-<script lang="ts">
-import Vue from 'vue';
-export default Vue.extend({
+<script>
+export default {
   props: {
     search: {
       type: String,
@@ -27,7 +35,13 @@ export default Vue.extend({
     },
     label: {
       type: String,
-      required: true,
+      required: false,
+      default: '',
+    },
+    placeHolder: {
+      type: String,
+      required: false,
+      default: 'Buscar',
     },
   },
   data() {
@@ -38,22 +52,37 @@ export default Vue.extend({
   },
 
   computed: {
-    $_search(): string {
+    $_search() {
       return this.search;
     },
   },
 
   methods: {
-    updateSearch(value: string): void {
+    updateSearch(value) {
       this.$emit('update-search', value);
     },
+    doSearch() {
+      this.$emit('update-search', this.search);
+    },
   },
-});
+};
 </script>
 
 <style scoped>
+.divider-primary {
+  border-color: var(--primary);
+}
+
 .search {
-  border-radius: 6px;
   padding: 5px;
+}
+.prepend-inner-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.append-slot {
+  display: flex;
+  margin-bottom: 8px;
 }
 </style>

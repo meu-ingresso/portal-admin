@@ -1,46 +1,5 @@
-import { bob, toast } from '@/store';
-
 export const sleep = async (ms: number): Promise<void> => {
   return await new Promise((resolve) => setTimeout(resolve, ms));
-};
-
-export const updateBob = async (userId: string, whoEdit: string): Promise<void> => {
-  if (whoEdit !== 'Comercial') {
-    bob.$bob.user_id = userId;
-  }
-  let target = '';
-
-  if (bob.$bob && bob.$bob.seller_target) {
-    target =
-      parseFloat(bob.$bob.freight) <= parseFloat(bob.$bob.seller_target) ? 'Sim' : 'Não';
-  } else {
-    target = 'Sem Target';
-  }
-
-  bob.$bob.pricing_target = target;
-
-  const response = await bob.update(bob.$bob);
-
-  if (response.body.code === 'UPDATE_SUCCESS') {
-    toast.setToast({
-      text: 'BOB atualizado com sucesso!',
-      type: 'success',
-      time: 2000,
-    });
-  } else {
-    toast.setToast({
-      text: 'Ocorreu um erro ao atualizar o BOB',
-      type: 'danger',
-      time: 3000,
-    });
-  }
-};
-
-export const pricingUserList = (): string[] => {
-  return [
-    '882671ce-9dac-4b72-b348-aa96ea4b84b8', // Jared
-    'c8643383-7296-41e4-822c-4fb3decf30bd', // Kayla
-  ];
 };
 
 export const isMobileDevice = (vuetify: any): boolean => {

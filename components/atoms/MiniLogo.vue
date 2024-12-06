@@ -1,11 +1,10 @@
 <template>
-  <img src="~/assets/images/logo.jpg" class="logoMenu" />
+  <img src="~/assets/images/logo-abreviado-branco.png" class="logoMenu" @click="$emit('click')" />
 </template>
 
 <style scoped>
 .logoMenu {
-  margin-top: 40px;
-  width: 170px;
-  height: 35px;
+  width: 78px;
+  height: 52px;
 }
 </style>

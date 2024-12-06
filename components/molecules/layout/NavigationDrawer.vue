@@ -1,5 +1,6 @@
 <template>
   <v-navigation-drawer
+    v-if="getSidebar"
     v-model="$_drawer"
     :mini-variant="$_miniVariant"
     clipped
@@ -9,8 +10,12 @@
       <div v-for="(item, i) in getSidebar" :key="i">
         <v-tooltip v-if="$_miniVariant" right>
           <template #activator="{ on, attrs }">
-            <v-list-item :to="item.to" router exact>
-              <v-list-item-action class="text-center">
+            <v-list-item
+              :to="item.to"
+              router
+              exact
+              :class="{ 'active-item': item.to === currentPath }">
+              <v-list-item-action v-if="item.icon" class="text-center">
                 <v-icon
                   v-if="$route.meta.prefix === item.to || $route.path === item.to"
                   v-bind="attrs"
@@ -29,8 +34,11 @@
           <span> {{ item.title }} </span>
         </v-tooltip>
 
-        <v-list-item v-if="!$_miniVariant" :to="item.to">
-          <v-list-item-action class="text-center">
+        <v-list-item
+          v-if="!$_miniVariant"
+          :to="item.to"
+          :class="{ 'active-item': item.to === currentPath }">
+          <v-list-item-action v-if="item.icon" class="text-center">
             <v-icon v-if="$route.meta.prefix === item.to || $route.path === item.to">{{
               item.iconActive
             }}</v-icon>
@@ -48,7 +56,8 @@
 
 <script>
 import Vue from 'vue';
-import { sidebar } from '@/utils/menu-sidebar';
+import { eventsSideBar } from '@/utils/events-sidebar';
+import { monthlyMovementsSideBar } from '@/utils/monthly-movement-sidebar';
 
 export default Vue.extend({
   props: {
@@ -63,18 +72,25 @@ export default Vue.extend({
   },
 
   computed: {
-    getSidebar() {
-      const permissionPrefixes = this.getUserPermissions.map(
-        (perm) => perm.module_prefix
-      );
+    currentPath() {
+      return this.$route.path;
+    },
 
-      return sidebar.filter((item) => {
-        if (item.needPermissions) {
-          const itemPrefix = item.to.slice(1);
-          return permissionPrefixes.includes(itemPrefix);
-        }
-        return true;
-      });
+    currentRouteMetaName() {
+      return this.$route.meta.name;
+    },
+
+    getSidebar() {
+      const routePath = this.currentPath;
+      const routeMetaName = this.currentRouteMetaName;
+
+      if (routeMetaName === 'event-id') {
+        return eventsSideBar;
+      } else if (routePath.startsWith('/monthly-movement')) {
+        return monthlyMovementsSideBar;
+      }
+
+      return null;
     },
 
     getUsername() {
@@ -113,22 +129,29 @@ export default Vue.extend({
 </script>
 
 <style scoped lang="scss">
-::v-deep {
-  .theme--light.v-icon {
-    color: var(--primary);
-  }
-}
 .text-support {
   color: white;
 }
 
 .navigation {
-  height: 105vh !important;
-  top: 74px !important;
+  height: 100vh !important;
+  top: 80px !important;
+  background-color: #7c28c60d;
 }
 
 .navigationMobile {
   height: 105vh !important;
   top: 0px !important;
+}
+
+.active-item {
+  background-color: var(--primary) !important;
+  border-top-right-radius: 38px;
+  border-bottom-right-radius: 38px;
+  color: white;
+}
+
+.active-item::before {
+  opacity: 0 !important;
 }
 </style>

@@ -1,7 +1,7 @@
 import { Plugin } from '@nuxt/types';
 
 const axiosPlugin: Plugin = ({ app, store, redirect }) => {
-  app.$axios.onRequest((config) => {
+/*   app.$axios.onRequest((config) => {
     const token = app.$cookies.get('token');
 
     if (token) config.headers.Authorization = `bearer ${token}`;
@@ -15,7 +15,7 @@ const axiosPlugin: Plugin = ({ app, store, redirect }) => {
 
       return redirect('/login');
     }
-  });
+  }); */
 };
 
 export default axiosPlugin;

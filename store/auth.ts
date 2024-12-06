@@ -1,6 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 
 import { $axios, $cookies } from '@/utils/nuxt-instance';
+
 interface LoginPayload {
   user_id: string;
   email: string;
@@ -14,6 +15,7 @@ interface UpdatePayload {
 }
 
 type Token = string | null;
+
 @Module({
   name: 'auth',
   stateFactory: true,
@@ -72,6 +74,83 @@ export default class Auth extends VuexModule {
 
   @Action
   public async login(payload: LoginPayload) {
+    // Simulação de login para ambiente de desenvolvimento
+
+    console.log(process.env.NODE_ENV)
+
+    if (process.env.NODE_ENV === 'development') {
+      const mockResponse = {
+        code: 'LOGIN_SUCCESS',
+        result: {
+          token: 'mocked-token',
+          payload: {
+            id: 'b10b507a-5b4e-474d-b8dc-9d9984630754',
+            name: 'Mock User',
+            email: payload.email,
+            role: 'admin',
+            id_erp: 'erp_123',
+            sellers: [],
+            permissions: ['read', 'write'],
+          },
+        },
+      };
+
+      const age = 60 * 60 * 24 * 7;
+
+      $cookies.set('token', mockResponse.result.token, {
+        path: '/',
+        maxAge: age,
+      });
+
+      $cookies.set('user_id', mockResponse.result.payload.id, {
+        path: '/',
+        maxAge: age,
+      });
+
+      $cookies.set('username', mockResponse.result.payload.name, {
+        path: '/',
+        maxAge: age,
+      });
+
+      $cookies.set('user_email', mockResponse.result.payload.email, {
+        path: '/',
+        maxAge: age,
+      });
+
+      $cookies.set('user_role', mockResponse.result.payload.role, {
+        path: '/',
+        maxAge: age,
+      });
+
+      $cookies.set('id_erp', mockResponse.result.payload.id_erp, {
+        path: '/',
+        maxAge: age,
+      });
+
+      $cookies.set('sellers', mockResponse.result.payload.sellers, {
+        path: '/',
+        maxAge: age,
+      });
+
+      $cookies.set(
+        'user_permissions',
+        JSON.stringify(mockResponse.result.payload.permissions),
+        {
+          path: '/',
+          maxAge: age,
+        }
+      );
+
+      $cookies.set('user_logged', true, {
+        path: '/',
+        maxAge: age,
+      });
+
+      this.context.commit('UPDATE_TOKEN', mockResponse.result);
+      return mockResponse;
+    }
+
+    // Caso não seja ambiente de desenvolvimento, realiza o fluxo normal
     return await $axios
       .$post('login', payload)
       .then((response) => {
