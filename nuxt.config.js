@@ -5,7 +5,7 @@ export default {
   },
 
   server: {
-    port: 9090,
+    port: 9595,
   },
 
   head: {
