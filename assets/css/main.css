@@ -1,5 +1,5 @@
 :root {
-  --primary: #521F8E;
+  --primary: #521f8e;
   --secondary: #ed1b34;
   --tertiary: #6d6e71;
   --strong-gray: #7f7f7f;
@@ -12,8 +12,8 @@
   --error-color: #dc3545;
   --white: #fff;
   --black: #121212;
-  --strong-black: #1B1B1B;
-  --black-text: #272C2F;
+  --strong-black: #1b1b1b;
+  --black-text: #272c2f;
   --gray3: #e7e7e7;
   --gray1: #868686;
   --light-gray: #eee;
@@ -22,7 +22,7 @@
   --beige: #f4f4f4;
   --border: #c3c3c3;
   --disable: #dbdbdb;
-  --font-family: 'Lato';
+  --font-family: 'Inter';
 }
 
 #app {
@@ -45,13 +45,13 @@ header {
 }
 
 @font-face {
-  font-family: 'Lato';
-  src: url('../fonts/Lato-Regular.ttf') format('truetype');
+  font-family: 'Inter';
+  src: url('../fonts/Inter-Regular.ttf') format('truetype');
   font-weight: normal;
 }
 @font-face {
-  font-family: 'Lato';
-  src: url('../fonts/Lato-Bold.ttf') format('truetype');
+  font-family: 'Inter-Bold';
+  src: url('../fonts/Inter-Bold.ttf') format('truetype');
   font-weight: bold;
 }
 
