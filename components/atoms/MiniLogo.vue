@@ -1,5 +1,5 @@
 <template>
-  <img src="~/assets/images/logo-abreviado-branco.png" class="logoMenu" @click="$emit('click')" />
+  <img src="~/assets/images/logo_menu.png" class="logoMenu" @click="$emit('click')" />
 </template>
 
 <style scoped>
