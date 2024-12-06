@@ -53,11 +53,9 @@ jobs:
 
             cd /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT
 
-            echo "@@@ CAMINHO ATUAL ... @@@"
-
-            pwd
-
             echo "⌛⏳ REALIZANDO PULL ... ⌛⏳"
+            git checkout staging
+
             git pull
 
             echo "⌛⏳ INSTALANDO AS DEPENDÊNCIAS ... ⌛⏳"
