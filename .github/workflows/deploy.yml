@@ -50,11 +50,13 @@ jobs:
               exit 1
             fi
 
+
+            cd /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT
+
             echo "@@@ CAMINHO ATUAL ... @@@"
 
             pwd
 
-            cd /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT
             echo "⌛⏳ REALIZANDO PULL ... ⌛⏳"
             git pull
 
