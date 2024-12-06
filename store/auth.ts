@@ -76,7 +76,7 @@ export default class Auth extends VuexModule {
   public async login(payload: LoginPayload) {
     // Simulação de login para ambiente de desenvolvimento
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV !== 'production') {
       const mockResponse = {
         code: 'LOGIN_SUCCESS',
         result: {
