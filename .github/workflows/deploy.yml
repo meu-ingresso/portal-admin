@@ -38,9 +38,10 @@ jobs:
           ssh -o StrictHostKeyChecking=no ubuntu@18.207.6.216 << EOF
             export NVM_DIR="/home/ubuntu/.nvm"
             [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
-            export PATH="\$PATH:$(yarn global bin)"
+            export PATH="\$PATH:/home/ubuntu/.yarn/bin"
             export ENVIRONMENT=$ENVIRONMENT
             export BRANCH=$BRANCH
+            export PM2_NAME=$PM2_NAME
 
             echo "🔍 Ambiente detectado: \$ENVIRONMENT"
             if [ ! -d "/home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT" ]; then
@@ -49,7 +50,9 @@ jobs:
             fi
 
             cd /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT
+
             echo "⌛⏳ REALIZANDO PULL ... ⌛⏳"
+            git checkout \$BRANCH
             git pull
 
             echo "⌛⏳ INSTALANDO AS DEPENDÊNCIAS ... ⌛⏳"
@@ -58,9 +61,19 @@ jobs:
             echo "⌛⏳ COMPILANDO APLICAÇÃO... ⌛⏳"
             yarn build || { echo "❌ Erro ao compilar a aplicação."; exit 1; }
 
+            echo "⌛⏳ Verificando PM2 ⌛⏳"
+            if ! command -v pm2 &> /dev/null
+            then
+              echo "❌ PM2 não encontrado. Verifique a instalação ou o PATH."
+              exit 1
+            fi
+
             echo "🚀 REINICIANDO APLICAÇÃO COM PM2 🚀"
-            pm2 restart all
-            pm2 save
+
+            echo \$PM2_NAME
+
+            pm2 restart \$PM2_NAME || { echo "❌ Erro ao reiniciar aplicação no PM2."; exit 1; }
+            pm2 save || { echo "❌ Erro ao salvar estado do PM2."; exit 1; }
 
             echo "✅✅✅ DEPLOY FINALIZADO PARA O AMBIENTE \$ENVIRONMENT ✅✅✅"
           EOF
