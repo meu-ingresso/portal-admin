@@ -1,5 +1,5 @@
 <template>
-  <v-card class="event-card">
+  <v-card class="event-card" @click="goToEventDetail">
     <v-img :src="image" class="event-image" alt="Event Image" contain></v-img>
     <v-card-text>
       <h3 class="event-title">{{ title }}</h3>
@@ -13,6 +13,7 @@
 import { formatDateTimeToBr } from '@/utils/formatters';
 export default {
   props: {
+    eventId: { type: String, required: true },
     title: { type: String, required: true },
     date: { type: String, required: true },
     location: { type: String, required: true },
@@ -23,14 +24,24 @@ export default {
       return formatDateTimeToBr(this.date);
     },
   },
+  methods: {
+    goToEventDetail() {
+      this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.eventId } });
+    },
+  },
 };
 </script>
 
 <style scoped>
 .event-card {
+  transition: transform 0.3s ease;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0px 0px 7.24px 0px #00000029 !important;
+}
+
+.event-card:hover {
+  transform: scale(1.005);
 }
 .event-title {
   font-size: 16px;
