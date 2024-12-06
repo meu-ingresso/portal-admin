@@ -1,10 +1,11 @@
 export default {
   env: {
-    api_host: process.env.API_HOST,
+    API_HOST: process.env.API_HOST,
+    NODE_ENV: process.env.NODE_ENV,
   },
 
   server: {
-    port: 8080,
+    port: 9090,
   },
 
   head: {
@@ -56,7 +57,7 @@ export default {
           primary: '#521F8E',
           secondary: '#ed1b34',
           success: '#2651f2',
-          black: '#1B1B1B'
+          black: '#1B1B1B',
         },
       },
     },
