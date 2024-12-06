@@ -1,8 +1,11 @@
 <template>
   <div v-if="!$vuetify.breakpoint.mobile" height="50%">
-    <MiniLogo v-if="!miniVariant" :class="{'cursor-pointer' : clickToHome}" @click="handleClick" />
+    <MiniLogo
+      v-if="!miniVariant"
+      :class="{ 'cursor-pointer': clickToHome }"
+      @click="handleClick" />
 
-    <SmallLogo v-else :class="{'cursor-pointer' : clickToHome}" @click="handleClick"/>
+    <SmallLogo v-else :class="{ 'cursor-pointer': clickToHome }" @click="handleClick" />
   </div>
 
   <div v-else height="50%" @click="changeMenu()">
@@ -49,7 +52,6 @@ export default Vue.extend({
 
   methods: {
     handleClick() {
-      console.log('clickToHome');
       if (this.clickToHome) {
         this.$router.push('/');
       }
