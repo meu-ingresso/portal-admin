@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "API_HOST=https://api.meuingresso.com.br nuxt",
-    "build": "API_HOST=https://api.meuingresso.com.br nuxt build",
+    "dev": "NODE_ENV=development API_HOST=http://localhost:9999 nuxt",
+    "build": " NODE_ENV=development API_HOST=http://localhost:9999 nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
     "lint:js": "eslint --ext \".js,.ts,.vue\" --ignore-path .gitignore .",
