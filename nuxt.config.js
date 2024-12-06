@@ -9,7 +9,7 @@ export default {
   },
 
   head: {
-    title: 'Meu Ingresso - ADMIN',
+    title: 'Meu Ingresso - STAGING ADMIN',
     htmlAttrs: {
       lang: 'en',
     },
