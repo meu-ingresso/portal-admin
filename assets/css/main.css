@@ -1,12 +1,12 @@
 :root {
-  --primary: #521f8e;
-  --secondary: #ed1b34;
-  --tertiary: #6d6e71;
+  --primary: #521F8E;
+  --secondary: #612A92;
+  --tertiary: #521f8e0d;
   --strong-gray: #7f7f7f;
   --bg: #dbdbdb;
   --warning: #fb8c00;
   --error: #ff5252;
-  --success: #28a745;
+  --success: #0DBB73;
   --light-green: #bfe3bf;
   --light: #f8f9f9;
   --error-color: #dc3545;
@@ -23,6 +23,9 @@
   --border: #c3c3c3;
   --disable: #dbdbdb;
   --font-family: 'Inter';
+  --font-family-inter-bold: 'Inter-Bold';
+  --font-family-poppins: 'Poppins';
+  --font-family-poppins-bold: 'Poppins-Bold';
 }
 
 #app {
@@ -54,6 +57,17 @@ header {
   src: url('../fonts/Inter-Bold.ttf') format('truetype');
   font-weight: bold;
 }
+@font-face {
+  font-family: 'Poppins';
+  src: url('../fonts/Poppins-Black.ttf') format('truetype');
+  font-weight: bold;
+}
+@font-face {
+  font-family: 'Poppins-Bold';
+  src: url('../fonts/Poppins-Bold.ttf') format('truetype');
+  font-weight: bold;
+}
+
 
 .bg-gray {
   background-color: var(--light) !important;

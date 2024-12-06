@@ -6,7 +6,7 @@ import { event } from '@/store';
 export default {
   computed: {
     events() {
-      return event.$eventList;
+      return event.$eventList || [];
     },
     isLoadingEvents() {
       return event.$isLoading;
