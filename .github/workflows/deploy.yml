@@ -1,0 +1,66 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Run Deploy Script
+        run: |
+          BRANCH=${{ github.ref_name }}
+          echo "🌿 Branch detectada: $BRANCH"
+
+          if [ "$BRANCH" == "main" ]; then
+            ENVIRONMENT="prod"
+            PM2_NAME="web-app-prod"
+          elif [ "$BRANCH" == "staging" ]; then
+            ENVIRONMENT="staging"
+            PM2_NAME="web-app-staging"
+          else
+            echo "❌ Branch $BRANCH não configurada para deploy."
+            exit 1
+          fi
+
+          ssh -o StrictHostKeyChecking=no ubuntu@18.207.6.216 << EOF
+            export NVM_DIR="/home/ubuntu/.nvm"
+            [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
+            export PATH="\$PATH:$(yarn global bin)"
+            export ENVIRONMENT=$ENVIRONMENT
+            export BRANCH=$BRANCH
+
+            echo "🔍 Ambiente detectado: \$ENVIRONMENT"
+            if [ ! -d "/home/ubuntu/Projetos/portal-web-\$ENVIRONMENT" ]; then
+              echo "❌ Diretório /home/ubuntu/Projetos/portal-web-\$ENVIRONMENT não encontrado."
+              exit 1
+            fi
+
+            cd /home/ubuntu/Projetos/portal-web-\$ENVIRONMENT
+            echo "⌛⏳ REALIZANDO PULL ... ⌛⏳"
+            git pull
+
+            echo "⌛⏳ INSTALANDO AS DEPENDÊNCIAS ... ⌛⏳"
+            yarn || { echo "❌ Erro ao instalar dependências."; exit 1; }
+
+            echo "⌛⏳ COMPILANDO APLICAÇÃO... ⌛⏳"
+            yarn build || { echo "❌ Erro ao compilar a aplicação."; exit 1; }
+
+            echo "🚀 REINICIANDO APLICAÇÃO COM PM2 🚀"
+            pm2 restart all
+            pm2 save
+
+            echo "✅✅✅ DEPLOY FINALIZADO PARA O AMBIENTE \$ENVIRONMENT ✅✅✅"
+          EOF
