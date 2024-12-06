@@ -18,18 +18,17 @@ export default {
 
 <style scoped>
 .promoters-badge {
-  border: 1px solid;
-  display: flex;
-  align-items: center;
+  border: 1px solid var(--black-text);
   padding: 8px 16px 8px 16px;
-  gap: 12px;
-  border-radius: 36px;
+  gap: 10px;
+  border-radius: 48px;
   width: 150px;
-  height: 30px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--black-text);
+  font-weight: 400;
   font-size: 16px;
   font-family: var(--font-family);
 }

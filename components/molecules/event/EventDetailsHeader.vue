@@ -4,11 +4,17 @@
       <div class="event-title">{{ title }}</div>
       <v-icon>mdi-circle-small</v-icon>
       <StatusBadge :text="statusText" />
-      <PromotersBadge :count="promoters"/>
+      <PromotersBadge :count="promoters" />
     </div>
 
-    <p>{{ location }}</p>
-    <p>{{ formattedDate }}</p>
+    <div class="location d-flex align-center mb-2">
+      <v-icon class="mr-2">mdi-map-marker</v-icon>
+      <p>{{ location }}</p>
+    </div>
+    <div class="date d-flex align-center">
+      <v-icon class="mr-2">mdi-calendar</v-icon>
+      <p>{{ formattedDate }}</p>
+    </div>
   </div>
 </template>
 
@@ -42,6 +48,6 @@ export default {
 .event-title {
   font-size: 40px;
   color: var(--black-text);
-  font-family: var(--font-family-inter-bold);    
+  font-family: var(--font-family-inter-bold);
 }
 </style>

@@ -79,6 +79,7 @@ export default {
 
   router: {
     base: process.env.ROUTE || '/',
+    middleware: 'event',
   },
 
   build: {
