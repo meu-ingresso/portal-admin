@@ -4,6 +4,7 @@
 
 <script>
 import { event } from '@/store';
+import { formatRealValue } from '@/utils/formatters';
 export default {
   computed: {
     selectedEvent() {
@@ -29,7 +30,7 @@ export default {
         ],
         sales: [
           { title: 'Ingressos Vendidos', value: ticketSales.length },
-          { title: 'Vendas', value: selectedEvent.totalizers.totalSalesAmout },
+          { title: 'Vendas', value: formatRealValue(selectedEvent.totalizers.totalSalesAmout) },
         ],
         promoters: selectedEvent.collaborators.length,
         tickets: selectedEvent.tickets.map((ticket) => ({
