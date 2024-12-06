@@ -26,10 +26,10 @@ jobs:
 
           if [ "$BRANCH" == "main" ]; then
             ENVIRONMENT="prod"
-            PM2_NAME="web-app-prod"
+            PM2_NAME="portal-admin-prod"
           elif [ "$BRANCH" == "staging" ]; then
             ENVIRONMENT="staging"
-            PM2_NAME="web-app-staging"
+            PM2_NAME="portal-admin-staging"
           else
             echo "❌ Branch $BRANCH não configurada para deploy."
             exit 1
@@ -43,12 +43,12 @@ jobs:
             export BRANCH=$BRANCH
 
             echo "🔍 Ambiente detectado: \$ENVIRONMENT"
-            if [ ! -d "/home/ubuntu/Projetos/portal-web-\$ENVIRONMENT" ]; then
-              echo "❌ Diretório /home/ubuntu/Projetos/portal-web-\$ENVIRONMENT não encontrado."
+            if [ ! -d "/home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT" ]; then
+              echo "❌ Diretório /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT não encontrado."
               exit 1
             fi
 
-            cd /home/ubuntu/Projetos/portal-web-\$ENVIRONMENT
+            cd /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT
             echo "⌛⏳ REALIZANDO PULL ... ⌛⏳"
             git pull
 
