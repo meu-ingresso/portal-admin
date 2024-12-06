@@ -4,7 +4,7 @@
       <div class="event-title">{{ title }}</div>
       <v-icon>mdi-circle-small</v-icon>
       <StatusBadge :text="statusText" />
-      <PromotersBadge :count="promoters" />
+      <PromotersBadge :count="promoters"/>
     </div>
 
     <p>{{ location }}</p>

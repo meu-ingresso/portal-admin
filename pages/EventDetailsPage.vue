@@ -25,7 +25,6 @@ export default {
           { title: 'Visualizações', value: 0 },
           { title: 'Visibilidade', value: selectedEvent.availability },
           { title: 'Tipos de ingressos', value: `${ticketsTypes.length} Tipos` },
-          { title: 'Promoters', value: `${ticketsTypes.length} Tipos` },
           { title: 'Códigos Promocionais', value: `${selectedEvent.coupons.length} Códigos` },
         ],
         sales: [
