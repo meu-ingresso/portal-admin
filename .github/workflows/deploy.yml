@@ -41,12 +41,18 @@ jobs:
             export PATH="\$PATH:$(yarn global bin)"
             export ENVIRONMENT=$ENVIRONMENT
             export BRANCH=$BRANCH
+            export PM2_NAME=$PM2_NAME
+
 
             echo "🔍 Ambiente detectado: \$ENVIRONMENT"
             if [ ! -d "/home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT" ]; then
               echo "❌ Diretório /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT não encontrado."
               exit 1
             fi
+
+            echo "@@@ CAMINHO ATUAL ... @@@"
+
+            pwd
 
             cd /home/ubuntu/Projetos/portal-admin-\$ENVIRONMENT
             echo "⌛⏳ REALIZANDO PULL ... ⌛⏳"
@@ -59,8 +65,8 @@ jobs:
             yarn build || { echo "❌ Erro ao compilar a aplicação."; exit 1; }
 
             echo "🚀 REINICIANDO APLICAÇÃO COM PM2 🚀"
-            pm2 restart all
-            pm2 save
+            pm2 restart \$PM2_NAME || { echo "❌ Erro ao reiniciar aplicação no PM2."; exit 1; }
+            pm2 save || { echo "❌ Erro ao salvar estado do PM2."; exit 1; }
 
             echo "✅✅✅ DEPLOY FINALIZADO PARA O AMBIENTE \$ENVIRONMENT ✅✅✅"
           EOF
