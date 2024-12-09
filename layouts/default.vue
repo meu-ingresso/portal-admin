@@ -2,7 +2,7 @@
   <v-app v-if="isValid">
     
     <NavigationDrawer
-      v-show="!isLoading"
+      v-if="!isLoading"
       :mini-variant="miniVariant"
       :drawer="drawer"
       @change-mini-variant="changeMiniVariant"

@@ -14,11 +14,11 @@
       :status-text="event.status.name"
       :image="findBannerImage(event)" />
   </div>
-  <v-row v-else class="align-center justify-center">
-    <v-col v-for="n in 2" :key="n" cols="12">
-      <v-skeleton-loader width="100%" type="card" />
-    </v-col>
-  </v-row>
+  <div v-else>
+    <v-row class="d-flex align-center justify-center mt-4 mb-4">
+      <v-progress-circular indeterminate color="primary" />
+    </v-row>
+  </div>
 </template>
 
 <script>

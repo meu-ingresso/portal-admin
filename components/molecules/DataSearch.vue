@@ -1,7 +1,8 @@
 <template>
   <div :class="`d-flex justify-space-between`">
     <v-text-field
-      :value="$_search"
+      v-model="localSearch"
+      :value="localSearch"
       :label="label"
       :placeholder="placeHolder"
       type="text"
@@ -48,21 +49,17 @@ export default {
     return {
       attrs: null,
       on: null,
+      localSearch: this.search,
     };
-  },
-
-  computed: {
-    $_search() {
-      return this.search;
-    },
   },
 
   methods: {
     updateSearch(value) {
+      this.localSearch = value;
       this.$emit('update-search', value);
     },
     doSearch() {
-      this.$emit('update-search', this.search);
+      this.$emit('do-search', this.localSearch);
     },
   },
 };
