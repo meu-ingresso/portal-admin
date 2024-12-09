@@ -1,5 +1,5 @@
 <template>
-  <div class="event-list">
+  <div v-if="!isLoadingEvents" class="event-list">
     <EventRow
       v-for="event in events"
       :key="event.id"
@@ -14,12 +14,24 @@
       :status-text="event.status.name"
       :image="findBannerImage(event)" />
   </div>
+  <div v-else>
+    <v-row class="d-flex align-center justify-center mt-4 mb-4">
+      <v-progress-circular indeterminate color="primary" />
+    </v-row>
+  </div>
 </template>
 
 <script>
+import { event } from '@/store';
 export default {
   props: {
     events: { type: Array, required: true },
+  },
+
+  computed: {
+    isLoadingEvents() {
+      return event.$isLoading;
+    },
   },
 
   methods: {
