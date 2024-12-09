@@ -1,5 +1,5 @@
 <template>
-  <EventsTemplate v-if="isLoading" :events="events"/>
+  <EventsTemplate v-if="!isLoading" :events="events"/>
   <Loading v-else />
 </template>
 <script>
