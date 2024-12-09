@@ -1,6 +1,8 @@
 <template>
   <v-app v-if="isValid">
+    
     <NavigationDrawer
+      v-show="!isLoading"
       :mini-variant="miniVariant"
       :drawer="drawer"
       @change-mini-variant="changeMiniVariant"
@@ -53,6 +55,7 @@
 <script>
 import { isMobileDevice } from '@/utils/utils';
 import { TopBar } from '~/utils/topbar';
+import { loading } from '@/store';
 
 export default {
   name: 'LayoutDefault',
@@ -66,6 +69,11 @@ export default {
   },
 
   computed: {
+
+    isLoading() {
+      return loading.$isLoading;
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },

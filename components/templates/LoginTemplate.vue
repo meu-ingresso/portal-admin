@@ -1,5 +1,5 @@
 <template>
-  <v-row v-if="!isLoading" class="align-center justify-center">
+  <v-row class="align-center justify-center">
     <v-col
       :cols="isMobile ? '12' : '4'"
       :lg="isMobile ? '12' : '4'"
@@ -16,10 +16,6 @@
 
     <Toast />
   </v-row>
-
-  <v-row v-else class="container-main">
-    <v-progress-circular indeterminate color="primary" />
-  </v-row>
 </template>
 
 <script>
@@ -28,7 +24,6 @@ import { sleep, isMobileDevice } from '@/utils/utils';
 export default {
   data() {
     return {
-      isLoading: true,
       validated: false,
     };
   },
