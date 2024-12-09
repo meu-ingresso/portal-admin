@@ -5,11 +5,22 @@
     class="login-form text-center mt-4"
     @submit.prevent="validate"
     @keyup.native.enter="validate">
+    <v-alert
+      v-if="error"
+      class="mt-2"
+      dense
+      outlined
+      type="error"
+      icon="mdi-alert-outline"
+      transition="scale-transition">
+      E-mail ou senha inválidos.
+    </v-alert>
+
     <v-row class="text-center">
       <v-col cols="12" class="pa-0 ma-0 emailInput">
         <v-text-field
           v-model="$auth.email"
-          :disabled="$isLoading"
+          :disabled="isLoading"
           class="loginInput"
           label="E-mail"
           placeholder="Digite aqui seu e-mail"
@@ -25,7 +36,7 @@
       <v-col cols="12" class="pa-0 ma-0 passwordImput">
         <v-text-field
           v-model="$auth.password"
-          :disabled="$isLoading"
+          :disabled="isLoading"
           class="loginInput"
           label="Senha"
           placeholder="Digite aqui sua senha"
@@ -44,7 +55,8 @@
         <DefaultButton
           text="LOGIN"
           class="login-button"
-          :disabled="!valid"
+          :is-loading="isLoading"
+          :disabled="!valid || isLoading"
           @click="validate" />
       </v-col>
       <v-col cols="12" class="d-flex align-center justify-center">
@@ -66,6 +78,7 @@ export default {
   data() {
     return {
       valid: true,
+      error: false,
       rules: {
         email: [
           (v) => !!v || 'Campo obrigatório',
@@ -81,7 +94,7 @@ export default {
     $auth() {
       return auth.$credentials;
     },
-    $isLoading() {
+    isLoading() {
       return loading.$isLoading;
     },
   },
@@ -93,10 +106,16 @@ export default {
 
     async onLogin() {
       try {
+        this.error = false;
+
         const res = await auth.login(auth.$credentials);
 
-        if (res && res.body.code === 'LOGIN_SUCCESS') {
+        if (res && res?.body?.code === 'LOGIN_SUCCESS') {
+          this.error = false;
           this.$router.push({ name: 'Eventos' });
+        } else {
+          this.error = true;
+          this.$refs.form.resetValidation();
         }
       } catch (error) {
         console.error(error);

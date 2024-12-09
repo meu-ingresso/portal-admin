@@ -1,5 +1,5 @@
 <template>
-  <v-row v-if="!isLoading" class="align-center justify-center">
+  <v-row class="align-center justify-center">
     <v-col
       :cols="isMobile ? '12' : '4'"
       :lg="isMobile ? '12' : '4'"
@@ -16,10 +16,6 @@
 
     <Toast />
   </v-row>
-
-  <v-row v-else class="container-main">
-    <v-progress-circular indeterminate color="primary" />
-  </v-row>
 </template>
 
 <script>
@@ -28,7 +24,6 @@ import { sleep, isMobileDevice } from '@/utils/utils';
 export default {
   data() {
     return {
-      isLoading: true,
       validated: false,
     };
   },
@@ -43,7 +38,6 @@ export default {
     await sleep(50);
     this.$set(this, 'isLoading', false);
   },
-
 };
 </script>
 
@@ -52,8 +46,31 @@ export default {
   border-radius: 32px;
 }
 .login-card-title {
-  font-size: 40px;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
+}
+
+@media (max-width: 360px) {
+  .login-card-title {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .login-card-title {
+    font-size: 26px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .login-card-title {
+    font-size: 30px;
+  }
+}
+
+@media (min-width: 1441px) {
+  .login-card-title {
+    font-size: 36px;
+  }
 }
 </style>
