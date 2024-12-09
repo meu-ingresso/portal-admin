@@ -1,10 +1,10 @@
 <template>
   <EventDetailsTemplate v-if="selectedEvent" :event="selectedEvent" />
-   <Loading v-else />
+  <Loading v-else />
 </template>
 
 <script>
-import { event } from '@/store';
+import { event, loading } from '@/store';
 import { formatRealValue } from '@/utils/formatters';
 export default {
   computed: {
@@ -27,11 +27,17 @@ export default {
           { title: 'Visualizações', value: 0 },
           { title: 'Visibilidade', value: selectedEvent.availability },
           { title: 'Tipos de ingressos', value: `${ticketsTypes.length} Tipos` },
-          { title: 'Códigos Promocionais', value: `${selectedEvent.coupons.length} Códigos` },
+          {
+            title: 'Códigos Promocionais',
+            value: `${selectedEvent.coupons.length} Códigos`,
+          },
         ],
         sales: [
           { title: 'Ingressos Vendidos', value: ticketSales.length },
-          { title: 'Vendas', value: formatRealValue(selectedEvent.totalizers.totalSalesAmout) },
+          {
+            title: 'Vendas',
+            value: formatRealValue(selectedEvent.totalizers.totalSalesAmout),
+          },
         ],
         promoters: selectedEvent.collaborators.length,
         tickets: selectedEvent.tickets.map((ticket) => ({
@@ -50,7 +56,9 @@ export default {
   },
 
   async mounted() {
+    loading.setIsLoading(true);
     await event.getById(this.$route.params.id);
+    loading.setIsLoading(false);
   },
 };
 </script>
