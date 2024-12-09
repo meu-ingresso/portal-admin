@@ -43,7 +43,6 @@ export default {
     await sleep(50);
     this.$set(this, 'isLoading', false);
   },
-
 };
 </script>
 
@@ -52,8 +51,31 @@ export default {
   border-radius: 32px;
 }
 .login-card-title {
-  font-size: 40px;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
+}
+
+@media (max-width: 360px) {
+  .login-card-title {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .login-card-title {
+    font-size: 26px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .login-card-title {
+    font-size: 30px;
+  }
+}
+
+@media (min-width: 1441px) {
+  .login-card-title {
+    font-size: 36px;
+  }
 }
 </style>
