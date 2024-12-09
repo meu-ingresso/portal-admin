@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isLoadingEvents" class="event-list">
+  <div class="event-list">
     <EventRow
       v-for="event in events"
       :key="event.id"
@@ -14,24 +14,12 @@
       :status-text="event.status.name"
       :image="findBannerImage(event)" />
   </div>
-  <v-row v-else class="align-center justify-center">
-    <v-col v-for="n in 2" :key="n" cols="12">
-      <v-skeleton-loader width="100%" type="card" />
-    </v-col>
-  </v-row>
 </template>
 
 <script>
-import { event } from '@/store';
 export default {
   props: {
     events: { type: Array, required: true },
-  },
-
-  computed: {
-    isLoadingEvents() {
-      return event.$isLoading;
-    },
   },
 
   methods: {
