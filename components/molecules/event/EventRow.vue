@@ -1,21 +1,21 @@
 <template>
   <v-row class="event-row cursor-pointer" @click="goToEventDetail">
-    <v-col cols="1" class="event-status">
+    <v-col sm="12" md="2" class="event-status">
       <StatusBadge :text="statusText" />
     </v-col>
-    <v-col cols="2">
+    <v-col sm="12" md="2">
       <v-img :src="image" class="event-image"></v-img>
     </v-col>
-    <v-col cols="4">
+    <v-col sm="12" md="3">
       <h4 class="event-title">{{ title }}</h4>
       <p class="event-date">{{ formattedDate }}</p>
       <p class="event-location">{{ location }}</p>
     </v-col>
-    <v-col cols="3" class="text-right">
+    <v-col sm="12" md="3" class="text-right">
       <p class="event-revenue">{{ formatToMoney(revenue) }}</p>
       <p class="event-revenue-today">{{ formatToMoney(revenueToday) }} hoje</p>
     </v-col>
-    <v-col cols="2" class="text-right">
+    <v-col sm="12" md="2" class="text-right">
       <p class="event-tickets">{{ tickets }}</p>
       <p class="event-tickets-today">{{ ticketsToday }} hoje</p>
     </v-col>
@@ -77,6 +77,7 @@ export default {
 }
 .event-image {
   border-radius: 8px;
+  max-width: 300px;
 }
 .event-title {
   font-size: 16px;

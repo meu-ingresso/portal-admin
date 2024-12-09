@@ -24,7 +24,13 @@
 
         <div class="content-menus">
           <div v-for="(item, index) in topBarItems" :key="index" class="topbar-item">
-            <v-btn :to="item.to" class="topbar-button" :title="item.title" depressed plain tile>
+            <v-btn
+              :to="item.to"
+              class="topbar-button"
+              :title="item.title"
+              depressed
+              plain
+              tile>
               <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
             </v-btn>
           </div>
@@ -32,7 +38,7 @@
 
         <v-spacer />
 
-        <AccountMenu />
+        <AccountMenu v-if="!isLogin" />
       </div>
     </v-app-bar>
 
@@ -45,25 +51,21 @@
 </template>
 
 <script>
-import Vue from 'vue';
-import { auth } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
-import { eventTopBar } from '@/utils/event-topbar';
+import { TopBar } from '~/utils/topbar';
 
-export default Vue.extend({
+export default {
   name: 'LayoutDefault',
-  middleware: 'auth',
-
   data() {
     return {
       drawer: false,
       miniVariant: true,
       isValid: false,
+      isLogin: false,
     };
   },
 
   computed: {
-
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -77,13 +79,16 @@ export default Vue.extend({
     },
 
     topBarItems() {
-      return eventTopBar;
+      if (!this.getUserLogged) {
+        return [];
+      }
+      return TopBar;
     },
   },
 
-  mounted() {
+  mounted() {    
     if (!this.getUserLogged || !this.getUserToken || this.getUserToken === '') {
-      auth.login({ email: 'viniciusadrianomachado@gmail.com' });
+      this.$router.push('/login');
       return;
     } else {
       this.$set(this, 'isValid', true);
@@ -107,7 +112,7 @@ export default Vue.extend({
       this.$set(this, 'drawer', value);
     },
   },
-});
+};
 </script>
 
 <style scoped>

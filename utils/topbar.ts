@@ -1,4 +1,4 @@
-export const eventTopBar = [
+export const TopBar = [
     {
         icon: 'mdi-calendar-multiselect-outline',
         iconActive: 'mdi-calendar-multiselect',

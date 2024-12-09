@@ -3,7 +3,7 @@
     <v-col cols="12">
       <div class="event-statistics-title">Detalhes</div>
     </v-col>
-    <v-col v-for="stat in statistics" :key="stat.title" cols="12" lg="3" md="6" sm="12">
+    <v-col v-for="stat in statistics" :key="stat.title" cols="12" xl="3" lg="4" md="6" sm="12">
       <StatisticCard :title="stat.title" :value="stat.value" />
     </v-col>
   </v-row>
