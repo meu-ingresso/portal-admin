@@ -4,6 +4,7 @@
       v-for="filter in filters"
       :key="filter.text"
       color="primary"
+      class="mr-2 mb-2"
       depressed
       :elevation="0"
       rounded
@@ -26,7 +27,6 @@ export default {
 
 <style scoped>
 .filter-buttons {
-  display: flex;
   gap: 16px;
   margin-bottom: 16px;
   margin-right: 8px;
