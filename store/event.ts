@@ -1,5 +1,6 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
+import { SearchPayload } from '~/models';
 
 @Module({
     name: 'event',
@@ -59,7 +60,7 @@ export default class Event extends VuexModule {
     }
 
     @Action
-    public async getAll() {
+    public async fetchEvents({ page = 1, limit = 12, search, sortBy, sortDesc }: SearchPayload) {
 
         this.setLoading(true);
 
@@ -72,8 +73,25 @@ export default class Event extends VuexModule {
             'attachments',
         ];
 
+        const params = new URLSearchParams();
+
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
+
+        sortBy.forEach((field: string, index: number) => {
+            const order = sortDesc[index] ? 'desc' : 'asc';
+            params.append('orderBy[]', `${field}:${order}`);
+        });
+
+        if (search) {
+            params.append('search[name][o]', '_LIKE_');
+            params.append('search[name][v]', encodeURIComponent(String(search)));
+        }
+
+        preloads.forEach((preload) => params.append('preloads[]', preload));
+
         return await $axios
-            .$get(`events?orderBy[]=name:asc&${preloads.map((preload) => `preloads[]=${preload}`).join('&')}`)
+            .$get(`events?${params.toString()}`)
             .then((response) => {
                 if (response.body && response.body.code !== 'SEARCH_SUCCESS')
                     throw new Error(response);

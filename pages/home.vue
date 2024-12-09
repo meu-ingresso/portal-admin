@@ -12,16 +12,19 @@ export default {
 
   computed: {
     events() {
-      return event.$eventList
+      return event.$eventList;
     },
     isLoadingEvents() {
-      return event.$isLoading
-    }
+      return event.$isLoading;
+    },
   },
 
   async mounted() {
     try {
-      await event.getAll();
+      await event.fetchEvents({
+        sortBy: ['name'],
+        sortDesc: [false],
+      });
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
     }

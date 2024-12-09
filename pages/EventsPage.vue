@@ -1,5 +1,8 @@
 <template>
-  <EventsTemplate v-if="!isLoading" :events="events"/>
+  <EventsTemplate
+    v-if="!isLoading"
+    :events="events"
+    @update-search="handleSearchEvents" />
   <Loading v-else />
 </template>
 <script>
@@ -17,11 +20,28 @@ export default {
   async mounted() {
     try {
       loading.setIsLoading(true);
-      await event.getAll();
+      await event.fetchEvents({
+        sortBy: ['name'],
+        sortDesc: [false],
+      });
       loading.setIsLoading(false);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
     }
+  },
+
+  methods: {
+    async handleSearchEvents(search) {
+      try {
+        await event.fetchEvents({
+          sortBy: ['name'],
+          sortDesc: [false],
+          search,
+        });
+      } catch (error) {
+        console.error('Erro ao carregar eventos:', error);
+      }
+    },
   },
 };
 </script>

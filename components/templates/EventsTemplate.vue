@@ -3,7 +3,7 @@
     <div class="events-template-title">Lista de Eventos</div>
     <v-divider class="mb-4 mt-4"></v-divider>
     <div class="actions">
-      <DataSearch :search="search" place-holder="Encontre seu evento" />
+      <DataSearch :search="search" place-holder="Encontre seu evento" @do-search="handleSearch" />
     </div>
     <FilterButtons
       :filters="filters"
@@ -50,6 +50,10 @@ export default {
     handleFilterChange(filter) {
       this.selectedFilter = filter;
     },
+    handleSearch(search) {
+      this.search = search;
+      this.$emit('update-search', search);
+    }
   },
 };
 </script>
