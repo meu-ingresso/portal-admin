@@ -48,7 +48,6 @@
 import Vue from 'vue';
 import { auth } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
-import { defaultTopBar } from '@/utils/default-topbar';
 import { eventTopBar } from '@/utils/event-topbar';
 
 export default Vue.extend({
@@ -64,9 +63,6 @@ export default Vue.extend({
   },
 
   computed: {
-    getRoute() {
-      return this.$route;
-    },
 
     isMobile() {
       return isMobileDevice(this.$vuetify);
@@ -80,18 +76,8 @@ export default Vue.extend({
       return !!this.$cookies.get('user_logged');
     },
 
-    currentPath() {
-      return this.$route.path;
-    },
-
     topBarItems() {
-      const routePath = this.currentPath;
-
-      if (routePath.startsWith('/events')) {
-        return eventTopBar;
-      }
-
-      return defaultTopBar;
+      return eventTopBar;
     },
   },
 

@@ -55,7 +55,7 @@ export default {
       themes: {
         light: {
           primary: '#521F8E',
-          secondary: '#ed1b34',
+          secondary: '#521f8e0d',
           success: '#2651f2',
           black: '#1B1B1B',
         },
@@ -79,6 +79,7 @@ export default {
 
   router: {
     base: process.env.ROUTE || '/',
+    middleware: 'event',
   },
 
   build: {

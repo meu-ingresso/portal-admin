@@ -29,5 +29,7 @@ export default {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+  margin-right: 8px;
+  margin-left: 8px;
 }
 </style>
