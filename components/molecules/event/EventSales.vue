@@ -3,7 +3,7 @@
     <v-col cols="12">
       <div class="event-sales-title">Suas Vendas</div>
     </v-col>
-    <v-col v-for="sale in sales" :key="sale.title" cols="12" lg="3" md="6" sm="12">
+    <v-col v-for="sale in sales" :key="sale.title" cols="12" xl="4" lg="4" md="6" sm="12">
       <SalesCard :title="sale.title" :value="sale.value" />
     </v-col>
   </v-row>

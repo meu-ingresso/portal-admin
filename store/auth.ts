@@ -14,7 +14,10 @@ interface UpdatePayload {
   roles?: Object[];
 }
 
-type Token = string | null;
+interface Token {
+  token: string;
+  expires_at: string;
+}
 
 @Module({
   name: 'auth',
@@ -29,7 +32,7 @@ export default class Auth extends VuexModule {
     password: '',
   };
 
-  private token = {} as Token;
+  private token: Token = null;
 
   public get $token() {
     return this.token;
@@ -45,19 +48,21 @@ export default class Auth extends VuexModule {
 
   @Mutation
   private UPDATE_TOKEN(result: any) {
+
     if (!result) {
-      this.token = result;
-      return;
+      this.token = null;
+      this.credentials.user_id = undefined;
+      this.credentials.email = '';
+      this.credentials.password = '';
+      return
     }
 
-    if (typeof result === 'string') {
-      this.token = result;
-      this.credentials.user_id = $cookies.get('user_id');
-      return;
-    }
+    this.token = {
+      token: result.token.token,
+      expires_at: result.token.expires_at,
+    };
 
-    this.token = result.token;
-    this.credentials.user_id = result.payload.id;
+    this.credentials.user_id = result.auth.id;
     this.credentials.email = '';
     this.credentials.password = '';
   }
@@ -74,143 +79,54 @@ export default class Auth extends VuexModule {
 
   @Action
   public async login(payload: LoginPayload) {
-    // Simulação de login para ambiente de desenvolvimento
-
-    if (process.env.NODE_ENV !== 'production') {
-      const mockResponse = {
-        code: 'LOGIN_SUCCESS',
-        result: {
-          token: 'mocked-token',
-          payload: {
-            id: 'b10b507a-5b4e-474d-b8dc-9d9984630754',
-            name: 'Mock User',
-            email: payload.email,
-            role: 'admin',
-            id_erp: 'erp_123',
-            sellers: [],
-            permissions: ['read', 'write'],
-          },
-        },
-      };
-
-      const age = 60 * 60 * 24 * 7;
-
-      $cookies.set('token', mockResponse.result.token, {
-        path: '/',
-        maxAge: age,
-      });
-
-      $cookies.set('user_id', mockResponse.result.payload.id, {
-        path: '/',
-        maxAge: age,
-      });
-
-      $cookies.set('username', mockResponse.result.payload.name, {
-        path: '/',
-        maxAge: age,
-      });
-
-      $cookies.set('user_email', mockResponse.result.payload.email, {
-        path: '/',
-        maxAge: age,
-      });
-
-      $cookies.set('user_role', mockResponse.result.payload.role, {
-        path: '/',
-        maxAge: age,
-      });
-
-      $cookies.set('id_erp', mockResponse.result.payload.id_erp, {
-        path: '/',
-        maxAge: age,
-      });
-
-      $cookies.set('sellers', mockResponse.result.payload.sellers, {
-        path: '/',
-        maxAge: age,
-      });
-
-      $cookies.set(
-        'user_permissions',
-        JSON.stringify(mockResponse.result.payload.permissions),
-        {
-          path: '/',
-          maxAge: age,
-        }
-      );
-
-      $cookies.set('user_logged', true, {
-        path: '/',
-        maxAge: age,
-      });
-
-      this.context.commit('UPDATE_TOKEN', mockResponse.result);
-      return mockResponse;
-    }
-
-    // Caso não seja ambiente de desenvolvimento, realiza o fluxo normal
     return await $axios
       .$post('login', payload)
       .then((response) => {
-        if (response.code !== 'LOGIN_SUCCESS') throw new Error(response);
+
+        const { body } = response;
+
+        if (body.code !== 'LOGIN_SUCCESS') throw new Error('Login failed');
 
         const age = 60 * 60 * 24 * 7;
 
-        $cookies.set('token', response.result.token, {
+        $cookies.set('token', body.result.token, {
           path: '/',
           maxAge: age,
         });
 
-        $cookies.set('user_id', response.result.payload.id, {
+        $cookies.set('user_id', body.result.auth.id, {
           path: '/',
           maxAge: age,
         });
 
-        $cookies.set('username', response.result.payload.name, {
+        const fullName = `${body.result.auth.people.first_name} ${body.result.auth.people.last_name}`;
+
+        $cookies.set('username', fullName, {
           path: '/',
           maxAge: age,
         });
 
-        $cookies.set('user_email', response.result.payload.email, {
+        $cookies.set('user_email', body.result.auth.email, {
           path: '/',
           maxAge: age,
         });
 
-        $cookies.set('user_role', response.result.payload.role, {
+        $cookies.set('user_role', body.result.auth.role, {
           path: '/',
           maxAge: age,
         });
-
-        $cookies.set('id_erp', response.result.payload.id_erp, {
-          path: '/',
-          maxAge: age,
-        });
-
-        $cookies.set('sellers', response.result.payload.sellers, {
-          path: '/',
-          maxAge: age,
-        });
-
-        $cookies.set(
-          'user_permissions',
-          JSON.stringify(response.result.payload.permissions),
-          {
-            path: '/',
-            maxAge: age,
-          }
-        );
 
         $cookies.set('user_logged', true, {
           path: '/',
           maxAge: age,
         });
 
-        this.context.commit('UPDATE_TOKEN', response.result);
+        this.context.commit('UPDATE_TOKEN', body.result);
 
         return response;
       })
-      .catch(({ response }) => {
-        return response;
+      .catch((error) => {
+        return error;
       });
   }
 

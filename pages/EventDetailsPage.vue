@@ -1,5 +1,6 @@
 <template>
   <EventDetailsTemplate v-if="selectedEvent" :event="selectedEvent" />
+   <Loading v-else />
 </template>
 
 <script>

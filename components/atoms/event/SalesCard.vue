@@ -22,16 +22,27 @@ export default {
   border: 0px !important;
 }
 .sale-card-title{
-  font-size: 24px;
   font-weight: 700;
+  font-size: 26px;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
 }
 
 .sale-card-subtitle {
-  font-size: 40px;
   font-weight: 700;
+  font-size: 40px;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
 }
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .sale-card-title {
+    font-size: 22px;
+  }
+
+  .sale-card-subtitle {
+    font-size: 32px;
+  }
+}
+
 </style>
