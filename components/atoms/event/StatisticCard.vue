@@ -1,6 +1,7 @@
 <template>
   <v-card flat tile outlined class="statistic-card">
     <v-card-title class="statistic-card-title">{{ title }}</v-card-title>
+
     <v-card-subtitle class="statistic-card-subtitle">{{ value }}</v-card-subtitle>
   </v-card>
 </template>
@@ -22,7 +23,7 @@ export default {
   border: 0px !important;
 }
 
-.statistic-card-title{
+.statistic-card-title {
   font-weight: 700;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
@@ -117,7 +118,4 @@ export default {
     padding: 36px;
   }
 }
-
-
-
 </style>

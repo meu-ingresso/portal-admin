@@ -3,7 +3,8 @@
     v-if="!isLoading"
     :events="events"
     @update-search="handleSearchEvents" />
-  <Loading v-else />
+
+  <Lottie v-else path="./animations/loading_default.json" height="300" width="300" />
 </template>
 <script>
 import { event, loading } from '@/store';

@@ -3,6 +3,7 @@
     <v-col cols="12">
       <div class="event-tickets-title">Ingressos Vendidos</div>
     </v-col>
+
     <v-col cols="12">
       <TicketRow
         v-for="ticket in tickets"

@@ -5,16 +5,17 @@
       :status-text="event.statusText"
       :location="event.location"
       :date="event.date"
-      :promoters="event.promoters"
-    />
+      :promoters="event.promoters" />
+
     <EventStatistics :statistics="event.statistics" />
+
     <EventSales :sales="event.sales" />
-    <EventTickets :tickets="event.tickets.filter(ticket => ticket.hasSales)" />
+
+    <EventTickets :tickets="event.tickets.filter((ticket) => ticket.hasSales)" />
   </v-container>
 </template>
 
 <script>
-
 export default {
   props: {
     event: { type: Object, required: true },

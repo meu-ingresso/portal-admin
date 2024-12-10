@@ -12,12 +12,12 @@
       hide-details
       class="search"
       @input="updateSearch">
-      <template v-slot:prepend-inner>
+      <template #prepend-inner>
         <div class="prepend-inner-slot">
           <v-icon class="mt-2" color="primary">mdi-magnify</v-icon>
         </div>
       </template>
-      <template v-slot:append>
+      <template #append>
         <div class="append-slot">
           <v-divider vertical class="mr-4 ml-4 divider-primary"></v-divider>
           <DefaultButton text="Buscar" @click="doSearch" />

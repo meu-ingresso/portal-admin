@@ -1,15 +1,23 @@
 <template>
   <v-container class="events-template">
     <div class="events-template-title">Lista de Eventos</div>
+
     <v-divider class="mb-4 mt-4"></v-divider>
+
     <div class="actions">
-      <DataSearch :search="search" place-holder="Encontre seu evento" @do-search="handleSearch" />
+      <DataSearch
+        :search="search"
+        place-holder="Encontre seu evento"
+        @do-search="handleSearch" />
     </div>
+
     <FilterButtons
       :filters="filters"
       :selected="selectedFilter"
       @filter-selected="handleFilterChange" />
+
     <v-divider class="mb-8 mt-8"></v-divider>
+
     <EventList :events="filteredEvents" />
 
     <v-row>
@@ -53,7 +61,7 @@ export default {
     handleSearch(search) {
       this.search = search;
       this.$emit('update-search', search);
-    }
+    },
   },
 };
 </script>
