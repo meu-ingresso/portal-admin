@@ -9,7 +9,7 @@
     />
     <EventStatistics :statistics="event.statistics" />
     <EventSales :sales="event.sales" />
-    <EventTickets :tickets="event.tickets" />
+    <EventTickets :tickets="event.tickets.filter(ticket => ticket.hasSales)" />
   </v-container>
 </template>
 
@@ -25,13 +25,5 @@ export default {
 <style scoped>
 .event-details {
   padding: 16px;
-}
-
-.event-details-title {
-  font-size: 40px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: var(--black-text);
-  font-family: var(--font-family-poppins-bold);
 }
 </style>
