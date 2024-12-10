@@ -1,6 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
+import { formatRealValue } from '~/utils/formatters';
 
 @Module({
     name: 'event',
@@ -41,7 +42,45 @@ export default class Event extends VuexModule {
 
     @Mutation
     private SET_SELECTED_EVENT(data: any) {
-        this.selectedEvent = data;
+
+        const ticketsTypes = data.tickets.map((ticket) => ticket.name);
+
+        const ticketSales = data.tickets.filter(
+            (ticket) => ticket.total_quantity > ticket.remaining_quantity
+        );
+
+        this.selectedEvent = {
+            ...data,
+            title: data.name,
+            statusText: data.status.name,
+            date: data.start_date,
+            statistics: [
+                { title: 'Visualizações', value: 0 },
+                { title: 'Visibilidade', value: data.availability },
+                { title: 'Tipos de ingressos', value: `${ticketsTypes.length} Tipos` },
+                {
+                    title: 'Códigos Promocionais',
+                    value: `${data.coupons.length} Códigos`,
+                },
+            ],
+            sales: [
+                { title: 'Ingressos Vendidos', value: ticketSales.length },
+                {
+                    title: 'Vendas',
+                    value: formatRealValue(data.totalizers.totalSalesAmout),
+                },
+            ],
+            promoters: data.collaborators.length,
+            tickets: data.tickets.map((ticket) => ({
+                id: ticket.id,
+                name: ticket.name,
+                price: ticket.price,
+                sold: ticket.total_quantity - ticket.remaining_quantity,
+                total: ticket.total_quantity,
+                status: ticket.status.name,
+                hasSales: ticket.total_quantity > ticket.remaining_quantity,
+            })),
+        };
     }
 
     @Mutation

@@ -85,14 +85,16 @@ export default {
     },
 
     inEventDetail() {
-      return this.currentRouteMetaName === 'eventsDetails';
+      return this.currentRouteMetaName.startsWith('eventsDetails');
     },
 
     selectedEventBanner() {
       const selectedEvent = event.$selectedEvent;
       if (!selectedEvent) return null;
-      
-      const banner = selectedEvent.attachments.find((attach) => attach.type === 'image' && attach.name === 'banner');
+
+      const banner = selectedEvent.attachments.find(
+        (attach) => attach.type === 'image' && attach.name === 'banner'
+      );
       return banner ? banner.image_url : '';
     },
 
@@ -104,7 +106,7 @@ export default {
       const routePath = this.currentPath;
       const routeMetaName = this.currentRouteMetaName;
 
-      if (routeMetaName === 'eventsDetails') {
+      if (routeMetaName.startsWith('eventsDetails')) {
         const eventId = this.routerParams.id;
 
         return eventsSideBar.map((item) => {
@@ -112,6 +114,11 @@ export default {
             return {
               ...item,
               to: `/events/${eventId}`,
+            };
+          } else if (item.to === '/events/:id/tickets') {
+            return {
+              ...item,
+              to: `/events/${eventId}/tickets`,
             };
           }
 
@@ -192,7 +199,7 @@ export default {
   opacity: 0 !important;
 }
 
-.event-detail-image{
+.event-detail-image {
   margin: 8px;
   padding: 0;
 }

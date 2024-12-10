@@ -5,9 +5,10 @@
       :lg="isMobile ? '12' : '4'"
       :md="isMobile ? '12' : '4'">
       <v-card class="px-4 py-4 login-card">
-        <v-card-title class="text-center login-card-title mb-4"
-          >Entre na sua conta</v-card-title
-        >
+        <v-card-title class="text-center login-card-title mb-4">
+          Entre na sua conta
+        </v-card-title>
+
         <v-card-text>
           <LoginForm @validated="validated = true" @unValidated="validated = false" />
         </v-card-text>
@@ -36,6 +37,7 @@ export default {
 
   async mounted() {
     await sleep(50);
+
     this.$set(this, 'isLoading', false);
   },
 };

@@ -1,9 +1,12 @@
 <template>
   <v-card class="event-card" @click="goToEventDetail">
-    <v-img :src="image" class="event-image" alt="Event Image" contain></v-img>
+    <v-img :src="image" class="event-image" alt="Event Image" contain />
+
     <v-card-text>
       <h3 class="event-title">{{ title }}</h3>
+
       <p class="event-date">{{ formattedDate }}</p>
+
       <p class="event-location">{{ location }}</p>
     </v-card-text>
   </v-card>
@@ -19,11 +22,13 @@ export default {
     location: { type: String, required: true },
     image: { type: String, required: true },
   },
+
   computed: {
     formattedDate() {
       return formatDateTimeToBr(this.date);
     },
   },
+
   methods: {
     goToEventDetail() {
       this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.eventId } });

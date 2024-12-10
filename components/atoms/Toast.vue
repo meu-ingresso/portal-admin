@@ -11,13 +11,17 @@
       <v-row :class="`toast-${getToast.toastType} toast`">
         <v-col cols="12" :class="`toast-${getToast.toastType} toast-title`">
           <strong>Notificação</strong>
-          <v-spacer></v-spacer>
+
+          <v-spacer />
+
           <v-icon class="close-toast" @click="closeToast()"> mdi-close </v-icon>
         </v-col>
-        <v-divider></v-divider>
+
+        <v-divider />
         <div class="toast-body">
           {{ getToast.toastText }}
         </div>
+
         <div v-if="getToast.toastText2" class="toast-body">
           {{ getToast.toastText2 }}
         </div>

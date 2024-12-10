@@ -1,6 +1,7 @@
 <template>
   <v-card flat tile outlined class="sale-card">
     <v-card-title class="sale-card-title mb-4">{{ title }}</v-card-title>
+
     <v-card-subtitle class="sale-card-subtitle">{{ value }}</v-card-subtitle>
   </v-card>
 </template>
@@ -21,7 +22,7 @@ export default {
   background-color: var(--tertiary);
   border: 0px !important;
 }
-.sale-card-title{
+.sale-card-title {
   font-weight: 700;
   font-size: 26px;
   color: var(--black-text);
@@ -44,5 +45,4 @@ export default {
     font-size: 32px;
   }
 }
-
 </style>

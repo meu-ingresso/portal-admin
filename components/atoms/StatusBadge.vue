@@ -12,7 +12,6 @@ export default {
 
   computed: {
     color() {
-
       switch (this.text) {
         case 'Publicado':
           return '#0DBB73';
@@ -23,9 +22,8 @@ export default {
         default:
           return 'warning';
       }
-
     },
-  }
+  },
 };
 </script>
 

@@ -1,6 +1,6 @@
 import Home from '@/pages/home.vue';
-import EventsPage from '@/pages/EventsPage.vue';
-import EventDetailsPage from '@/pages/EventDetailsPage.vue';
+import EventsPage from '~/pages/events/EventsPage.vue';
+import EventDetailsPage from '~/pages/events/EventDetailsPage.vue';
 
 export default [
   {
@@ -31,8 +31,19 @@ export default [
     name: 'Detalhe de Eventos',
     meta: {
       name: 'eventsDetails',
-      prefix: '/events/:id',
+      prefix: 'eventsDetails',
       screenName: 'eventsDetails',
+      isEdit: false,
+    },
+  },
+  {
+    path: '/events/:id/tickets',
+    component: EventDetailsPage,
+    name: 'Ingressos do Eventos',
+    meta: {
+      name: 'eventsDetailsTickets',
+      prefix: 'eventsDetailsTickets',
+      screenName: 'eventsDetailsTickets',
       isEdit: false,
     },
   },
