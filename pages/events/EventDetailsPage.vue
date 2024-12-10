@@ -97,7 +97,9 @@ export default {
       return (
         eventSelected.collaborators?.some(
           (collaborator) => collaborator.id === this.userId
-        ) || eventSelected.promoter_id === this.userId
+        ) ||
+        eventSelected.promoter_id === this.userId ||
+        this.isAdmin
       );
     },
   },
