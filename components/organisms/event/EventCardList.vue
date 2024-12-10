@@ -16,6 +16,7 @@ export default {
   props: {
     events: { type: Array, required: true },
   },
+
   methods: {
     getImage(event) {
       const banner = event.attachments.find(

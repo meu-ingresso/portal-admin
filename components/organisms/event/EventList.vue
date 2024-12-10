@@ -14,6 +14,7 @@
       :status-text="event.status.name"
       :image="findBannerImage(event)" />
   </div>
+
   <div v-else>
     <v-row class="d-flex align-center justify-center mt-4 mb-4">
       <v-progress-circular indeterminate color="primary" />

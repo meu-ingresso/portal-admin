@@ -1,6 +1,7 @@
 <template>
   <v-chip outlined class="promoters-badge ml-4">
     <v-icon left small color="grey darken-2">mdi-account-group</v-icon>
+
     <span>{{ count }} Promoters</span>
   </v-chip>
 </template>

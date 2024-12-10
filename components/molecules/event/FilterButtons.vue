@@ -9,8 +9,7 @@
       :elevation="0"
       rounded
       :outlined="selected !== filter.value"
-      @click="$emit('filter-selected', filter.value)"
-    >
+      @click="$emit('filter-selected', filter.value)">
       {{ filter.text }}
     </v-btn>
   </div>
