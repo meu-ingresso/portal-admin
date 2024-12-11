@@ -7,8 +7,11 @@
       width="300" />
 
     <div v-else>
+      HASPERMISSION {{ userHasPermission() }}
+
       <div v-if="selectedEvent && !eventInvalid && userHasPermission()">
         <EventDetailsTemplate v-if="inDetails" :event="selectedEvent" />
+
         <EventDetailsTicketsTemplate v-if="inDetailsTickets" :event="selectedEvent" />
       </div>
 
@@ -16,7 +19,7 @@
 
       <ValueNoExists
         v-else-if="!userHasPermission()"
-        text="Você não possui acesso a esse evento" />
+        text="Você não possui acesso à esse evento" />
     </div>
   </div>
 </template>
@@ -65,7 +68,9 @@ export default {
   async mounted() {
     if (!this.selectedEvent || this.selectedEvent.id !== this.$route.params.id) {
       loading.setIsLoading(true);
+
       await this.eventExists();
+
       loading.setIsLoading(false);
     }
   },
@@ -93,6 +98,15 @@ export default {
       const eventSelected = this.selectedEvent;
 
       if (!eventSelected || !eventSelected.id) return false;
+
+      console.log('EH ADMIN', this.isAdmin);
+      console.log(
+        'COLABORADOR',
+        eventSelected.collaborators?.some(
+          (collaborator) => collaborator.id === this.userId
+        )
+      );
+      console.log('PROMOTER', eventSelected.promoter_id === this.userId);
 
       return (
         eventSelected.collaborators?.some(

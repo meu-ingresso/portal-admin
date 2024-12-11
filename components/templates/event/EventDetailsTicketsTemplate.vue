@@ -7,6 +7,7 @@
       :start-date="event.date"
       :end-date="event.end_date"
       :opening-hour="event.opening_hour"
+      :ending-hour="event.ending_hour"
       :promoters="event.promoters" />
     <TicketStatistics :statistics="statistics" />
     <EventTickets :tickets="event.tickets" title="Tipos de ingressos" title-size="16px" />
