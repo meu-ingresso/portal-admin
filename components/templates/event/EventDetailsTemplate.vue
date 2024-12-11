@@ -4,7 +4,9 @@
       :title="event.title"
       :status-text="event.statusText"
       :location="event.location"
-      :date="event.date"
+      :start-date="event.date"
+      :end-date="event.end_date"
+      :opening-hour="event.opening_hour"
       :promoters="event.promoters" />
 
     <EventStatistics :statistics="event.statistics" />

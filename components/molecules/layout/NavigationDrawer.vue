@@ -41,6 +41,8 @@
         <v-list-item
           v-if="!$_miniVariant"
           :to="item.to"
+          router
+          exact
           :class="{ 'active-item': item.to === currentPath }">
           <v-list-item-action v-if="item.icon" class="text-center">
             <v-icon v-if="$route.meta.prefix === item.to || $route.path === item.to">{{
