@@ -25,14 +25,14 @@ export default {
 .sale-card-title {
   font-weight: 700;
   font-size: 26px;
-  color: var(--black-text);
+  color: var(--black-text) !important;
   font-family: var(--font-family-inter-bold);
 }
 
 .sale-card-subtitle {
   font-weight: 700;
   font-size: 40px;
-  color: var(--black-text);
+  color: var(--black-text) !important;
   font-family: var(--font-family-inter-bold);
 }
 
