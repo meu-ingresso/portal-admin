@@ -16,7 +16,7 @@
 
       <ValueNoExists
         v-else-if="!userHasPermission()"
-        text="Você não possui acesso a esse evento" />
+        text="Você não possui acesso à esse evento" />
     </div>
   </div>
 </template>
@@ -65,7 +65,9 @@ export default {
   async mounted() {
     if (!this.selectedEvent || this.selectedEvent.id !== this.$route.params.id) {
       loading.setIsLoading(true);
+
       await this.eventExists();
+
       loading.setIsLoading(false);
     }
   },
