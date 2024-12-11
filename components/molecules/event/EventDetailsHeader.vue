@@ -3,7 +3,7 @@
     <div class="event-title-wrapper mb-2">
       <div class="event-title">{{ title }}</div>
 
-      <v-icon>mdi-circle-small</v-icon>
+      <v-icon class="details-icon">mdi-circle-small</v-icon>
 
       <StatusBadge :text="statusText" />
 
@@ -11,23 +11,25 @@
     </div>
 
     <div class="location d-flex align-center mb-2">
-      <v-icon class="mr-2">mdi-map-marker</v-icon>
+      <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
       <p>{{ location }}</p>
     </div>
 
     <div class="date d-flex align-center">
-      <v-icon class="mr-2">mdi-calendar</v-icon>
+      <v-icon class="mr-2 details-icon">mdi-calendar</v-icon>
 
       <div class="d-flex align-center">
         <p>{{ formattedStartDate }}</p>
-        <v-icon>mdi-circle-small</v-icon>
+        <v-icon class="details-icon">mdi-circle-small</v-icon>
         <p>{{ formattedOpeningHour }}</p>
       </div>
-      <div class="mr-2 ml-2">-</div>
+      <div class="mr-2 ml-2">
+        <v-icon class="details-icon">mdi-chevron-right</v-icon>
+      </div>
       <div class="d-flex align-center">
         <p>{{ formattedEndDate }}</p>
-        <v-icon>mdi-circle-small</v-icon>
+        <v-icon class="details-icon">mdi-circle-small</v-icon>
         <p>{{ formattedEndingHour }}</p>
       </div>
     </div>
@@ -78,5 +80,8 @@ export default {
   font-size: 40px;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
+}
+.details-icon{
+  color: var(--black-text);
 }
 </style>
