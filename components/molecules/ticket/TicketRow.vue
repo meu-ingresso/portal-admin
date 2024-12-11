@@ -1,5 +1,5 @@
 <template>
-  <v-row class="ticket-row cursor-pointer">
+  <v-row class="ticket-row cursor-pointer mr-0 ml-0">
     <v-col cols="12" md="6" sm="12">
       <div class="first-ticket-column">
         <div class="ticket-name">{{ name }}</div>
