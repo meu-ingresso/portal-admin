@@ -9,6 +9,11 @@ export const formatDateToBr = (date: string): String => {
   return moment(date, 'YYYY-MM-DD').format('DD/MM/YYYY');
 };
 
+export const formatDateToCustomString = (date: string): String => {
+  if (!date) return '';
+  return moment(date).format('DD MMM YYYY').toUpperCase();
+}
+
 export const formatHourToBr = (hour: string): String => {
   if (!hour) return '';
   return moment(hour, 'HH:mm:ss').format('HH:mm');

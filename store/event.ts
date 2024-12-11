@@ -72,6 +72,7 @@ export default class Event extends VuexModule {
             ],
             promoters: data.collaborators.length,
             tickets: data.tickets.map((ticket) => ({
+                ...ticket,
                 id: ticket.id,
                 name: ticket.name,
                 price: ticket.price,
