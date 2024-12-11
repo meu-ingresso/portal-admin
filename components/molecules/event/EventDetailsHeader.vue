@@ -38,13 +38,14 @@
 import { formatDateToCustomString, formatHourToBr } from '@/utils/formatters';
 export default {
   props: {
-    title: { type: String, required: true },
-    statusText: { type: String, required: true },
-    location: { type: String, required: true },
-    startDate: { type: String, required: true },
-    endDate: { type: String, required: true },
-    openingHour: { type: String, required: true },
-    promoters: { type: Number, required: true },
+    title: { type: String, default: '-' },
+    statusText: { type: String, default: '-' },
+    location: { type: String, default: '-' },
+    startDate: { type: String, default: '-' },
+    endDate: { type: String, default: '-' },
+    openingHour: { type: String, default: '-' },
+    endingHour: { type: String, default: '-' },
+    promoters: { type: Number, default: 0 },
   },
 
   computed: {
