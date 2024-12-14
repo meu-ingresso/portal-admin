@@ -36,6 +36,64 @@ export default {
   font-family: var(--font-family-inter-bold);
 }
 
+@media (max-width: 360px) {
+  .sale-card-title {
+    font-size: 10px;
+  }
+
+  .sale-card-subtitle {
+    font-size: 16px;
+  }
+
+  .sale-card {
+    padding: 6px !important;
+  }
+}
+
+@media (min-width: 361px) and (max-width: 480px) {
+  .sale-card-title {
+    font-size: 16px;
+  }
+
+  .sale-card-subtitle {
+    font-size: 24px;
+  }
+
+  .sale-card {
+    padding: 8px !important;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .sale-card-title {
+    font-size: 16px;
+  }
+
+  .sale-card-subtitle {
+    font-size: 24px;
+  }
+
+  .sale-card {
+    padding: 8px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sale-card-title {
+    font-size: 16px;
+  }
+
+  .sale-card-subtitle {
+    font-size: 24px;
+  }
+
+  .sale-card {
+    padding: 8px !important;
+  }
+}
+
+
+
 @media (min-width: 1025px) and (max-width: 1440px) {
   .sale-card-title {
     font-size: 22px;

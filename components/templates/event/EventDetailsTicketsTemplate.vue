@@ -9,8 +9,13 @@
       :opening-hour="event.opening_hour"
       :ending-hour="event.ending_hour"
       :promoters="event.promoters" />
-    <TicketStatistics :statistics="statistics" />
-    <EventTickets :tickets="event.tickets" title="Tipos de ingressos" title-size="16px" />
+    <div class="event-details-wrapper">
+      <TicketStatistics :statistics="statistics" />
+      <EventTickets
+        :tickets="event.tickets"
+        title="Tipos de ingressos"
+        title-size="16px" />
+    </div>
   </v-container>
 </template>
 
@@ -49,5 +54,8 @@ export default {
 <style scoped>
 .event-details {
   padding: 16px;
+}
+.event-details-wrapper{
+  max-width: 1480px;
 }
 </style>

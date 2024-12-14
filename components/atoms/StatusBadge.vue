@@ -14,6 +14,7 @@ export default {
     color() {
       switch (this.text) {
         case 'Publicado':
+        case 'À Venda':
           return '#0DBB73';
         case 'Rascunho':
           return '#E0700D';
