@@ -31,20 +31,25 @@ export default [
     name: 'Detalhe de Eventos',
     meta: {
       name: 'eventsDetails',
-      prefix: 'eventsDetails',
-      screenName: 'eventsDetails',
-      isEdit: false,
+      template: 'details'
     },
-  },
-  {
-    path: '/events/:id/tickets',
-    component: EventDetailsPage,
-    name: 'Ingressos do Eventos',
-    meta: {
-      name: 'eventsDetailsTickets',
-      prefix: 'eventsDetailsTickets',
-      screenName: 'eventsDetailsTickets',
-      isEdit: false,
-    },
-  },
+    children: [
+      {
+        path: '',
+        name: 'eventsDetails',
+        meta: {
+          name: 'eventsDetails',
+          template: 'details'
+        },
+      },
+      {
+        path: 'tickets',
+        name: 'eventsDetailsTickets',
+        meta: {
+          name: 'eventsDetails',
+          template: 'tickets'
+        },
+      },
+    ],
+  }
 ];

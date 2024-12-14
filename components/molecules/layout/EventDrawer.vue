@@ -1,14 +1,21 @@
 <template>
   <v-navigation-drawer
-    v-if="getSidebar"
+    v-if="getSidebar && !isMobile"
     v-model="$_drawer"
     :mini-variant="$_miniVariant"
     clipped
     app
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
     <v-list class="py-0">
-      <v-list-item v-if="inEventDetail" class="event-detail-image">
-        <v-img :src="selectedEventBanner"></v-img>
+      <v-list-item class="event-detail-image">
+        <v-img v-if="selectedEventBanner" :src="selectedEventBanner"></v-img>
+        <div v-else class="d-flex justify-center align-center" style="margin: 0 auto">
+          <v-progress-circular
+            indeterminate
+            color="primary"
+            size="48"
+            class="progress-circular" />
+        </div>
       </v-list-item>
 
       <div v-for="(item, i) in getSidebar" :key="i">
@@ -52,18 +59,28 @@
           </v-list-item-action>
 
           <v-list-item-content>
-            <v-list-item-title v-text="item.title" />
+            <v-list-item-title>
+              {{ item.title }}
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </div>
     </v-list>
   </v-navigation-drawer>
+
+  <v-select
+    v-else-if="getSelectItems && isMobile"
+    v-model="selectedItem"
+    outlined
+    return-object
+    hide-details
+    :items="getSelectItems" />
 </template>
 
 <script>
-import { event } from '@/store';
+import { loading } from '@/store';
 import { eventsSideBar } from '@/utils/events-sidebar';
-import { monthlyMovementsSideBar } from '@/utils/monthly-movement-sidebar';
+import { isMobileDevice } from '@/utils/utils';
 
 export default {
   props: {
@@ -75,9 +92,23 @@ export default {
       type: Boolean,
       default: false,
     },
+    eventData: {
+      type: Object,
+      default: null,
+    },
+  },
+
+  data() {
+    return {
+      selectedItem: null,
+    };
   },
 
   computed: {
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
+
     currentPath() {
       return this.$route.path;
     },
@@ -86,15 +117,10 @@ export default {
       return this.$route.meta.name;
     },
 
-    inEventDetail() {
-      return this.currentRouteMetaName.startsWith('eventsDetails');
-    },
-
     selectedEventBanner() {
-      const selectedEvent = event.$selectedEvent;
-      if (!selectedEvent) return null;
+      if (!this.eventData) return null;
 
-      const banner = selectedEvent.attachments.find(
+      const banner = this.eventData.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
       return banner ? banner.image_url : '';
@@ -104,45 +130,35 @@ export default {
       return this.$route.params;
     },
 
+    isLoading() {
+      return loading.$isLoading;
+    },
+
+    getSelectItems() {
+      if (this.isLoading) return null;
+      return this.getSidebar.map((item) => {
+        return {
+          text: item.title,
+          value: item.to,
+        };
+      });
+    },
+
     getSidebar() {
-      const routePath = this.currentPath;
-      const routeMetaName = this.currentRouteMetaName;
+      if (this.isLoading) return null;
 
-      if (routeMetaName.startsWith('eventsDetails')) {
-        const eventId = this.routerParams.id;
+      const eventId = this.routerParams.id;
 
-        return eventsSideBar.map((item) => {
-          if (item.to === '/events/:id') {
-            return {
-              ...item,
-              to: `/events/${eventId}`,
-            };
-          } else if (item.to === '/events/:id/tickets') {
-            return {
-              ...item,
-              to: `/events/${eventId}/tickets`,
-            };
-          }
-
-          return item;
-        });
-      } else if (routePath.startsWith('/reports')) {
-        return monthlyMovementsSideBar;
-      }
-
-      return null;
+      return eventsSideBar.map((item) => {
+        return {
+          ...item,
+          to: item.to.replace(':id', eventId),
+        };
+      });
     },
 
     getUsername() {
       return this.$cookies.get('username');
-    },
-
-    getUserPermissions() {
-      return this.$cookies.get('user_permissions');
-    },
-
-    getUserId() {
-      return this.$cookies.get('user_id');
     },
 
     $_miniVariant: {
@@ -160,6 +176,30 @@ export default {
       },
       set(val) {
         this.$emit('change-drawer', val);
+      },
+    },
+  },
+
+  watch: {
+    currentPath: {
+      immediate: true,
+      handler() {
+        if (!this.getSelectItems) return;
+        const foundItem = this.getSelectItems.find(
+          (item) => item.value === this.currentPath
+        );
+        if (foundItem) this.selectedItem = foundItem;
+      },
+    },
+
+    selectedItem: {
+      immediate: true,
+      handler() {
+        if (!this.selectedItem) return;
+
+        if (this.currentPath !== this.selectedItem.value) {
+          this.$router.push(this.selectedItem.value);
+        }
       },
     },
   },
