@@ -45,7 +45,7 @@ export default {
   }
 
   .statistic-card {
-    padding: 16px;
+    padding: 6px !important;
   }
 }
 
@@ -59,7 +59,7 @@ export default {
   }
 
   .statistic-card {
-    padding: 20px;
+    padding: 8px !important;
   }
 }
 
@@ -73,7 +73,7 @@ export default {
   }
 
   .statistic-card {
-    padding: 24px;
+    padding: 12px !important;
   }
 }
 
@@ -87,7 +87,7 @@ export default {
   }
 
   .statistic-card {
-    padding: 28px;
+    padding: 20px !important;
   }
 }
 
@@ -101,13 +101,13 @@ export default {
   }
 
   .statistic-card {
-    padding: 32px;
+    padding: 32px !important;
   }
 }
 
 @media (min-width: 1441px) {
   .statistic-card-title {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .statistic-card-subtitle {
@@ -115,7 +115,7 @@ export default {
   }
 
   .statistic-card {
-    padding: 36px;
+    padding: 36px !important;
   }
 }
 </style>

@@ -24,4 +24,16 @@ export default {
   color: var(--black-text);
   font-family: var(--font-family-poppins-bold);
 }
+
+@media (max-width: 360px) {
+  .event-sales-title {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 361px) and (max-width: 480px) {
+  .event-sales-title {
+    font-size: 18px;
+  }
+}
 </style>

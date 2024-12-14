@@ -1,51 +1,58 @@
 <template>
   <div>
+    <EventDrawer :drawer="drawer" :event-data="eventData" />
+
     <Lottie
-      v-if="isLoadingEvents"
+      v-if="isLoading || isLoadingEvent"
       path="./animations/loading_default.json"
       height="300"
       width="300" />
 
     <div v-else>
-      <div v-if="selectedEvent && !eventInvalid && userHasPermission()">
-        <EventDetailsTemplate v-if="inDetails" :event="selectedEvent" />
-        <EventDetailsTicketsTemplate v-if="inDetailsTickets" :event="selectedEvent" />
+      <div v-if="eventData && !eventInvalid && userHasPermission">
+        <EventDetailsTemplate v-if="isDetails" :event="eventData" />
+        <EventDetailsTicketsTemplate v-if="isTickets" :event="eventData" />
       </div>
 
       <ValueNoExists v-if="eventInvalid" text="Evento não encontrado" />
 
       <ValueNoExists
-        v-else-if="!userHasPermission()"
+        v-else-if="eventData && !userHasPermission"
         text="Você não possui acesso à esse evento" />
     </div>
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import { event, loading } from '@/store';
 
 export default {
   data() {
     return {
       eventInvalid: false,
+      drawer: true,
+      eventData: null,
     };
   },
 
   computed: {
-    selectedEvent() {
-      return event.$selectedEvent;
+    isLoading() {
+      return loading.$isLoading;
     },
 
-    isLoadingEvents() {
+    isLoadingEvent() {
       return event.$isLoading;
     },
 
-    inDetails() {
-      return this.$route.meta.name === 'eventsDetails';
+    currentRouter() {
+      return this.$route;
     },
 
-    inDetailsTickets() {
-      return this.$route.meta.name === 'eventsDetailsTickets';
+    isDetails() {
+      return this.$route.meta.template === 'details';
+    },
+    isTickets() {
+      return this.$route.meta.template === 'tickets';
     },
 
     userRole() {
@@ -60,39 +67,9 @@ export default {
       const role = this.userRole;
       return role && role.name === 'Admin';
     },
-  },
 
-  async mounted() {
-    if (!this.selectedEvent || this.selectedEvent.id !== this.$route.params.id) {
-      loading.setIsLoading(true);
-
-      await this.eventExists();
-
-      loading.setIsLoading(false);
-    }
-  },
-
-  methods: {
-    async eventExists(): Promise<void> {
-      try {
-        const response = await event.getById(this.$route.params.id);
-
-        if (
-          !response ||
-          response.code === 'FIND_NOTFOUND' ||
-          response.body?.code !== 'SEARCH_SUCCESS'
-        ) {
-          this.eventInvalid = true;
-        } else {
-          this.eventInvalid = false;
-        }
-      } catch (error) {
-        this.eventInvalid = true;
-      }
-    },
-
-    userHasPermission(): boolean {
-      const eventSelected = this.selectedEvent;
+    userHasPermission() {
+      const eventSelected = this.eventData;
 
       if (!eventSelected || !eventSelected.id) return false;
 
@@ -103,6 +80,28 @@ export default {
         eventSelected.promoter_id === this.userId ||
         this.isAdmin
       );
+    },
+  },
+
+  mounted() {
+    console.log('Buscando dados do evento');
+    this.fetchEventData();
+  },
+
+  methods: {
+    async fetchEventData() {
+      try {
+        const response = await event.getById(this.$route.params.id);
+
+        if (!response || response.code === 'FIND_NOTFOUND') {
+          this.eventInvalid = true;
+        } else {
+          this.eventData = event.$selectedEvent;
+          this.eventInvalid = false;
+        }
+      } catch (error) {
+        this.eventInvalid = true;
+      }
     },
   },
 };
