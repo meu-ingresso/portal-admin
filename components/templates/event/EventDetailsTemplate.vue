@@ -1,5 +1,5 @@
 <template>
-  <v-container class="event-details">
+  <div class="event-details">
     <EventDetailsHeader
       :title="event.title"
       :status-text="event.statusText"
@@ -19,7 +19,7 @@
         disable-menu
         :tickets="event.tickets.filter((ticket) => ticket.hasSales)" />
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script>
@@ -32,7 +32,7 @@ export default {
 
 <style scoped>
 .event-details {
-  padding: 16px;
+  padding-top: 16px;
 }
 .event-details-wrapper{
   max-width: 1480px;
