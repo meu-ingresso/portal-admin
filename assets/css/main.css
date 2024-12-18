@@ -311,3 +311,11 @@ header {
 .v-select__slot {
   cursor: pointer !important;
 }
+
+.filter-slide-group > .v-slide-group__next, .v-slide-group__prev {
+  min-width: 32px !important;
+}
+
+.w-full {
+  width: 100% !important;
+}

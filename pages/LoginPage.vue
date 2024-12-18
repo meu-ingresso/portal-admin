@@ -1,5 +1,5 @@
 <template>
-  <v-container class="login-container">
+  <v-container class="login-container px-2 py-2">
     <LoginTemplate />
   </v-container>
 </template>

@@ -1,26 +1,36 @@
 <template>
   <v-card class="event-card" @click="goToEventDetail">
-    <v-img :src="image" class="event-image" alt="Event Image" contain />
-
     <v-card-text>
-      <h3 class="event-title">{{ title }}</h3>
-
-      <p class="event-date">{{ formattedDate }}</p>
-
-      <p class="event-location">{{ location }}</p>
+      <h3 class="event-title mb-4">{{ title }}</h3>
+      <div class="d-flex align-end justify-space-between">
+        <div class="d-flex align-center justify-space-between w-full">
+          <div class="d-flex flex-column align-start justify-space-between">
+            <p class="event-revenue">{{ formatToMoney(revenue) }}</p>
+            <p class="event-revenue-today">{{ formatToMoney(revenueToday) }} hoje</p>
+          </div>
+          <div class="d-flex flex-column align-start justify-space-between">
+            <p class="event-tickets">{{ tickets }}</p>
+            <p class="event-tickets-today">{{ ticketsToday }} hoje</p>
+          </div>
+        </div>
+      </div>
     </v-card-text>
   </v-card>
 </template>
 
 <script>
-import { formatDateTimeToBr } from '@/utils/formatters';
+import { formatDateTimeToBr, formatRealValue } from '@/utils/formatters';
 export default {
   props: {
     eventId: { type: String, required: true },
     title: { type: String, required: true },
     date: { type: String, required: true },
     location: { type: String, required: true },
-    image: { type: String, required: true },
+    revenue: { type: Number, required: true },
+    revenueToday: { type: Number, required: true },
+    tickets: { type: Number, required: true },
+    ticketsToday: { type: Number, required: true },
+    statusText: { type: String, required: true },
   },
 
   computed: {
@@ -30,6 +40,9 @@ export default {
   },
 
   methods: {
+    formatToMoney(value) {
+      return formatRealValue(value);
+    },
     goToEventDetail() {
       this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.eventId } });
     },
@@ -40,9 +53,11 @@ export default {
 <style scoped>
 .event-card {
   transition: transform 0.3s ease;
-  border-radius: 8px;
+  border-radius: 8px !important;
   overflow: hidden;
-  box-shadow: 0px 0px 7.24px 0px #00000029 !important;
+  box-shadow: none !important;
+  margin-bottom: 16px;
+  background-color: var(--tertiary);
 }
 
 .event-card:hover {
@@ -54,14 +69,17 @@ export default {
   color: var(--primary);
 }
 
-.event-date {
-  color: var(--black-text);
-  font-weight: 600;
-  font-size: 14px;
+.event-revenue,
+.event-tickets {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--font-black);
 }
-.event-location {
-  color: var(--black-text);
-  font-weight: 400;
+.event-date,
+.event-location,
+.event-revenue-today,
+.event-tickets-today {
   font-size: 14px;
+  color: gray;
 }
 </style>

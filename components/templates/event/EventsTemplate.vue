@@ -1,5 +1,5 @@
 <template>
-  <v-container class="events-template">
+  <v-container class="events-template py-10">
     <div class="events-template-title">Lista de Eventos</div>
 
     <v-divider class="mb-4 mt-4"></v-divider>
@@ -79,5 +79,17 @@ export default {
 }
 .actions {
   margin-bottom: 20px;
+}
+
+@media (max-width: 360px) {
+  .events-template-title {
+    font-size: 22px;
+  }
+}
+
+@media (min-width: 361px) and (max-width: 480px) {
+  .events-template-title {
+    font-size: 24px;
+  }
 }
 </style>
