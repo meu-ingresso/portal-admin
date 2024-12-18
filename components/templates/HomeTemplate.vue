@@ -3,7 +3,7 @@
     <div class="home-template-title">{{ getTitle }}</div>
 
     <template v-if="!isLoadingEvents">
-      <EventCardList :events="events" />
+      <EventBannerList :events="events" />
 
       <v-row>
         <v-col cols="12" class="d-flex justify-center">
