@@ -1,18 +1,34 @@
 <template>
   <div v-if="!isLoadingEvents" class="event-list">
-    <EventRow
-      v-for="event in events"
-      :key="event.id"
-      :event-id="event.id"
-      :title="event.name"
-      :date="event.start_date"
-      :location="event.location"
-      :revenue="event.totalizers.totalSalesAmout"
-      :revenue-today="event.totalizers.totalSalesAmountToday"
-      :tickets="event.totalizers.totalSales"
-      :tickets-today="event.totalizers.totalSalesToday"
-      :status-text="event.status.name"
-      :image="findBannerImage(event)" />
+    <template v-if="!isMobile">
+      <EventRow
+        v-for="event in events"
+        :key="event.id"
+        :event-id="event.id"
+        :title="event.name"
+        :date="event.start_date"
+        :location="event.location"
+        :revenue="event.totalizers.totalSalesAmout"
+        :revenue-today="event.totalizers.totalSalesAmountToday"
+        :tickets="event.totalizers.totalSales"
+        :tickets-today="event.totalizers.totalSalesToday"
+        :status-text="event.status.name"
+        :image="findBannerImage(event)" />
+    </template>
+    <template v-else>
+      <EventCard
+        v-for="event in events"
+        :key="event.id"
+        :event-id="event.id"
+        :title="event.name"
+        :date="event.start_date"
+        :location="event.location"
+        :revenue="event.totalizers.totalSalesAmout"
+        :revenue-today="event.totalizers.totalSalesAmountToday"
+        :tickets="event.totalizers.totalSales"
+        :tickets-today="event.totalizers.totalSalesToday"
+        :status-text="event.status.name"/>
+    </template>
   </div>
 
   <div v-else>
@@ -24,6 +40,7 @@
 
 <script>
 import { event } from '@/store';
+import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
     events: { type: Array, required: true },
@@ -32,6 +49,9 @@ export default {
   computed: {
     isLoadingEvents() {
       return event.$isLoading;
+    },
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
     },
   },
 

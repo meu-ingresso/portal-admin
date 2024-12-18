@@ -1,9 +1,9 @@
 <template>
-  <v-container class="home-template">
+  <v-container class="home-template py-10">
     <div class="home-template-title">{{ getTitle }}</div>
 
     <template v-if="!isLoadingEvents">
-      <EventCardList :events="events" />
+      <EventBannerList :events="events" />
 
       <v-row>
         <v-col cols="12" class="d-flex justify-center">
@@ -55,6 +55,19 @@ export default {
   color: var(--black-text);
   font-family: var(--font-family-poppins-bold);
 }
+
+@media (max-width: 360px) {
+  .home-template-title {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 361px) and (max-width: 480px) {
+  .home-template-title {
+    font-size: 18px;
+  }
+}
+
 .home-template {
   max-width: 1280px;
 }

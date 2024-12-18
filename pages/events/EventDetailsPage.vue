@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-container>
     <EventDrawer :drawer="drawer" :event-data="eventData" />
 
     <Lottie
@@ -20,7 +20,7 @@
         v-else-if="eventData && !userHasPermission"
         text="Você não possui acesso à esse evento" />
     </div>
-  </div>
+  </v-container>
 </template>
 
 <script>

@@ -1,6 +1,6 @@
 <template>
-  <img v-if="isDark" src="~/assets/images/logo_menu1.png" class="logoMenu dark" />
-  <img v-else src="~/assets/images/logo_menu.png" class="logoMenu" />
+  <img v-if="isDark" src="~/assets/images/logo_menu1.png" class="logoMenu dark"  @click="handleClick" />
+  <img v-else src="~/assets/images/logo_menu.png" class="logoMenu"  @click="handleClick" />
 </template>
 
 <script>
@@ -9,6 +9,18 @@ export default {
     isDark: {
       type: Boolean,
       default: false,
+    },
+        clickToHome: {
+      type: Boolean,
+      default: false,
+    },
+  },
+
+  methods: {
+    handleClick() {
+      if (this.clickToHome) {
+        this.$router.push('/');
+      }
     },
   },
 };

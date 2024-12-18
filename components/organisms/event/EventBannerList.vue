@@ -1,7 +1,7 @@
 <template>
   <v-row>
     <v-col v-for="event in events" :key="event.id" cols="12" md="4" sm="12">
-      <EventCard
+      <EventBanner
         :event-id="event.id"
         :title="event.name"
         :date="event.start_date"

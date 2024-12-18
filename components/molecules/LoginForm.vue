@@ -54,7 +54,7 @@
       <v-col cols="12" class="d-flex align-center justify-center">
         <DefaultButton
           text="LOGIN"
-          class="login-button"
+          :class="{'login-button': !isMobile, 'login-button button-mobile': isMobile}"
           :is-loading="isLoading"
           :disabled="!valid || isLoading"
           @click="validate" />
@@ -62,7 +62,10 @@
       <v-col cols="12" class="d-flex align-center justify-center">
         <DefaultButton
           text="Não possuo conta"
-          class="create-account-button"
+          :class="{
+            'create-account-button': !isMobile,
+            'create-account-button button-mobile': isMobile,
+          }"
           disabled
           outlined
           @click="goToCreateAccount" />
@@ -73,7 +76,7 @@
 
 <script>
 import { auth, loading } from '~/store';
-
+import { isMobileDevice } from '@/utils/utils';
 export default {
   data() {
     return {
@@ -96,6 +99,9 @@ export default {
     },
     isLoading() {
       return loading.$isLoading;
+    },
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
     },
   },
 
@@ -151,6 +157,10 @@ export default {
   width: 95% !important;
   margin-left: 12px !important;
   border-radius: 6px !important;
+}
+
+.button-mobile {
+  width: 100% !important;
 }
 
 .emailInput {

@@ -1,5 +1,5 @@
 <template>
-  <v-container class="event-details">
+  <div class="event-details">
     <EventDetailsHeader
       :title="event.title"
       :status-text="event.statusText"
@@ -16,7 +16,7 @@
         title="Tipos de ingressos"
         title-size="16px" />
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script>
@@ -53,7 +53,7 @@ export default {
 
 <style scoped>
 .event-details {
-  padding: 16px;
+  padding-top: 16px;
 }
 .event-details-wrapper{
   max-width: 1480px;
