@@ -111,3 +111,9 @@ export const trimPayloadStrings = (payload) => {
 
   return trimmedPayload;
 };
+
+export const onFormatCEP = (value: string): string => {
+  if (!value) return '';
+  const cleaned = value.replace(/\D/g, '');
+  return cleaned.replace(/^(\d{5})(\d)/, '$1-$2').slice(0, 9);
+}
