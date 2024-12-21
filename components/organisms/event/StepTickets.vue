@@ -1,9 +1,11 @@
 
 <template>
   <v-container class="step-tickets">
-    <v-row class="align-center">
-      <v-col cols="12" md="12" sm="12" class="d-flex justify-end">
-         <DefaultButton text="Adicionar Ingresso" @click="addTicket" />
+    <v-row>
+      <v-col cols="12">
+        <h3>Cadastro de Ingressos</h3>
+        <p class="subtitle-1">Adicione ingresos para o evento.</p>
+        <DefaultButton class="mt-2" text="Adicionar Ingresso" @click="addTicket" />
       </v-col>
     </v-row>
 
@@ -54,7 +56,7 @@
           min="0"
           required />
       </v-col>
-      <v-col cols="12" sm="3">
+      <v-col cols="12" md="3" sm="12">
         <v-menu
           v-model="ticket.open_date_menu"
           :close-on-content-click="false"
@@ -75,7 +77,7 @@
             @input="ticket.open_date_menu = false"></v-date-picker>
         </v-menu>
       </v-col>
-      <v-col cols="12" sm="3">
+      <v-col cols="12" md="3" sm="12">
         <v-menu
           v-model="ticket.close_date_menu"
           :close-on-content-click="false"
@@ -96,14 +98,14 @@
             @input="ticket.close_date_menu = false"></v-date-picker>
         </v-menu>
       </v-col>
-      <v-col cols="12" sm="2">
+      <v-col cols="12" md="2" sm="12">
         <v-select
           v-model="ticket.visibility"
           :items="['Público', 'Privado']"
           label="Visibilidade"
           required />
       </v-col>
-      <v-col cols="12" sm="4">
+      <v-col cols="12" md="2" sm="12">
         <v-autocomplete
           v-model="ticket.category"
           :items="categories"
@@ -114,7 +116,7 @@
           @update:search-input="onTriggerCategorySearch(ticketIndex)"
           @change="onCategoryChange(ticketIndex)" />
       </v-col>
-      <v-col cols="12" sm="2">
+      <v-col cols="12" md="2" sm="12" class="d-flex align-center">
         <v-btn color="red" text @click="removeTicket(ticketIndex)">
           Remover Ingresso
         </v-btn>
@@ -171,7 +173,7 @@ export default {
         !this.categories.includes(`Criar categoria e atribuir "${search}"`)
       ) {
         this.categories.push(`Criar categoria e atribuir "${search}"`);
-      }else {
+      } else {
         this.clearTempCategories();
       }
     },
