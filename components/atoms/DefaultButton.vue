@@ -8,6 +8,7 @@
     :to="to"
     :disabled="disabled"
     :loading="isLoading"
+    :block="block"
     @click="emitClick">
     {{ text }}
   </v-btn>
@@ -22,6 +23,7 @@ export default {
     outlined: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     isLoading: { type: Boolean, default: false },
+    block: { type: Boolean, default: false },
   },
 
   methods: {

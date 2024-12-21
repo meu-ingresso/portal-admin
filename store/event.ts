@@ -12,6 +12,7 @@ export default class Event extends VuexModule {
     private eventList = [];
     private selectedEvent = null;
     private isLoading: boolean = false;
+    private isLoadingAlias: boolean = false;
 
     public get $eventList() {
         return this.eventList;
@@ -30,6 +31,10 @@ export default class Event extends VuexModule {
 
     public get $isLoading() {
         return this.isLoading;
+    }
+
+    public get $isLoadingAlias() {
+        return this.isLoadingAlias;
     }
 
     @Mutation
@@ -89,9 +94,19 @@ export default class Event extends VuexModule {
         this.isLoading = value;
     }
 
+    @Mutation
+    private SET_IS_LOADING_ALIAS(value: boolean) {
+        this.isLoadingAlias = value;
+    }
+
     @Action
     public setLoading(value: boolean) {
         this.context.commit('SET_IS_LOADING', value);
+    }
+
+    @Action
+    public setLoadingAlias(value: boolean) {
+        this.context.commit('SET_IS_LOADING_ALIAS', value);
     }
 
     @Action
@@ -179,6 +194,31 @@ export default class Event extends VuexModule {
             })
             .catch(() => {
                 this.setLoading(false);
+                return {
+                    data: 'Error',
+                    code: 'FIND_NOTFOUND',
+                    total: 0,
+                };
+            });
+    }
+
+    @Action
+    public async validateAlias(alias: string) {
+
+        this.setLoadingAlias(true);
+
+        return await $axios
+            .$get(`event/validate-alias/${alias}`)
+            .then((response) => {
+                if (response.body && response.body.code !== 'VALIDATE_SUCCESS')
+                    throw new Error(response);
+
+                this.setLoadingAlias(false);
+
+                return response.body.result;
+            })
+            .catch(() => {
+                this.setLoadingAlias(false);
                 return {
                     data: 'Error',
                     code: 'FIND_NOTFOUND',

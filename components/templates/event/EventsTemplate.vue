@@ -1,9 +1,13 @@
 <template>
   <v-container class="events-template py-10">
-    <div class="events-template-title">Lista de Eventos</div>
-
-    <v-divider class="mb-4 mt-4"></v-divider>
-
+    <v-row class="d-flex align-center mb-4">
+      <v-col cols="12" md="6" sm="12">
+        <div class="events-template-title">Lista de Eventos</div>
+      </v-col>
+      <v-col cols="12" md="6" sm="12" class="d-flex justify-md-end justify-sm-start">
+        <DefaultButton text="Criar um evento" :block="isMobile" to="/events/create" />
+      </v-col>
+    </v-row>
     <div class="actions">
       <DataSearch
         :search="search"
@@ -29,6 +33,7 @@
 </template>
 
 <script>
+import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
     events: { type: Array, required: true },
@@ -46,6 +51,9 @@ export default {
     };
   },
   computed: {
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
     filteredEvents() {
       return this.events.filter(
         (event) =>
@@ -73,7 +81,6 @@ export default {
 .events-template-title {
   font-size: 40px;
   font-weight: 700;
-  margin-bottom: 20px;
   color: var(--black-text);
   font-family: var(--font-family-poppins-bold);
 }

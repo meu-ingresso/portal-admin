@@ -1,5 +1,5 @@
 <template>
-  <div :class="`d-flex justify-space-between`">
+  <div class="d-flex justify-space-between">
     <v-text-field
       v-model="localSearch"
       :label="label"
@@ -67,9 +67,6 @@ export default {
 </script>
 
 <style scoped>
-.search {
-  padding: 5px;
-}
 .prepend-inner-slot {
   display: flex;
   align-items: center;

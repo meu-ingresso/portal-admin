@@ -8,6 +8,9 @@ import Filter from '@/store/filter';
 import Loading from '@/store/loading';
 import User from '@/store/user';
 import Event from '@/store/event';
+import Category from '@/store/category';
+import Rating from '@/store/rating';
+import Cep from '@/store/cep';
 
 let auth: Auth;
 let toast: Toast;
@@ -15,6 +18,9 @@ let filter: Filter;
 let loading: Loading;
 let user: User;
 let event: Event;
+let category: Category;
+let rating: Rating;
+let cep: Cep;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -23,6 +29,9 @@ const initializeStores = (store: Store<any>) => {
   loading = getModule(Loading, store);
   user = getModule(User, store);
   event = getModule(Event, store);
+  category = getModule(Category, store);
+  rating = getModule(Rating, store);
+  cep = getModule(Cep, store);
 };
 
 export {
@@ -32,5 +41,8 @@ export {
   filter,
   loading,
   user,
-  event
+  event,
+  category,
+  rating,
+  cep,
 };

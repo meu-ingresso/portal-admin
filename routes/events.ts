@@ -1,6 +1,7 @@
 import Home from '@/pages/home.vue';
 import EventsPage from '~/pages/events/EventsPage.vue';
 import EventDetailsPage from '~/pages/events/EventDetailsPage.vue';
+import CreateEventPage from '~/pages/events/CreateEventPage.vue';
 
 export default [
   {
@@ -22,6 +23,17 @@ export default [
       name: 'events',
       prefix: '/events',
       screenName: 'events',
+      isEdit: false,
+    },
+  },
+  {
+    path: '/events/create',
+    component: CreateEventPage,
+    name: 'Criação de Eventos',
+    meta: {
+      name: 'createEvent',
+      prefix: '/events/create',
+      screenName: 'createEvent',
       isEdit: false,
     },
   },
