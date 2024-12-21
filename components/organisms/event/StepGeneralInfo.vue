@@ -42,7 +42,7 @@
     </v-row>
     <v-row>
       <!-- Categoria -->
-      <v-col cols="12" md="6" sm="12">
+      <v-col cols="12" md="4" sm="12">
         <v-select
           v-model="localForm.category"
           label="Categoria"
@@ -50,14 +50,25 @@
           return-object
           required />
       </v-col>
-      <!-- Faixa Etária -->
-      <v-col cols="12" md="6" sm="12">
+      <!-- Classificação Indicativa -->
+      <v-col cols="12" md="4" sm="12">
         <v-select
           v-model="localForm.rating"
-          label="Faixa Etária"
+          label="Classificação Indicativa"
           :items="ratings"
           return-object
           required />
+      </v-col>
+      <!-- Capacidade máxima -->
+      <v-col cols="12" md="4" sm="12">
+        <v-text-field
+          v-model="localForm.max_capacity"
+          label="Capacidade máxima"
+          placeholder="Digite a capacidade máxima de pessoas"
+          type="number"
+          min="0"
+          required
+          hide-details />
       </v-col>
       <!-- Descrição do Evento -->
       <v-col cols="12" md="12" sm="12">
@@ -67,6 +78,9 @@
           rows="4"
           placeholder="Digite uma descrição para o evento"
           required />
+      </v-col>
+      <v-col cols="12" md="12" sm="12">
+        <v-switch v-model="localForm.is_featured" label="Evento em Destaque" inset />
       </v-col>
     </v-row>
     <!-- Data e Hora -->
@@ -165,27 +179,45 @@
         <p class="subtitle-2" v-html="eventDuration" />
       </v-col>
     </v-row>
-    <!-- Local do Evento -->
+    <!-- Endereço do Evento -->
     <v-row>
-      <v-col cols="12">
+      <v-col cols="12" md="6" sm="12">
         <v-text-field
           v-model="localForm.cep"
           label="CEP"
           placeholder="Digite o CEP"
           required
           @input="onChangeCEP" />
-        <v-card v-if="address" outlined class="mt-3 mb-3">
+      </v-col>
+      <v-col cols="12" md="6" sm="12">
+        <v-text-field
+          v-model="localForm.location_name"
+          label="Local do Evento"
+          placeholder="Digite o local do evento" />
+      </v-col>
+      <v-col cols="12">
+        <v-card v-if="localForm.address" outlined class="mt-3 mb-3">
           <v-card-text>
-            <p><strong>Rua:</strong> {{ address.street }}</p>
-            <p><strong>Bairro:</strong> {{ address.neighborhood }}</p>
-            <p><strong>Cidade:</strong> {{ address.city }}</p>
-            <p><strong>Estado:</strong> {{ address.state }}</p>
+            <p><strong>Rua:</strong> {{ localForm.address.street }}</p>
+            <p><strong>Bairro:</strong> {{ localForm.address.neighborhood }}</p>
+            <p><strong>Cidade:</strong> {{ localForm.address.city }}</p>
+            <p><strong>Estado:</strong> {{ localForm.address.state }}</p>
           </v-card-text>
         </v-card>
+      </v-col>
+      <v-col cols="12" md="6" sm="12">
         <v-text-field
-          v-model="localForm.complement"
+          v-model="localForm.address.complement"
           label="Complemento"
           placeholder="Digite o complemento" />
+      </v-col>
+      <v-col cols="12" md="6" sm="12">
+        <v-text-field
+          v-model="localForm.address.number"
+          label="Número"
+          type="number"
+          min="0"
+          placeholder="Digite o número" />
       </v-col>
     </v-row>
   </v-container>
@@ -199,19 +231,7 @@ export default {
   props: {
     form: {
       type: Object,
-      default: () => ({
-        eventName: '',
-        alias: '',
-        description: '',
-        category: null,
-        startDate: '',
-        startTime: '',
-        endDate: '',
-        endTime: '',
-        rating: null,
-        cep: '',
-        complement: '',
-      }),
+      required: true,
     },
     categories: {
       type: Array,
@@ -229,7 +249,6 @@ export default {
         isValid: null,
         alias: '',
       },
-      address: null,
       startDateMenu: false,
       endDateMenu: false,
       startTimeMenu: false,
@@ -285,7 +304,7 @@ export default {
   },
   methods: {
     emitChanges() {
-      this.$emit('update:form', this.localForm);
+      this.$emit('update:form', { ...this.localForm });
     },
     async validateAlias() {
       try {
@@ -334,7 +353,7 @@ export default {
         try {
           const responseCEP = await cep.fetchCep(this.localForm.cep);
 
-          this.address = {
+          this.localForm.address = {
             street: responseCEP.logradouro,
             neighborhood: responseCEP.bairro,
             city: responseCEP.localidade,
@@ -351,7 +370,6 @@ export default {
 
 <style scoped>
 .step-general-info {
-  max-width: 800px;
   margin: 0 auto;
 }
 .mt-3 {

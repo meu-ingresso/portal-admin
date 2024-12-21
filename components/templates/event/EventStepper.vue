@@ -21,13 +21,14 @@
 
       <v-stepper-items>
         <v-stepper-content v-for="(step, index) in steps" :key="index" :step="index + 1">
-          <component :is="step.component" v-bind="step.props" :form.sync="form"/>
+          <component :is="step.component" v-bind="step.props" :form.sync="form" />
 
           <v-row justify="space-between" class="mt-4">
-            <v-col cols="12">
+            <v-col cols="12" class="d-flex justify-end">
               <DefaultButton
                 v-if="index > 0"
                 outlined
+                class="mr-2"
                 text="Voltar"
                 @click="previousStep" />
 
@@ -53,9 +54,7 @@
 import { category, rating, loading } from '@/store';
 
 import StepGeneralInfo from '@/components/organisms/event/StepGeneralInfo.vue';
-/* import StepTickets from '@/components/organisms/StepTickets.vue';
-import StepCoupons from '@/components/organisms/StepCoupons.vue';
-import StepSummary from '@/components/organisms/StepSummary.vue'; */
+import StepTickets from '@/components/organisms/event/StepTickets.vue';
 
 export default {
   data() {
@@ -73,7 +72,17 @@ export default {
         endTime: '',
         rating: '',
         cep: '',
-        complement: '',
+        max_capacity: 0,
+        address: {
+          street: '',
+          number: '',
+          neighborhood: '',
+          city: '',
+          state: '',
+          complement: '',
+        },
+        is_featured: false,
+        location_name: '',
         tickets: [],
         coupons: [],
       },
@@ -117,6 +126,13 @@ export default {
           ratings: this.ratings,
         },
       },
+      {
+        label: 'Ingressos',
+        component: StepTickets,
+        props: {
+          form: this.form,
+        },
+      },
     ];
 
     loading.setIsLoading(false);
@@ -140,7 +156,7 @@ export default {
 
 <style scoped>
 .event-stepper {
-  max-width: 800px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
