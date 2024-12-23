@@ -9,6 +9,7 @@
     :disabled="disabled"
     :loading="isLoading"
     :block="block"
+    :text="isText"
     @click="emitClick">
     {{ text }}
   </v-btn>
@@ -24,6 +25,7 @@ export default {
     disabled: { type: Boolean, default: false },
     isLoading: { type: Boolean, default: false },
     block: { type: Boolean, default: false },
+    isText: { type: Boolean, default: false },
   },
 
   methods: {
