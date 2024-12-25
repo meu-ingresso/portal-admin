@@ -1,7 +1,5 @@
 <template>
   <v-container>
-    <EventDrawer :drawer="drawer" :event-data="eventData" />
-
     <Lottie
       v-if="isLoading || isLoadingEvent"
       path="./animations/loading_default.json"
@@ -9,6 +7,8 @@
       width="300" />
 
     <div v-else>
+      <EventDrawer :drawer="drawer" :event-data="eventData" />
+
       <div v-if="eventData && !eventInvalid && userHasPermission">
         <EventDetailsTemplate v-if="isDetails" :event="eventData" />
         <EventDetailsTicketsTemplate v-if="isTickets" :event="eventData" />

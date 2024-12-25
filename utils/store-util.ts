@@ -11,6 +11,7 @@ import Event from '@/store/event';
 import Category from '@/store/category';
 import Rating from '@/store/rating';
 import Cep from '@/store/cep';
+import EventForm from '@/store/eventForm';
 
 let auth: Auth;
 let toast: Toast;
@@ -21,6 +22,7 @@ let event: Event;
 let category: Category;
 let rating: Rating;
 let cep: Cep;
+let eventForm: EventForm;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -32,6 +34,7 @@ const initializeStores = (store: Store<any>) => {
   category = getModule(Category, store);
   rating = getModule(Rating, store);
   cep = getModule(Cep, store);
+  eventForm = getModule(EventForm, store);
 };
 
 export {
@@ -45,4 +48,5 @@ export {
   category,
   rating,
   cep,
+  eventForm,
 };
