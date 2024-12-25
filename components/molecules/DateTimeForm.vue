@@ -1,6 +1,6 @@
 <template>
-  <v-row>
-    <v-col cols="12" md="6" sm="12">
+  <v-row class="pa-0 ma-0">
+    <v-col cols="12" md="6" sm="12" class="pa-2 pl-0 pr-3 ma-0">
       <v-menu
         ref="startDateMenu"
         v-model="startDateMenu"
@@ -12,9 +12,11 @@
           <v-text-field
             v-model="localStartDate"
             label="Data de Início"
-            prepend-icon="mdi-calendar"
+            prepend-inner-icon="mdi-calendar"
             readonly
             outlined
+            dense
+            hide-details="auto"
             v-bind="attrs"
             required
             v-on="on" />
@@ -22,24 +24,30 @@
         <v-date-picker
           v-model="localStartDate"
           locale="pt-br"
+          dense
+          hide-details="auto"
           @input="startDateMenu = false" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12">
+    <v-col cols="12" md="6" sm="12" class="pa-2 pl-2 pr-0 ma-0">
       <v-menu
         ref="startTimeMenu"
         v-model="startTimeMenu"
         :close-on-content-click="false"
         transition="scale-transition"
         offset-y
+        dense
+        hide-details="auto"
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
             v-model="localStartTime"
             label="Hora de Início"
-            prepend-icon="mdi-clock-outline"
+            prepend-inner-icon="mdi-clock-outline"
             readonly
             outlined
+            dense
+            hide-details="auto"
             v-bind="attrs"
             required
             v-on="on" />
@@ -47,24 +55,30 @@
         <v-time-picker
           v-model="localStartTime"
           format="24hr"
+          dense
+          hide-details="auto"
           @input="startTimeMenu = false" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12">
+    <v-col cols="12" md="6" sm="12" class="pa-2 pl-0 pr-3 ma-0">
       <v-menu
         ref="endDateMenu"
         v-model="endDateMenu"
         :close-on-content-click="false"
         transition="scale-transition"
         offset-y
+        dense
+        hide-details="auto"
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
             v-model="localEndDate"
             label="Data de Término"
-            prepend-icon="mdi-calendar"
+            prepend-inner-icon="mdi-calendar"
             readonly
             outlined
+            dense
+            hide-details="auto"
             v-bind="attrs"
             required
             v-on="on" />
@@ -72,24 +86,30 @@
         <v-date-picker
           v-model="localEndDate"
           locale="pt-br"
+          dense
+          hide-details="auto"
           @input="endDateMenu = false" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12">
+    <v-col cols="12" md="6" sm="12" class="pa-2 pl-2 pr-0 ma-0">
       <v-menu
         ref="endTimeMenu"
         v-model="endTimeMenu"
         :close-on-content-click="false"
         transition="scale-transition"
         offset-y
+        dense
+        hide-details="auto"
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
             v-model="localEndTime"
             label="Hora de Término"
-            prepend-icon="mdi-clock-outline"
+            prepend-inner-icon="mdi-clock-outline"
             readonly
             outlined
+            dense
+            hide-details="auto"
             v-bind="attrs"
             required
             v-on="on" />
@@ -97,10 +117,12 @@
         <v-time-picker
           v-model="localEndTime"
           format="24hr"
+          dense
+          hide-details="auto"
           @input="endTimeMenu = false" />
       </v-menu>
     </v-col>
-    <v-col cols="12">
+    <v-col v-if="localStartDate && localEndDate" cols="12" class="pa-2 pl-0">
       <p class="subtitle-2" v-html="eventDuration" />
     </v-col>
   </v-row>
@@ -143,7 +165,11 @@ export default {
       const startDateTime = new Date(`${this.localStartDate}T${this.localStartTime}:00`);
       const endDateTime = new Date(`${this.localEndDate}T${this.localEndTime}:00`);
 
-      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime()) || endDateTime <= startDateTime) {
+      if (
+        isNaN(startDateTime.getTime()) ||
+        isNaN(endDateTime.getTime()) ||
+        endDateTime <= startDateTime
+      ) {
         return 'A data de término deve ser posterior à data de início.';
       }
 
