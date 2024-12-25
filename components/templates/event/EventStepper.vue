@@ -38,7 +38,6 @@
 
               <DefaultButton
                 v-if="index < steps.length - 1"
-                outlined
                 text="Próximo"
                 @click="nextStep" />
 

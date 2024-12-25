@@ -1,19 +1,22 @@
 <template>
   <v-container class="step-general-info">
-    <v-row>
+    <v-row class="pa-0 ma-0">
       <v-col cols="12" md="12" sm="12">
         <v-text-field
           v-model="localForm.eventName"
           label="Nome do Evento"
           outlined
+          dense
           placeholder="Digite o nome do evento"
           required
+          hide-details="auto"
           @input="onEventNameChange" />
       </v-col>
     </v-row>
+
     <v-row
       v-if="aliasValidation.isValid !== null && localForm.alias.length > 0"
-      class="mt-1">
+      class="pa-0 ma-0">
       <v-col cols="12">
         <div class="d-flex align-center">
           <v-progress-circular
@@ -24,15 +27,18 @@
             :size="18" />
 
           <template v-if="aliasValidation.isValid">
-            <v-icon v-if="!isValidatingAlias" class="mr-1" color="green"
-              >mdi-check-circle</v-icon
-            >
+            <v-icon v-if="!isValidatingAlias" class="mr-1" color="green">
+              mdi-check-circle
+            </v-icon>
+
             <p class="caption">{{ aliasValidation.alias }}</p>
           </template>
+
           <template v-else>
-            <v-icon v-if="!isValidatingAlias" class="mr-1" color="red"
-              >mdi-alert-box</v-icon
-            >
+            <v-icon v-if="!isValidatingAlias" class="mr-1" color="red">
+              mdi-alert-box
+            </v-icon>
+
             <p class="caption">
               {{ aliasValidation.alias }} <span class="red--text">(já reservado)</span>
             </p>
@@ -40,7 +46,8 @@
         </div>
       </v-col>
     </v-row>
-    <v-row>
+
+    <v-row class="pa-0 ma-0">
       <!-- Categoria -->
       <v-col cols="12" md="4" sm="12">
         <v-select
@@ -48,9 +55,12 @@
           label="Categoria"
           :items="categories"
           outlined
+          dense
           return-object
+          hide-details="auto"
           required />
       </v-col>
+
       <!-- Classificação Indicativa -->
       <v-col cols="12" md="4" sm="12">
         <v-select
@@ -58,9 +68,12 @@
           label="Classificação Indicativa"
           :items="ratings"
           outlined
+          dense
           return-object
+          hide-details="auto"
           required />
       </v-col>
+
       <!-- Capacidade máxima -->
       <v-col cols="12" md="4" sm="12">
         <v-text-field
@@ -70,30 +83,29 @@
           type="number"
           min="0"
           outlined
+          dense
           required
-          hide-details />
+          hide-details="auto" />
       </v-col>
+
       <!-- Descrição do Evento -->
       <v-col cols="12" md="12" sm="12">
         <v-textarea
           v-model="localForm.description"
           label="Descrição"
-          rows="4"
+          rows="5"
           outlined
+          dense
+          hide-details="auto"
           placeholder="Digite uma descrição para o evento"
           required />
       </v-col>
-      <v-col cols="12" md="3" sm="12">
-        <v-switch v-model="localForm.is_featured" label="Evento em Destaque" inset />
-      </v-col>
     </v-row>
+
     <!-- Data e Hora -->
-    <v-row>
+    <v-row class="pa-0 ma-0">
       <v-col cols="12">
-        <h3>Datas</h3>
-        <p class="subtitle-2">
-          O fuso-horário do evento é automaticamente configurado a partir da localização.
-        </p>
+        <h3>Data e Hora</h3>
       </v-col>
       <v-col cols="12">
         <!-- Outros campos -->
@@ -108,6 +120,7 @@
           @update:endTime="updateEndTime" />
       </v-col>
     </v-row>
+
     <!-- Endereço do Evento -->
     <AddressForm
       :cep="form.cep"

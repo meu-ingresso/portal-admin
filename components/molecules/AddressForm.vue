@@ -1,21 +1,27 @@
 <template>
-  <v-row>
-    <v-col cols="12" md="6" sm="12">
-      <v-text-field
-        v-model="localCep"
-        label="CEP"
-        outlined
-        placeholder="Digite o CEP"
-        required
-        @input="onChangeCEP" />
-    </v-col>
+  <v-row class="pa-0 ma-0">
     <v-col cols="12" md="6" sm="12">
       <v-text-field
         v-model="localLocationName"
         label="Local do Evento"
         outlined
+        dense
+        hide-details="auto"
         placeholder="Digite o local do evento" />
     </v-col>
+
+    <v-col cols="12" md="6" sm="12">
+      <v-text-field
+        v-model="localCep"
+        label="CEP"
+        outlined
+        dense
+        placeholder="Digite o CEP"
+        required
+        hide-details="auto"
+        @input="onChangeCEP" />
+    </v-col>
+
     <v-col cols="12">
       <v-card v-if="isFetchingAddress" outlined class="mt-3 mb-3">
         <v-card-text>
@@ -23,12 +29,14 @@
           <p>Buscando endereço...</p>
         </v-card-text>
       </v-card>
+
       <v-card v-else-if="addressError" outlined class="mt-3 mb-3">
         <v-card-text>
           <v-icon color="red">mdi-alert-circle</v-icon>
           <p>{{ addressError }}</p>
         </v-card-text>
       </v-card>
+
       <v-card v-else-if="isAddressFilled" outlined class="mt-3 mb-3">
         <v-card-text>
           <p><strong>Rua:</strong> {{ localAddress.street }}</p>
@@ -38,20 +46,26 @@
         </v-card-text>
       </v-card>
     </v-col>
-    <v-col cols="12" md="4" sm="12">
+
+    <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
         v-model="localAddress.number"
         label="Número"
         type="number"
         outlined
+        dense
+        hide-details="auto"
         min="0"
         placeholder="Digite o número" />
     </v-col>
-    <v-col cols="12" md="8" sm="12">
+
+    <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
         v-model="localAddress.complement"
         label="Complemento"
         outlined
+        dense
+        hide-details="auto"
         placeholder="Digite o complemento" />
     </v-col>
   </v-row>
