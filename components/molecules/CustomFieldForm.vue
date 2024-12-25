@@ -1,66 +1,77 @@
 <template>
   <v-container>
-    <!-- Seleção de Campos Existentes -->
+    <!-- Botão para Adicionar Campo -->
     <v-row>
-      <v-col cols="12">
-        <v-select
-          v-model="selectedExistingField"
-          :items="existingFields"
-          item-text="name"
-          label="Selecionar Campo Existente"
-          clearable
-          @change="onSelectExistingField" />
+      <v-col cols="12" class="pl-0">
+        <v-btn color="primary" depressed @click="addField">
+          <v-icon left> mdi-plus </v-icon> Novo Campo
+        </v-btn>
       </v-col>
     </v-row>
 
-    <!-- Formulário de Edição ou Exibição -->
-    <v-row>
-      <v-col cols="12" sm="6">
+    <!-- Lista de Campos -->
+    <v-row
+      v-for="(field, index) in fields"
+      :key="index"
+      class="mb-3"
+      :class="{ 'bg-light-gray': index % 2 === 0 }">
+      <!-- Nome do Campo -->
+      <v-col cols="12" md="6" sm="12">
         <v-text-field
           v-model="field.name"
           label="Nome do Campo"
+          outlined
           placeholder="Ex: CPF"
-          :disabled="isUsingExistingField"
           required />
       </v-col>
-      <v-col cols="12" sm="6">
+
+      <!-- Tipo do Campo -->
+      <v-col cols="12" md="6" sm="12">
         <v-select
           v-model="field.type"
           :items="fieldTypes"
+          outlined
           label="Tipo"
-          :disabled="isUsingExistingField"
           required />
       </v-col>
-      <v-col cols="12" sm="4">
-        <v-checkbox
-          v-model="field.required"
-          label="Obrigatório"
-          :disabled="isUsingExistingField" />
+
+      <!-- Tipos de Pessoa -->
+      <v-col cols="12" md="4" sm="12">
+        <v-checkbox v-model="field.types.pf" label="Pessoa Física (PF)" />
       </v-col>
-      <v-col cols="12" sm="4">
-        <v-checkbox
-          v-model="field.unique"
-          label="Único"
-          :disabled="isUsingExistingField" />
+      <v-col cols="12" md="4" sm="12">
+        <v-checkbox v-model="field.types.pj" label="Pessoa Jurídica (PJ)" />
       </v-col>
-      <v-col cols="12" sm="4">
-        <v-checkbox
-          v-model="field.visible"
-          label="Visível no checkout"
-          :disabled="isUsingExistingField" />
+      <v-col cols="12" md="4" sm="12">
+        <v-checkbox v-model="field.types.foreigner" label="Estrangeiros" />
       </v-col>
+
+      <!-- Descrição do Campo -->
       <v-col cols="12">
         <v-textarea
           v-model="field.description"
           label="Descrição"
+          outlined
           placeholder="Adicione uma instrução para o usuário"
-          rows="2"
-          :disabled="isUsingExistingField" />
+          rows="2" />
+      </v-col>
+
+      <!-- Configurações do Campo -->
+      <v-col cols="12" md="4" sm="12">
+        <v-checkbox v-model="field.required" label="Obrigatório" />
+      </v-col>
+      <v-col cols="12" md="4" sm="12">
+        <v-checkbox v-model="field.unique" label="Único" />
+      </v-col>
+      <v-col cols="12" md="4" sm="12">
+        <v-checkbox v-model="field.visible_on_ticket" label="Visível na impressão" />
+      </v-col>
+
+      <!-- Botão para Remover Campo -->
+      <v-col cols="12">
+        <v-btn color="red" text @click="removeField(index)"> Remover Campo </v-btn>
       </v-col>
     </v-row>
-
-    <!-- Botões -->
-    <v-btn class="mt-3" text color="success" @click="saveField"> Salvar </v-btn>
   </v-container>
 </template>
 
@@ -68,16 +79,9 @@
 <script>
 export default {
   props: {
-    customField: {
-      type: Object,
-      default: () => ({
-        name: '',
-        type: '',
-        required: false,
-        unique: false,
-        visible: true,
-        description: '',
-      }),
+    customFields: {
+      type: Array,
+      default: () => [],
     },
     existingFields: {
       type: Array,
@@ -86,36 +90,45 @@ export default {
   },
   data() {
     return {
-      field: { ...this.customField }, // Clona o campo recebido como prop
-      selectedExistingField: null, // Campo selecionado
-      isUsingExistingField: false, // Flag para desabilitar os inputs
+      fields: [...this.customFields],
       fieldTypes: ['CPF', 'CNPJ', 'Texto', 'Número', 'Data', 'Email', 'Telefone'],
     };
   },
+  mounted() {
+    this.addField();
+  },
   methods: {
-    // Método chamado ao selecionar um campo existente
-    onSelectExistingField(field) {
-      if (field) {
-        // Popula os campos com os valores do campo existente
-        this.field = { ...field };
-        this.isUsingExistingField = true; // Desabilita os inputs
-      } else {
-        // Restaura o estado inicial se nenhum campo for selecionado
-        this.field = { ...this.customField };
-        this.isUsingExistingField = false;
-      }
+    addField() {
+      this.fields.push({
+        name: '',
+        type: '',
+        required: false,
+        unique: false,
+        visible_on_ticket: false,
+        description: '',
+        types: {
+          pf: true,
+          pj: false,
+          foreigner: false,
+        },
+      });
     },
-
-    // Salva o campo customizado
-    saveField() {
-      if (this.isUsingExistingField) {
-        // Se estiver usando um campo existente, apenas o retorna como está
-        this.$emit('save', this.field);
-      } else {
-        // Caso contrário, salva o campo editado/criado
-        this.$emit('save', this.field);
-      }
+    removeField(index) {
+      this.fields.splice(index, 1);
+    },
+    saveFields() {
+      this.$emit('save', this.fields); // Emite todos os campos para o pai
     },
   },
 };
 </script>
+
+<style scoped>
+.bg-white {
+  background-color: white;
+}
+
+.bg-light-gray {
+  background-color: #f5f5f5;
+}
+</style>
