@@ -15,7 +15,12 @@
     <v-stepper-items>
       <!-- Etapa 1: Informações do Ingresso -->
       <v-stepper-content step="1" class="px-0 py-0">
-        <TicketForm :ticket="localTicket" @update:ticket="updateTicket" />
+        <TicketForm
+          :ticket="localTicket"
+          :categories="categories"
+          @update:ticket="updateTicket" 
+          @update:categories="updateCategories"
+          />
         <div class="d-flex justify-end">
           <v-btn text color="primary" @click="nextStep">Próximo</v-btn>
         </div>
@@ -26,10 +31,10 @@
         <CustomFieldForm
           :custom-fields="localTicket.customFields"
           :existing-fields="existingFields"
-          @save="saveCustomFields" />
+          @update:fields="updateCustomFields" />
         <div class="d-flex justify-space-between align-center">
           <v-btn text color="grey" @click="previousStep">Voltar</v-btn>
-          <v-btn text color="primary" @click="save">Salvar</v-btn>
+          <v-btn text color="primary" @click="save">Salvar Ingresso</v-btn>
         </div>
       </v-stepper-content>
     </v-stepper-items>
@@ -47,13 +52,28 @@ export default {
       type: Array,
       default: () => [],
     },
+    categories: {
+      type: Array,
+      required: true,
+    },
   },
   data() {
     return {
       localTicket: { ...this.ticket },
+      localCategories: [...this.categories],
       currentStep: 1,
     };
   },
+
+  watch: {
+    ticket: {
+      handler() {
+        this.localTicket = { ...this.ticket };
+      },
+      deep: true,
+    },
+  },
+
   methods: {
     nextStep() {
       if (this.currentStep < 2) this.currentStep++;
@@ -64,11 +84,15 @@ export default {
     updateTicket(updatedTicket) {
       this.localTicket = { ...updatedTicket }; // Atualiza o modelo local
     },
-    saveCustomFields(fields) {
+    updateCategories(updatedCategories) {
+      this.localCategories = [...updatedCategories]; // Atualiza as categorias
+    },
+    updateCustomFields(fields) {
       this.localTicket.customFields = fields; // Atualiza os campos customizados
     },
     save() {
       this.$emit('save', this.localTicket); // Emite o ticket atualizado para o pai
+      this.currentStep = 1; // Reseta o stepper para a primeira etapa
     },
   },
 };

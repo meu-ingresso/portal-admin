@@ -10,12 +10,12 @@
     </v-row>
 
     <!-- Tabela de Ingressos -->
-    <v-simple-table class="mt-4">
+    <v-simple-table v-if="localForm.tickets.length" class="mt-4">
       <thead>
         <tr>
           <th>Nome</th>
           <th>Preço</th>
-          <th>Quantidade Máxima</th>
+          <th>Qtd. Máxima</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -43,8 +43,10 @@
         </v-card-title>
         <v-card-text>
           <TicketStepper
+            v-if="showTicketModal"
             :ticket="currentTicket"
             :existing-fields="existingFields"
+            :categories="categories"
             @save="saveTicket"
             @close="closeTicketModal" />
         </v-card-text>
@@ -54,7 +56,6 @@
 </template>
 
 <script>
-import Debounce from '@/utils/Debounce';
 export default {
   props: {
     form: {
@@ -69,7 +70,8 @@ export default {
       isEditing: false,
       currentTicketIndex: null,
       currentTicket: null,
-      existingFields: [], // Campos customizados existentes
+      existingFields: [],
+      categories: [],
     };
   },
 
@@ -80,10 +82,6 @@ export default {
       },
       deep: true,
     },
-  },
-
-  created() {
-    this.debouncer = new Debounce(this.onCategorySearch, 900);
   },
 
   mounted() {
@@ -118,41 +116,9 @@ export default {
     emitChanges() {
       this.$emit('update:form', { ...this.localForm });
     },
-    onTriggerCategorySearch(ticketIndex) {
-      this.debouncer.execute(ticketIndex);
-    },
-    onCategorySearch(ticketIndex) {
-      const search = this.localForm.tickets[ticketIndex].categorySearch;
-      if (
-        search &&
-        !this.categories.includes(search) &&
-        !this.categories.includes(`Criar categoria e atribuir "${search}"`)
-      ) {
-        this.categories.push(`Criar categoria e atribuir "${search}"`);
-      } else {
-        this.clearTempCategories();
-      }
-    },
-    onCategoryChange(ticketIndex) {
-      const category = this.localForm.tickets[ticketIndex].category;
-      if (category && category.startsWith('Criar categoria e atribuir')) {
-        const newCategory = category
-          .replace('Criar categoria e atribuir "', '')
-          .replace('"', '');
-        this.categories.push(newCategory);
-        this.localForm.tickets[ticketIndex].category = newCategory;
-        this.clearTempCategories();
-      }
-    },
-    clearTempCategories() {
-      this.categories = this.categories.filter(
-        (category) => !category.startsWith('Criar categoria e atribuir')
-      );
-    },
-
     openTicketModal() {
       this.isEditing = false;
-      this.currentTicket = {
+      this.$set(this, 'currentTicket', {
         name: '',
         price: 0,
         max_quantity: 0,
@@ -160,10 +126,11 @@ export default {
         max_purchase: 0,
         open_date: '',
         close_date: '',
+        categorySearch: '',
         visibility: 'Público',
         category: '',
         customFields: [],
-      };
+      });
       this.showTicketModal = true;
     },
     editTicket(index) {
