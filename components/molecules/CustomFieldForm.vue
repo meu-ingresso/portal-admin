@@ -1,13 +1,10 @@
 <template>
-  <v-container class="custom-field-form">
-    <v-card>
+  <v-container class="custom-field-form px-1">
+    <v-card class="mb-4">
       <v-card-title>
         <div class="subtitle-1">
           Gerencie os campos para preenchimento no formulário de seu ingresso
         </div>
-        <v-spacer></v-spacer>
-        <!-- Botão para Adicionar Novo Campo -->
-        <ButtonWithIcon text="Novo Campo" @click="addField" />
       </v-card-title>
       <!-- Tabela de Campos -->
       <v-data-table
@@ -18,7 +15,7 @@
         item-value="name"
         hide-default-footer
         no-data-text="Nenhum campo personalizado adicionado"
-        class="no-hover-table">
+        class="no-hover-table mb-2">
         <!-- Seleção -->
         <template #item.selected="{ item }">
           <v-checkbox v-model="item.selected" dense @change="emitChanges" />
@@ -102,6 +99,11 @@
           </v-btn>
         </template>
       </v-data-table>
+      <v-row>
+        <v-col cols="12" class="d-flex justify-center align-center">
+          <DefaultButton text="Novo Campo" @click="addField" />
+        </v-col>
+      </v-row>
     </v-card>
   </v-container>
 </template>
