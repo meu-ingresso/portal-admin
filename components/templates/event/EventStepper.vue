@@ -21,7 +21,11 @@
 
       <v-stepper-items>
         <v-stepper-content v-for="(step, index) in steps" :key="index" :step="index + 1">
-          <component :is="step.component" v-bind="step.props" :form.sync="form" />
+          <component
+            :is="step.component"
+            v-bind="step.props"
+            :ref="'step-' + (index + 1)"
+            :form.sync="form" />
 
           <v-row justify="space-between" class="mt-4">
             <v-col cols="12" class="d-flex justify-end">
@@ -34,7 +38,6 @@
 
               <DefaultButton
                 v-if="index < steps.length - 1"
-                outlined
                 text="Próximo"
                 @click="nextStep" />
 
@@ -47,49 +50,36 @@
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>
+    <Toast />
   </v-container>
 </template>
 
 <script>
-import { category, rating, loading } from '@/store';
+import { category, rating, loading, toast, eventForm } from '@/store';
 
 import StepGeneralInfo from '@/components/organisms/event/StepGeneralInfo.vue';
 import StepTickets from '@/components/organisms/event/StepTickets.vue';
+import StepCoupons from '@/components/organisms/event/StepCoupons.vue';
 
 export default {
   data() {
     return {
       currentStep: 1,
       steps: [],
-      form: {
-        eventName: '',
-        alias: '',
-        description: '',
-        category: '',
-        startDate: '',
-        startTime: '',
-        endDate: '',
-        endTime: '',
-        rating: '',
-        cep: '',
-        max_capacity: 0,
-        address: {
-          street: '',
-          number: '',
-          neighborhood: '',
-          city: '',
-          state: '',
-          complement: '',
-        },
-        is_featured: false,
-        location_name: '',
-        tickets: [],
-        coupons: [],
-      },
     };
   },
 
   computed: {
+    form: {
+      get() {
+        return eventForm.$form;
+      },
+      set(value) {
+        console.log('Setting form', value);
+        eventForm.updateForm(value);
+      },
+    },
+
     isLoading() {
       return loading.$isLoading;
     },
@@ -133,6 +123,13 @@ export default {
           form: this.form,
         },
       },
+      {
+        label: 'Cupons de Desconto',
+        component: StepCoupons,
+        props: {
+          form: this.form,
+        },
+      },
     ];
 
     loading.setIsLoading(false);
@@ -140,7 +137,27 @@ export default {
 
   methods: {
     nextStep() {
-      if (this.currentStep < this.steps.length) {
+      const currentStepComponent = this.$refs[`step-${this.currentStep}`];
+      if (
+        currentStepComponent &&
+        typeof currentStepComponent[0]?.canProceed === 'function'
+      ) {
+        currentStepComponent[0].canProceed((_canProceed, flag, msg) => {
+          if (msg) {
+            toast.setToast({
+              text: msg,
+              type: 'danger',
+              time: 5000,
+            });
+          }
+
+          if (flag) {
+            if (this.currentStep < this.steps.length) {
+              this.currentStep++;
+            }
+          }
+        });
+      } else if (this.currentStep < this.steps.length) {
         this.currentStep++;
       }
     },

@@ -28,18 +28,43 @@ export default class Cep extends VuexModule {
 
         this.setLoading(true);
 
-        return await $axios
-            .$get(`https://viacep.com.br/ws/${cep}/json/`)
-            .then((response) => {
-                return response;
-            })
-            .catch(() => {
+        try {
+            const response = await $axios.$get(`https://viacep.com.br/ws/${cep}/json/`);
+            if (!response.logradouro || !response.bairro || !response.localidade || !response.uf) {
+                throw new Error('CEP não encontrado na API ViaCEP');
+            }
+            this.setLoading(false);
+            return {
+                street: response.logradouro,
+                neighborhood: response.bairro,
+                city: response.localidade,
+                state: response.uf,
+            };
+        } catch (error) {
+            console.warn('Erro ao buscar CEP na API ViaCEP:', error.message);
+
+            try {
+                const response = await $axios.$get(`https://brasilapi.com.br/api/cep/v2/${cep}`);
+                if (!response.street || !response.neighborhood || !response.city || !response.state) {
+                    throw new Error('CEP não encontrado na API BrasilAPI');
+                }
                 this.setLoading(false);
                 return {
-                    data: 'Error',
-                    code: 'FIND_NOTFOUND',
-                    total: 0,
+                    street: response.street,
+                    neighborhood: response.neighborhood,
+                    city: response.city,
+                    state: response.state,
                 };
-            });
+            } catch (error) {
+                console.error('Erro ao buscar CEP na API BrasilAPI:', error.message);
+                this.setLoading(false);
+                return {
+                    street: null,
+                    neighborhood: null,
+                    city: null,
+                    state: null,
+                };
+            }
+        }
     }
 }

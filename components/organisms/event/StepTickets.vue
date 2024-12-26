@@ -1,130 +1,61 @@
 
 <template>
   <v-container class="step-tickets">
-    <v-row class="align-center">
-      <v-col cols="12" md="12" sm="12" class="d-flex justify-end">
-         <DefaultButton text="Adicionar Ingresso" @click="addTicket" />
+    <v-row>
+      <v-col cols="12">
+        <h3>Cadastro de Ingressos</h3>
+        <p class="subtitle-1">Adicione ingresos para o evento.</p>
+        <DefaultButton class="mt-2" text="Adicionar Ingresso" @click="openTicketModal" />
       </v-col>
     </v-row>
 
-    <v-row
-      v-for="(ticket, ticketIndex) in localForm.tickets"
-      :key="ticketIndex"
-      class="ticket-row"
-      :class="{
-        'bg-white': ticketIndex % 2 === 0,
-        'bg-light-gray': ticketIndex % 2 !== 0,
-      }">
-      <v-col cols="12" sm="4">
-        <v-text-field
-          v-model="ticket.name"
-          label="Nome do Ingresso"
-          placeholder="Ex: Ingresso VIP"
-          required />
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-text-field
-          v-model="ticket.price"
-          label="Preço (R$)"
-          type="number"
-          min="0"
-          required />
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-text-field
-          v-model="ticket.max_quantity"
-          label="Quantidade Máxima"
-          type="number"
-          min="0"
-          required />
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-text-field
-          v-model="ticket.min_purchase"
-          label="Compra Mínima"
-          type="number"
-          min="0"
-          required />
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-text-field
-          v-model="ticket.max_purchase"
-          label="Compra Máxima"
-          type="number"
-          min="0"
-          required />
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-menu
-          v-model="ticket.open_date_menu"
-          :close-on-content-click="false"
-          :nudge-right="40"
-          transition="scale-transition"
-          offset-y
-          min-width="auto">
-          <template #activator="{ on, attrs }">
-            <v-text-field
-              v-model="ticket.open_date"
-              label="Data de Abertura"
-              readonly
-              v-bind="attrs"
-              v-on="on" />
-          </template>
-          <v-date-picker
-            v-model="ticket.open_date"
-            @input="ticket.open_date_menu = false"></v-date-picker>
-        </v-menu>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-menu
-          v-model="ticket.close_date_menu"
-          :close-on-content-click="false"
-          :nudge-right="40"
-          transition="scale-transition"
-          offset-y
-          min-width="auto">
-          <template #activator="{ on, attrs }">
-            <v-text-field
-              v-model="ticket.close_date"
-              label="Data de Fechamento"
-              readonly
-              v-bind="attrs"
-              v-on="on" />
-          </template>
-          <v-date-picker
-            v-model="ticket.close_date"
-            @input="ticket.close_date_menu = false"></v-date-picker>
-        </v-menu>
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-select
-          v-model="ticket.visibility"
-          :items="['Público', 'Privado']"
-          label="Visibilidade"
-          required />
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-autocomplete
-          v-model="ticket.category"
-          :items="categories"
-          label="Categoria"
-          :search-input.sync="ticket.categorySearch"
-          no-data-text="Nenhuma categoria encontrada"
-          required
-          @update:search-input="onTriggerCategorySearch(ticketIndex)"
-          @change="onCategoryChange(ticketIndex)" />
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-btn color="red" text @click="removeTicket(ticketIndex)">
-          Remover Ingresso
-        </v-btn>
-      </v-col>
-    </v-row>
+    <!-- Tabela de Ingressos -->
+    <v-simple-table v-if="localForm.tickets.length" class="mt-4">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Preço</th>
+          <th>Qtd. Máxima</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(ticket, index) in localForm.tickets" :key="index">
+          <td>{{ ticket.name }}</td>
+          <td>R$ {{ ticket.price }}</td>
+          <td>{{ ticket.max_quantity }}</td>
+          <td>
+            <v-btn text color="primary" @click="editTicket(index)">Editar</v-btn>
+            <v-btn text color="red" @click="removeTicket(index)">Remover</v-btn>
+          </td>
+        </tr>
+      </tbody>
+    </v-simple-table>
+
+    <!-- Modal de Cadastro de Ingresso -->
+    <v-dialog v-model="showTicketModal" persistent max-width="1024px">
+      <v-card>
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h4>{{ isEditing ? 'Editar Ingresso' : 'Novo Ingresso' }}</h4>
+          <v-btn icon @click="closeTicketModal">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <TicketStepper
+            v-if="showTicketModal"
+            :ticket="currentTicket"
+            :existing-fields="existingFields"
+            :categories="categories"
+            @save="saveTicket"
+            @close="closeTicketModal" />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
-import Debounce from '@/utils/Debounce';
 export default {
   props: {
     form: {
@@ -135,7 +66,11 @@ export default {
   data() {
     return {
       localForm: { ...this.form },
-      tickets: [],
+      showTicketModal: false,
+      isEditing: false,
+      currentTicketIndex: null,
+      currentTicket: null,
+      existingFields: [],
       categories: [],
     };
   },
@@ -149,50 +84,41 @@ export default {
     },
   },
 
-  created() {
-    this.debouncer = new Debounce(this.onCategorySearch, 900);
+  mounted() {
+    this.populateExistingFields();
   },
 
   methods: {
+    canProceed(callback) {
+      const pendingIndex = this.localForm.tickets.findIndex(
+        (ticket) => !ticket.customFields || ticket.customFields.length === 0
+      );
+
+      if (pendingIndex !== -1) {
+        this.currentTicketIndex = pendingIndex;
+        this.showCustomFieldModal = true;
+        callback(null, false);
+      } else {
+        callback(null, true);
+      }
+    },
+    populateExistingFields() {
+      this.existingFields = [];
+
+      this.localForm.tickets.forEach((ticket) => {
+        ticket.customFields.forEach((field) => {
+          if (!this.existingFields.some((existing) => existing.name === field.name)) {
+            this.existingFields.push(field);
+          }
+        });
+      });
+    },
     emitChanges() {
       this.$emit('update:form', { ...this.localForm });
     },
-    removeTicket(ticketIndex) {
-      this.localForm.tickets.splice(ticketIndex, 1);
-    },
-    onTriggerCategorySearch(ticketIndex) {
-      this.debouncer.execute(ticketIndex);
-    },
-    onCategorySearch(ticketIndex) {
-      const search = this.localForm.tickets[ticketIndex].categorySearch;
-      if (
-        search &&
-        !this.categories.includes(search) &&
-        !this.categories.includes(`Criar categoria e atribuir "${search}"`)
-      ) {
-        this.categories.push(`Criar categoria e atribuir "${search}"`);
-      }else {
-        this.clearTempCategories();
-      }
-    },
-    onCategoryChange(ticketIndex) {
-      const category = this.localForm.tickets[ticketIndex].category;
-      if (category && category.startsWith('Criar categoria e atribuir')) {
-        const newCategory = category
-          .replace('Criar categoria e atribuir "', '')
-          .replace('"', '');
-        this.categories.push(newCategory);
-        this.localForm.tickets[ticketIndex].category = newCategory;
-        this.clearTempCategories();
-      }
-    },
-    clearTempCategories() {
-      this.categories = this.categories.filter(
-        (category) => !category.startsWith('Criar categoria e atribuir')
-      );
-    },
-    addTicket() {
-      this.localForm.tickets.push({
+    openTicketModal() {
+      this.isEditing = false;
+      this.$set(this, 'currentTicket', {
         name: '',
         price: 0,
         max_quantity: 0,
@@ -200,12 +126,32 @@ export default {
         max_purchase: 0,
         open_date: '',
         close_date: '',
+        categorySearch: '',
         visibility: 'Público',
         category: '',
-        categorySearch: '',
-        open_date_menu: false,
-        close_date_menu: false,
+        customFields: [],
       });
+      this.showTicketModal = true;
+    },
+    editTicket(index) {
+      this.isEditing = true;
+      this.currentTicketIndex = index;
+      this.currentTicket = { ...this.localForm.tickets[index] };
+      this.showTicketModal = true;
+    },
+    saveTicket(ticket) {
+      if (this.isEditing) {
+        this.$set(this.localForm.tickets, this.currentTicketIndex, ticket);
+      } else {
+        this.localForm.tickets.push(ticket);
+      }
+      this.showTicketModal = false;
+    },
+    closeTicketModal() {
+      this.showTicketModal = false;
+    },
+    removeTicket(index) {
+      this.localForm.tickets.splice(index, 1);
     },
   },
 };
