@@ -169,6 +169,8 @@ export default {
     },
     onDateChange(field, value) {
       this.localTicket[field] = value;
+      this.openDateMenu = false;
+      this.closeDateMenu = false;
       this.emitChanges();
     },
     onTriggerCategorySearch() {

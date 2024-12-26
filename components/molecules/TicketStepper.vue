@@ -18,11 +18,10 @@
         <TicketForm
           :ticket="localTicket"
           :categories="categories"
-          @update:ticket="updateTicket" 
-          @update:categories="updateCategories"
-          />
+          @update:ticket="updateTicket"
+          @update:categories="updateCategories" />
         <div class="d-flex justify-end">
-          <v-btn text color="primary" @click="nextStep">Próximo</v-btn>
+          <DefaultButton text="Próximo" @click="nextStep" />
         </div>
       </v-stepper-content>
 
@@ -33,8 +32,8 @@
           :existing-fields="existingFields"
           @update:fields="updateCustomFields" />
         <div class="d-flex justify-space-between align-center">
-          <v-btn text color="grey" @click="previousStep">Voltar</v-btn>
-          <v-btn text color="primary" @click="save">Salvar Ingresso</v-btn>
+          <DefaultButton outlined text="Voltar" @click="previousStep" />
+          <DefaultButton text="Salvar Ingresso" @click="save" />
         </div>
       </v-stepper-content>
     </v-stepper-items>
