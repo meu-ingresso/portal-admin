@@ -182,7 +182,9 @@ export default {
   },
 
   mounted() {
-    this.addField();
+    if (this.existingFields.length === 0) {
+      this.addField();
+    }
   },
 
   methods: {
