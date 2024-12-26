@@ -1,135 +1,110 @@
 <template>
   <v-container class="custom-field-form">
-    <!-- Botão para Adicionar Campo -->
-    <v-row>
-      <v-col cols="12" class="pl-0">
-        <v-btn color="primary" depressed @click="addField">
-          <v-icon left> mdi-plus </v-icon> Novo Campo
-        </v-btn>
-      </v-col>
-    </v-row>
+    <v-card>
+      <v-card-title>
+        <div class="subtitle-1">
+          Gerencie os campos para preenchimento no formulário de seu ingresso
+        </div>
+        <v-spacer></v-spacer>
+        <!-- Botão para Adicionar Novo Campo -->
+        <ButtonWithIcon text="Novo Campo" @click="addField" />
+      </v-card-title>
+      <!-- Tabela de Campos -->
+      <v-data-table
+        :headers="headers"
+        :items="allFields"
+        dense
+        elevation="0"
+        item-value="name"
+        hide-default-footer
+        no-data-text="Nenhum campo personalizado adicionado"
+        class="no-hover-table">
+        <!-- Seleção -->
+        <template #item.selected="{ item }">
+          <v-checkbox v-model="item.selected" dense @change="emitChanges" />
+        </template>
 
-    <!-- Campo Atual Baseado na Página -->
-    <transition name="fade">
-      <v-row v-if="fields[currentPage - 1]" class="mb-3 field-row">
-        <!-- Nome do Campo -->
-        <v-col cols="12" md="6" sm="12">
+        <!-- Nome -->
+        <template #item.name="{ item }">
           <v-text-field
-            v-model="fields[currentPage - 1].name"
-            label="Nome do Campo"
+            v-model="item.name"
             outlined
-            placeholder="Ex: CPF"
-            required
             dense
             hide-details="auto"
+            placeholder="Digite o nome"
+            class="my-2"
             @input="emitChanges" />
-        </v-col>
+        </template>
 
-        <!-- Tipo do Campo -->
-        <v-col cols="12" md="6" sm="12">
+        <!-- Tipo -->
+        <template #item.type="{ item }">
           <v-select
-            v-model="fields[currentPage - 1].type"
+            v-model="item.type"
             :items="fieldTypes"
-            outlined
-            label="Tipo"
-            required
             dense
             hide-details="auto"
+            outlined
+            placeholder="Tipo do campo"
+            class="my-2"
             @input="emitChanges" />
-        </v-col>
+        </template>
 
         <!-- Tipos de Pessoa -->
-        <v-col cols="12" md="4" sm="12">
-          <v-checkbox
-            v-model="fields[currentPage - 1].types.pf"
-            label="Pessoa Física (PF)"
+        <template #item.personTypes="{ item }">
+          <v-select
+            v-model="item.personTypes"
+            :items="personTypes"
+            multiple
+            chips
             dense
             hide-details="auto"
-            @input="emitChanges" />
-        </v-col>
-        <v-col cols="12" md="4" sm="12">
-          <v-checkbox
-            v-model="fields[currentPage - 1].types.pj"
-            label="Pessoa Jurídica (PJ)"
-            dense
-            hide-details="auto"
-            @input="emitChanges" />
-        </v-col>
-        <v-col cols="12" md="4" sm="12">
-          <v-checkbox
-            v-model="fields[currentPage - 1].types.foreigner"
-            label="Estrangeiros"
-            dense
-            hide-details="auto"
-            @input="emitChanges" />
-        </v-col>
-
-        <!-- Descrição do Campo -->
-        <v-col cols="12">
-          <v-textarea
-            v-model="fields[currentPage - 1].description"
-            label="Descrição"
             outlined
-            placeholder="Adicione uma instrução para o usuário"
-            rows="2"
-            dense
-            hide-details="auto"
+            placeholder="Tipos de pessoa"
+            class="my-2"
+            :disabled="item.isExisting && !item.selected"
             @input="emitChanges" />
-        </v-col>
+        </template>
 
-        <!-- Configurações do Campo -->
-        <v-col cols="12" md="4" sm="12">
-          <v-checkbox
-            v-model="fields[currentPage - 1].required"
-            label="Obrigatório"
+        <!-- Obrigatório -->
+        <template #item.required="{ item }">
+          <v-switch
+            v-model="item.required"
+            class="inline-switch my-2"
             dense
             hide-details="auto"
             @input="emitChanges" />
-        </v-col>
-        <v-col cols="12" md="4" sm="12">
-          <v-checkbox
-            v-model="fields[currentPage - 1].unique"
-            label="Único"
+        </template>
+
+        <!-- Único -->
+        <template #item.unique="{ item }">
+          <v-switch
+            v-model="item.unique"
+            class="inline-switch my-2"
             dense
             hide-details="auto"
             @input="emitChanges" />
-        </v-col>
-        <v-col cols="12" md="4" sm="12">
-          <v-checkbox
-            v-model="fields[currentPage - 1].visible_on_ticket"
-            label="Visível na impressão"
+        </template>
+
+        <!-- Visível no Ticket -->
+        <template #item.visible_on_ticket="{ item }">
+          <v-switch
+            v-model="item.visible_on_ticket"
+            class="inline-switch my-2"
             dense
             hide-details="auto"
             @input="emitChanges" />
-        </v-col>
-        <!-- Botão para Remover Campo -->
-        <v-col cols="12" class="text-right">
-          <v-btn
-            v-if="fields.length > 1"
-            color="red"
-            text
-            @click="removeField(currentPage - 1)">
-            Remover Campo
+        </template>
+
+        <!-- Ações -->
+        <template #item.actions="{ item, index }">
+          <v-btn color="red" icon @click="removeField(index)">
+            <v-icon>mdi-delete</v-icon>
           </v-btn>
-        </v-col>
-      </v-row>
-    </transition>
-
-    <!-- Paginação -->
-    <v-row>
-      <v-col cols="12" class="d-flex justify-center">
-        <v-pagination
-          v-model="currentPage"
-          :length="fields.length"
-          circle
-          total-visible="5"
-          color="primary" />
-      </v-col>
-    </v-row>
+        </template>
+      </v-data-table>
+    </v-card>
   </v-container>
 </template>
-
-
 
 <script>
 export default {
@@ -142,13 +117,60 @@ export default {
       type: Array,
       default: () => [],
     },
+    fieldTypes: {
+      type: Array,
+      default: () => ['CPF', 'CNPJ', 'Texto', 'Número', 'Data', 'Email', 'Telefone'],
+    },
   },
   data() {
     return {
       fields: [...this.customFields],
-      fieldTypes: ['CPF', 'CNPJ', 'Texto', 'Número', 'Data', 'Email', 'Telefone'],
-      currentPage: 1, // Página atual
+      personTypes: ['Pessoa Física (PF)', 'Pessoa Jurídica (PJ)', 'Estrangeiro'],
     };
+  },
+  computed: {
+    headers() {
+      const baseHeaders = [
+        { text: 'Nome', align: 'start', value: 'name', width: '200px' },
+        { text: 'Tipo', value: 'type', width: '150px' },
+        { text: 'Tipos de Pessoa', value: 'personTypes', width: '240px' },
+        { text: 'Obrigatório', value: 'required', width: '80px', sortable: false },
+        { text: 'Único', value: 'unique', width: '80px', sortable: false },
+        {
+          text: 'Visível na Impressão',
+          value: 'visible_on_ticket',
+          width: '80px',
+          sortable: false,
+        },
+        { text: 'Ações', value: 'actions', width: '50px', sortable: false },
+      ];
+
+      if (this.existingFields.length > 0) {
+        baseHeaders.unshift({
+          text: 'Selecionar',
+          value: 'selected',
+          width: '50px',
+          sortable: false,
+        });
+      }
+
+      return baseHeaders;
+    },
+    allFields() {
+      // Combina os campos existentes e personalizados
+      const existingFields = this.existingFields.map((field) => ({
+        ...field,
+        isExisting: true,
+        selected: this.fields.some((f) => f.name === field.name),
+        personTypes: field.personTypes || [],
+      }));
+
+      const customFields = this.fields.filter(
+        (field) => !existingFields.some((existing) => existing.name === field.name)
+      );
+
+      return [...existingFields, ...customFields];
+    },
   },
   watch: {
     customFields: {
@@ -158,69 +180,56 @@ export default {
       deep: true,
     },
   },
+
   mounted() {
-    if (!this.fields.length) {
-      this.addField();
-    }
+    this.addField();
   },
+
   methods: {
     emitChanges() {
-      this.$emit('update:fields', this.fields);
+      // Emite os campos selecionados
+      const selectedFields = this.allFields.filter(
+        (field) => !field.isExisting || field.selected
+      );
+      this.$emit('update:fields', selectedFields);
     },
     addField() {
       this.fields.push({
         name: '',
         type: '',
+        personTypes: [],
         required: false,
         unique: false,
         visible_on_ticket: false,
-        description: '',
-        types: {
-          pf: true,
-          pj: false,
-          foreigner: false,
-        },
       });
-      this.$set(this, 'currentPage', this.fields.length); // Vai para a última página
       this.emitChanges();
     },
     removeField(index) {
       this.fields.splice(index, 1);
-      this.currentPage = Math.min(this.currentPage, this.fields.length); // Ajusta para a página anterior, se necessário
       this.emitChanges();
     },
   },
 };
 </script>
-
 <style scoped>
-.custom-field-form {
-  max-height: 680px;
-  overflow-y: auto;
+.elevation-1 {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
+.no-hover-table tbody tr:hover {
+  background-color: transparent;
 }
 
-.field-row {
-  border: 1px solid #e0e0e0; /* Borda leve */
-  border-radius: 8px; /* Arredondamento */
-  padding: 16px;
-  background-color: #f9f9f9; /* Fundo sutil */
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Sombra leve */
+.v-data-table tbody tr td {
+  vertical-align: middle;
 }
 
-.bg-white {
-  background-color: white;
+.inline-switch {
+  display: inline-flex;
 }
 
-.bg-light-gray {
-  background-color: #f5f5f5;
+.v-btn {
+  margin: 0;
 }
 </style>
