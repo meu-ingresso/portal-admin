@@ -14,6 +14,9 @@
           v-model="coupon.code"
           label="Código do Cupom"
           placeholder="Ex: DESCONTO10"
+          outlined
+          dense
+          hide-details="auto"
           required />
       </v-col>
 
@@ -22,8 +25,11 @@
           v-model="coupon.discountType"
           :items="discountTypes"
           label="Tipo de Desconto"
+          outlined
           placeholder="Selecione"
           required
+          dense
+          hide-details="auto"
           @change="onDiscountTypeChange(index)" />
       </v-col>
 
@@ -37,7 +43,10 @@
           "
           :type="coupon.discountType === 'percentage' ? 'number' : 'text'"
           :append-icon="coupon.discountType === 'percentage' ? 'mdi-percent' : ''"
+          outlined
           required
+          dense
+          hide-details="auto"
           @input="onDiscountValueInput(coupon, index)" />
       </v-col>
 
@@ -46,6 +55,9 @@
           v-model="coupon.maxUses"
           label="Máximo de Usos"
           type="number"
+          outlined
+          dense
+          hide-details="auto"
           min="1"
           required />
       </v-col>
@@ -62,10 +74,12 @@
             <v-text-field
               v-model="coupon.expirationDate"
               label="Data de Expiração"
-              prepend-icon="mdi-calendar"
               readonly
+              outlined
               v-bind="attrs"
               required
+              dense
+              hide-details="auto"
               v-on="on" />
           </template>
           <v-date-picker
