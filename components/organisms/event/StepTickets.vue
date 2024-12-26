@@ -16,6 +16,10 @@
           <th>Nome</th>
           <th>Preço</th>
           <th>Qtd. Máxima</th>
+          <th>Compra. Mínima</th>
+          <th>Compra. Máxima</th>
+          <th>Data. Abertura</th>
+          <th>Data. Fechamento</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -24,6 +28,10 @@
           <td>{{ ticket.name }}</td>
           <td>R$ {{ ticket.price }}</td>
           <td>{{ ticket.max_quantity }}</td>
+          <td>{{ ticket.min_purchase }}</td>
+          <td>{{ ticket.max_purchase }}</td>
+          <td>{{ ticket.open_date }}</td>
+          <td>{{ ticket.close_date }}</td>
           <td>
             <v-btn text color="primary" @click="editTicket(index)">Editar</v-btn>
             <v-btn text color="red" @click="removeTicket(index)">Remover</v-btn>
@@ -113,6 +121,15 @@ export default {
         });
       });
     },
+    populateExistingCategories() {
+      this.categories = [];
+
+      this.localForm.tickets.forEach((ticket) => {
+        if (!this.categories.includes(ticket.category)) {
+          this.categories.push(ticket.category);
+        }
+      });
+    },
     emitChanges() {
       this.$emit('update:form', { ...this.localForm });
     },
@@ -145,6 +162,7 @@ export default {
       } else {
         this.localForm.tickets.push(ticket);
       }
+      this.populateExistingCategories();
       this.showTicketModal = false;
     },
     closeTicketModal() {
