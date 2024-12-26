@@ -180,22 +180,4 @@ export default {
 .step-tickets {
   margin: 0 auto;
 }
-
-.ticket-row {
-  margin-bottom: 16px;
-}
-
-.category-row {
-  margin-top: 16px;
-  margin-bottom: 16px;
-  align-items: center;
-}
-
-.bg-white {
-  background-color: white;
-}
-
-.bg-light-gray {
-  background-color: #f5f5f5;
-}
 </style>

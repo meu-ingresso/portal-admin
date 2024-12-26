@@ -8,7 +8,11 @@
       </v-col>
     </v-row>
 
-    <v-row v-for="(coupon, index) in coupons" :key="index" class="coupon-row">
+    <v-row
+      v-for="(coupon, index) in coupons"
+      :key="index"
+      class="coupon-row"
+      :class="{ 'bg-light-gray': index % 2 === 0 }">
       <v-col cols="12" sm="4">
         <v-text-field
           v-model="coupon.code"
@@ -156,5 +160,13 @@ export default {
 
 .coupon-row {
   margin-bottom: 16px;
+}
+
+.bg-white {
+  background-color: white;
+}
+
+.bg-light-gray {
+  background-color: #f5f5f5;
 }
 </style>
