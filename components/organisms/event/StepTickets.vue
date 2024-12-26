@@ -41,8 +41,8 @@
     </v-simple-table>
 
     <!-- Modal de Cadastro de Ingresso -->
-    <v-dialog v-model="showTicketModal" persistent max-width="1024px">
-      <v-card>
+    <v-dialog v-model="showTicketModal" persistent fullscreen>
+      <v-card tile>
         <v-card-title class="d-flex justify-space-between align-center">
           <h4>{{ isEditing ? 'Editar Ingresso' : 'Novo Ingresso' }}</h4>
           <v-btn icon @click="closeTicketModal">
@@ -163,6 +163,7 @@ export default {
         this.localForm.tickets.push(ticket);
       }
       this.populateExistingCategories();
+      this.populateExistingFields();
       this.showTicketModal = false;
     },
     closeTicketModal() {
