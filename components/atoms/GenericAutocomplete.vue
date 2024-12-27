@@ -13,7 +13,6 @@
       :no-data-text="noDataText"
       @update:search-input="onSearchInput"
       @change="onItemChange">
-      
       <!-- Template para exibir cada item com ações -->
       <template #item="{ item }">
         <div class="d-flex align-center justify-space-between">
@@ -33,11 +32,18 @@
     <!-- Dialog de Confirmação -->
     <v-dialog v-model="confirmDialog" max-width="500">
       <v-card>
-        <v-card-title class="text-h6">Confirmar exclusão</v-card-title>
-        <v-card-text>Tem certeza de que deseja excluir "{{ formatItem(itemToRemove) }}"?</v-card-text>
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Confirmar exclusão</h3>
+          <v-btn icon @click="confirmDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          Tem certeza de que deseja excluir "{{ formatItem(itemToRemove) }}"?
+        </v-card-text>
         <v-card-actions>
-          <v-btn text @click="confirmDialog = false">Cancelar</v-btn>
-          <v-btn color="red" text @click="removeItem">Excluir</v-btn>
+          <DefaultButton outlined text="Cancelar" @click="confirmDialog = false" />
+          <DefaultButton text="Excluir" @click="removeItem" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -45,18 +51,23 @@
     <!-- Dialog de Edição -->
     <v-dialog v-model="editDialog" max-width="500">
       <v-card>
-        <v-card-title class="text-h6">Editar Item</v-card-title>
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Editar Item</h3>
+          <v-btn icon @click="editDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
         <v-card-text>
           <v-text-field
             v-model="editedItemValue"
             label="Novo valor"
             outlined
             dense
-          />
+            hide-details="auto" />
         </v-card-text>
         <v-card-actions>
-          <v-btn text @click="editDialog = false">Cancelar</v-btn>
-          <v-btn color="primary" text @click="saveEditedItem">Salvar</v-btn>
+          <DefaultButton outlined text="Cancelar" @click="editDialog = false" />
+          <DefaultButton text="Salvar" @click="saveEditedItem" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -113,7 +124,9 @@ export default {
 
   computed: {
     noDataText() {
-      return this.internalItems.length ? 'Selecione um item' : 'Comece a digitar para criar um item';
+      return this.internalItems.length
+        ? 'Selecione um item'
+        : 'Comece a digitar para criar um item';
     },
   },
   watch: {
@@ -188,7 +201,9 @@ export default {
       this.confirmDialog = true;
     },
     removeItem() {
-      this.internalItems = this.internalItems.filter((item) => item !== this.itemToRemove);
+      this.internalItems = this.internalItems.filter(
+        (item) => item !== this.itemToRemove
+      );
       if (this.selectedItem === this.itemToRemove) {
         this.selectedItem = null;
       }
@@ -220,5 +235,4 @@ export default {
 </script>
 
 <style scoped>
-
 </style>
