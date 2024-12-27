@@ -64,7 +64,7 @@ import StepCoupons from '@/components/organisms/event/StepCoupons.vue';
 export default {
   data() {
     return {
-      currentStep: 1,
+      currentStep: 2,
       steps: [],
     };
   },

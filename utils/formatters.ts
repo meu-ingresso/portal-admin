@@ -48,6 +48,31 @@ export const formatRealValue = (value: number): string => {
   })}`;
 };
 
+export const formatPrice = (value: any, locale: string = 'pt-BR') => {
+
+  value = value.replace(/[^\d,]/g, '');
+
+  if (value.includes(',')) {
+    value = value.replace(',', '.');
+  }
+
+  let returnValue: string = '';
+
+  // Converte para número float e formata como moeda
+  const numericValue = parseFloat(value);
+  if (!isNaN(numericValue)) {
+    returnValue = numericValue.toLocaleString(locale, {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  } else {
+    returnValue = '';
+  }
+
+  return returnValue;
+};
+
 export const onFormatCellphone = (event) => {
   let value = event;
 
