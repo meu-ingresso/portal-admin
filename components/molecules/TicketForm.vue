@@ -13,30 +13,24 @@
           @input="emitChanges" />
       </v-col>
       <v-col cols="12" md="6" sm="12">
-        <v-autocomplete
-          v-model="localTicket.category"
+        <GenericAutocomplete
+          :value="localTicket.category"
           :items="localCategories"
           label="Categoria"
-          :search-input.sync="localTicket.categorySearch"
-          no-data-text="Nenhuma categoria encontrada"
-          required
-          outlined
-          dense
-          hide-details="auto"
-          @update:search-input="onTriggerCategorySearch"
-          @change="onCategoryChange" />
+          placeholder="Digite ou selecione uma categoria"
+          @input="onCategoryChange"
+          @update:items="updateCategories" />
       </v-col>
       <v-col cols="12" md="3" sm="12">
         <v-text-field
           v-model="localTicket.price"
-          label="Preço (R$)"
-          type="number"
-          min="0"
+          label="Preço"
           required
           outlined
           dense
+          prefix="R$"
           hide-details="auto"
-          @input="emitChanges" />
+          @input="onPriceChange" />
       </v-col>
       <v-col cols="12" md="3" sm="12">
         <v-text-field
@@ -129,7 +123,7 @@
 </template>
 
 <script>
-import Debounce from '@/utils/Debounce';
+import { formatPrice } from '@/utils/formatters';
 export default {
   props: {
     ticket: {
@@ -159,13 +153,18 @@ export default {
     },
   },
 
-  created() {
-    this.debouncer = new Debounce(this.onCategorySearch, 900);
-  },
   methods: {
     emitChanges() {
       this.$emit('update:ticket', this.localTicket);
       this.$emit('update:categories', this.localCategories);
+    },
+    onCategoryChange(value) {
+      this.localTicket.category = value;
+      this.emitChanges();
+    },
+    onPriceChange() {
+      this.localTicket.price = formatPrice(this.localTicket.price);
+      this.emitChanges();
     },
     onDateChange(field, value) {
       this.localTicket[field] = value;
@@ -173,37 +172,8 @@ export default {
       this.closeDateMenu = false;
       this.emitChanges();
     },
-    onTriggerCategorySearch() {
-      this.debouncer.execute();
-    },
-    onCategorySearch() {
-      const search = this.localTicket.categorySearch;
-      console.log('Searching for', search);
-      if (
-        search &&
-        !this.localCategories.includes(search) &&
-        !this.localCategories.includes(`Criar categoria e atribuir "${search}"`)
-      ) {
-        this.localCategories.push(`Criar categoria e atribuir "${search}"`);
-      } else {
-        this.clearTempCategories();
-      }
-    },
-    onCategoryChange() {
-      const category = this.localTicket.category;
-      if (category && category.startsWith('Criar categoria e atribuir')) {
-        const newCategory = category
-          .replace('Criar categoria e atribuir "', '')
-          .replace('"', '');
-        this.localCategories.push(newCategory);
-        this.localTicket.category = newCategory;
-        this.clearTempCategories();
-      }
-    },
-    clearTempCategories() {
-      this.localCategories = this.localCategories.filter(
-        (category) => !category.startsWith('Criar categoria e atribuir')
-      );
+    updateCategories(categories) {
+      this.localCategories = [...categories];
       this.emitChanges();
     },
   },
@@ -211,5 +181,5 @@ export default {
 </script>
 
 <style scoped>
-/* Adicione estilos conforme necessário */
+
 </style>
