@@ -18,6 +18,7 @@
         dense
         placeholder="Digite o CEP"
         required
+        maxlength="9"
         hide-details="auto"
         @input="onChangeCEP" />
     </v-col>
