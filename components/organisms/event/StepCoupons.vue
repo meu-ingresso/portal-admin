@@ -32,8 +32,7 @@
           placeholder="Selecione"
           required
           dense
-          hide-details="auto"
-          @change="onDiscountTypeChange(index)" />
+          hide-details="auto" />
       </v-col>
 
       <v-col cols="12" md="4" sm="12">
@@ -46,6 +45,7 @@
           "
           :type="coupon.discountType === 'percentage' ? 'number' : 'text'"
           :append-icon="coupon.discountType === 'percentage' ? 'mdi-percent' : ''"
+          :prefix="coupon.discountType === 'fixed' ? 'R$' : ''"
           outlined
           required
           dense
@@ -127,7 +127,7 @@
 </template>
 
 <script>
-import { formatRealValue, formatDateToBr } from '@/utils/formatters';
+import { formatRealValue, formatDateToBr, formatPrice } from '@/utils/formatters';
 
 export default {
   props: {
@@ -153,7 +153,7 @@ export default {
     addCoupon() {
       this.coupons.push({
         code: '',
-        discountType: '',
+        discountType: 'fixed',
         discountValue: 0,
         maxUses: 1,
         expirationDate: '',
@@ -182,16 +182,8 @@ export default {
     updateCoupons() {
       this.$emit('update:form', { ...this.form, coupons: this.coupons });
     },
-    onDiscountTypeChange(index) {
-      const coupon = this.coupons[index];
-      if (coupon.discountType === 'fixed') {
-        coupon.discountValue = formatRealValue(coupon.discountValue);
-      }
-    },
     onDiscountValueInput(coupon, index) {
-      if (coupon.discountType === 'fixed') {
-        this.coupons[index].discountValue = formatRealValue(coupon.discountValue);
-      }
+      this.coupons[index].discountValue = formatPrice(coupon.discountValue);
     },
   },
 };
