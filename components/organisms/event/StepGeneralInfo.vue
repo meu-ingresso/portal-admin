@@ -1,6 +1,6 @@
 <template>
-  <v-container class="step-general-info">
-    <v-row class="pa-0 ma-0">
+  <v-container class="step-general-info" :class="{ 'px-0': isMobile }">
+    <v-row>
       <v-col cols="12" md="12" sm="12">
         <v-text-field
           v-model="localForm.eventName"
@@ -14,9 +14,7 @@
       </v-col>
     </v-row>
 
-    <v-row
-      v-if="aliasValidation.isValid !== null && localForm.alias.length > 0"
-      class="pa-0 ma-0">
+    <v-row v-if="aliasValidation.isValid !== null && localForm.alias.length > 0">
       <v-col cols="12">
         <div class="d-flex align-center">
           <v-progress-circular
@@ -47,9 +45,9 @@
       </v-col>
     </v-row>
 
-    <v-row class="pa-0 ma-0">
+    <v-row>
       <!-- Categoria -->
-      <v-col cols="12" md="4" sm="12">
+      <v-col cols="12" md="6" sm="12">
         <v-select
           v-model="localForm.category"
           label="Categoria"
@@ -62,7 +60,7 @@
       </v-col>
 
       <!-- Classificação Indicativa -->
-      <v-col cols="12" md="4" sm="12">
+      <v-col cols="12" md="6" sm="12">
         <v-select
           v-model="localForm.rating"
           label="Classificação Indicativa"
@@ -73,21 +71,6 @@
           hide-details="auto"
           required />
       </v-col>
-
-      <!-- Capacidade máxima -->
-      <v-col cols="12" md="4" sm="12">
-        <v-text-field
-          v-model="localForm.max_capacity"
-          label="Capacidade máxima"
-          placeholder="Digite a capacidade máxima de pessoas"
-          type="number"
-          min="0"
-          outlined
-          dense
-          required
-          hide-details="auto" />
-      </v-col>
-
       <!-- Descrição do Evento -->
       <v-col cols="12" md="12" sm="12">
         <v-textarea
@@ -103,23 +86,22 @@
     </v-row>
 
     <!-- Data e Hora -->
-    <v-row class="pa-0 ma-0">
+    <v-row>
       <v-col cols="12">
         <h3>Data e Hora</h3>
       </v-col>
-      <v-col cols="12">
-        <!-- Outros campos -->
-        <DateTimeForm
-          :start-date="form.startDate"
-          :start-time="form.startTime"
-          :end-date="form.endDate"
-          :end-time="form.endTime"
-          @update:startDate="updateStartDate"
-          @update:startTime="updateStartTime"
-          @update:endDate="updateEndDate"
-          @update:endTime="updateEndTime" />
-      </v-col>
     </v-row>
+
+    <!-- Outros campos -->
+    <DateTimeForm
+      :start-date="form.startDate"
+      :start-time="form.startTime"
+      :end-date="form.endDate"
+      :end-time="form.endTime"
+      @update:startDate="updateStartDate"
+      @update:startTime="updateStartTime"
+      @update:endDate="updateEndDate"
+      @update:endTime="updateEndTime" />
 
     <!-- Endereço do Evento -->
     <AddressForm
@@ -135,6 +117,8 @@
 <script>
 import Debounce from '@/utils/Debounce';
 import { event, eventForm } from '@/store';
+import { isMobileDevice } from '@/utils/utils';
+
 export default {
   props: {
     form: {
@@ -164,6 +148,9 @@ export default {
   computed: {
     isValidatingAlias() {
       return event.$isLoadingAlias;
+    },
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
     },
   },
 
