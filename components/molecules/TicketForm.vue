@@ -1,129 +1,137 @@
 <template>
-  <v-container class="px-1">
-    <v-row>
-      <v-col cols="12" md="6" sm="12">
-        <v-text-field
-          v-model="localTicket.name"
-          label="Nome do Ingresso"
-          placeholder="Ex: Ingresso VIP"
-          required
-          outlined
-          dense
-          hide-details="auto"
-          @input="emitChanges" />
-      </v-col>
-      <v-col cols="12" md="6" sm="12">
-        <GenericAutocomplete
-          :value="localTicket.category"
-          :items="localCategories"
-          label="Categoria"
-          placeholder="Digite ou selecione uma categoria"
-          @input="onCategoryChange"
-          @update:items="updateCategories" />
-      </v-col>
-      <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localTicket.price"
-          label="Preço"
-          required
-          outlined
-          dense
-          prefix="R$"
-          hide-details="auto"
-          @input="onPriceChange" />
-      </v-col>
-      <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localTicket.max_quantity"
-          label="Quantidade Máxima"
-          type="number"
-          min="0"
-          required
-          outlined
-          dense
-          hide-details="auto"
-          @input="emitChanges" />
-      </v-col>
-      <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localTicket.min_purchase"
-          label="Compra Mínima"
-          type="number"
-          min="0"
-          outlined
-          dense
-          hide-details="auto"
-          @input="emitChanges" />
-      </v-col>
-      <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localTicket.max_purchase"
-          label="Compra Máxima"
-          type="number"
-          min="0"
-          outlined
-          dense
-          hide-details="auto"
-          @input="emitChanges" />
-      </v-col>
-      <v-col cols="12" md="6" sm="12">
-        <v-menu
-          v-model="openDateMenu"
-          :close-on-content-click="false"
-          :nudge-right="40"
-          transition="scale-transition"
-          offset-y
-          min-width="auto">
-          <template #activator="{ on, attrs }">
-            <v-text-field
-              v-model="localTicket.open_date"
-              label="Data de Abertura"
-              readonly
-              v-bind="attrs"
-              outlined
-              dense
-              hide-details="auto"
-              v-on="on"
-              @input="emitChanges" />
-          </template>
-          <v-date-picker
-            v-model="localTicket.open_date"
-            locale="pt-br"
-            @input="onDateChange('open_date', $event)" />
-        </v-menu>
-      </v-col>
-      <v-col cols="12" md="6" sm="12">
-        <v-menu
-          v-model="closeDateMenu"
-          :close-on-content-click="false"
-          :nudge-right="40"
-          transition="scale-transition"
-          offset-y
-          min-width="auto">
-          <template #activator="{ on, attrs }">
-            <v-text-field
-              v-model="localTicket.close_date"
-              label="Data de Fechamento"
-              readonly
-              v-bind="attrs"
-              outlined
-              dense
-              hide-details="auto"
-              v-on="on"
-              @input="emitChanges" />
-          </template>
-          <v-date-picker
-            v-model="localTicket.close_date"
-            locale="pt-br"
-            @input="onDateChange('close_date', $event)" />
-        </v-menu>
-      </v-col>
-    </v-row>
-  </v-container>
+  <v-row>
+    <v-col cols="12" md="6" sm="12">
+      <v-text-field
+        v-model="localTicket.name"
+        label="Nome do Ingresso"
+        placeholder="Ex: Ingresso VIP"
+        required
+        outlined
+        dense
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
+    <v-col cols="12" md="6" sm="12">
+      <GenericAutocomplete
+        :value="localTicket.category"
+        :items="localCategories"
+        label="Grupo de Ingressos"
+        placeholder="Digite ou selecione um grupo de ingresso"
+        @input="onCategoryChange"
+        @update:items="updateCategories" />
+    </v-col>
+    <v-col cols="12" md="3" sm="12">
+      <v-text-field
+        v-model="localTicket.price"
+        label="Preço"
+        required
+        outlined
+        dense
+        prefix="R$"
+        hide-details="auto"
+        @input="onPriceChange" />
+    </v-col>
+    <v-col cols="12" md="3" sm="12">
+      <v-text-field
+        v-model="localTicket.max_quantity"
+        label="Quantidade Máxima"
+        type="number"
+        min="0"
+        required
+        outlined
+        dense
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
+    <v-col cols="12" md="3" sm="12">
+      <v-text-field
+        v-model="localTicket.min_purchase"
+        label="Compra Mínima"
+        type="number"
+        min="0"
+        outlined
+        dense
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
+    <v-col cols="12" md="3" sm="12">
+      <v-text-field
+        v-model="localTicket.max_purchase"
+        label="Compra Máxima"
+        type="number"
+        min="0"
+        outlined
+        dense
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
+    <v-col cols="12" md="4" sm="12">
+      <v-menu
+        v-model="openDateMenu"
+        :close-on-content-click="false"
+        :nudge-right="40"
+        transition="scale-transition"
+        offset-y
+        min-width="auto">
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            v-model="formattedOpenDate"
+            label="Data de Abertura"
+            readonly
+            v-bind="attrs"
+            outlined
+            dense
+            hide-details="auto"
+            v-on="on"
+            @input="emitChanges" />
+        </template>
+        <v-date-picker
+          v-model="localTicket.open_date"
+          locale="pt-br"
+          @input="onDateChange('open_date', $event)" />
+      </v-menu>
+    </v-col>
+    <v-col cols="12" md="4" sm="12">
+      <v-menu
+        v-model="closeDateMenu"
+        :close-on-content-click="false"
+        :nudge-right="40"
+        transition="scale-transition"
+        offset-y
+        min-width="auto">
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            v-model="formattedCloseDate"
+            label="Data de Fechamento"
+            readonly
+            v-bind="attrs"
+            outlined
+            dense
+            hide-details="auto"
+            v-on="on"
+            @input="emitChanges" />
+        </template>
+        <v-date-picker
+          v-model="localTicket.close_date"
+          locale="pt-br"
+          @input="onDateChange('close_date', $event)" />
+      </v-menu>
+    </v-col>
+    <v-col cols="12" md="4" sm="12" class="d-flex align-center">
+      <v-tooltip bottom>
+        <template #activator="{ on, attrs }">
+          <v-btn icon small v-bind="attrs" @click="removeTicket" v-on="on">
+            <v-icon color="red">mdi-delete</v-icon>
+          </v-btn>
+        </template>
+        <span>Remover Ingresso</span>
+      </v-tooltip>
+    </v-col>
+  </v-row>
 </template>
 
 <script>
-import { formatPrice } from '@/utils/formatters';
+import { formatPrice, formatDateToBr } from '@/utils/formatters';
 export default {
   props: {
     ticket: {
@@ -142,6 +150,15 @@ export default {
       openDateMenu: false,
       closeDateMenu: false,
     };
+  },
+
+  computed: {
+    formattedOpenDate() {
+      return this.localTicket.open_date ? formatDateToBr(this.localTicket.open_date) : '';
+    },
+    formattedCloseDate() {
+      return this.localTicket.close_date ? formatDateToBr(this.localTicket.close_date ) : '';
+    },
   },
 
   watch: {
@@ -176,10 +193,12 @@ export default {
       this.localCategories = [...categories];
       this.emitChanges();
     },
+    removeTicket() {
+      this.$emit('remove:ticket');
+    },
   },
 };
 </script>
 
 <style scoped>
-
 </style>

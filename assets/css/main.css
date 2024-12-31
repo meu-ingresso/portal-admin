@@ -16,7 +16,7 @@
   --black-text: #272c2f;
   --gray3: #e7e7e7;
   --gray1: #868686;
-  --light-gray: #eee;
+  --light-gray: #f5f5f5;
   --red: #ff5252;
   --green: #0DBB73;
   --beige: #f4f4f4;
@@ -75,6 +75,10 @@ header {
 
 .bg-green {
   background-color: var(--light-green) !important;
+}
+
+.bg-light-gray {
+  background-color: var(--light-gray) !important;
 }
 
 .cl-blue,
