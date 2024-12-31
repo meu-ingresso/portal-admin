@@ -38,15 +38,9 @@ export default {
 
 <style scoped>
 .button {
-  height: 44px;
   text-transform: uppercase;
   font-weight: 800;
   color: white;
-  border-radius: 34px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 16px;
-  padding-right: 16px;
   font-family: var(--font-family-inter-bold);
 }
 </style>

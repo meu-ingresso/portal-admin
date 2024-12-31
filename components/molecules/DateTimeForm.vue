@@ -1,6 +1,6 @@
 <template>
-  <v-row class="pa-0 ma-0">
-    <v-col cols="12" md="6" sm="12" class="pa-2 pl-0 pr-3 ma-0">
+  <v-row>
+    <v-col cols="12" md="6" sm="12">
       <v-menu
         ref="startDateMenu"
         v-model="startDateMenu"
@@ -10,7 +10,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
-            v-model="localStartDate"
+            v-model="formattedStartDate"
             label="Data de Início"
             prepend-inner-icon="mdi-calendar"
             readonly
@@ -26,10 +26,10 @@
           locale="pt-br"
           dense
           hide-details="auto"
-          @input="startDateMenu = false" />
+          @input="onStartDateChange" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12" class="pa-2 pl-2 pr-0 ma-0">
+    <v-col cols="12" md="6" sm="12">
       <v-menu
         ref="startTimeMenu"
         v-model="startTimeMenu"
@@ -60,7 +60,7 @@
           @input="startTimeMenu = false" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12" class="pa-2 pl-0 pr-3 ma-0">
+    <v-col cols="12" md="6" sm="12">
       <v-menu
         ref="endDateMenu"
         v-model="endDateMenu"
@@ -72,7 +72,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
-            v-model="localEndDate"
+            v-model="formattedEndDate"
             label="Data de Término"
             prepend-inner-icon="mdi-calendar"
             readonly
@@ -88,10 +88,10 @@
           locale="pt-br"
           dense
           hide-details="auto"
-          @input="endDateMenu = false" />
+          @input="onEndDateChange" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12" class="pa-2 pl-2 pr-0 ma-0">
+    <v-col cols="12" md="6" sm="12">
       <v-menu
         ref="endTimeMenu"
         v-model="endTimeMenu"
@@ -122,13 +122,14 @@
           @input="endTimeMenu = false" />
       </v-menu>
     </v-col>
-    <v-col v-if="localStartDate && localEndDate" cols="12" class="pa-2 pl-0">
+    <v-col v-if="localStartDate && localEndDate" cols="12">
       <p class="subtitle-2" v-html="eventDuration" />
     </v-col>
   </v-row>
 </template>
 
 <script>
+import { formatDateToBr } from '@/utils/formatters';
 export default {
   props: {
     startDate: {
@@ -161,6 +162,12 @@ export default {
     };
   },
   computed: {
+    formattedStartDate() {
+      return this.localStartDate ? formatDateToBr(this.localStartDate) : '';
+    },
+    formattedEndDate() {
+      return this.localEndDate ? formatDateToBr(this.localEndDate) : '';
+    },
     eventDuration() {
       const startDateTime = new Date(`${this.localStartDate}T${this.localStartTime}:00`);
       const endDateTime = new Date(`${this.localEndDate}T${this.localEndTime}:00`);
@@ -194,6 +201,15 @@ export default {
     },
     localEndTime(newVal) {
       this.$emit('update:endTime', newVal);
+    },
+  },
+
+  methods: {
+    onStartDateChange() {
+      this.startDateMenu = false;
+    },
+    onEndDateChange() {
+      this.endDateMenu = false;
     },
   },
 };

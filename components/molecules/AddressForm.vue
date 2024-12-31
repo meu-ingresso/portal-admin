@@ -1,5 +1,5 @@
 <template>
-  <v-row class="pa-0 ma-0">
+  <v-row>
     <v-col cols="12" md="6" sm="12">
       <v-text-field
         v-model="localLocationName"

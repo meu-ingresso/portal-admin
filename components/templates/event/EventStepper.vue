@@ -59,6 +59,7 @@ import { category, rating, loading, toast, eventForm } from '@/store';
 
 import StepGeneralInfo from '@/components/organisms/event/StepGeneralInfo.vue';
 import StepTickets from '@/components/organisms/event/StepTickets.vue';
+import StepCustomFields from '@/components/organisms/event/StepCustomFields.vue';
 import StepCoupons from '@/components/organisms/event/StepCoupons.vue';
 
 export default {
@@ -119,6 +120,13 @@ export default {
       {
         label: 'Ingressos',
         component: StepTickets,
+        props: {
+          form: this.form,
+        },
+      },
+      {
+        label: 'Campos Personalizados',
+        component: StepCustomFields,
         props: {
           form: this.form,
         },

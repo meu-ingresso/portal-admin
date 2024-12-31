@@ -15,7 +15,7 @@
       @change="onItemChange">
       <!-- Template para exibir cada item com ações -->
       <template #item="{ item }">
-        <div class="d-flex align-center justify-space-between">
+        <div class="d-flex align-center justify-space-between w-full">
           <span>{{ formatItem(item) }}</span>
           <div v-if="(allowEdit || allowRemove) && !checkItemIsNew(item)" class="ml-2">
             <v-btn v-if="allowEdit" icon small @click="openEditModal(item)">
@@ -41,7 +41,7 @@
         <v-card-text>
           Tem certeza de que deseja excluir "{{ formatItem(itemToRemove) }}"?
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="d-flex justify-space-between align-center">
           <DefaultButton outlined text="Cancelar" @click="confirmDialog = false" />
           <DefaultButton text="Excluir" @click="removeItem" />
         </v-card-actions>
@@ -65,7 +65,7 @@
             dense
             hide-details="auto" />
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="d-flex justify-space-between align-center">
           <DefaultButton outlined text="Cancelar" @click="editDialog = false" />
           <DefaultButton text="Salvar" @click="saveEditedItem" />
         </v-card-actions>
@@ -183,6 +183,7 @@ export default {
           this.selectedItem = formattedItem;
         }
         this.clearPlaceholders();
+        this.$emit('update:items', this.internalItems);
       }
     },
     checkItemIsNew(item) {
