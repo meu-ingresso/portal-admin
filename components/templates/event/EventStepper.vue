@@ -6,8 +6,8 @@
       height="300"
       width="300" />
 
-    <v-stepper v-else v-model="currentStep">
-      <v-stepper-header>
+    <v-stepper v-else v-model="currentStep" flat class="bg-beige">
+      <v-stepper-header class="bg-white no-box-shadow">
         <v-stepper-step
           v-for="(step, index) in steps"
           :key="index"
@@ -19,8 +19,8 @@
         <v-divider></v-divider>
       </v-stepper-header>
 
-      <v-stepper-items>
-        <v-stepper-content v-for="(step, index) in steps" :key="index" :step="index + 1">
+      <v-stepper-items class="pt-8">
+        <v-stepper-content v-for="(step, index) in steps" :key="index" :step="index + 1" class="bg-white">
           <component
             :is="step.component"
             v-bind="step.props"

@@ -1,10 +1,12 @@
 <template>
-  <v-container class="step-coupons">
+  <v-container class="step-coupons py-0" :class="{ 'px-0': isMobile }">
     <v-row>
-      <v-col cols="12">
-        <h3>Cadastro de Cupons</h3>
-        <p class="subtitle-1">Adicione cupons de desconto para o evento.</p>
-        <DefaultButton class="mt-2" text="Adicionar Cupom" @click="addCoupon" />
+      <v-col cols="12" class="px-0">
+        <template v-if="isMobile">
+          <h3>Cadastro de Cupons</h3>
+          <p class="subtitle-1">Adicione cupons de desconto para o evento.</p>
+        </template>
+        <ButtonWithIcon class="mt-2" text="Cupom" direction="left" @click="addCoupon" />
       </v-col>
     </v-row>
 
@@ -127,7 +129,8 @@
 </template>
 
 <script>
-import { formatRealValue, formatDateToBr, formatPrice } from '@/utils/formatters';
+import { formatDateToBr, formatPrice } from '@/utils/formatters';
+import { isMobileDevice } from '@/utils/utils';
 
 export default {
   props: {
@@ -147,6 +150,12 @@ export default {
       couponNameToRemove: '',
       couponIndexToRemove: null,
     };
+  },
+
+  computed: {
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
   },
 
   methods: {

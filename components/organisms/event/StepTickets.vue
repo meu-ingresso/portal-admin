@@ -1,11 +1,13 @@
 
 <template>
-  <v-container class="step-tickets" :class="{ 'px-0': isMobile }">
+  <v-container class="step-tickets py-0" :class="{ 'px-0': isMobile }">
     <v-row>
-      <v-col cols="12">
-        <h3>Cadastro de Ingressos</h3>
-        <p class="subtitle-1">Adicione ingresos para o evento.</p>
-        <DefaultButton class="mt-2" text="Adicionar Ingresso" @click="addTicket" />
+      <v-col cols="12" class="px-0">
+        <template v-if="isMobile">
+          <h3>Cadastro de Ingressos</h3>
+          <p class="subtitle-1">Adicione ingresos para o evento.</p>
+        </template>
+        <ButtonWithIcon class="mt-2" text="Ingresso" direction="left" @click="addTicket" />
       </v-col>
     </v-row>
     <v-row

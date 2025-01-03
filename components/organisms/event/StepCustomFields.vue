@@ -1,12 +1,15 @@
 <template>
-  <v-container class="step-custom-fields">
+  <v-container class="step-custom-fields py-0" :class="{ 'px-0': isMobile }">
     <v-row>
-      <v-col cols="12">
-        <h3>Campos Customizados</h3>
-        <p class="subtitle-1">Adicione campos personalizados para o checkout.</p>
-        <DefaultButton
+      <v-col cols="12" class="px-0">
+        <template v-if="isMobile">
+          <h3>Campos Customizados</h3>
+          <p class="subtitle-1">Adicione campos personalizados para o checkout.</p>
+        </template>
+        <ButtonWithIcon
           class="mt-2"
-          text="Adicionar Campo Customizado"
+          text="Campo"
+          direction="left"
           @click="addCustomField" />
       </v-col>
     </v-row>
@@ -22,7 +25,9 @@
           hide-details="auto"
           label="Nome do Campo"
           placeholder="Ex: CPF"
-          required />
+          required
+          :disabled="field.isDefault"
+           />
       </v-col>
 
       <v-col cols="12" sm="12" md="4">
@@ -34,7 +39,9 @@
           outlined
           dense
           hide-details="auto"
-          required />
+          required
+          :disabled="field.isDefault"
+           />
       </v-col>
 
       <v-col cols="12" sm="12" md="4">
@@ -48,7 +55,9 @@
           multiple
           chips
           hide-details="auto"
-          required />
+          required 
+          :disabled="field.isDefault"
+          />
       </v-col>
 
       <v-col cols="12" sm="12" md="6">
@@ -61,7 +70,9 @@
           hide-details="auto"
           outlined
           label="Tipos de Pessoa"
-          placeholder="Selecione os tipos de pessoas" />
+          placeholder="Selecione os tipos de pessoas" 
+          :disabled="field.isDefault"
+          />
       </v-col>
 
       <v-col cols="12" sm="12" md="6">
@@ -74,7 +85,9 @@
           chips
           dense
           hide-details="auto"
-          outlined />
+          outlined
+          :disabled="field.isDefault"
+           />
       </v-col>
 
       <v-col cols="12" sm="12" md="10">
@@ -85,11 +98,13 @@
           dense
           outlined
           hide-details="auto"
-          rows="2" />
+          rows="2"
+          :disabled="field.isDefault"
+           />
       </v-col>
 
       <v-col cols="12" sm="12" md="2" class="d-flex align-center">
-        <v-tooltip bottom>
+        <v-tooltip v-if="!field.isDefault" bottom>
           <template #activator="{ on, attrs }">
             <v-btn icon small v-bind="attrs" @click="removeCustomField(index)" v-on="on">
               <v-icon color="red">mdi-delete</v-icon>
@@ -122,6 +137,7 @@
 </template>
 
 <script>
+import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
     form: {
@@ -157,9 +173,43 @@ export default {
     tickets() {
       return this.form?.tickets.map((ticket) => ticket.name) || [];
     },
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
+  },
+
+  created() {
+    this.ensureDefaultFields();
   },
 
   methods: {
+    ensureDefaultFields() {
+      const defaultFields = [
+        {
+          name: 'Nome Completo',
+          type: 'text',
+          isDefault: true,
+          required: true,
+          visible_on_ticket: true,
+        },
+        {
+          name: 'Email',
+          type: 'email',
+          isDefault: true,
+          required: true,
+          visible_on_ticket: true,
+        },
+      ];
+
+      defaultFields.forEach((defaultField) => {
+        if (!this.customFields.some((field) => field.name === defaultField.name)) {
+          this.customFields.push({ ...defaultField });
+        }
+      });
+
+      this.updateCustomFields();
+    },
+
     addCustomField() {
       this.customFields.push({
         name: '',

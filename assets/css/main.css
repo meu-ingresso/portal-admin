@@ -68,6 +68,9 @@ header {
   font-weight: bold;
 }
 
+.bg-white{
+  background-color: #fff !important;
+}
 
 .bg-gray {
   background-color: var(--light) !important;
@@ -79,6 +82,14 @@ header {
 
 .bg-light-gray {
   background-color: var(--light-gray) !important;
+}
+
+.bg-beige {
+  background-color: var(--beige) !important;
+}
+
+.no-box-shadow{
+  box-shadow: none !important;
 }
 
 .cl-blue,
