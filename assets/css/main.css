@@ -88,6 +88,10 @@ header {
   background-color: var(--beige) !important;
 }
 
+.inline-switch-checkbox {
+  display: inline-flex;
+}
+
 .no-box-shadow{
   box-shadow: none !important;
 }

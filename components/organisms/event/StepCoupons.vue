@@ -1,10 +1,10 @@
 <template>
-  <v-container class="step-coupons py-0" :class="{ 'px-0': isMobile }">
+  <v-container class="step-coupons py-0">
     <v-row>
-      <v-col cols="12" class="px-0">
+      <v-col cols="12">
         <template v-if="isMobile">
           <h3>Cadastro de Cupons</h3>
-          <p class="subtitle-1">Adicione cupons de desconto para o evento.</p>
+          <p class="subtitle-2">Adicione cupons de desconto para o evento.</p>
         </template>
         <ButtonWithIcon class="mt-2" text="Cupom" direction="left" @click="addCoupon" />
       </v-col>
@@ -131,7 +131,7 @@
 <script>
 import { formatDateToBr, formatPrice } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
-
+import { toast } from '@/store';
 export default {
   props: {
     form: {
@@ -180,6 +180,11 @@ export default {
       this.updateCoupons();
       this.confirmDialog = false;
       this.couponIndexToRemove = null;
+      toast.setToast({
+        text: 'Cupom removido com sucesso.',
+        type: 'success',
+        time: 5000,
+      });
     },
 
     removeCoupon(index) {

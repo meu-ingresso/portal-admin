@@ -1,5 +1,5 @@
 <template>
-  <v-container class="step-general-info py-0" :class="{ 'px-0': isMobile }">
+  <v-container class="step-general-info py-0">
     <v-row>
       <v-col cols="12">
         <h3>Sobre o Evento</h3>
@@ -53,7 +53,7 @@
 
     <v-row>
       <!-- Categoria -->
-      <v-col cols="12" md="6" sm="12">
+      <v-col cols="12" md="4" sm="12">
         <v-select
           v-model="localForm.category"
           label="Categoria"
@@ -65,8 +65,21 @@
           required />
       </v-col>
 
+      <!-- Tipo do Evento -->
+      <v-col cols="12" md="4" sm="12">
+        <v-select
+          v-model="localForm.event_type"
+          label="Tipo do Evento"
+          :items="types"
+          outlined
+          dense
+          return-object
+          hide-details="auto"
+          required />
+      </v-col>
+
       <!-- Classificação Indicativa -->
-      <v-col cols="12" md="6" sm="12">
+      <v-col cols="12" md="4" sm="12">
         <v-select
           v-model="localForm.rating"
           label="Classificação Indicativa"
@@ -174,6 +187,7 @@ export default {
         isValid: null,
         alias: '',
       },
+      types: ['Presencial', 'Online', 'Híbrido'],
       debouncerAlias: null,
     };
   },

@@ -20,15 +20,27 @@
       </v-stepper-header>
 
       <v-stepper-items class="pt-8">
-        <v-stepper-content v-for="(step, index) in steps" :key="index" :step="index + 1" class="bg-white">
+        <v-stepper-content
+          v-for="(step, index) in steps"
+          :key="index"
+          :step="index + 1"
+          class="bg-white"
+          :class="{ 'fixed-height-content': isMobile }">
           <component
             :is="step.component"
             v-bind="step.props"
             :ref="'step-' + (index + 1)"
-            :form.sync="form" />
+            :form.sync="form"
+            :class="{ 'fixed-height-component': isMobile }" />
 
-          <v-row justify="space-between" class="mt-4">
-            <v-col cols="12" class="d-flex justify-end">
+          <v-row
+            justify="space-between"
+            class="mt-4"
+            :class="{ 'fixed-actions px-2': isMobile }">
+            <v-col
+              cols="12"
+              class="d-flex"
+              :class="{ 'justify-end': !isMobile || index === 0 , 'justify-space-between': isMobile && index > 0 }">
               <DefaultButton
                 v-if="index > 0"
                 outlined
@@ -47,16 +59,16 @@
                 @click="submitData" />
             </v-col>
           </v-row>
+          <Toast />
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>
-    <Toast />
   </v-container>
 </template>
 
 <script>
 import { category, rating, loading, toast, eventForm } from '@/store';
-
+import { isMobileDevice } from '@/utils/utils';
 import StepGeneralInfo from '@/components/organisms/event/StepGeneralInfo.vue';
 import StepTickets from '@/components/organisms/event/StepTickets.vue';
 import StepCustomFields from '@/components/organisms/event/StepCustomFields.vue';
@@ -79,6 +91,10 @@ export default {
         console.log('Setting form', value);
         eventForm.updateForm(value);
       },
+    },
+
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
     },
 
     isLoading() {
@@ -187,5 +203,28 @@ export default {
 
 .mt-4 {
   margin-top: 16px;
+}
+
+.fixed-height-content {
+  height: calc(100vh - 240px);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.fixed-height-content .v-stepper-content {
+  height: 100%;
+}
+
+.fixed-height-component {
+  max-height: calc(100vh - 340px);
+  height: calc(100vh - 340px);
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.fixed-actions {
+  border-top: 1px solid var(--tertiary);
 }
 </style>
