@@ -1,6 +1,6 @@
 <template>
   <v-row>
-    <v-col cols="12" md="6" sm="12">
+    <v-col cols="12" md="3" sm="12">
       <v-menu
         ref="startDateMenu"
         v-model="startDateMenu"
@@ -29,7 +29,7 @@
           @input="onStartDateChange" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12">
+    <v-col cols="12" md="3" sm="12">
       <v-menu
         ref="startTimeMenu"
         v-model="startTimeMenu"
@@ -60,7 +60,7 @@
           @input="startTimeMenu = false" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12">
+    <v-col cols="12" md="3" sm="12">
       <v-menu
         ref="endDateMenu"
         v-model="endDateMenu"
@@ -91,7 +91,7 @@
           @input="onEndDateChange" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="6" sm="12">
+    <v-col cols="12" md="3" sm="12">
       <v-menu
         ref="endTimeMenu"
         v-model="endTimeMenu"

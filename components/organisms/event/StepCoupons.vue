@@ -1,10 +1,12 @@
 <template>
-  <v-container class="step-coupons">
+  <v-container class="step-coupons py-0">
     <v-row>
       <v-col cols="12">
-        <h3>Cadastro de Cupons</h3>
-        <p class="subtitle-1">Adicione cupons de desconto para o evento.</p>
-        <DefaultButton class="mt-2" text="Adicionar Cupom" @click="addCoupon" />
+        <template v-if="isMobile">
+          <h3>Cadastro de Cupons</h3>
+          <p class="subtitle-2">Adicione cupons de desconto para o evento.</p>
+        </template>
+        <ButtonWithIcon class="mt-2" text="Cupom" direction="left" @click="addCoupon" />
       </v-col>
     </v-row>
 
@@ -127,8 +129,9 @@
 </template>
 
 <script>
-import { formatRealValue, formatDateToBr, formatPrice } from '@/utils/formatters';
-
+import { formatDateToBr, formatPrice } from '@/utils/formatters';
+import { isMobileDevice } from '@/utils/utils';
+import { toast } from '@/store';
 export default {
   props: {
     form: {
@@ -147,6 +150,12 @@ export default {
       couponNameToRemove: '',
       couponIndexToRemove: null,
     };
+  },
+
+  computed: {
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
   },
 
   methods: {
@@ -171,6 +180,11 @@ export default {
       this.updateCoupons();
       this.confirmDialog = false;
       this.couponIndexToRemove = null;
+      toast.setToast({
+        text: 'Cupom removido com sucesso.',
+        type: 'success',
+        time: 5000,
+      });
     },
 
     removeCoupon(index) {

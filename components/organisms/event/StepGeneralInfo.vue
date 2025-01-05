@@ -1,5 +1,11 @@
 <template>
-  <v-container class="step-general-info" :class="{ 'px-0': isMobile }">
+  <v-container class="step-general-info py-0">
+    <v-row>
+      <v-col cols="12">
+        <h3>Sobre o Evento</h3>
+      </v-col>
+    </v-row>
+
     <v-row>
       <v-col cols="12" md="12" sm="12">
         <v-text-field
@@ -47,7 +53,7 @@
 
     <v-row>
       <!-- Categoria -->
-      <v-col cols="12" md="6" sm="12">
+      <v-col cols="12" md="4" sm="12">
         <v-select
           v-model="localForm.category"
           label="Categoria"
@@ -59,8 +65,21 @@
           required />
       </v-col>
 
+      <!-- Tipo do Evento -->
+      <v-col cols="12" md="4" sm="12">
+        <v-select
+          v-model="localForm.event_type"
+          label="Tipo do Evento"
+          :items="types"
+          outlined
+          dense
+          return-object
+          hide-details="auto"
+          required />
+      </v-col>
+
       <!-- Classificação Indicativa -->
-      <v-col cols="12" md="6" sm="12">
+      <v-col cols="12" md="4" sm="12">
         <v-select
           v-model="localForm.rating"
           label="Classificação Indicativa"
@@ -85,10 +104,31 @@
       </v-col>
     </v-row>
 
+    <!-- Campo de Upload da Imagem -->
+    <v-row>
+      <v-col cols="12">
+        <v-file-input
+          v-model="localForm.banner"
+          label="Banner do Evento"
+          accept="image/*"
+          outlined
+          hide-input
+          dense
+          prepend-icon="mdi-cloud-upload-outline"
+          hide-details="auto"
+          show-size
+          class="custom-file-input"
+          @change="validateImageDimensions" />
+        <p class="caption text-center mt-2">
+          Clique ou arraste a imagem principal aqui (954x500px)
+        </p>
+      </v-col>
+    </v-row>
+
     <!-- Data e Hora -->
     <v-row>
       <v-col cols="12">
-        <h3>Data e Hora</h3>
+        <h3>Data e Horário</h3>
       </v-col>
     </v-row>
 
@@ -103,6 +143,12 @@
       @update:endDate="updateEndDate"
       @update:endTime="updateEndTime" />
 
+    <v-row>
+      <v-col cols="12">
+        <h3>Localização</h3>
+      </v-col>
+    </v-row>
+
     <!-- Endereço do Evento -->
     <AddressForm
       :cep="form.cep"
@@ -116,7 +162,7 @@
 
 <script>
 import Debounce from '@/utils/Debounce';
-import { event, eventForm } from '@/store';
+import { event, eventForm, toast } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
@@ -141,6 +187,7 @@ export default {
         isValid: null,
         alias: '',
       },
+      types: ['Presencial', 'Online', 'Híbrido'],
       debouncerAlias: null,
     };
   },
@@ -208,6 +255,26 @@ export default {
       this.$set(this.aliasValidation, 'alias', alias);
       this.$set(this.localForm, 'alias', alias);
     },
+    validateImageDimensions(file) {
+      if (!file) {
+        return;
+      }
+
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        if (img.width !== 954 || img.height !== 500) {
+          toast.setToast({
+            text: 'A imagem deve ter as dimensões de 954x500px.',
+            type: 'danger',
+            time: 5000,
+          });
+          this.localForm.banner = null;
+        }
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.src = objectUrl;
+    },
     updateStartDate(value) {
       eventForm.updateForm({ startDate: value });
     },
@@ -239,5 +306,14 @@ export default {
 }
 .mt-3 {
   margin-top: 16px;
+}
+
+.custom-file-input {
+  height: 200px; /* Altura maior */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #ccc; /* Estilo da borda */
+  background-color: #f9f9f9; /* Cor de fundo */
 }
 </style>

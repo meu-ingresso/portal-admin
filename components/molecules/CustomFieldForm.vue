@@ -66,7 +66,7 @@
         <template #item.required="{ item }">
           <v-switch
             v-model="item.required"
-            class="inline-switch my-2"
+            class="inline-switch-checkbox my-2"
             dense
             hide-details="auto"
             @input="emitChanges" />
@@ -76,7 +76,7 @@
         <template #item.unique="{ item }">
           <v-switch
             v-model="item.unique"
-            class="inline-switch my-2"
+            class="inline-switch-checkbox my-2"
             dense
             hide-details="auto"
             @input="emitChanges" />
@@ -86,7 +86,7 @@
         <template #item.visible_on_ticket="{ item }">
           <v-switch
             v-model="item.visible_on_ticket"
-            class="inline-switch my-2"
+            class="inline-switch-checkbox my-2"
             dense
             hide-details="auto"
             @input="emitChanges" />
@@ -227,10 +227,6 @@ export default {
 
 .v-data-table tbody tr td {
   vertical-align: middle;
-}
-
-.inline-switch {
-  display: inline-flex;
 }
 
 .v-btn {
