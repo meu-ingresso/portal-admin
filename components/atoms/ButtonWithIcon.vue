@@ -11,9 +11,14 @@
     :block="block"
     :text="isText"
     @click="emitClick">
-    {{ text }}
-    <v-icon v-if="direction === 'right'" right>{{ icon }}</v-icon>
-    <v-icon v-if="direction === 'left'" left>{{ icon }}</v-icon>
+    <template v-if="direction === 'right'">
+      {{ text }}
+      <v-icon right>{{ icon }}</v-icon>
+    </template>
+    <template v-if="direction === 'left'">
+      <v-icon left>{{ icon }}</v-icon>
+      {{ text }}
+    </template>
   </v-btn>
 </template>
 
@@ -46,11 +51,6 @@ export default {
   text-transform: uppercase;
   font-weight: 800;
   color: white;
-  border-radius: 34px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 16px;
-  padding-right: 16px;
   font-family: var(--font-family-inter-bold);
 }
 </style>

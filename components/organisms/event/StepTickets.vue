@@ -1,11 +1,17 @@
 
 <template>
-  <v-container class="step-tickets" :class="{ 'px-0': isMobile }">
+  <v-container class="step-tickets py-0">
     <v-row>
       <v-col cols="12">
-        <h3>Cadastro de Ingressos</h3>
-        <p class="subtitle-1">Adicione ingresos para o evento.</p>
-        <DefaultButton class="mt-2" text="Adicionar Ingresso" @click="addTicket" />
+        <template v-if="isMobile">
+          <h3>Cadastro de Ingressos</h3>
+          <p class="subtitle-2">Adicione ingresos para o evento.</p>
+        </template>
+        <ButtonWithIcon
+          class="mt-2"
+          text="Ingresso"
+          direction="left"
+          @click="addTicket" />
       </v-col>
     </v-row>
     <v-row
@@ -34,7 +40,7 @@
                 <div class="d-flex align-center">
                   <v-switch
                     v-model="absorveTax"
-                    class="inline-switch mr-4 pt-0"
+                    class="inline-switch-checkbox mr-4 pt-0"
                     label="Absorver a taxa de serviço"
                     dense
                     hide-details="auto" />
@@ -90,6 +96,7 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
+import { toast } from '@/store';
 export default {
   props: {
     form: {
@@ -169,6 +176,7 @@ export default {
         max_purchase: 0,
         open_date: '',
         close_date: '',
+        visible: true,
         quantity: 0,
         customFields: [],
       });
@@ -184,12 +192,27 @@ export default {
       this.ticketIdxToRemove = null;
       this.ticketNameToRemove = null;
       this.confirmDialog = false;
+      toast.setToast({
+        text: 'Ingresso removido com sucesso.',
+        type: 'success',
+        time: 5000,
+      });
     },
     handleRemoveTicket(index) {
-      this.ticketNameToRemove =
-        this.tickets[index].name || 'Ingresso de número ' + (index + 1);
+      const nameToShow = this.tickets[index].name || 'Ingresso de número ' + (index + 1);
+
+      this.ticketNameToRemove = nameToShow;
       this.ticketIdxToRemove = index;
-      this.confirmDialog = true;
+
+      if (this.form.customFields.some((field) => field?.tickets?.includes(nameToShow))) {
+        toast.setToast({
+          text: 'Existem campos personalizados vinculados a esse ingresso.',
+          type: 'danger',
+          time: 5000,
+        });
+      } else {
+        this.confirmDialog = true;
+      }
     },
   },
 };
@@ -198,9 +221,6 @@ export default {
 <style scoped>
 .step-tickets {
   margin: 0 auto;
-}
-.inline-switch {
-  display: inline-flex;
 }
 .tax-container {
   max-width: 200px;
