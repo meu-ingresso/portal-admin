@@ -15,8 +15,6 @@
           :complete="currentStep > index + 1">
           {{ step.label }}
         </v-stepper-step>
-
-        <v-divider></v-divider>
       </v-stepper-header>
 
       <v-stepper-items class="pt-8">

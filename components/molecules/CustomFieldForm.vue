@@ -1,235 +1,140 @@
 <template>
-  <v-container class="custom-field-form px-1">
-    <v-card class="mb-4">
-      <v-card-title>
-        <div class="subtitle-1">
-          Gerencie os campos para preenchimento no formulário de seu ingresso
-        </div>
-      </v-card-title>
-      <!-- Tabela de Campos -->
-      <v-data-table
-        :headers="headers"
-        :items="allFields"
+  <v-row>
+    <!-- Nome do Campo -->
+    <v-col cols="12" md="6">
+      <v-text-field
+        v-model="localField.name"
+        label="Nome do Campo"
+        placeholder="Ex: CPF"
+        outlined
         dense
-        elevation="0"
-        item-value="name"
-        hide-default-footer
-        no-data-text="Nenhum campo personalizado adicionado"
-        class="no-hover-table mb-2">
-        <!-- Seleção -->
-        <template #item.selected="{ item }">
-          <v-checkbox v-model="item.selected" dense @change="emitChanges" />
-        </template>
+        hide-details="auto"
+        required
+        @input="emitChanges" />
+    </v-col>
 
-        <!-- Nome -->
-        <template #item.name="{ item }">
-          <v-text-field
-            v-model="item.name"
-            outlined
-            dense
-            hide-details="auto"
-            placeholder="Digite o nome"
-            class="my-2"
-            @input="emitChanges" />
-        </template>
+    <!-- Tipo do Campo -->
+    <v-col cols="12" md="6">
+      <v-select
+        v-model="localField.type"
+        :items="fieldTypes"
+        label="Tipo do Campo"
+        placeholder="Selecione o tipo"
+        outlined
+        dense
+        hide-details="auto"
+        required
+        @input="emitChanges" />
+    </v-col>
 
-        <!-- Tipo -->
-        <template #item.type="{ item }">
-          <v-select
-            v-model="item.type"
-            :items="fieldTypes"
-            dense
-            hide-details="auto"
-            outlined
-            placeholder="Tipo do campo"
-            class="my-2"
-            @input="emitChanges" />
-        </template>
+    <!-- Ingressos Associados -->
+    <v-col cols="12" md="12">
+      <v-select
+        v-model="localField.tickets"
+        :items="tickets"
+        label="Ingressos"
+        placeholder="Selecione o(s) ingresso(s)"
+        no-data-text="Nenhum ingresso cadastrado"
+        outlined
+        dense
+        multiple
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
 
-        <!-- Tipos de Pessoa -->
-        <template #item.personTypes="{ item }">
-          <v-select
-            v-model="item.personTypes"
-            :items="personTypes"
-            multiple
-            chips
-            dense
-            hide-details="auto"
-            outlined
-            placeholder="Tipos de pessoa"
-            class="my-2"
-            :disabled="item.isExisting && !item.selected"
-            @input="emitChanges" />
-        </template>
+    <!-- Tipos de Pessoa -->
+    <v-col cols="12" md="12">
+      <v-select
+        v-model="localField.personTypes"
+        :items="personTypes"
+        label="Tipos de Pessoa"
+        placeholder="Selecione os tipos de pessoas"
+        outlined
+        dense
+        multiple
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
 
-        <!-- Obrigatório -->
-        <template #item.required="{ item }">
-          <v-switch
-            v-model="item.required"
-            class="inline-switch-checkbox my-2"
-            dense
-            hide-details="auto"
-            @input="emitChanges" />
-        </template>
+    <!-- Opções de Configuração -->
+    <v-col cols="12" md="12">
+      <v-select
+        v-model="localField.options"
+        :items="options"
+        label="Configurações"
+        placeholder="Selecione as configurações"
+        outlined
+        dense
+        multiple
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
 
-        <!-- Único -->
-        <template #item.unique="{ item }">
-          <v-switch
-            v-model="item.unique"
-            class="inline-switch-checkbox my-2"
-            dense
-            hide-details="auto"
-            @input="emitChanges" />
-        </template>
-
-        <!-- Visível no Ticket -->
-        <template #item.visible_on_ticket="{ item }">
-          <v-switch
-            v-model="item.visible_on_ticket"
-            class="inline-switch-checkbox my-2"
-            dense
-            hide-details="auto"
-            @input="emitChanges" />
-        </template>
-
-        <!-- Ações -->
-        <template #item.actions="{ item, index }">
-          <v-btn color="red" icon @click="removeField(index)">
-            <v-icon>mdi-delete</v-icon>
-          </v-btn>
-        </template>
-      </v-data-table>
-      <v-row>
-        <v-col cols="12" class="d-flex justify-center align-center">
-          <DefaultButton text="Novo Campo" @click="addField" />
-        </v-col>
-      </v-row>
-    </v-card>
-  </v-container>
+    <!-- Descrição de Ajuda -->
+    <v-col cols="12" md="12">
+      <v-textarea
+        v-model="localField.description"
+        label="Descrição de Ajuda"
+        placeholder="Explique como usar este campo"
+        outlined
+        dense
+        rows="2"
+        hide-details="auto"
+        @input="emitChanges" />
+    </v-col>
+  </v-row>
 </template>
 
 <script>
 export default {
   props: {
-    customFields: {
-      type: Array,
-      default: () => [],
+    field: {
+      type: Object,
+      required: true,
     },
-    existingFields: {
+    tickets: {
       type: Array,
-      default: () => [],
+      required: true,
     },
-    fieldTypes: {
+    personTypes: {
       type: Array,
-      default: () => ['CPF', 'CNPJ', 'Texto', 'Número', 'Data', 'Email', 'Telefone'],
+      required: true,
+    },
+    options: {
+      type: Array,
+      required: true,
     },
   },
   data() {
     return {
-      fields: [...this.customFields],
-      personTypes: ['Pessoa Física (PF)', 'Pessoa Jurídica (PJ)', 'Estrangeiro'],
+      localField: { ...this.field },
+      fieldTypes: [
+        { text: 'Texto', value: 'text' },
+        { text: 'Número', value: 'number' },
+        { text: 'Data', value: 'date' },
+        { text: 'Email', value: 'email' },
+        { text: 'Telefone', value: 'phone' },
+        { text: 'Autocomplete', value: 'autocomplete' },
+        { text: 'Multiselect', value: 'multiselect' },
+      ],
     };
   },
-  computed: {
-    headers() {
-      const baseHeaders = [
-        { text: 'Nome', align: 'start', value: 'name', width: '200px' },
-        { text: 'Tipo', value: 'type', width: '150px' },
-        { text: 'Tipos de Pessoa', value: 'personTypes', width: '240px' },
-        { text: 'Obrigatório', value: 'required', width: '80px', sortable: false },
-        { text: 'Único', value: 'unique', width: '80px', sortable: false },
-        {
-          text: 'Visível na Impressão',
-          value: 'visible_on_ticket',
-          width: '80px',
-          sortable: false,
-        },
-        { text: 'Ações', value: 'actions', width: '50px', sortable: false },
-      ];
-
-      if (this.existingFields.length > 0) {
-        baseHeaders.unshift({
-          text: 'Selecionar',
-          value: 'selected',
-          width: '50px',
-          sortable: false,
-        });
-      }
-
-      return baseHeaders;
-    },
-    allFields() {
-      // Combina os campos existentes e personalizados
-      const existingFields = this.existingFields.map((field) => ({
-        ...field,
-        isExisting: true,
-        selected: this.fields.some((f) => f.name === field.name),
-        personTypes: field.personTypes || [],
-      }));
-
-      const customFields = this.fields.filter(
-        (field) => !existingFields.some((existing) => existing.name === field.name)
-      );
-
-      return [...existingFields, ...customFields];
-    },
-  },
   watch: {
-    customFields: {
+    field: {
       handler() {
-        this.fields = [...this.customFields];
+        this.localField = { ...this.field };
       },
       deep: true,
     },
   },
 
-  mounted() {
-    if (this.existingFields.length === 0) {
-      this.addField();
-    }
-  },
-
   methods: {
     emitChanges() {
-      // Emite os campos selecionados
-      const selectedFields = this.allFields.filter(
-        (field) => !field.isExisting || field.selected
-      );
-      this.$emit('update:fields', selectedFields);
-    },
-    addField() {
-      this.fields.push({
-        name: '',
-        type: '',
-        personTypes: [],
-        required: false,
-        unique: false,
-        visible_on_ticket: false,
-      });
-      this.emitChanges();
-    },
-    removeField(index) {
-      this.fields.splice(index, 1);
-      this.emitChanges();
+      this.$emit('update:field', this.localField);
     },
   },
 };
 </script>
+
 <style scoped>
-.elevation-1 {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.no-hover-table tbody tr:hover {
-  background-color: transparent;
-}
-
-.v-data-table tbody tr td {
-  vertical-align: middle;
-}
-
-.v-btn {
-  margin: 0;
-}
 </style>
