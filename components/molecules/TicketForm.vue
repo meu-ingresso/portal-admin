@@ -76,7 +76,7 @@
         <template #activator="{ on, attrs }">
           <v-text-field
             v-model="formattedOpenDate"
-            label="Data de Abertura"
+            label="Data. Abertura"
             readonly
             v-bind="attrs"
             outlined
@@ -102,7 +102,7 @@
         <template #activator="{ on, attrs }">
           <v-text-field
             v-model="formattedCloseDate"
-            label="Data de Fechamento"
+            label="Data. Fechamento"
             readonly
             v-bind="attrs"
             outlined
@@ -129,7 +129,7 @@
         dense
         hide-details="auto" />
     </v-col>
-    <v-col cols="12" md="2" sm="12">
+    <v-col md="2" sm="8" class="d-flex align-center">
       <v-checkbox
         v-model="localTicket.visible"
         label="Visível"
@@ -138,7 +138,7 @@
         dense
         @change="emitChanges" />
     </v-col>
-    <v-col cols="12" md="1" sm="12" class="d-flex align-center">
+    <v-col md="1" sm="4" class="d-flex align-center">
       <v-tooltip bottom>
         <template #activator="{ on, attrs }">
           <v-btn icon small v-bind="attrs" @click="removeTicket" v-on="on">

@@ -10,105 +10,97 @@
           class="mt-2"
           text="Campo"
           direction="left"
-          @click="addCustomField" />
+          @click="openNewFieldModal" />
       </v-col>
     </v-row>
-    <v-row
-      v-for="(field, index) in customFields"
-      :key="index"
-      class="custom-field-row bg-light-gray">
-      <v-col cols="12" sm="12" :md="field.isDefault ? 6 : 4">
-        <v-text-field
-          v-model="field.name"
-          outlined
-          dense
-          hide-details="auto"
-          label="Nome do Campo"
-          placeholder="Ex: CPF"
-          required
-          :disabled="field.isDefault" />
-      </v-col>
 
-      <v-col cols="12" sm="12" :md="field.isDefault ? 6 : 4">
-        <v-select
-          v-model="field.type"
-          :items="fieldTypes"
-          label="Tipo do Campo"
-          placeholder="Selecione o tipo"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :disabled="field.isDefault" />
-      </v-col>
+    <template v-if="customFields.length">
+      <!-- Estrutura de Tabela Desktop -->
+      <div class="table-container mt-4">
+        <!-- Cabeçalho -->
+        <div class="table-header">
+          <div class="table-cell">Nome</div>
+          <div class="table-cell">Tipo</div>
+          <div class="table-cell">Ações</div>
+        </div>
 
-      <v-col v-if="!field.isDefault" cols="12" sm="12" md="4">
-        <v-select
-          v-model="field.tickets"
-          :items="tickets"
-          label="Ingressos"
-          placeholder="Selecione o(s) ingresso(s)"
-          outlined
-          dense
-          multiple
-          no-data-text="Nenhum ingresso criado"
-          chips
-          hide-details="auto"
-          required
-          :disabled="field.isDefault" />
-      </v-col>
+        <!-- Linhas dos Campos -->
+        <Container :lock-axis="'y'" :non-drag-area-selector="'.actions .disabled-row'" @drop="onDrop">
+          <Draggable
+            v-for="(field, index) in customFields"
+            :key="index"
+            class="table-row"
+            :class="{ 'disabled-row': field.isDefault }">
+            <div class="table-cell">{{ field.name ? field.name : '-' }}</div>
+            <div class="table-cell">{{ field.type ? field.type : '-' }}</div>
+            <div class="table-cell actions">
+              <v-btn
+                icon
+                small
+                :disabled="field.isDefault"
+                @click="openEditModal(field, index)">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn
+                icon
+                small
+                :disabled="field.isDefault"
+                @click="removeCustomField(index)">
+                <v-icon color="red">mdi-delete</v-icon>
+              </v-btn>
+            </div>
+          </Draggable>
+        </Container>
+      </div>
+    </template>
 
-      <v-col cols="12" sm="12" md="6">
-        <v-select
-          v-model="field.personTypes"
-          :items="personTypes"
-          multiple
-          chips
-          dense
-          hide-details="auto"
-          outlined
-          label="Tipos de Pessoa"
-          placeholder="Selecione os tipos de pessoas"
-          :disabled="field.isDefault" />
-      </v-col>
+    <!-- Modal de Novo Campo -->
+    <v-dialog v-model="newFieldModal" max-width="800px" :fullscreen="isMobile">
+      <v-card :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Novo Campo</h3>
+          <v-btn icon @click="newFieldModal = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <CustomFieldForm
+            :field="newField"
+            :tickets="tickets"
+            :person-types="personTypes"
+            :options="options"
+            @update:field="updateNewFieldFields" />
+        </v-card-text>
+        <v-card-actions class="d-flex align-center justify-space-between">
+          <DefaultButton outlined text="Cancelar" @click="newFieldModal = false" />
+          <DefaultButton text="Salvar" @click="saveNewField" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
-      <v-col cols="12" sm="12" md="6">
-        <v-select
-          v-model="field.options"
-          :items="options"
-          label="Configurações"
-          placeholder="Selecione as configurações"
-          multiple
-          chips
-          dense
-          hide-details="auto"
-          outlined
-          :disabled="field.isDefault" />
-      </v-col>
-
-      <!-- Descrição de Ajuda (somente para campos customizados) -->
-      <v-col v-if="!field.isDefault" cols="12" sm="12" md="10">
-        <v-textarea
-          v-model="field.description"
-          label="Descrição de Ajuda"
-          placeholder="Explique como usar este campo"
-          dense
-          outlined
-          hide-details="auto"
-          rows="2" />
-      </v-col>
-
-      <v-col cols="12" sm="12" md="2" class="d-flex align-center">
-        <v-tooltip v-if="!field.isDefault" bottom>
-          <template #activator="{ on, attrs }">
-            <v-btn icon small v-bind="attrs" @click="removeCustomField(index)" v-on="on">
-              <v-icon color="red">mdi-delete</v-icon>
-            </v-btn>
-          </template>
-          <span>Remover Campo</span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
+    <!-- Modal de Edição -->
+    <v-dialog v-model="editModal" max-width="800px" :fullscreen="isMobile">
+      <v-card :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Editar Campo</h3>
+          <v-btn icon @click="editModal = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <CustomFieldForm
+            :field="selectedField"
+            :tickets="tickets"
+            :person-types="personTypes"
+            :options="options"
+            @update:field="updateFieldFields" />
+        </v-card-text>
+        <v-card-actions class="d-flex align-center justify-space-between">
+          <DefaultButton outlined text="Cancelar" @click="editModal = false" />
+          <DefaultButton text="Salvar" @click="saveEditedField" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Dialog de Confirmação -->
     <v-dialog v-model="confirmDialog" max-width="500">
@@ -132,9 +124,11 @@
 </template>
 
 <script>
+import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
 import { toast } from '@/store';
 export default {
+  components: { Container, Draggable },
   props: {
     form: {
       type: Object,
@@ -162,6 +156,11 @@ export default {
       confirmDialog: false,
       fieldNameToRemove: null,
       fieldIdxToRemove: null,
+      newFieldModal: false,
+      newField: this.getEmptyField(),
+      editModal: false,
+      selectedField: null,
+      selectedFieldIndex: null,
     };
   },
 
@@ -203,32 +202,54 @@ export default {
         }
       });
 
-      this.updateCustomFields();
+      this.emitChanges();
     },
 
-    addCustomField() {
-      this.customFields.push({
+    getEmptyField() {
+      return {
         name: '',
         type: '',
-        required: false,
-        unique: false,
-        visible_on_ticket: false,
-        description: '',
         tickets: [],
-      });
-      this.updateCustomFields();
-
-      if (!this.form.tickets || this.form.tickets.length === 0) {
-        toast.setToast({
-          text: 'Nenhum ingresso criado no momento.',
-          type: 'danger',
-          time: 5000,
-        });
+        personTypes: [],
+        options: [],
+        description: '',
+      };
+    },
+    openNewFieldModal() {
+      this.newField = this.getEmptyField();
+      this.newFieldModal = true;
+    },
+    updateNewFieldFields(updatedField) {
+      this.newField = updatedField;
+    },
+    saveNewField() {
+      this.customFields.push({ ...this.newField });
+      this.newFieldModal = false;
+      this.emitChanges();
+    },
+    openEditModal(field, index) {
+      this.selectedField = { ...field };
+      this.selectedFieldIndex = index;
+      this.editModal = true;
+    },
+    updateFieldFields(updatedField) {
+      this.selectedField = updatedField;
+    },
+    saveEditedField() {
+      if (this.selectedFieldIndex !== null) {
+        this.$set(this.customFields, this.selectedFieldIndex, this.selectedField);
+        this.editModal = false;
+        this.emitChanges();
       }
     },
+    handleRemoveField(index) {
+      this.customFields.splice(index, 1);
+      this.emitChanges();
+    },
+
     confirmRemoveField() {
       this.customFields.splice(this.fieldIdxToRemove, 1);
-      this.updateCustomFields();
+      this.emitChanges();
       this.confirmDialog = false;
       toast.setToast({
         text: 'Campo removido com sucesso.',
@@ -242,8 +263,16 @@ export default {
         this.customFields[index].name || 'Campo de número ' + (index + 1);
       this.confirmDialog = true;
     },
-    updateCustomFields() {
+
+    emitChanges() {
       this.$emit('update:form', { ...this.form, customFields: this.customFields });
+    },
+
+    onDrop({ removedIndex, addedIndex }) {
+      if (removedIndex !== null && addedIndex !== null) {
+        const movedTicket = this.customFields.splice(removedIndex, 1)[0];
+        this.customFields.splice(addedIndex, 0, movedTicket);
+      }
     },
   },
 };
@@ -256,5 +285,63 @@ export default {
 
 .custom-field-row {
   margin-bottom: 16px;
+}
+
+.table-container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--tertiary);
+  border-radius: 8px;
+}
+
+.table-header,
+.table-row {
+  display: flex !important;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.table-header .table-cell {
+  font-size: 14px;
+}
+
+.table-row .table-cell {
+  font-size: 12px;
+}
+
+.table-header {
+  background-color: #f4f4f4;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.table-row:hover {
+  background-color: #f9f9f9;
+}
+
+.table-cell:last-child {
+  text-align: right;
+}
+
+.table-row.disabled-row {
+  opacity: 0.6;
+  pointer-events: none;
+  background-color: #f9f9f9;
+}
+
+.table-row.disabled-row .table-cell {
+  font-style: italic;
+}
+
+.table-row {
+  cursor: grab;
+}
+
+.table-row:active {
+  cursor: grabbing;
 }
 </style>
