@@ -6,106 +6,95 @@
           <h3>Cadastro de Cupons</h3>
           <p class="subtitle-2">Adicione cupons de desconto para o evento.</p>
         </template>
-        <ButtonWithIcon class="mt-2" text="Cupom" direction="left" @click="addCoupon" />
+        <ButtonWithIcon
+          class="mt-2"
+          text="Cupom"
+          direction="left"
+          @click="openNewCouponModal" />
       </v-col>
     </v-row>
 
-    <v-row
-      v-for="(coupon, index) in coupons"
-      :key="index"
-      class="coupon-row bg-light-gray">
-      <v-col cols="12" md="4" sm="12">
-        <v-text-field
-          v-model="coupon.code"
-          label="Código do Cupom"
-          placeholder="Ex: DESCONTO10"
-          outlined
-          dense
-          hide-details="auto"
-          required />
-      </v-col>
+    <!-- Tabela de Cupons -->
+    <template v-if="coupons.length">
+      <div class="table-container mt-4">
+        <div class="table-header">
+          <div class="table-cell">Código</div>
+          <div class="table-cell">Valor</div>
+          <div class="table-cell">Ações</div>
+        </div>
 
-      <v-col cols="12" md="4" sm="12">
-        <v-select
-          v-model="coupon.discountType"
-          :items="discountTypes"
-          label="Tipo de Desconto"
-          outlined
-          placeholder="Selecione"
-          required
-          dense
-          hide-details="auto" />
-      </v-col>
-
-      <v-col cols="12" md="4" sm="12">
-        <v-text-field
-          v-model="coupon.discountValue"
-          :label="
-            coupon.discountType === 'percentage'
-              ? 'Valor do Desconto (%)'
-              : 'Valor do Desconto (R$)'
-          "
-          :type="coupon.discountType === 'percentage' ? 'number' : 'text'"
-          :append-icon="coupon.discountType === 'percentage' ? 'mdi-percent' : ''"
-          :prefix="coupon.discountType === 'fixed' ? 'R$' : ''"
-          outlined
-          required
-          dense
-          hide-details="auto"
-          @input="onDiscountValueInput(coupon, index)" />
-      </v-col>
-
-      <v-col cols="12" md="4" sm="12">
-        <v-text-field
-          v-model="coupon.maxUses"
-          label="Máximo de Usos"
-          type="number"
-          outlined
-          dense
-          hide-details="auto"
-          min="1"
-          required />
-      </v-col>
-
-      <v-col cols="12" md="4" sm="12">
-        <v-menu
-          ref="`expirationMenu${index}`"
-          v-model="coupon.expirationMenu"
-          :close-on-content-click="false"
-          transition="scale-transition"
-          offset-y
-          min-width="auto">
-          <template #activator="{ on, attrs }">
-            <v-text-field
-              :value="formattedExpirationDate(coupon)"
-              label="Data de Expiração"
-              readonly
-              outlined
-              v-bind="attrs"
-              required
-              dense
-              hide-details="auto"
-              v-on="on"
-              @input="coupon.expirationDate = $event.target.value" />
-          </template>
-          <v-date-picker
-            v-model="coupon.expirationDate"
-            locale="pt-br"
-            @input="coupon.expirationMenu = false" />
-        </v-menu>
-      </v-col>
-
-      <v-col cols="12" sm="12" md="2" class="d-flex align-center">
-        <v-tooltip bottom>
-          <template #activator="{ on, attrs }">
-            <v-btn icon small v-bind="attrs" @click="removeCoupon(index)" v-on="on">
+        <div
+          v-for="(coupon, index) in coupons"
+          :key="index"
+          class="table-row"
+          :class="{ 'disabled-row': coupon.isDefault }">
+          <div class="table-cell">{{ coupon.code }}</div>
+          <div class="table-cell">
+            {{
+              coupon.discountType === 'fixed'
+                ? `R$ ${coupon.discountValue}`
+                : `${coupon.discountValue}%`
+            }}
+          </div>
+          <div class="table-cell actions">
+            <v-btn
+              icon
+              small
+              :disabled="coupon.isDefault"
+              @click="openEditModal(coupon, index)">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn icon small :disabled="coupon.isDefault" @click="removeCoupon(index)">
               <v-icon color="red">mdi-delete</v-icon>
             </v-btn>
-          </template>
-          <span>Remover Cupom</span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Modal de Novo Cupom -->
+    <v-dialog v-model="newCouponModal" max-width="800px" :fullscreen="isMobile">
+      <v-card :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Novo Cupom</h3>
+          <v-btn icon @click="newCouponModal = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <CouponForm
+            :coupon="newCoupon"
+            :discount-types="discountTypes"
+            @update:coupon="updateNewCouponFields" />
+        </v-card-text>
+        <v-card-actions class="d-flex align-center justify-space-between">
+          <DefaultButton outlined text="Cancelar" @click="newCouponModal = false" />
+          <DefaultButton text="Salvar" @click="saveNewCoupon" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Modal de Edição -->
+    <v-dialog v-model="editModal" max-width="800px" :fullscreen="isMobile">
+      <v-card :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Editar Cupom</h3>
+          <v-btn icon @click="editModal = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <CouponForm
+            :coupon="selectedCoupon"
+            :discount-types="discountTypes"
+            @update:coupon="updateCouponFields" />
+        </v-card-text>
+        <v-card-actions class="d-flex align-center justify-space-between">
+          <DefaultButton outlined text="Cancelar" @click="editModal = false" />
+          <DefaultButton text="Salvar" @click="saveEditedCoupon" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Dialog de Confirmação -->
     <v-dialog v-model="confirmDialog" max-width="500">
@@ -149,6 +138,11 @@ export default {
       confirmDialog: false,
       couponNameToRemove: '',
       couponIndexToRemove: null,
+      newCouponModal: false,
+      newCoupon: this.getEmptyCoupon(),
+      editModal: false,
+      selectedCoupon: null,
+      selectedCouponIndex: null,
     };
   },
 
@@ -159,16 +153,15 @@ export default {
   },
 
   methods: {
-    addCoupon() {
-      this.coupons.push({
+    getEmptyCoupon() {
+      return {
         code: '',
         discountType: 'fixed',
         discountValue: 0,
         maxUses: 1,
         expirationDate: '',
-        expirationMenu: false,
-      });
-      this.updateCoupons();
+        isDefault: false,
+      };
     },
 
     formattedExpirationDate(coupon) {
@@ -177,14 +170,51 @@ export default {
 
     confirmRemoveCoupon() {
       this.coupons.splice(this.couponIndexToRemove, 1);
-      this.updateCoupons();
       this.confirmDialog = false;
       this.couponIndexToRemove = null;
+      this.emitChanges();
       toast.setToast({
         text: 'Cupom removido com sucesso.',
         type: 'success',
         time: 5000,
       });
+    },
+
+    openNewCouponModal() {
+      this.newCoupon = this.getEmptyCoupon();
+      this.newCouponModal = true;
+    },
+
+    updateNewCouponFields(updatedCoupon) {
+      this.newCoupon = updatedCoupon;
+    },
+
+    saveNewCoupon() {
+      this.coupons.push({ ...this.newCoupon });
+      this.newCouponModal = false;
+      this.emitChanges();
+    },
+
+    openEditModal(coupon, index) {
+      this.selectedCoupon = { ...coupon };
+      this.selectedCouponIndex = index;
+      this.editModal = true;
+    },
+
+    updateCouponFields(updatedCoupon) {
+      this.selectedCoupon = updatedCoupon;
+    },
+
+    saveEditedCoupon() {
+      if (this.selectedCouponIndex !== null) {
+        this.$set(this.coupons, this.selectedCouponIndex, this.selectedCoupon);
+        this.editModal = false;
+        this.emitChanges();
+      }
+    },
+
+    emitChanges() {
+      this.$emit('update:form', { ...this.form, coupons: this.coupons });
     },
 
     removeCoupon(index) {
@@ -193,9 +223,7 @@ export default {
       this.couponIndexToRemove = index;
       this.confirmDialog = true;
     },
-    updateCoupons() {
-      this.$emit('update:form', { ...this.form, coupons: this.coupons });
-    },
+
     onDiscountValueInput(coupon, index) {
       this.coupons[index].discountValue = formatPrice(coupon.discountValue);
     },
@@ -210,5 +238,55 @@ export default {
 
 .coupon-row {
   margin-bottom: 16px;
+}
+
+.table-container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--tertiary);
+  border-radius: 8px;
+}
+
+.table-header,
+.table-row {
+  display: flex !important;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.table-header .table-cell {
+  font-size: 14px;
+}
+
+.table-row .table-cell {
+  font-size: 12px;
+}
+
+.table-header {
+  background-color: #f4f4f4;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.table-row:hover {
+  background-color: #f9f9f9;
+}
+
+.table-cell:last-child {
+  text-align: right;
+}
+
+.table-row.disabled-row {
+  opacity: 0.6;
+  pointer-events: none;
+  background-color: #f9f9f9;
+}
+
+.table-row.disabled-row .table-cell {
+  font-style: italic;
 }
 </style>
