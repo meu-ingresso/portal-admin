@@ -22,7 +22,7 @@
           v-for="(step, index) in steps"
           :key="index"
           :step="index + 1"
-          class="bg-white"
+          class="bg-white px-6 py-6"
           :class="{ 'fixed-height-content': isMobile }">
           <component
             :is="step.component"
@@ -108,6 +108,7 @@ export default {
       return rating.$ratingList.map((rating) => ({
         value: rating.id,
         text: rating.description,
+        img: rating.image,
       }));
     },
   },
@@ -207,8 +208,8 @@ export default {
   height: calc(100vh - 240px);
   padding-top: 16px;
   padding-bottom: 16px;
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 .fixed-height-content .v-stepper-content {

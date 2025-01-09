@@ -1,5 +1,5 @@
 <template>
-  <v-container class="step-coupons py-0">
+  <v-container class="step-coupons py-0 px-0">
     <v-row>
       <v-col cols="12">
         <template v-if="isMobile">
@@ -61,13 +61,13 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4 py-2">
           <CouponForm
             :coupon="newCoupon"
             :discount-types="discountTypes"
             @update:coupon="updateNewCouponFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between">
+        <v-card-actions class="d-flex align-center justify-space-between py-4">
           <DefaultButton outlined text="Cancelar" @click="newCouponModal = false" />
           <DefaultButton text="Salvar" @click="saveNewCoupon" />
         </v-card-actions>
@@ -83,13 +83,13 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4 py-2">
           <CouponForm
             :coupon="selectedCoupon"
             :discount-types="discountTypes"
             @update:coupon="updateCouponFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between">
+        <v-card-actions class="d-flex align-center justify-space-between py-4">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
           <DefaultButton text="Salvar" @click="saveEditedCoupon" />
         </v-card-actions>

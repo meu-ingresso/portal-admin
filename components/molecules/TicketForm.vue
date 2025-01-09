@@ -93,6 +93,37 @@
     </v-col>
     <v-col cols="12" md="3" sm="12">
       <v-menu
+        v-model="startTimeMenu"
+        :close-on-content-click="false"
+        transition="scale-transition"
+        offset-y
+        dense
+        hide-details="auto"
+        min-width="auto">
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            v-model="localTicket.start_time"
+            label="Hora de Início"
+            prepend-inner-icon="mdi-clock-outline"
+            readonly
+            outlined
+            dense
+            hide-details="auto"
+            v-bind="attrs"
+            required
+            v-on="on"
+            @input="emitChanges" />
+        </template>
+        <v-time-picker
+          v-model="localTicket.start_time"
+          format="24hr"
+          dense
+          hide-details="auto"
+          @input="onHourChange('start_time', $event)" />
+      </v-menu>
+    </v-col>
+    <v-col cols="12" md="3" sm="12">
+      <v-menu
         v-model="closeDateMenu"
         :close-on-content-click="false"
         :nudge-right="40"
@@ -114,10 +145,43 @@
         <v-date-picker
           v-model="localTicket.close_date"
           locale="pt-br"
+          dense
           @input="onDateChange('close_date', $event)" />
       </v-menu>
     </v-col>
-    <v-col cols="12" md="3" sm="12">
+        <v-col cols="12" md="3" sm="12">
+      <v-menu
+        v-model="endTimeMenu"
+        :close-on-content-click="false"
+        transition="scale-transition"
+        offset-y
+        dense
+        hide-details="auto"
+        min-width="auto">
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            v-model="localTicket.end_time"
+            label="Hora de Término"
+            prepend-inner-icon="mdi-clock-outline"
+            readonly
+            outlined
+            dense
+            hide-details="auto"
+            v-bind="attrs"
+            required
+            v-on="on"
+            @input="emitChanges"
+             />
+        </template>
+        <v-time-picker
+          v-model="localTicket.end_time"
+          format="24hr"
+          dense
+          hide-details="auto"
+          @input="onHourChange('end_time', $event)" />
+      </v-menu>
+    </v-col>
+    <v-col cols="12" md="6" sm="12">
       <v-select
         v-model="localTicket.availability"
         :items="availabilityList"
@@ -129,7 +193,7 @@
         dense
         hide-details="auto" />
     </v-col>
-    <v-col md="2" sm="8" class="d-flex align-center">
+    <v-col md="3" sm="8" class="d-flex align-center">
       <v-checkbox
         v-model="localTicket.visible"
         label="Visível"
@@ -138,7 +202,7 @@
         dense
         @change="emitChanges" />
     </v-col>
-    <v-col md="1" sm="4" class="d-flex align-center">
+    <v-col md="3" sm="4" class="d-flex align-center">
       <v-tooltip bottom>
         <template #activator="{ on, attrs }">
           <v-btn icon small v-bind="attrs" @click="removeTicket" v-on="on">
@@ -175,6 +239,8 @@ export default {
       ],
       openDateMenu: false,
       closeDateMenu: false,
+      startTimeMenu: false,
+      endTimeMenu: false,
     };
   },
 
@@ -215,6 +281,12 @@ export default {
       this.localTicket[field] = value;
       this.openDateMenu = false;
       this.closeDateMenu = false;
+      this.emitChanges();
+    },
+    onHourChange(field, value) {
+      this.localTicket[field] = value;
+      this.startTimeMenu = false;
+      this.endTimeMenu = false;
       this.emitChanges();
     },
     updateCategories(categories) {
