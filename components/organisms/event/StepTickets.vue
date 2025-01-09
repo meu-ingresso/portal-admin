@@ -1,6 +1,6 @@
 
 <template>
-  <v-container class="step-tickets py-0">
+  <v-container class="step-tickets py-0 px-0">
     <v-row>
       <v-col cols="12">
         <template v-if="isMobile">
@@ -15,64 +15,81 @@
       </v-col>
     </v-row>
 
-    <template v-if="tickets.length">
-
-      <!-- Estrutura de Tabela Desktop -->
-      <div v-if="!isMobile" class="table-container mt-4">
-        <!-- Cabeçalho -->
-        <div class="table-header">
-          <div class="table-cell">Nome</div>
-          <div class="table-cell">Categoria</div>
-          <div class="table-cell">Preço</div>
-          <div class="table-cell">Ações</div>
-        </div>
-
-        <!-- Linhas Reordenáveis -->
-        <Container :lock-axis="'y'" :non-drag-area-selector="'.actions'" @drop="onDrop">
-          <Draggable v-for="(ticket, index) in tickets" :key="index" class="table-row">
-            <div class="table-cell">{{ ticket.name ? ticket.name : '-' }}</div>
-            <div class="table-cell">{{ ticket.category ? ticket.category : '-' }}</div>
-            <div class="table-cell">R$ {{ ticket.price }}</div>
-            <div class="table-cell actions">
-              <v-btn icon small @click="openEditModal(ticket, index)">
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn icon small @click="handleRemoveTicket(index)">
-                <v-icon color="red">mdi-delete</v-icon>
-              </v-btn>
+    <v-row>
+      <v-col cols="12">
+        <template v-if="tickets.length">
+          <!-- Estrutura de Tabela Desktop -->
+          <div v-if="!isMobile" class="table-container">
+            <!-- Cabeçalho -->
+            <div class="table-header">
+              <div class="table-cell">Nome</div>
+              <div class="table-cell">Categoria</div>
+              <div class="table-cell">Preço</div>
+              <div class="table-cell">Ações</div>
             </div>
-          </Draggable>
-        </Container>
-      </div>
 
-      <!-- Estrutura de Tabela Celular -->
-      <div v-else class="table-container mt-4">
-        <!-- Cabeçalho -->
-        <div class="table-header">
-          <div class="table-cell">Nome</div>
-          <div class="table-cell">Ações</div>
-        </div>
+            <!-- Linhas Reordenáveis -->
+            <Container
+              :lock-axis="'y'"
+              :non-drag-area-selector="'.actions'"
+              @drop="onDrop">
+              <Draggable
+                v-for="(ticket, index) in tickets"
+                :key="index"
+                class="table-row">
+                <div class="table-cell">{{ ticket.name ? ticket.name : '-' }}</div>
+                <div class="table-cell">
+                  {{ ticket.category ? ticket.category : '-' }}
+                </div>
+                <div class="table-cell">R$ {{ ticket.price }}</div>
+                <div class="table-cell actions">
+                  <v-btn icon small @click="openEditModal(ticket, index)">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn icon small @click="handleRemoveTicket(index)">
+                    <v-icon color="red">mdi-delete</v-icon>
+                  </v-btn>
+                </div>
+              </Draggable>
+            </Container>
+          </div>
 
-        <!-- Linhas Reordenáveis -->
-        <Container :lock-axis="'y'" :non-drag-area-selector="'.actions'" @drop="onDrop">
-          <Draggable v-for="(ticket, index) in tickets" :key="index" class="table-row">
-            <div class="table-cell">{{ ticket.name ? ticket.name : '-' }}</div>
-            <div class="table-cell actions">
-              <v-btn icon small @click="openEditModal(ticket, index)">
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn icon small @click="handleRemoveTicket(index)">
-                <v-icon color="red">mdi-delete</v-icon>
-              </v-btn>
+          <!-- Estrutura de Tabela Celular -->
+          <div v-else class="table-container">
+            <!-- Cabeçalho -->
+            <div class="table-header">
+              <div class="table-cell">Nome</div>
+              <div class="table-cell">Ações</div>
             </div>
-          </Draggable>
-        </Container>
-      </div>
-    </template>
 
-    <v-row v-if="tickets.length" class="mt-4">
-      <v-col cols="12" class="px-0">
-        <v-card tile>
+            <!-- Linhas Reordenáveis -->
+            <Container
+              :lock-axis="'y'"
+              :non-drag-area-selector="'.actions'"
+              @drop="onDrop">
+              <Draggable
+                v-for="(ticket, index) in tickets"
+                :key="index"
+                class="table-row">
+                <div class="table-cell">{{ ticket.name ? ticket.name : '-' }}</div>
+                <div class="table-cell actions">
+                  <v-btn icon small @click="openEditModal(ticket, index)">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn icon small @click="handleRemoveTicket(index)">
+                    <v-icon color="red">mdi-delete</v-icon>
+                  </v-btn>
+                </div>
+              </Draggable>
+            </Container>
+          </div>
+        </template>
+      </v-col>
+    </v-row>
+
+    <v-row v-if="tickets.length">
+      <v-col cols="12">
+        <v-card tile elevation="1" class="ticket-configuration">
           <v-card-title>
             <p class="subtitle-1">Configurações</p>
           </v-card-title>
@@ -124,14 +141,14 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4 py-2">
           <TicketForm
             :ticket="newTicket"
             :categories="categories"
             @update:ticket="updateNewTicketFields"
             @update:categories="handleUpdateCategories" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between">
+        <v-card-actions class="d-flex align-center justify-space-between py-4">
           <DefaultButton outlined text="Cancelar" @click="newTicketModal = false" />
           <DefaultButton text="Salvar" @click="saveNewTicket" />
         </v-card-actions>
@@ -147,14 +164,14 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4 py-2">
           <TicketForm
             :ticket="selectedTicket"
             :categories="categories"
             @update:ticket="updateTicketFields"
             @update:categories="handleUpdateCategories" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between">
+        <v-card-actions class="d-flex align-center justify-space-between py-4">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
           <DefaultButton text="Salvar" @click="saveEditedTicket" />
         </v-card-actions>
@@ -219,7 +236,9 @@ export default {
         min_purchase: 0,
         max_purchase: 0,
         open_date: '',
+        start_time: '',
         close_date: '',
+        end_time: '',
         visible: true,
         quantity: 0,
         customFields: [],
@@ -317,7 +336,9 @@ export default {
         min_purchase: 0,
         max_purchase: 0,
         open_date: '',
+        start_time: '',
         close_date: '',
+        end_time: '',
         visible: true,
         quantity: 0,
         customFields: [],
@@ -432,5 +453,9 @@ export default {
 
 .table-row:active {
   cursor: grabbing;
+}
+
+.ticket-configuration {
+  box-shadow: 0px 0px 2.24px 0px rgba(0, 0, 0, 0.16078) !important;
 }
 </style>

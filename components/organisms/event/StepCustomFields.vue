@@ -1,5 +1,5 @@
 <template>
-  <v-container class="step-custom-fields py-0">
+  <v-container class="step-custom-fields py-0 px-0">
     <v-row>
       <v-col cols="12">
         <template v-if="isMobile">
@@ -14,45 +14,59 @@
       </v-col>
     </v-row>
 
-    <template v-if="customFields.length">
-      <!-- Estrutura de Tabela Desktop -->
-      <div class="table-container mt-4">
-        <!-- Cabeçalho -->
-        <div class="table-header">
-          <div class="table-cell">Nome</div>
-          <div class="table-cell">Tipo</div>
-          <div class="table-cell">Ações</div>
-        </div>
-
-        <!-- Linhas dos Campos -->
-        <Container :lock-axis="'y'" :non-drag-area-selector="'.actions .disabled-row'" @drop="onDrop">
-          <Draggable
-            v-for="(field, index) in customFields"
-            :key="index"
-            class="table-row"
-            :class="{ 'disabled-row': field.isDefault }">
-            <div class="table-cell">{{ field.name ? field.name : '-' }}</div>
-            <div class="table-cell">{{ field.type ? field.type : '-' }}</div>
-            <div class="table-cell actions">
-              <v-btn
-                icon
-                small
-                :disabled="field.isDefault"
-                @click="openEditModal(field, index)">
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn
-                icon
-                small
-                :disabled="field.isDefault"
-                @click="removeCustomField(index)">
-                <v-icon color="red">mdi-delete</v-icon>
-              </v-btn>
+    <v-row>
+      <v-col cols="12">
+        <template v-if="customFields.length">
+          <div class="table-container">
+            <!-- Cabeçalho -->
+            <div class="table-header">
+              <div class="table-cell">Nome</div>
+              <div class="table-cell">Tipo</div>
+              <div class="table-cell">Pessoas</div>
+              <div class="table-cell">Configurações</div>
+              <div class="table-cell">Ações</div>
             </div>
-          </Draggable>
-        </Container>
-      </div>
-    </template>
+
+            <!-- Linhas dos Campos -->
+            <Container
+              :lock-axis="'y'"
+              :non-drag-area-selector="'.actions .disabled-row'"
+              @drop="onDrop">
+              <Draggable
+                v-for="(field, index) in customFields"
+                :key="index"
+                class="table-row"
+                :class="{ 'disabled-row': field.isDefault }">
+                <div class="table-cell">{{ field.name ? field.name : '-' }}</div>
+                <div class="table-cell">{{ field.type ? field.type : '-' }}</div>
+                <div class="table-cell">
+                  {{ field.personTypes ? getArrayObjectText(field.personTypes) : '-' }}
+                </div>
+                <div class="table-cell">
+                  {{ field.options ? getArrayObjectText(field.options) : '-' }}
+                </div>
+                <div class="table-cell actions">
+                  <v-btn
+                    icon
+                    small
+                    :disabled="field.isDefault"
+                    @click="openEditModal(field, index)">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn
+                    icon
+                    small
+                    :disabled="field.isDefault"
+                    @click="removeCustomField(index)">
+                    <v-icon color="red">mdi-delete</v-icon>
+                  </v-btn>
+                </div>
+              </Draggable>
+            </Container>
+          </div>
+        </template>
+      </v-col>
+    </v-row>
 
     <!-- Modal de Novo Campo -->
     <v-dialog v-model="newFieldModal" max-width="800px" :fullscreen="isMobile">
@@ -63,7 +77,7 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4 py-2">
           <CustomFieldForm
             :field="newField"
             :tickets="tickets"
@@ -71,7 +85,7 @@
             :options="options"
             @update:field="updateNewFieldFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between">
+        <v-card-actions class="d-flex align-center justify-space-between py-4">
           <DefaultButton outlined text="Cancelar" @click="newFieldModal = false" />
           <DefaultButton text="Salvar" @click="saveNewField" />
         </v-card-actions>
@@ -87,7 +101,7 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4 py-2">
           <CustomFieldForm
             :field="selectedField"
             :tickets="tickets"
@@ -95,7 +109,7 @@
             :options="options"
             @update:field="updateFieldFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between">
+        <v-card-actions class="d-flex align-center justify-space-between py-4">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
           <DefaultButton text="Salvar" @click="saveEditedField" />
         </v-card-actions>
@@ -152,7 +166,11 @@ export default {
         { text: 'Único', value: 'unique' },
         { text: 'Visível na Impressão', value: 'visible_on_ticket' },
       ],
-      personTypes: ['Pessoa Física (PF)', 'Pessoa Jurídica (PJ)', 'Estrangeiro'],
+      personTypes: [
+        { text: 'Pessoa Física (PF)', value: 'PF' },
+        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+        { text: 'Estrangeiro', value: 'Estrangeiro' },
+      ],
       confirmDialog: false,
       fieldNameToRemove: null,
       fieldIdxToRemove: null,
@@ -184,15 +202,26 @@ export default {
           name: 'Nome Completo',
           type: 'text',
           isDefault: true,
-          options: ['required', 'visible_on_ticket'],
-          personTypes: ['Pessoa Física (PF)', 'Pessoa Jurídica (PJ)', 'Estrangeiro'],
+          options: [
+            { text: 'Obrigatório', value: 'required' },
+            { text: 'Visível na Impressão', value: 'visible_on_ticket' },
+          ],
+          personTypes: [
+            { text: 'Pessoa Física (PF)', value: 'PF' },
+            { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+            { text: 'Estrangeiro', value: 'Estrangeiro' },
+          ],
         },
         {
           name: 'Email',
           type: 'email',
           isDefault: true,
           options: ['required', 'visible_on_ticket'],
-          personTypes: ['Pessoa Física (PF)', 'Pessoa Jurídica (PJ)', 'Estrangeiro'],
+          personTypes: [
+            { text: 'Pessoa Física (PF)', value: 'PF' },
+            { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+            { text: 'Estrangeiro', value: 'Estrangeiro' },
+          ],
         },
       ];
 
@@ -273,6 +302,10 @@ export default {
         const movedTicket = this.customFields.splice(removedIndex, 1)[0];
         this.customFields.splice(addedIndex, 0, movedTicket);
       }
+    },
+
+    getArrayObjectText(arrayValue) {
+      return arrayValue.map((item) => item.text).join(', ');
     },
   },
 };

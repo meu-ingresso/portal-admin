@@ -60,7 +60,7 @@ export default class Event extends VuexModule {
             statusText: data.status.name,
             date: data.start_date,
             statistics: [
-                { title: 'Visualizações', value: 0 },
+                { title: 'Visualizações', value: data.totalizers.totalViews },
                 { title: 'Visibilidade', value: data.availability },
                 { title: 'Tipos de ingressos', value: `${ticketsTypes.length} Tipos` },
                 {
