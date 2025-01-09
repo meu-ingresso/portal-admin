@@ -1,5 +1,5 @@
 <template>
-  <v-container class="step-general-info py-0">
+  <v-container class="step-general-info py-0 px-0">
     <v-row>
       <v-col cols="12">
         <h3>Sobre o Evento</h3>
@@ -80,7 +80,7 @@
 
       <!-- Classificação Indicativa -->
       <v-col cols="12" md="4" sm="12">
-        <v-select
+        <!--         <v-select
           v-model="localForm.rating"
           label="Classificação Indicativa"
           :items="ratings"
@@ -88,8 +88,10 @@
           dense
           return-object
           hide-details="auto"
-          required />
+          required /> -->
+        <RatingSelect v-model="localForm.rating" :value="localForm.rating" :ratings="ratings" />
       </v-col>
+
       <!-- Descrição do Evento -->
       <v-col cols="12" md="12" sm="12">
         <v-textarea
@@ -105,9 +107,37 @@
     </v-row>
 
     <!-- Campo de Upload da Imagem -->
-    <v-row>
+    <!--     <v-row>
       <v-col cols="12">
         <v-file-input
+          v-model="localForm.banner"
+          label="Banner do Evento"
+          placeholder="Clique ou arraste a imagem principal aqui (954x500px)"
+          accept="image/*"
+          outlined
+          dense
+          prepend-icon="mdi-camera"
+          hide-details="auto"
+          show-size
+          @change="validateImageDimensions"
+          @click:clear="onClearBanner"
+           />
+        <div v-if="imagePreview" class="image-preview mt-3">
+          <img :src="imagePreview" alt="Prévia do Banner" />
+        </div>
+      </v-col>
+    </v-row> -->
+    <v-row>
+      <v-col cols="12">
+        <!-- Campo de Upload / Prévia da Imagem -->
+        <div v-if="imagePreview" class="image-preview-container">
+          <img :src="imagePreview" alt="Prévia do Banner" class="image-preview" />
+          <v-btn icon class="remove-image-btn" @click="onClearBanner">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </div>
+        <v-file-input
+          v-else
           v-model="localForm.banner"
           label="Banner do Evento"
           accept="image/*"
@@ -119,8 +149,8 @@
           show-size
           class="custom-file-input"
           @change="validateImageDimensions" />
-        <p class="caption text-center mt-2">
-          Clique ou arraste a imagem principal aqui (954x500px)
+        <p v-if="!imagePreview" class="caption text-center mt-2">
+          Clique para selecionar o banner do evento (954x500px)
         </p>
       </v-col>
     </v-row>
@@ -189,6 +219,7 @@ export default {
       },
       types: ['Presencial', 'Online', 'Híbrido'],
       debouncerAlias: null,
+      imagePreview: null,
     };
   },
 
@@ -256,25 +287,34 @@ export default {
       this.$set(this.localForm, 'alias', alias);
     },
     validateImageDimensions(file) {
-      if (!file) {
-        return;
-      }
+      if (!file) return;
 
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);
+
       img.onload = () => {
         if (img.width !== 954 || img.height !== 500) {
           toast.setToast({
-            text: 'A imagem deve ter as dimensões de 954x500px.',
+            text: `A imagem enviada tem ${img.width}x${img.height}px. As dimensões recomendadas são 954x500px.`,
             type: 'danger',
             time: 5000,
           });
-          this.localForm.banner = null;
         }
         URL.revokeObjectURL(objectUrl);
       };
+
       img.src = objectUrl;
+
+      // Atualiza a prévia da imagem
+      this.imagePreview = objectUrl;
+      this.localForm.banner = file;
     },
+
+    onClearBanner() {
+      this.imagePreview = null;
+      this.localForm.banner = null;
+    },
+
     updateStartDate(value) {
       eventForm.updateForm({ startDate: value });
     },
@@ -315,5 +355,44 @@ export default {
   justify-content: center;
   border: 2px dashed #ccc; /* Estilo da borda */
   background-color: #f9f9f9; /* Cor de fundo */
+}
+
+.image-preview {
+  text-align: center;
+}
+
+.image-preview-container {
+  position: relative;
+  height: 200px;
+  border: 2px dashed #ccc;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.image-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

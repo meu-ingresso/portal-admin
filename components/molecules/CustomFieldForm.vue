@@ -53,6 +53,7 @@
         dense
         multiple
         hide-details="auto"
+        return-object
         @input="emitChanges" />
     </v-col>
 
@@ -67,6 +68,7 @@
         dense
         multiple
         hide-details="auto"
+        return-object
         @input="emitChanges" />
     </v-col>
 

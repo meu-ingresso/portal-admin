@@ -15,7 +15,7 @@ export default class EventForm extends VuexModule {
         startTime: '',
         endDate: '',
         endTime: '',
-        rating: '',
+        rating: null,
         event_type: '',
         cep: '',
         max_capacity: 0,
