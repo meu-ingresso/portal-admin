@@ -9,7 +9,7 @@
         </template>
         <ButtonWithIcon
           class="mt-2"
-          text="Ingresso"
+          :text="getNomenclature"
           direction="left"
           @click="openNewTicketModal" />
       </v-col>
@@ -43,12 +43,32 @@
                 </div>
                 <div class="table-cell">R$ {{ ticket.price }}</div>
                 <div class="table-cell actions">
-                  <v-btn icon small @click="openEditModal(ticket, index)">
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-                  <v-btn icon small @click="handleRemoveTicket(index)">
-                    <v-icon color="red">mdi-delete</v-icon>
-                  </v-btn>
+                  <v-tooltip bottom>
+                    <template #activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        small
+                        v-bind="attrs"
+                        v-on="on"
+                        @click="openEditModal(ticket, index)">
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>Editar Registro</span>
+                  </v-tooltip>
+                  <v-tooltip bottom>
+                    <template #activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        small
+                        v-bind="attrs"
+                        v-on="on"
+                        @click="handleRemoveTicket(index)">
+                        <v-icon color="red">mdi-delete</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>Remover Registro</span>
+                  </v-tooltip>
                 </div>
               </Draggable>
             </Container>
@@ -87,68 +107,25 @@
       </v-col>
     </v-row>
 
-    <v-row v-if="tickets.length">
-      <v-col cols="12">
-        <v-card tile elevation="1" class="ticket-configuration">
-          <v-card-title>
-            <p class="subtitle-1">Configurações</p>
-          </v-card-title>
-          <v-card-text>
-            <v-row class="d-flex align-center justify-space-between">
-              <v-col cols="12" md="8" sm="12">
-                <div class="d-flex align-center">
-                  <v-switch
-                    v-model="absorveTax"
-                    class="inline-switch-checkbox mr-4 pt-0"
-                    label="Absorver a taxa de serviço"
-                    dense
-                    hide-details="auto" />
-                  <v-tooltip top>
-                    <template #activator="{ on, attrs }">
-                      <v-icon color="gray" v-bind="attrs" v-on="on"
-                        >mdi-help-circle</v-icon
-                      >
-                    </template>
-                    <span class="tax-container">
-                      Ao selecionar essa opção, a taxa de serviço (10%) será incluída no
-                      preço final de venda do ingresso e não será mostrada ao comprador
-                    </span>
-                  </v-tooltip>
-                </div>
-              </v-col>
-              <v-col cols="12" md="4" sm="12" class="d-flex align-center">
-                <p class="mr-4">Nomenclatura:</p>
-                <v-select
-                  v-model="nomenclature"
-                  :items="nomenclatureOptions"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  required />
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
     <!-- Modal de Novo Ingresso -->
-    <v-dialog v-model="newTicketModal" max-width="800px" :fullscreen="isMobile">
+    <v-dialog v-model="newTicketModal" max-width="960px" :fullscreen="isMobile">
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
-          <h3>Novo Ingresso</h3>
+          <h3>{{ getNewItemModalTitle }}</h3>
           <v-btn icon @click="newTicketModal = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <TicketForm
+            ref="newTicketForm"
             :ticket="newTicket"
             :categories="categories"
+            :nomenclature="getNomenclature"
             @update:ticket="updateNewTicketFields"
             @update:categories="handleUpdateCategories" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-4">
+        <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="newTicketModal = false" />
           <DefaultButton text="Salvar" @click="saveNewTicket" />
         </v-card-actions>
@@ -156,22 +133,24 @@
     </v-dialog>
 
     <!-- Modal de Edição -->
-    <v-dialog v-model="editModal" max-width="800px" :fullscreen="isMobile">
+    <v-dialog v-model="editModal" max-width="960px" :fullscreen="isMobile">
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
-          <h3>Editar Ingresso</h3>
+          <h3>Editar {{ getNomenclature }}</h3>
           <v-btn icon @click="editModal = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <TicketForm
+            ref="editTicketForm"
             :ticket="selectedTicket"
             :categories="categories"
+            :nomenclature="getNomenclature"
             @update:ticket="updateTicketFields"
             @update:categories="handleUpdateCategories" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-4">
+        <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
           <DefaultButton text="Salvar" @click="saveEditedTicket" />
         </v-card-actions>
@@ -210,6 +189,10 @@ export default {
       type: Object,
       required: true,
     },
+    nomenclature: {
+      type: String,
+      required: true,
+    },
   },
 
   data() {
@@ -221,9 +204,6 @@ export default {
       confirmDialog: false,
       ticketIdxToRemove: null,
       ticketNameToRemove: null,
-      nomenclature: 'Ingresso',
-      nomenclatureOptions: ['Ingresso', 'Inscrição', 'Doação'],
-      absorveTax: false,
       editModal: false,
       selectedTicket: null,
       selectedTicketIndex: null,
@@ -231,16 +211,17 @@ export default {
       newTicket: {
         name: '',
         category: '',
-        price: 0,
-        max_quantity: 0,
-        min_purchase: 0,
-        max_purchase: 0,
+        price: '',
+        max_quantity: '',
+        min_purchase: '',
+        max_purchase: '',
         open_date: '',
         start_time: '',
         close_date: '',
         end_time: '',
         visible: true,
-        quantity: 0,
+        availability: '',
+        quantity: '',
         customFields: [],
       },
     };
@@ -249,6 +230,24 @@ export default {
   computed: {
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+    getNomenclature() {
+      switch (this.nomenclature) {
+        case 'Ingressos':
+          return 'Ingresso';
+        case 'Inscrições':
+          return 'Inscrição';
+        case 'Doações':
+          return 'Doação';
+        default:
+          return 'Ingresso';
+      }
+    },
+    getNewItemModalTitle() {
+      if (this.getNomenclature === 'Ingresso') {
+        return `Novo ${this.getNomenclature}`;
+      }
+      return `Nova ${this.getNomenclature}`;
     },
   },
 
@@ -305,20 +304,21 @@ export default {
       this.ticketNameToRemove = null;
       this.confirmDialog = false;
       toast.setToast({
-        text: 'Ingresso removido com sucesso.',
+        text: 'Registro removido com sucesso.',
         type: 'success',
         time: 5000,
       });
     },
     handleRemoveTicket(index) {
-      const nameToShow = this.tickets[index].name || 'Ingresso de número ' + (index + 1);
+      const nameToShow =
+        this.tickets[index].name || `${getNomenclature} de número ` + (index + 1);
 
       this.ticketNameToRemove = nameToShow;
       this.ticketIdxToRemove = index;
 
       if (this.form.customFields.some((field) => field?.tickets?.includes(nameToShow))) {
         toast.setToast({
-          text: 'Existem campos personalizados vinculados a esse ingresso.',
+          text: 'Existem campos personalizados vinculados a esse registro.',
           type: 'danger',
           time: 5000,
         });
@@ -331,16 +331,17 @@ export default {
       this.newTicket = {
         name: '',
         category: '',
-        price: 0,
-        max_quantity: 0,
-        min_purchase: 0,
-        max_purchase: 0,
+        price: '',
+        max_quantity: '',
+        min_purchase: '',
+        max_purchase: '',
         open_date: '',
         start_time: '',
         close_date: '',
         end_time: '',
         visible: true,
-        quantity: 0,
+        availability: '',
+        quantity: '',
         customFields: [],
       };
       this.newTicketModal = true;
@@ -350,9 +351,15 @@ export default {
       this.newTicket = updatedTicket;
     },
     saveNewTicket() {
-      this.tickets.push({ ...this.newTicket });
-      this.newTicketModal = false;
-      this.emitChanges();
+      const ticketForm = this.$refs.newTicketForm;
+
+      if (ticketForm.validateForm()) {
+        this.tickets.push({ ...this.newTicket });
+        this.newTicketModal = false;
+        this.emitChanges();
+      } else {
+        console.log('[INSERÇÃO - TicketForm] Erro de validação:', ticketForm.errors);
+      }
     },
 
     openEditModal(ticket, index) {
@@ -365,9 +372,15 @@ export default {
     },
     saveEditedTicket() {
       if (this.selectedTicketIndex !== null) {
-        this.$set(this.tickets, this.selectedTicketIndex, this.selectedTicket);
-        this.emitChanges();
-        this.editModal = false;
+        const ticketForm = this.$refs.editTicketForm;
+
+        if (ticketForm.validateForm()) {
+          this.$set(this.tickets, this.selectedTicketIndex, this.selectedTicket);
+          this.emitChanges();
+          this.editModal = false;
+        } else {
+          console.log('[EDIÇÃO - TicketForm] Erro de validação:', ticketForm.errors);
+        }
       }
     },
 
@@ -453,9 +466,5 @@ export default {
 
 .table-row:active {
   cursor: grabbing;
-}
-
-.ticket-configuration {
-  box-shadow: 0px 0px 2.24px 0px rgba(0, 0, 0, 0.16078) !important;
 }
 </style>

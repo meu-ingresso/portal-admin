@@ -15,6 +15,8 @@
           dense
           placeholder="Digite o nome do evento"
           required
+          :error="!!errors.eventName"
+          :error-messages="errors.eventName"
           hide-details="auto"
           @input="onEventNameChange" />
       </v-col>
@@ -62,7 +64,9 @@
           dense
           return-object
           hide-details="auto"
-          required />
+          required
+          :error="!!errors.category"
+          :error-messages="errors.category" />
       </v-col>
 
       <!-- Tipo do Evento -->
@@ -73,23 +77,21 @@
           :items="types"
           outlined
           dense
-          return-object
           hide-details="auto"
-          required />
+          required
+          :disabled="nomenclature === 'Doação'"
+          :error="!!errors.event_type"
+          :error-messages="errors.event_type" />
       </v-col>
 
       <!-- Classificação Indicativa -->
       <v-col cols="12" md="4" sm="12">
-        <!--         <v-select
+        <RatingSelect
           v-model="localForm.rating"
-          label="Classificação Indicativa"
-          :items="ratings"
-          outlined
-          dense
-          return-object
-          hide-details="auto"
-          required /> -->
-        <RatingSelect v-model="localForm.rating" :value="localForm.rating" :ratings="ratings" />
+          :value="localForm.rating"
+          :ratings="ratings"
+          :error="!!errors.rating"
+          :error-messages="errors.rating" />
       </v-col>
 
       <!-- Descrição do Evento -->
@@ -105,28 +107,6 @@
           required />
       </v-col>
     </v-row>
-
-    <!-- Campo de Upload da Imagem -->
-    <!--     <v-row>
-      <v-col cols="12">
-        <v-file-input
-          v-model="localForm.banner"
-          label="Banner do Evento"
-          placeholder="Clique ou arraste a imagem principal aqui (954x500px)"
-          accept="image/*"
-          outlined
-          dense
-          prepend-icon="mdi-camera"
-          hide-details="auto"
-          show-size
-          @change="validateImageDimensions"
-          @click:clear="onClearBanner"
-           />
-        <div v-if="imagePreview" class="image-preview mt-3">
-          <img :src="imagePreview" alt="Prévia do Banner" />
-        </div>
-      </v-col>
-    </v-row> -->
     <v-row>
       <v-col cols="12">
         <!-- Campo de Upload / Prévia da Imagem -->
@@ -168,25 +148,86 @@
       :start-time="form.startTime"
       :end-date="form.endDate"
       :end-time="form.endTime"
+      :errors="{
+        startDate: errors.startDate,
+        startTime: errors.startTime,
+        endDate: errors.endDate,
+        endTime: errors.endTime,
+      }"
       @update:startDate="updateStartDate"
       @update:startTime="updateStartTime"
       @update:endDate="updateEndDate"
       @update:endTime="updateEndTime" />
 
+    <template v-if="['Presencial', 'Híbrido'].includes(localForm.event_type) && nomenclature !== 'Doação'">
+      <v-row>
+        <v-col cols="12">
+          <h3>Localização</h3>
+        </v-col>
+      </v-row>
+
+      <!-- Endereço do Evento -->
+      <AddressForm
+        :cep="form.cep"
+        :location-name="form.location_name"
+        :number="form.number"
+        :address="form.address"
+        :errors="{
+          cep: errors.cep,
+          location_name: errors.location_name,
+          number: errors.number,
+        }"
+        @update:cep="updateCep"
+        @update:location-name="updateLocationName"
+        @update:number="updateNumber"
+        @update:address="updateAddress" />
+    </template>
+
+    <!-- Configurações do Evento/Ingressos -->
     <v-row>
       <v-col cols="12">
-        <h3>Localização</h3>
+        <v-card tile elevation="1" class="ticket-configuration">
+          <v-card-title>
+            <p class="subtitle-1">Configurações</p>
+          </v-card-title>
+          <v-card-text>
+            <v-row class="d-flex align-center justify-space-between">
+              <v-col cols="12" md="8" sm="12">
+                <div class="d-flex align-center">
+                  <v-switch
+                    v-model="absorveTax"
+                    class="inline-switch-checkbox mr-4 pt-0"
+                    label="Absorver a taxa de serviço"
+                    dense
+                    hide-details="auto" />
+                  <v-tooltip top>
+                    <template #activator="{ on, attrs }">
+                      <v-icon color="gray" v-bind="attrs" v-on="on"
+                        >mdi-help-circle</v-icon
+                      >
+                    </template>
+                    <span class="tax-container">
+                      Ao selecionar essa opção, a taxa de serviço (10%) será incluída no
+                      preço final de venda do ingresso e não será mostrada ao comprador
+                    </span>
+                  </v-tooltip>
+                </div>
+              </v-col>
+              <v-col cols="12" md="4" sm="12" class="d-flex align-center">
+                <p class="mr-4">Nomenclatura:</p>
+                <v-select
+                  v-model="nomenclature"
+                  :items="nomenclatureOptions"
+                  outlined
+                  dense
+                  hide-details="auto"
+                  required />
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
-
-    <!-- Endereço do Evento -->
-    <AddressForm
-      :cep="form.cep"
-      :location-name="form.location_name"
-      :address="form.address"
-      @update:cep="updateCep"
-      @update:location-name="updateLocationName"
-      @update:address="updateAddress" />
   </v-container>
 </template>
 
@@ -220,6 +261,52 @@ export default {
       types: ['Presencial', 'Online', 'Híbrido'],
       debouncerAlias: null,
       imagePreview: null,
+      absorveTax: false,
+      nomenclature: 'Ingresso',
+      nomenclatureOptions: ['Ingresso', 'Inscrição', 'Doação'],
+      errors: {
+        eventName: '',
+        category: '',
+        event_type: '',
+        rating: '',
+        startDate: '',
+        startTime: '',
+        endDate: '',
+        endTime: '',
+        cep: '',
+        location_name: '',
+        number: '',
+      },
+      validationRules: {
+        eventName: [(value) => !!value || 'O nome do evento é obrigatório.'],
+        category: [(value) => !!value || 'Selecione uma categoria.'],
+        event_type: [(value) => !!value || 'Selecione o tipo do evento.'],
+        rating: [(value) => !!value || 'Selecione uma classificação indicativa.'],
+        startDate: [(value) => !!value || 'A data de início é obrigatória.'],
+        startTime: [(value) => !!value || 'A hora de início é obrigatória.'],
+        endDate: [
+          (value) => !!value || 'A data de término é obrigatória.',
+          (value) =>
+            !value ||
+            value >= this.localForm.startDate ||
+            'A data de término deve ser posterior à data de início.',
+        ],
+        endTime: [
+          (value) => !!value || 'A hora de término é obrigatória.',
+          (value) =>
+            !value ||
+            this.localForm.endDate > this.localForm.startDate ||
+            value > this.localForm.startTime ||
+            'A hora de término deve ser posterior à hora de início.',
+        ],
+        cep: [
+          (value) => !!value || 'O CEP é obrigatório.',
+          (value) =>
+            /^\d{5}-\d{3}$/.test(value) || 'O CEP deve estar no formato 00000-000.',
+        ],
+        location_name: [(value) => !!value || 'O local do evento é obrigatório.'],
+        number: [(value) => !!value || 'O número é obrigatório.'],
+      },
     };
   },
 
@@ -239,6 +326,16 @@ export default {
       },
       deep: true,
     },
+    nomenclature(value) {
+      if (value === 'Ingresso') {
+        this.$emit('update:nomenclature', 'Ingressos');
+      } else if (value === 'Inscrição') {
+        this.$emit('update:nomenclature', 'Inscrições');
+      } else if (value === 'Doação') {
+        this.localForm.event_type = 'Online';
+        this.$emit('update:nomenclature', 'Doações');
+      }
+    },
   },
 
   created() {
@@ -248,6 +345,15 @@ export default {
     emitChanges() {
       this.$emit('update:form', { ...this.localForm });
     },
+
+    canProceed(callback) {
+      if (!this.validateForm()) {
+        return callback(null, false, 'Existem campos inválidos no formulário.');
+      }
+
+      callback(null, true);
+    },
+
     async validateAlias() {
       try {
         const alias = this.localForm.alias;
@@ -309,31 +415,85 @@ export default {
       this.imagePreview = objectUrl;
       this.localForm.banner = file;
     },
-
     onClearBanner() {
       this.imagePreview = null;
       this.localForm.banner = null;
     },
+    validateField(fieldName) {
+      if (['Presencial', 'Híbrido'].includes(this.localForm.event_type)) {
+        const rules = this.validationRules[fieldName];
+        if (!rules) return true;
+
+        const value = this.localForm[fieldName];
+        const error = rules.find((rule) => rule(value) !== true);
+
+        this.$set(this.errors, fieldName, error ? error(value) : '');
+        return !error;
+      } else {
+        if (
+          fieldName === 'cep' ||
+          fieldName === 'location_name' ||
+          fieldName === 'number'
+        ) {
+          return true;
+        }
+
+        const rules = this.validationRules[fieldName];
+        if (!rules) return true;
+
+        const value = this.localForm[fieldName];
+        const error = rules.find((rule) => rule(value) !== true);
+
+        this.$set(this.errors, fieldName, error ? error(value) : '');
+        return !error;
+      }
+    },
+
+    validateForm() {
+      const fieldNames = Object.keys(this.validationRules);
+      let isValid = true; // Começamos assumindo que o formulário é válido
+
+      // Valida todos os campos e acumula os erros
+      fieldNames.forEach((fieldName) => {
+        const fieldIsValid = this.validateField(fieldName);
+        if (!fieldIsValid) {
+          isValid = false; // Se qualquer campo for inválido, marcamos como inválido
+        }
+      });
+
+      return isValid;
+    },
 
     updateStartDate(value) {
+      this.localForm.startDate = value;
       eventForm.updateForm({ startDate: value });
     },
     updateStartTime(value) {
+      this.localForm.startTime = value;
       eventForm.updateForm({ startTime: value });
     },
     updateEndDate(value) {
+      this.localForm.endDate = value;
       eventForm.updateForm({ endDate: value });
     },
     updateEndTime(value) {
+      this.localForm.endTime = value;
       eventForm.updateForm({ endTime: value });
     },
+    updateNumber(value) {
+      this.localForm.number = value;
+      eventForm.updateForm({ number: value });
+    },
     updateCep(value) {
+      this.localForm.cep = value;
       eventForm.updateForm({ cep: value });
     },
     updateLocationName(value) {
+      this.localForm.location_name = value;
       eventForm.updateForm({ location_name: value });
     },
     updateAddress(value) {
+      this.localForm.address = value;
       eventForm.updateForm({ address: value });
     },
   },
@@ -394,5 +554,9 @@ export default {
   border-radius: 8px;
   border: 2px solid #ccc;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ticket-configuration {
+  box-shadow: 0px 0px 2.24px 0px rgba(0, 0, 0, 0.16078) !important;
 }
 </style>

@@ -3,6 +3,7 @@
     <!-- Nome do Campo -->
     <v-col cols="12" md="6">
       <v-text-field
+        ref="nameField"
         v-model="localField.name"
         label="Nome do Campo"
         placeholder="Ex: CPF"
@@ -10,12 +11,15 @@
         dense
         hide-details="auto"
         required
+        :error="errors.name.length > 0"
+        :error-messages="errors.name"
         @input="emitChanges" />
     </v-col>
 
     <!-- Tipo do Campo -->
     <v-col cols="12" md="6">
       <v-select
+        ref="typeField"
         v-model="localField.type"
         :items="fieldTypes"
         label="Tipo do Campo"
@@ -24,6 +28,8 @@
         dense
         hide-details="auto"
         required
+        :error="errors.type.length > 0"
+        :error-messages="errors.type"
         @input="emitChanges" />
     </v-col>
 
@@ -39,6 +45,8 @@
         dense
         multiple
         hide-details="auto"
+        :error="errors.tickets.length > 0"
+        :error-messages="errors.tickets"
         @input="emitChanges" />
     </v-col>
 
@@ -54,6 +62,8 @@
         multiple
         hide-details="auto"
         return-object
+        :error="errors.personTypes.length > 0"
+        :error-messages="errors.personTypes"
         @input="emitChanges" />
     </v-col>
 
@@ -119,6 +129,23 @@ export default {
         { text: 'Autocomplete', value: 'autocomplete' },
         { text: 'Multiselect', value: 'multiselect' },
       ],
+      errors: {
+        name: [],
+        type: [],
+        tickets: [],
+        personTypes: [],
+      },
+      validationRules: {
+        name: [(value) => !!value || 'O nome é obrigatório.'],
+        type: [(v) => !!v || 'O tipo do campo é obrigatório.'],
+        tickets: [
+          (v) => (!!v && v.length > 0) || 'Pelo menos um ingresso deve ser selecionado.',
+        ],
+        personTypes: [
+          (v) =>
+            (!!v && v.length > 0) || 'Pelo menos um tipo de pessoa deve ser selecionado.',
+        ],
+      },
     };
   },
   watch: {
@@ -133,6 +160,29 @@ export default {
   methods: {
     emitChanges() {
       this.$emit('update:field', this.localField);
+    },
+
+    validateField(fieldName) {
+      const rules = this.validationRules[fieldName];
+      if (!rules) return true;
+
+      const value = this.localField[fieldName];
+      const error = rules.find((rule) => rule(value) !== true);
+
+      this.$set(this.errors, fieldName, error ? error(value) : '');
+      return !error;
+    },
+
+    validateForm() {
+      let isValid = true;
+
+      Object.keys(this.validationRules).forEach((fieldName) => {
+        if (!this.validateField(fieldName)) {
+          isValid = false;
+        }
+      });
+
+      return isValid;
     },
   },
 };

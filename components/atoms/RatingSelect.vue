@@ -7,7 +7,9 @@
     item-text="text"
     dense
     outlined
-    hide-details="auto"
+    :error="error"
+    :error-messages="errorMessages"
+    :hide-details="!errorMessages || errorMessages.length === 0"
     :return-object="true"
     :menu-props="{ contentClass: 'rating-select-dropdown' }"
     class="rating-select">
@@ -44,6 +46,14 @@ export default {
     ratings: {
       type: Array,
       required: true,
+    },
+    error: {
+      type: Boolean,
+      default: false,
+    },
+    errorMessages: {
+      type: [String, Array],
+      default: () => [],
     },
   },
   data() {

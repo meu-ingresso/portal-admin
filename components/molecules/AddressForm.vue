@@ -7,7 +7,10 @@
         outlined
         dense
         hide-details="auto"
-        placeholder="Digite o local do evento" />
+        required
+        placeholder="Digite o local do evento"
+        :error="!!errors.location_name"
+        :error-messages="errors.location_name" />
     </v-col>
 
     <v-col cols="12" md="4" sm="12">
@@ -20,6 +23,8 @@
         required
         maxlength="9"
         hide-details="auto"
+        :error="!!errors.cep"
+        :error-messages="errors.cep"
         @input="onChangeCEP" />
     </v-col>
 
@@ -50,14 +55,16 @@
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
-        v-model="localAddress.number"
+        v-model="localNumer"
         label="Número"
         type="number"
         outlined
         dense
         hide-details="auto"
         min="0"
-        placeholder="Digite o número" />
+        placeholder="Digite o número"
+        :error="!!errors.number"
+        :error-messages="errors.number" />
     </v-col>
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
@@ -86,15 +93,28 @@ export default {
       type: String,
       required: true,
     },
+    number: {
+      type: String,
+      required: true,
+    },
     address: {
       type: Object,
       required: true,
+    },
+    errors: {
+      type: Object,
+      default: () => ({
+        cep: '',
+        location_name: '',
+        number: '',
+      }),
     },
   },
   data() {
     return {
       localCep: this.cep,
       localLocationName: this.locationName,
+      localNumer: this.number,
       localAddress: { ...this.address },
       isFetchingAddress: false,
       addressError: '',
@@ -120,14 +140,23 @@ export default {
     locationName(newVal) {
       this.localLocationName = newVal;
     },
+    number(newVal) {
+      this.localNumer = newVal;
+    },
+    localLocationName(newVal) {
+      this.$emit('update:location-name', newVal);
+    },
+    localCep(newVal) {
+      this.$emit('update:cep', newVal);
+    },
+    localNumer(newVal) {
+      this.$emit('update:number', newVal);
+    },
     address: {
       handler(newVal) {
         this.localAddress = { ...newVal };
       },
       deep: true,
-    },
-    localLocationName(newVal) {
-      this.$emit('update:locationName', newVal);
     },
     localAddress: {
       handler(newVal) {
@@ -138,7 +167,6 @@ export default {
           this.localAddress.state !== this.address.state
         ) {
           this.$emit('update:address', newVal);
-          this.$emit('update:cep', this.localCep);
         }
       },
       deep: true,

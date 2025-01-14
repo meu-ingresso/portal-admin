@@ -67,7 +67,7 @@
             :discount-types="discountTypes"
             @update:coupon="updateNewCouponFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-4">
+        <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="newCouponModal = false" />
           <DefaultButton text="Salvar" @click="saveNewCoupon" />
         </v-card-actions>
@@ -89,7 +89,7 @@
             :discount-types="discountTypes"
             @update:coupon="updateCouponFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-4">
+        <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
           <DefaultButton text="Salvar" @click="saveEditedCoupon" />
         </v-card-actions>

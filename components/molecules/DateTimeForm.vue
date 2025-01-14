@@ -19,6 +19,8 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :error="!!errors.startDate"
+            :error-messages="errors.startDate"
             v-on="on" />
         </template>
         <v-date-picker
@@ -50,6 +52,8 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :error="!!errors.startTime"
+            :error-messages="errors.startTime"
             v-on="on" />
         </template>
         <v-time-picker
@@ -81,6 +85,8 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :error="!!errors.endDate"
+            :error-messages="errors.endDate"
             v-on="on" />
         </template>
         <v-date-picker
@@ -112,6 +118,8 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :error="!!errors.endTime"
+            :error-messages="errors.endTime"
             v-on="on" />
         </template>
         <v-time-picker
@@ -146,6 +154,10 @@ export default {
     },
     endTime: {
       type: String,
+      required: true,
+    },
+    errors: {
+      type: Object,
       required: true,
     },
   },

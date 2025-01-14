@@ -79,13 +79,14 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CustomFieldForm
+            ref="newCustomFieldForm"
             :field="newField"
             :tickets="tickets"
             :person-types="personTypes"
             :options="options"
             @update:field="updateNewFieldFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-4">
+        <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="newFieldModal = false" />
           <DefaultButton text="Salvar" @click="saveNewField" />
         </v-card-actions>
@@ -103,13 +104,14 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CustomFieldForm
+            ref="editCustomFieldForm"
             :field="selectedField"
             :tickets="tickets"
             :person-types="personTypes"
             :options="options"
             @update:field="updateFieldFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-4">
+        <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
           <DefaultButton text="Salvar" @click="saveEditedField" />
         </v-card-actions>
@@ -216,7 +218,10 @@ export default {
           name: 'Email',
           type: 'email',
           isDefault: true,
-          options: ['required', 'visible_on_ticket'],
+          options: [
+            { text: 'Obrigatório', value: 'required' },
+            { text: 'Visível na Impressão', value: 'visible_on_ticket' },
+          ],
           personTypes: [
             { text: 'Pessoa Física (PF)', value: 'PF' },
             { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
@@ -252,9 +257,15 @@ export default {
       this.newField = updatedField;
     },
     saveNewField() {
-      this.customFields.push({ ...this.newField });
-      this.newFieldModal = false;
-      this.emitChanges();
+      const fieldForm = this.$refs.newCustomFieldForm;
+
+      if (fieldForm.validateForm()) {
+        this.customFields.push({ ...this.newField });
+        this.newFieldModal = false;
+        this.emitChanges();
+      } else {
+        console.log('[INSERÇÃO - FieldForm] Erro de validação:', fieldForm.errors);
+      }
     },
     openEditModal(field, index) {
       this.selectedField = { ...field };
@@ -266,9 +277,15 @@ export default {
     },
     saveEditedField() {
       if (this.selectedFieldIndex !== null) {
-        this.$set(this.customFields, this.selectedFieldIndex, this.selectedField);
-        this.editModal = false;
-        this.emitChanges();
+        const fieldForm = this.$refs.editCustomFieldForm;
+
+        if (fieldForm.validateForm()) {
+          this.$set(this.customFields, this.selectedFieldIndex, this.selectedField);
+          this.editModal = false;
+          this.emitChanges();
+        } else {
+          console.log('[EDIÇÃO - FieldForm] Erro de validação:', fieldForm.errors);
+        }
       }
     },
     handleRemoveField(index) {
