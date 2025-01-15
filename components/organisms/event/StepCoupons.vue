@@ -3,7 +3,7 @@
     <v-row>
       <v-col cols="12">
         <template v-if="isMobile">
-          <h3>Cadastro de Cupons</h3>
+          <h3>Cupons</h3>
           <p class="subtitle-2">Adicione cupons de desconto para o evento.</p>
         </template>
         <ButtonWithIcon
@@ -20,14 +20,11 @@
         <div class="table-header">
           <div class="table-cell">Código</div>
           <div class="table-cell">Valor</div>
+          <div class="table-cell">Ingressos</div>
           <div class="table-cell">Ações</div>
         </div>
 
-        <div
-          v-for="(coupon, index) in coupons"
-          :key="index"
-          class="table-row"
-          :class="{ 'disabled-row': coupon.isDefault }">
+        <div v-for="(coupon, index) in coupons" :key="index" class="table-row">
           <div class="table-cell">{{ coupon.code }}</div>
           <div class="table-cell">
             {{
@@ -36,15 +33,12 @@
                 : `${coupon.discountValue}%`
             }}
           </div>
+          <div class="table-cell">{{ getArrayObjectText(coupon.tickets, null) }}</div>
           <div class="table-cell actions">
-            <v-btn
-              icon
-              small
-              :disabled="coupon.isDefault"
-              @click="openEditModal(coupon, index)">
+            <v-btn icon small @click="openEditModal(coupon, index)">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
-            <v-btn icon small :disabled="coupon.isDefault" @click="removeCoupon(index)">
+            <v-btn icon small @click="removeCoupon(index)">
               <v-icon color="red">mdi-delete</v-icon>
             </v-btn>
           </div>
@@ -53,7 +47,11 @@
     </template>
 
     <!-- Modal de Novo Cupom -->
-    <v-dialog v-model="newCouponModal" max-width="800px" :fullscreen="isMobile">
+    <v-dialog
+      v-model="newCouponModal"
+      max-width="960px"
+      :fullscreen="isMobile"
+      persistent>
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>Novo Cupom</h3>
@@ -63,8 +61,11 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CouponForm
+            ref="newCupomForm"
             :coupon="newCoupon"
-            :discount-types="discountTypes"
+            :tickets="tickets"
+            :event-start-date="form.startDate"
+            :event-end-date="form.endDate"
             @update:coupon="updateNewCouponFields" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
@@ -75,7 +76,7 @@
     </v-dialog>
 
     <!-- Modal de Edição -->
-    <v-dialog v-model="editModal" max-width="800px" :fullscreen="isMobile">
+    <v-dialog v-model="editModal" max-width="960px" :fullscreen="isMobile" persistent>
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>Editar Cupom</h3>
@@ -85,8 +86,11 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CouponForm
+            ref="editCupomForm"
             :coupon="selectedCoupon"
-            :discount-types="discountTypes"
+            :tickets="tickets"
+            :event-start-date="form.startDate"
+            :event-end-date="form.endDate"
             @update:coupon="updateCouponFields" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
@@ -97,7 +101,7 @@
     </v-dialog>
 
     <!-- Dialog de Confirmação -->
-    <v-dialog v-model="confirmDialog" max-width="500">
+    <v-dialog v-model="confirmDialog" max-width="500" persistent>
       <v-card>
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>Confirmar exclusão</h3>
@@ -118,7 +122,7 @@
 </template>
 
 <script>
-import { formatDateToBr, formatPrice } from '@/utils/formatters';
+import { formatDateToBr } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
 import { toast } from '@/store';
 export default {
@@ -131,10 +135,6 @@ export default {
   data() {
     return {
       coupons: this.form.coupons || [],
-      discountTypes: [
-        { text: 'Fixo', value: 'fixed' },
-        { text: 'Porcentagem', value: 'percentage' },
-      ],
       confirmDialog: false,
       couponNameToRemove: '',
       couponIndexToRemove: null,
@@ -150,6 +150,9 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
+    tickets() {
+      return this.form?.tickets.map((ticket) => ticket.name) || [];
+    },
   },
 
   methods: {
@@ -157,10 +160,10 @@ export default {
       return {
         code: '',
         discountType: 'fixed',
-        discountValue: 0,
+        discountValue: '',
         maxUses: 1,
         expirationDate: '',
-        isDefault: false,
+        tickets: [],
       };
     },
 
@@ -190,6 +193,13 @@ export default {
     },
 
     saveNewCoupon() {
+      const cupomForm = this.$refs.newCupomForm;
+
+      if (!cupomForm.validateForm()) {
+        console.log('[INSERÇÃO - CoupomForm] Erro de validação:', cupomForm.errors);
+        return;
+      }
+
       this.coupons.push({ ...this.newCoupon });
       this.newCouponModal = false;
       this.emitChanges();
@@ -206,6 +216,13 @@ export default {
     },
 
     saveEditedCoupon() {
+      const cupomForm = this.$refs.editCupomForm;
+
+      if (!cupomForm.validateForm()) {
+        console.log('[EDIÇÃO - CoupomForm] Erro de validação:', cupomForm.errors);
+        return;
+      }
+
       if (this.selectedCouponIndex !== null) {
         this.$set(this.coupons, this.selectedCouponIndex, this.selectedCoupon);
         this.editModal = false;
@@ -224,8 +241,11 @@ export default {
       this.confirmDialog = true;
     },
 
-    onDiscountValueInput(coupon, index) {
-      this.coupons[index].discountValue = formatPrice(coupon.discountValue);
+    getArrayObjectText(arrayValue, key = 'text') {
+      if (!key) {
+        return arrayValue.map((item) => item).join(', ');
+      }
+      return arrayValue.map((item) => item[key]).join(', ');
     },
   },
 };

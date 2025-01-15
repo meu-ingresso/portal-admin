@@ -10,7 +10,36 @@
         dense
         hide-details="auto"
         required
-        @input="emitChanges" />
+        :error="errors.code.length > 0"
+        :error-messages="errors.code" />
+    </v-col>
+
+    <!-- Ingressos Associados -->
+    <v-col cols="12" md="6">
+      <v-select
+        v-model="localCoupon.tickets"
+        :items="tickets"
+        label="Ingressos"
+        placeholder="Selecione o(s) ingresso(s)"
+        no-data-text="Nenhum ingresso cadastrado"
+        outlined
+        dense
+        multiple
+        hide-details="auto">
+        <template #prepend-item>
+          <v-list-item ripple @mousedown.prevent @click="toggleAllTickets">
+            <v-list-item-action>
+              <v-icon :color="localCoupon.tickets.length > 0 ? 'primary' : ''">
+                {{ icon }}
+              </v-icon>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title> Todos </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-divider class="mt-2"></v-divider>
+        </template>
+      </v-select>
     </v-col>
 
     <!-- Tipo de Desconto -->
@@ -23,7 +52,8 @@
         dense
         hide-details="auto"
         required
-        @input="emitChanges" />
+        :error="errors.discountType.length > 0"
+        :error-messages="errors.discountType" />
     </v-col>
 
     <!-- Valor do Desconto -->
@@ -35,14 +65,14 @@
             ? 'Valor do Desconto (%)'
             : 'Valor do Desconto (R$)'
         "
-        :type="localCoupon.discountType === 'percentage' ? 'number' : 'text'"
-        :append-icon="localCoupon.discountType === 'percentage' ? 'mdi-percent' : ''"
-        :prefix="localCoupon.discountType === 'fixed' ? 'R$' : ''"
+        :prefix="localCoupon.discountType === 'fixed' ? 'R$' : '%'"
         outlined
         dense
         hide-details="auto"
         required
-        @input="emitChanges" />
+        :error="errors.discountValue.length > 0"
+        :error-messages="errors.discountValue"
+        @keypress="onPriceOrNumberChange" />
     </v-col>
 
     <!-- Máximo de Usos -->
@@ -50,13 +80,16 @@
       <v-text-field
         v-model="localCoupon.maxUses"
         label="Máximo de Usos"
+        placeholder="Ex: 100"
         type="number"
+        min="1"
         outlined
         dense
         hide-details="auto"
-        min="1"
         required
-        @input="emitChanges" />
+        :error="errors.maxUses.length > 0"
+        :error-messages="errors.maxUses"
+        @keypress="onNumerFieldChange" />
     </v-col>
 
     <!-- Data de Expiração -->
@@ -76,6 +109,8 @@
             dense
             hide-details="auto"
             v-bind="attrs"
+            :error="errors.expirationDate.length > 0"
+            :error-messages="errors.expirationDate"
             v-on="on" />
         </template>
         <v-date-picker
@@ -88,7 +123,7 @@
 </template>
 
 <script>
-import { formatDateToBr } from '@/utils/formatters';
+import { formatDateToBr, formatPrice } from '@/utils/formatters';
 
 export default {
   props: {
@@ -96,15 +131,56 @@ export default {
       type: Object,
       required: true,
     },
-    discountTypes: {
+    tickets: {
       type: Array,
+      required: true,
+    },
+    eventStartDate: {
+      type: String,
+      required: true,
+    },
+    eventEndDate: {
+      type: String,
       required: true,
     },
   },
   data() {
     return {
       localCoupon: { ...this.coupon },
+      discountTypes: [
+        { text: 'Fixo', value: 'fixed' },
+        { text: 'Porcentagem', value: 'percentage' },
+      ],
       expirationMenu: false,
+      errors: {
+        code: [],
+        tickets: [],
+        discountType: [],
+        discountValue: [],
+        maxUses: [],
+        expirationDate: [],
+      },
+      validationRules: {
+        code: [(value) => !!value || 'O código do cupom é obrigatório.'],
+        discountType: [(v) => !!v || 'O tipo de desconto é obrigatório.'],
+        discountValue: [
+          (v) => !!v || 'O valor do desconto é obrigatório.',
+          (v) => parseFloat(v) > 0 || 'O valor do desconto deve ser maior que 0.',
+        ],
+        maxUses: [
+          (v) => !!v || 'O número máximo de usos é obrigatório.',
+          (v) => v > 0 || 'O número máximo de usos deve ser maior que 0.',
+        ],
+        expirationDate: [
+          (v) => !!v || 'A data de expiração é obrigatória.',
+          (v) =>
+            this.normalizeDate(v) >= this.normalizeDate(new Date()) ||
+            'A data de expiração deve ser posterior a hoje.',
+          (v) =>
+            this.normalizeDate(v) >= this.normalizeDate(this.eventStartDate) ||
+            'A data de expiração deve ser posterior à data de início do evento.',
+        ],
+      },
     };
   },
   computed: {
@@ -112,6 +188,17 @@ export default {
       return this.localCoupon.expirationDate
         ? formatDateToBr(this.localCoupon.expirationDate)
         : '';
+    },
+    selectedAllTickets() {
+      return this.localCoupon.tickets.length === this.tickets.length;
+    },
+    selectedSomeTickets() {
+      return this.localCoupon.tickets.length > 0 && !this.selectedAllTickets;
+    },
+    icon() {
+      if (this.selectedAllTickets) return 'mdi-close-box';
+      if (this.selectedSomeTickets) return 'mdi-minus-box';
+      return 'mdi-checkbox-blank-outline';
     },
   },
   watch: {
@@ -124,12 +211,77 @@ export default {
   },
 
   methods: {
+    toggleAllTickets() {
+      if (this.selectedAllTickets) {
+        this.localCoupon.tickets = [];
+      } else {
+        this.localCoupon.tickets = [...this.tickets];
+      }
+    },
+
+    normalizeDate(date) {
+      const normalized = new Date(date);
+      normalized.setUTCHours(0, 0, 0, 0);
+      return normalized;
+    },
+
+    onNumerFieldChange(event) {
+      const charCode = event.charCode || event.keyCode;
+      if (charCode < 48 || charCode > 57) {
+        event.preventDefault();
+      }
+    },
+
+    onPriceOrNumberChange(event) {
+      if (this.coupon.discountType === 'percentage') {
+        this.onNumerFieldChange(event);
+        this.localCoupon.discountValue = Math.min(this.localCoupon.discountValue, 100);
+      } else {
+        const charCode = event.charCode || event.keyCode;
+        const char = String.fromCharCode(charCode);
+
+        if (
+          !/[0-9,]/.test(char) ||
+          (char === ',' && this.localCoupon.discountValue.includes(','))
+        ) {
+          event.preventDefault();
+        }
+
+        const value = event.target.value;
+        this.localCoupon.discountValue = formatPrice(value);
+      }
+    },
+
     emitChanges() {
       this.$emit('update:coupon', this.localCoupon);
     },
     onDateChange() {
       this.expirationMenu = false;
-      this.emitChanges();
+    },
+    validateField(fieldName) {
+      const rules = this.validationRules[fieldName];
+      if (!rules) return true;
+
+      const value = this.localCoupon[fieldName];
+      const error = rules.find((rule) => rule(value) !== true);
+
+      this.$set(this.errors, fieldName, error ? error(value) : '');
+      return !error;
+    },
+    validateForm() {
+      let isValid = true;
+
+      Object.keys(this.validationRules).forEach((fieldName) => {
+        if (!this.validateField(fieldName)) {
+          isValid = false;
+        }
+      });
+
+      if (isValid) {
+        this.emitChanges();
+      }
+
+      return isValid;
     },
   },
 };
@@ -137,3 +289,4 @@ export default {
 
 <style scoped>
 </style>
+

@@ -94,6 +94,18 @@
           :error-messages="errors.rating" />
       </v-col>
 
+      <v-col v-if="isEventOnlineOrHibrido" cols="12" md="12" sm="12">
+        <v-text-field
+          v-model="localForm.link_online"
+          label="Link do Evento"
+          outlined
+          dense
+          placeholder="Digite o link do evento"
+          hide-details="auto"
+          :error="!!errors.link_online"
+          :error-messages="errors.link_online" />
+      </v-col>
+
       <!-- Descrição do Evento -->
       <v-col cols="12" md="12" sm="12">
         <v-textarea
@@ -159,7 +171,7 @@
       @update:endDate="updateEndDate"
       @update:endTime="updateEndTime" />
 
-    <template v-if="['Presencial', 'Híbrido'].includes(localForm.event_type) && nomenclature !== 'Doação'">
+    <template v-if="isEventPresencialOrHibrito && nomenclature !== 'Doação'">
       <v-row>
         <v-col cols="12">
           <h3>Localização</h3>
@@ -191,8 +203,8 @@
             <p class="subtitle-1">Configurações</p>
           </v-card-title>
           <v-card-text>
-            <v-row class="d-flex align-center justify-space-between">
-              <v-col cols="12" md="8" sm="12">
+            <v-row class="d-flex align-start">
+              <v-col md="4" sm="12">
                 <div class="d-flex align-center">
                   <v-switch
                     v-model="absorveTax"
@@ -213,10 +225,22 @@
                   </v-tooltip>
                 </div>
               </v-col>
-              <v-col cols="12" md="4" sm="12" class="d-flex align-center">
-                <p class="mr-4">Nomenclatura:</p>
+              <v-col md="4" sm="12">
+                <v-select
+                  v-model="localForm.availability"
+                  label="Visibilidade"
+                  :items="availabilityOptions"
+                  persistent-hint
+                  :hint="getHintByAvailability"
+                  outlined
+                  dense
+                  hide-details="auto"
+                  required />
+              </v-col>
+              <v-col md="4" sm="12" class="d-flex align-center">
                 <v-select
                   v-model="nomenclature"
+                  label="Nomenclatura"
                   :items="nomenclatureOptions"
                   outlined
                   dense
@@ -262,7 +286,8 @@ export default {
       debouncerAlias: null,
       imagePreview: null,
       absorveTax: false,
-      nomenclature: 'Ingresso',
+      availabilityOptions: ['Visível a todos', 'Oculto'],
+      nomenclature: this.form.sale_type || 'Ingresso',
       nomenclatureOptions: ['Ingresso', 'Inscrição', 'Doação'],
       errors: {
         eventName: '',
@@ -275,6 +300,7 @@ export default {
         endTime: '',
         cep: '',
         location_name: '',
+        link_online: '',
         number: '',
       },
       validationRules: {
@@ -284,6 +310,11 @@ export default {
         rating: [(value) => !!value || 'Selecione uma classificação indicativa.'],
         startDate: [(value) => !!value || 'A data de início é obrigatória.'],
         startTime: [(value) => !!value || 'A hora de início é obrigatória.'],
+        link_online: [
+          (value) => !!value || 'O link do evento é obrigatório.',
+          (value) =>
+            /^(https?:\/\/[^\s$.?#].[^\s]*)$/i.test(value) || 'Digite um link válido.',
+        ],
         endDate: [
           (value) => !!value || 'A data de término é obrigatória.',
           (value) =>
@@ -317,6 +348,25 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
+    isEventPresencialOrHibrito() {
+      return ['Presencial', 'Híbrido'].includes(this.localForm.event_type);
+    },
+    isEventOnline() {
+      return this.localForm.event_type === 'Online';
+    },
+    isEventOnlineOrHibrido() {
+      return ['Online', 'Híbrido'].includes(this.localForm.event_type);
+    },
+    getHintByAvailability() {
+      switch (this.localForm.availability) {
+        case 'Visível a todos':
+          return 'O evento será visível para todos os usuários da plataforma.';
+        case 'Oculto':
+          return 'Apenas quem tiver o link poderá acessar a página do evento.';
+        default:
+          return '';
+      }
+    },
   },
 
   watch: {
@@ -327,6 +377,9 @@ export default {
       deep: true,
     },
     nomenclature(value) {
+      // Atualiza o tipo de venda do evento
+      this.localForm.sale_type = value;
+
       if (value === 'Ingresso') {
         this.$emit('update:nomenclature', 'Ingressos');
       } else if (value === 'Inscrição') {
@@ -420,33 +473,28 @@ export default {
       this.localForm.banner = null;
     },
     validateField(fieldName) {
-      if (['Presencial', 'Híbrido'].includes(this.localForm.event_type)) {
-        const rules = this.validationRules[fieldName];
-        if (!rules) return true;
+      const value = this.localForm[fieldName];
+      const rules = this.validationRules[fieldName];
 
-        const value = this.localForm[fieldName];
-        const error = rules.find((rule) => rule(value) !== true);
-
-        this.$set(this.errors, fieldName, error ? error(value) : '');
-        return !error;
-      } else {
-        if (
-          fieldName === 'cep' ||
-          fieldName === 'location_name' ||
-          fieldName === 'number'
-        ) {
-          return true;
-        }
-
-        const rules = this.validationRules[fieldName];
-        if (!rules) return true;
-
-        const value = this.localForm[fieldName];
-        const error = rules.find((rule) => rule(value) !== true);
-
-        this.$set(this.errors, fieldName, error ? error(value) : '');
-        return !error;
+      // Ignora validação de endereço para eventos Online
+      if (['cep', 'location_name', 'number'].includes(fieldName) && this.isEventOnline) {
+        this.$set(this.errors, fieldName, '');
+        return true;
       }
+
+      // Ignora validação de link_online para eventos Presenciais
+      if (fieldName === 'link_online' && !this.isEventOnline) {
+        this.$set(this.errors, fieldName, '');
+        return true;
+      }
+
+      // Se não houver regras definidas, retorna válido
+      if (!rules) return true;
+
+      // Aplica as regras de validação
+      const error = rules.find((rule) => rule(value) !== true);
+      this.$set(this.errors, fieldName, error ? error(value) : '');
+      return !error;
     },
 
     validateForm() {

@@ -54,7 +54,7 @@
 
               <DefaultButton
                 v-if="index === getSteps.length - 1"
-                text="Finalizar"
+                text="Publicar Evento"
                 @click="submitData" />
             </v-col>
           </v-row>

@@ -27,7 +27,7 @@
     </v-col>
 
     <!-- Para casos de doação, não exibir os campos de preço e quantidade -->
-    <v-col cols="12" :md="nomenclature != 'Doação' ? 3 : 6" sm="12">
+    <v-col cols="12" md="6" sm="12">
       <v-text-field
         v-model="localTicket.price"
         label="Preço"
@@ -40,7 +40,7 @@
         :error-messages="errors.price"
         @keypress="onPriceChange" />
     </v-col>
-    <v-col cols="12" :md="nomenclature != 'Doação' ? 3 : 6" sm="12">
+    <v-col cols="12" md="6" sm="12">
       <v-text-field
         v-model="localTicket.max_quantity"
         :value="localTicket.max_quantity"
@@ -58,7 +58,22 @@
     </v-col>
 
     <template v-if="nomenclature != 'Doação'">
-      <v-col cols="12" md="3" sm="12">
+      <v-col cols="12" md="12" sm="12" class="py-0 my-4">
+        <div class="d-flex align-center" style="padding: 0px 4px 0px">
+          <h4>Quantidade permitida por compra</h4>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-icon v-bind="attrs" v-on="on">mdi-help-circle</v-icon>
+            </template>
+            <span
+              >Limite a quantidade permitida por compra com quantidade mínima e
+              máxima</span
+            >
+          </v-tooltip>
+        </div>
+      </v-col>
+
+      <v-col cols="12" md="6" sm="12">
         <v-text-field
           v-model="localTicket.min_purchase"
           label="Compra Mínima"
@@ -71,7 +86,7 @@
           :error-messages="errors.min_purchase"
           @keypress="onNumerFieldChange" />
       </v-col>
-      <v-col cols="12" md="3" sm="12">
+      <v-col cols="12" md="6" sm="12">
         <v-text-field
           v-model="localTicket.max_purchase"
           label="Compra Máxima"
@@ -247,6 +262,14 @@ export default {
       type: String,
       required: true,
     },
+    eventStartDate: {
+      type: String,
+      required: true,
+    },
+    eventEndDate: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
@@ -293,7 +316,12 @@ export default {
             value >= this.localTicket.min_purchase ||
             'A compra máxima deve ser maior ou igual à compra mínima.',
         ],
-        open_date: [(value) => !!value || 'A data de abertura é obrigatória.'],
+        open_date: [
+          (value) => !!value || 'A data de abertura é obrigatória.',
+          (value) =>
+            this.normalizeDate(value) >= this.normalizeDate(new Date()) ||
+            'A data de abertura deve ser posterior a hoje.',
+        ],
         start_time: [(value) => !!value || 'A hora de início é obrigatória.'],
         close_date: [
           (value) => !!value || 'A data de fechamento é obrigatória.',
@@ -391,6 +419,12 @@ export default {
       if (isValid) this.emitChanges();
 
       return isValid;
+    },
+
+    normalizeDate(date) {
+      const normalized = new Date(date);
+      normalized.setUTCHours(0, 0, 0, 0);
+      return normalized;
     },
 
     emitChanges() {
