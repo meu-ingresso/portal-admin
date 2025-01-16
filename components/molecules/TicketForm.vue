@@ -277,8 +277,8 @@ export default {
       localCategories: [...this.categories],
       availabilityList: [
         { text: 'Para todo o público', value: 'Publico' },
-        { text: 'Restrito a convidados', value: 'Restrito' },
-        { text: 'Apenas PDV interno', value: 'Interno' },
+        { text: 'Restrito a convidados', value: 'Privado' },
+        { text: 'Apenas PDV interno', value: 'PDV' },
       ],
       openDateMenu: false,
       closeDateMenu: false,

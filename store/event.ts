@@ -226,4 +226,118 @@ export default class Event extends VuexModule {
                 };
             });
     }
+
+    @Action
+    public async createEvent(eventPayload) {
+        try {
+            this.setLoading(true);
+
+            // Step 1: Create Address
+            const addressResponse = await $axios.$post('addresses', {
+                street: eventPayload.address.street,
+                zipcode: eventPayload.cep,
+                number: eventPayload.number,
+                complement: eventPayload.address.complement || '',
+                neighborhood: eventPayload.address.neighborhood,
+                latitude: eventPayload.address.latitude || null,
+                longitude: eventPayload.address.longitude || null,
+                city_id: eventPayload.address.city_id,
+            });
+
+            if (!addressResponse || !addressResponse.body || addressResponse.body.code !== 'CREATE_SUCCESS') {
+                throw new Error('Failed to create address');
+            }
+
+            const addressId = addressResponse.body.result.id;
+
+            // Step 2: Create Event
+            const eventResponse = await $axios.$post('events', {
+                alias: eventPayload.alias,
+                name: eventPayload.eventName,
+                description: eventPayload.description,
+                status_id: 'd2057acb-d359-4508-b685-2aefa7a7b4e7', // Draft status [Rascunho]
+                address_id: addressId,
+                category_id: eventPayload.category.value,
+                rating_id: eventPayload.rating.value,
+                start_date: `${eventPayload.startDate}T${eventPayload.startTime}:00.000Z`,
+                end_date: `${eventPayload.endDate}T${eventPayload.endTime}:00.000Z`,
+                opening_hour: eventPayload.startTime,
+                ending_hour: eventPayload.endTime,
+                contact: eventPayload.contact || '',
+                location_name: eventPayload.location_name,
+                general_information: eventPayload.general_information || '',
+                availability: eventPayload.availability,
+                sale_type: eventPayload.sale_type,
+                event_type: eventPayload.event_type,
+                promoter_id: eventPayload.promoter_id || '',
+                id_pixel: eventPayload.id_pixel || '',
+                id_tag_manager: eventPayload.id_tag_manager || '',
+                id_analytics: eventPayload.id_analytics || '',
+                id_google_ads: eventPayload.id_google_ads || '',
+                ads_conversion_label: eventPayload.ads_conversion_label || '',
+                is_featured: eventPayload.is_featured,
+                absorb_service_fee: eventPayload.absorb_service_fee || false,
+            });
+
+
+            if (!eventResponse || !eventResponse.body || eventResponse.body.code !== 'CREATE_SUCCESS') {
+                throw new Error('Failed to create event');
+            }
+
+            const eventId = eventResponse.body.result.id;
+
+            // Step 3: Create Ticket Categories and Tickets
+            const categoryMap = new Map();
+
+            for (const [index, ticket] of eventPayload.tickets.entries()) {
+                let categoryId;
+
+                if (ticket.category && !categoryMap.has(ticket.category)) {
+                    // Create Category if not already created
+                    const categoryResponse = await $axios.$post('ticket-categories', {
+                        event_id: eventId,
+                        name: ticket.category,
+                    });
+
+                    if (!categoryResponse || !categoryResponse.body || categoryResponse.body.code !== 'CREATE_SUCCESS') {
+                        throw new Error('Failed to create ticket category');
+                    }
+
+                    categoryId = categoryResponse.body.result.id;
+                    categoryMap.set(ticket.category, categoryId);
+                } else {
+                    // Use existing category ID
+                    categoryId = categoryMap.get(ticket.category);
+                }
+
+                // Create Ticket
+                await $axios.$post('tickets', {
+                    event_id: eventId,
+                    ticket_event_category_id: categoryId,
+                    name: ticket.name,
+                    description: ticket.description || '',
+                    total_quantity: ticket.max_quantity,
+                    remaining_quantity: ticket.max_quantity,
+                    price: ticket.price,
+                    status_id: '89b4f60f-c058-4d9c-ab88-f27bb0f8925f', // Default status [Ingresso a venda]
+                    start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
+                    end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
+                    availability: ticket.availability.value,
+                    display_order: index + 1,
+                    min_quantity_per_user: ticket.min_purchase,
+                    max_quantity_per_user: ticket.max_purchase,
+                });
+            }
+
+            this.setLoading(false);
+
+            return eventResponse;
+        } catch (error) {
+            this.setLoading(false);
+            console.error('Error creating event:', error);
+            throw error;
+        }
+    }
+
+
 }
