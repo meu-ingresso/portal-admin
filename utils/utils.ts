@@ -93,3 +93,11 @@ export const userHasPermissions = (
 
   return allowedPrefixes.includes(routePrefix);
 };
+
+
+export const getArrayObjectText = (arrayValue: any[], key = 'text'): string => {
+  if (!key) {
+    return arrayValue.map((item) => item).join(', ');
+  }
+  return arrayValue.map((item) => item[key]).join(', ');
+};

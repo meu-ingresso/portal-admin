@@ -6,6 +6,40 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
     namespaced: true,
 })
 export default class EventForm extends VuexModule {
+
+    private defaultFields = [
+        {
+            name: 'Nome Completo',
+            type: { text: 'Texto', value: 'text' },
+            isDefault: true,
+            options: [
+                { text: 'Obrigatório', value: 'required' },
+                { text: 'Visível no ingresso', value: 'visible_on_ticket' },
+            ],
+            personTypes: [
+                { text: 'Pessoa Física (PF)', value: 'PF' },
+                { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+                { text: 'Estrangeiro', value: 'Estrangeiro' },
+            ],
+            tickets: [],
+        },
+        {
+            name: 'Email',
+            type: { text: 'Email', value: 'email' },
+            isDefault: true,
+            options: [
+                { text: 'Obrigatório', value: 'required' },
+                { text: 'Visível na Impressão', value: 'visible_on_ticket' },
+            ],
+            personTypes: [
+                { text: 'Pessoa Física (PF)', value: 'PF' },
+                { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+                { text: 'Estrangeiro', value: 'Estrangeiro' },
+            ],
+            tickets: [],
+        },
+    ];
+
     private form = {
         eventName: '',
         alias: '',
@@ -17,21 +51,29 @@ export default class EventForm extends VuexModule {
         endTime: '',
         rating: null,
         event_type: '',
-        cep: '',
         max_capacity: 0,
         address: {
             street: '',
-            number: '',
             neighborhood: '',
             city: '',
             state: '',
             complement: '',
         },
-        is_featured: false,
+        cep: '',
         location_name: '',
+        number: '',
+        is_featured: false,
+        absorb_service_fee: false,
         tickets: [],
         coupons: [],
-        customFields: [],
+        customFields: [
+            ...this.defaultFields,
+        ],
+        attachments: [],
+        link_online: '',
+        sale_type: 'Ingresso',
+        availability: 'Visível a todos',
+        promoter_id: null,
     };
 
     public get $form() {

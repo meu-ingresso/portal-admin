@@ -10,6 +10,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="formattedStartDate"
             v-model="formattedStartDate"
             label="Data de Início"
             prepend-inner-icon="mdi-calendar"
@@ -19,6 +20,7 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :rules="rules?.startDate"
             v-on="on" />
         </template>
         <v-date-picker
@@ -41,6 +43,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="localStartTime"
             v-model="localStartTime"
             label="Hora de Início"
             prepend-inner-icon="mdi-clock-outline"
@@ -50,6 +53,7 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :rules="rules?.startTime"
             v-on="on" />
         </template>
         <v-time-picker
@@ -72,6 +76,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="formattedEndDate"
             v-model="formattedEndDate"
             label="Data de Término"
             prepend-inner-icon="mdi-calendar"
@@ -81,6 +86,7 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :rules="rules?.endDate"
             v-on="on" />
         </template>
         <v-date-picker
@@ -103,6 +109,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="localEndTime"
             v-model="localEndTime"
             label="Hora de Término"
             prepend-inner-icon="mdi-clock-outline"
@@ -112,6 +119,7 @@
             hide-details="auto"
             v-bind="attrs"
             required
+            :rules="rules?.endTime"
             v-on="on" />
         </template>
         <v-time-picker
@@ -159,6 +167,27 @@ export default {
       startTimeMenu: false,
       endDateMenu: false,
       endTimeMenu: false,
+      hasErrors: false,
+      rules: {
+        startDate: [(value) => !!value || 'A data de início é obrigatória.'],
+        startTime: [(value) => !!value || 'A hora de início é obrigatória.'],
+        endDate: [
+          (value) => !!value || 'A data de término é obrigatória.',
+          (value) =>
+            !value ||
+            this.normalizeDate(this.localEndDate) >=
+              this.normalizeDate(this.localStartDate) ||
+            'A data de término deve ser posterior à data de início.',
+        ],
+        endTime: [
+          (value) => !!value || 'A hora de término é obrigatória.',
+          (value) =>
+            !value ||
+            this.localEndDate > this.localStartDate ||
+            value > this.localStartTime ||
+            'A hora de término deve ser posterior à hora de início.',
+        ],
+      },
     };
   },
   computed: {
@@ -177,7 +206,7 @@ export default {
         isNaN(endDateTime.getTime()) ||
         endDateTime <= startDateTime
       ) {
-        return 'A data de término deve ser posterior à data de início.';
+        return '';
       }
 
       const durationMs = endDateTime - startDateTime;
@@ -187,6 +216,14 @@ export default {
       const minutes = totalMinutes % 60;
 
       return `Seu evento vai durar <strong>${days} dias, ${hours} horas, ${minutes} minutos</strong>.`;
+    },
+    form() {
+      return {
+        formattedStartDate: this.formattedStartDate,
+        localStartTime: this.localStartTime,
+        formattedEndDate: this.formattedEndDate,
+        localEndTime: this.localEndTime,
+      };
     },
   },
   watch: {
@@ -205,11 +242,28 @@ export default {
   },
 
   methods: {
+    validate() {
+      this.hasErrors = false;
+
+      Object.keys(this.form).forEach((f) => {
+        if (!this.form[f]) this.hasErrors = true;
+
+        this.$refs[f].validate(true);
+      });
+
+      return this.hasErrors;
+    },
+
     onStartDateChange() {
       this.startDateMenu = false;
     },
     onEndDateChange() {
       this.endDateMenu = false;
+    },
+    normalizeDate(date) {
+      const normalized = new Date(date);
+      normalized.setUTCHours(0, 0, 0, 0);
+      return normalized;
     },
   },
 };
