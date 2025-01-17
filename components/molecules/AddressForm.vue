@@ -2,6 +2,7 @@
   <v-row>
     <v-col cols="12" md="8" sm="12">
       <v-text-field
+        ref="localLocationName"
         v-model="localLocationName"
         label="Local do Evento"
         outlined
@@ -9,12 +10,12 @@
         hide-details="auto"
         required
         placeholder="Digite o local do evento"
-        :error="!!errors.location_name"
-        :error-messages="errors.location_name" />
+        :rules="rules?.location_name" />
     </v-col>
 
     <v-col cols="12" md="4" sm="12">
       <v-text-field
+        ref="localCep"
         v-model="localCep"
         label="CEP"
         outlined
@@ -23,8 +24,7 @@
         required
         maxlength="9"
         hide-details="auto"
-        :error="!!errors.cep"
-        :error-messages="errors.cep"
+        :rules="rules?.cep"
         @input="onChangeCEP" />
     </v-col>
 
@@ -55,6 +55,7 @@
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
+        ref="localNumer"
         v-model="localNumer"
         label="Número"
         type="number"
@@ -62,9 +63,9 @@
         dense
         hide-details="auto"
         min="0"
+        required
         placeholder="Digite o número"
-        :error="!!errors.number"
-        :error-messages="errors.number" />
+        :rules="rules?.number" />
     </v-col>
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
@@ -101,12 +102,12 @@ export default {
       type: Object,
       required: true,
     },
-    errors: {
+    rules: {
       type: Object,
       default: () => ({
-        cep: '',
-        location_name: '',
-        number: '',
+        cep: [(v) => !!v || 'CEP é obrigatório', (v) => v.length === 9 || 'CEP inválido'],
+        location_name: [(v) => !!v || 'Local do evento é obrigatório'],
+        number: [(v) => !!v || 'Número é obrigatório'],
       }),
     },
   },
@@ -119,6 +120,7 @@ export default {
       isFetchingAddress: false,
       addressError: '',
       debouncerCEP: null,
+      formHasErrors: false,
     };
   },
 
@@ -130,6 +132,13 @@ export default {
         this.localAddress.city &&
         this.localAddress.state
       );
+    },
+    form() {
+      return {
+        localCep: this.localCep,
+        localLocationName: this.localLocationName,
+        localNumer: this.localNumer,
+      };
     },
   },
 
@@ -176,6 +185,21 @@ export default {
     this.debouncerCEP = new Debounce(this.fetchAddressByCEP, 300);
   },
   methods: {
+    validate() {
+      this.formHasErrors = false;
+
+      if (this.localCep !== '') {
+        this.$refs.localCep.validate(true);
+        this.$refs.localNumer.validate(true);
+        this.$refs.localLocationName.validate(true);
+      } else {
+        this.$refs.localCep.validate(true);
+        this.$refs.localLocationName.validate(true);
+      }
+
+      return this.formHasErrors;
+    },
+
     onChangeCEP() {
       this.localCep = onFormatCEP(this.localCep);
       this.debouncerCEP.execute();
@@ -192,6 +216,7 @@ export default {
             neighborhood: responseCEP.neighborhood,
             city: responseCEP.city,
             state: responseCEP.state,
+            state_name: responseCEP.state_name,
           };
         } catch (error) {
           console.error('Erro ao buscar endereço:', error);

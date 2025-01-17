@@ -2,6 +2,7 @@
   <v-row>
     <v-col cols="12" md="6" sm="12">
       <v-text-field
+        ref="name"
         v-model="localTicket.name"
         :label="
           nomenclature === 'Doação'
@@ -13,8 +14,7 @@
         outlined
         dense
         hide-details="auto"
-        :error="!!errors.name"
-        :error-messages="errors.name" />
+        :rules="validationRules.name" />
     </v-col>
     <v-col cols="12" md="6" sm="12">
       <GenericAutocomplete
@@ -29,6 +29,7 @@
     <!-- Para casos de doação, não exibir os campos de preço e quantidade -->
     <v-col cols="12" md="6" sm="12">
       <v-text-field
+        ref="price"
         v-model="localTicket.price"
         label="Preço"
         required
@@ -36,12 +37,12 @@
         dense
         prefix="R$"
         hide-details="auto"
-        :error="!!errors.price"
-        :error-messages="errors.price"
+        :rules="validationRules.price"
         @keypress="onPriceChange" />
     </v-col>
     <v-col cols="12" md="6" sm="12">
       <v-text-field
+        ref="max_quantity"
         v-model="localTicket.max_quantity"
         :value="localTicket.max_quantity"
         label="Quantidade"
@@ -52,8 +53,7 @@
         outlined
         dense
         hide-details="auto"
-        :error="!!errors.max_quantity"
-        :error-messages="errors.max_quantity"
+        :rules="validationRules.max_quantity"
         @keypress="onNumerFieldChange" />
     </v-col>
 
@@ -75,28 +75,30 @@
 
       <v-col cols="12" md="6" sm="12">
         <v-text-field
+          ref="min_purchase"
           v-model="localTicket.min_purchase"
           label="Compra Mínima"
           type="number"
           min="0"
           outlined
           dense
+          required
           hide-details="auto"
-          :error="!!errors.min_purchase"
-          :error-messages="errors.min_purchase"
+          :rules="validationRules.min_purchase"
           @keypress="onNumerFieldChange" />
       </v-col>
       <v-col cols="12" md="6" sm="12">
         <v-text-field
+          ref="max_purchase"
           v-model="localTicket.max_purchase"
           label="Compra Máxima"
           type="number"
           min="0"
           outlined
           dense
+          required
           hide-details="auto"
-          :error="!!errors.max_purchase"
-          :error-messages="errors.max_purchase" />
+          :rules="validationRules.max_purchase" />
       </v-col>
     </template>
 
@@ -110,15 +112,16 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="formattedOpenDate"
             v-model="formattedOpenDate"
             label="Início das Vendas"
             readonly
             v-bind="attrs"
             outlined
             dense
+            required
             hide-details="auto"
-            :error="!!errors.open_date"
-            :error-messages="errors.open_date"
+            :rules="validationRules.open_date"
             v-on="on" />
         </template>
         <v-date-picker
@@ -138,6 +141,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="start_time"
             v-model="localTicket.start_time"
             label="Horário de Início"
             prepend-inner-icon="mdi-clock-outline"
@@ -147,8 +151,7 @@
             hide-details="auto"
             v-bind="attrs"
             required
-            :error="!!errors.start_time"
-            :error-messages="errors.start_time"
+            :rules="validationRules.start_time"
             v-on="on" />
         </template>
         <v-time-picker
@@ -169,15 +172,16 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="formattedCloseDate"
             v-model="formattedCloseDate"
             label="Término das Vendas"
             readonly
             v-bind="attrs"
             outlined
             dense
+            required
             hide-details="auto"
-            :error="!!errors.close_date"
-            :error-messages="errors.close_date"
+            :rules="validationRules.close_date"
             v-on="on" />
         </template>
         <v-date-picker
@@ -198,6 +202,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="end_time"
             v-model="localTicket.end_time"
             label="Horário de Término"
             prepend-inner-icon="mdi-clock-outline"
@@ -207,8 +212,7 @@
             hide-details="auto"
             v-bind="attrs"
             required
-            :error="!!errors.end_time"
-            :error-messages="errors.end_time"
+            :rules="validationRules.end_time"
             v-on="on" />
         </template>
         <v-time-picker
@@ -221,6 +225,7 @@
     </v-col>
     <v-col cols="12" md="6" sm="12">
       <v-select
+        ref="availability"
         v-model="localTicket.availability"
         :items="availabilityList"
         return-object
@@ -231,8 +236,7 @@
         :hint="getHintByAvailability"
         required
         dense
-        :error="!!errors.availability"
-        :error-messages="errors.availability"
+        :rules="validationRules.availability"
         hide-details="auto" />
     </v-col>
     <v-col md="3" sm="8">
@@ -240,7 +244,6 @@
         v-model="localTicket.visible"
         label="Visível"
         class="inline-switch-checkbox"
-        :hide-details="!errors.availability"
         dense />
     </v-col>
   </v-row>
@@ -284,18 +287,7 @@ export default {
       closeDateMenu: false,
       startTimeMenu: false,
       endTimeMenu: false,
-      errors: {
-        name: '',
-        price: '',
-        max_quantity: '',
-        min_purchase: '',
-        max_purchase: '',
-        open_date: '',
-        start_time: '',
-        close_date: '',
-        end_time: '',
-        availability: '',
-      },
+      formHasErrors: false,
       validationRules: {
         name: [(value) => !!value || 'O nome é obrigatório.'],
         price: [
@@ -318,8 +310,9 @@ export default {
         ],
         open_date: [
           (value) => !!value || 'A data de abertura é obrigatória.',
-          (value) =>
-            this.normalizeDate(value) >= this.normalizeDate(new Date()) ||
+          () =>
+            this.normalizeDate(this.localTicket.open_date) >=
+              this.normalizeDate(new Date()) ||
             'A data de abertura deve ser posterior a hoje.',
         ],
         start_time: [(value) => !!value || 'A hora de início é obrigatória.'],
@@ -327,14 +320,16 @@ export default {
           (value) => !!value || 'A data de fechamento é obrigatória.',
           (value) =>
             !value ||
-            value >= this.localTicket.open_date ||
+            this.normalizeDate(this.localTicket.close_date) >=
+              this.normalizeDate(this.localTicket.open_date) ||
             'A data de fechamento deve ser posterior à data de abertura.',
         ],
         end_time: [
           (value) => !!value || 'A hora de término é obrigatória.',
           (value) =>
             !value ||
-            this.localTicket.close_date > this.localTicket.open_date ||
+            this.normalizeDate(this.localTicket.close_date) >
+              this.normalizeDate(this.localTicket.open_date) ||
             value > this.localTicket.start_time ||
             'A hora de término deve ser posterior à hora de início.',
         ],
@@ -383,6 +378,21 @@ export default {
           return '';
       }
     },
+    form() {
+      return {
+        name: this.localTicket.name,
+        category: this.localTicket.category,
+        price: this.localTicket.price,
+        max_quantity: this.localTicket.max_quantity,
+        min_purchase: this.localTicket.min_purchase,
+        max_purchase: this.localTicket.max_purchase,
+        formattedOpenDate: this.localTicket.open_date,
+        start_time: this.localTicket.start_time,
+        formattedCloseDate: this.localTicket.close_date,
+        end_time: this.localTicket.end_time,
+        availability: this.localTicket.availability?.value,
+      };
+    },
   },
 
   watch: {
@@ -395,30 +405,29 @@ export default {
   },
 
   methods: {
-    validateField(fieldName) {
-      const rules = this.validationRules[fieldName];
-      if (!rules) return true;
-
-      const value = this.localTicket[fieldName];
-      const error = rules.find((rule) => rule(value) !== true);
-
-      this.$set(this.errors, fieldName, error ? error(value) : '');
-      return !error;
-    },
-
     validateForm() {
-      let isValid = true;
+      this.formHasErrors = false;
 
-      Object.keys(this.validationRules).forEach((fieldName) => {
-        if (!this.validateField(fieldName)) {
-          console.log('Field', fieldName, 'is invalid');
-          isValid = false;
-        }
+      Object.keys(this.form).forEach((f) => {
+        // Não validar campos customizados
+        if (f === 'custom_fields') return;
+
+        // Não validar grupo de ingressos
+        if (f === 'category') return;
+
+        // Doação não tem preço
+        const limitFields = ['min_purchase', 'max_purchase'].includes(f);
+
+        if (this.nomenclature === 'Doação' && limitFields) return;
+
+        if (!this.form[f]) this.formHasErrors = true;
+
+        this.$refs[f].validate(true);
       });
 
-      if (isValid) this.emitChanges();
+      if (!this.formHasErrors) this.emitChanges();
 
-      return isValid;
+      return this.formHasErrors;
     },
 
     normalizeDate(date) {

@@ -63,6 +63,7 @@ export default class EventForm extends VuexModule {
         location_name: '',
         number: '',
         is_featured: false,
+        absorb_service_fee: false,
         tickets: [],
         coupons: [],
         customFields: [
@@ -72,6 +73,7 @@ export default class EventForm extends VuexModule {
         link_online: '',
         sale_type: 'Ingresso',
         availability: 'Visível a todos',
+        promoter_id: null,
     };
 
     public get $form() {

@@ -12,7 +12,9 @@
         hide-details="auto"
         required
         :error="errors.name.length > 0"
-        :error-messages="errors.name" />
+        :error-messages="errors.name" 
+        :rules="validationRules.name"
+        />
     </v-col>
 
     <!-- Tipo do Campo -->
@@ -30,6 +32,7 @@
         required
         :error="errors.type.length > 0"
         :error-messages="errors.type"
+        :rules="validationRules.type"
         @input="onTypeChange" />
     </v-col>
 
@@ -95,7 +98,9 @@
         rows="6"
         hide-details="auto"
         :error="errors.termsContent?.length > 0"
-        :error-messages="errors.termsContent" />
+        :error-messages="errors.termsContent"
+        :rules="validationRules.termsContent"
+         />
     </v-col>
 
     <!-- Ingressos Associados -->
@@ -111,7 +116,9 @@
         multiple
         hide-details="auto"
         :error="errors.tickets.length > 0"
-        :error-messages="errors.tickets" />
+        :error-messages="errors.tickets"
+        :rules="validationRules.tickets"
+         />
     </v-col>
 
     <!-- Tipos de Pessoa -->
@@ -127,7 +134,9 @@
         hide-details="auto"
         return-object
         :error="errors.personTypes.length > 0"
-        :error-messages="errors.personTypes" />
+        :error-messages="errors.personTypes" 
+        :rules="validationRules.personTypes"
+        />
     </v-col>
 
     <!-- Opções de Configuração -->

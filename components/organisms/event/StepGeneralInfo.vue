@@ -7,23 +7,23 @@
     </v-row>
 
     <v-row>
-      <v-col cols="12" md="12" sm="12">
+      <v-col cols="12" md="12" sm="12" class="pb-0">
         <v-text-field
+          ref="eventName"
           v-model="localForm.eventName"
           label="Nome do Evento"
           outlined
+          counter="60"
           dense
           placeholder="Digite o nome do evento"
           required
-          :error="!!errors.eventName"
-          :error-messages="errors.eventName"
-          hide-details="auto"
+          :rules="validationRules.eventName"
           @input="onEventNameChange" />
       </v-col>
     </v-row>
 
     <v-row v-if="aliasValidation.isValid !== null && localForm.alias.length > 0">
-      <v-col cols="12">
+      <v-col cols="12" class="pt-0">
         <div class="d-flex align-center">
           <v-progress-circular
             v-if="isValidatingAlias"
@@ -57,6 +57,7 @@
       <!-- Categoria -->
       <v-col cols="12" md="4" sm="12">
         <v-select
+          ref="category"
           v-model="localForm.category"
           label="Categoria"
           :items="categories"
@@ -65,13 +66,13 @@
           return-object
           hide-details="auto"
           required
-          :error="!!errors.category"
-          :error-messages="errors.category" />
+          :rules="validationRules.category" />
       </v-col>
 
       <!-- Tipo do Evento -->
       <v-col cols="12" md="4" sm="12">
         <v-select
+          ref="event_type"
           v-model="localForm.event_type"
           label="Tipo do Evento"
           :items="types"
@@ -80,30 +81,29 @@
           hide-details="auto"
           required
           :disabled="nomenclature === 'Doação'"
-          :error="!!errors.event_type"
-          :error-messages="errors.event_type" />
+          :rules="validationRules.event_type" />
       </v-col>
 
       <!-- Classificação Indicativa -->
       <v-col cols="12" md="4" sm="12">
         <RatingSelect
+          ref="rating"
           v-model="localForm.rating"
           :value="localForm.rating"
           :ratings="ratings"
-          :error="!!errors.rating"
-          :error-messages="errors.rating" />
+          :rules="validationRules.rating" />
       </v-col>
 
       <v-col v-if="isEventOnlineOrHibrido" cols="12" md="12" sm="12">
         <v-text-field
+          ref="link_online"
           v-model="localForm.link_online"
           label="Link do Evento"
           outlined
           dense
           placeholder="Digite o link do evento"
           hide-details="auto"
-          :error="!!errors.link_online"
-          :error-messages="errors.link_online" />
+          :rules="validationRules.link_online" />
       </v-col>
 
       <!-- Descrição do Evento -->
@@ -115,8 +115,7 @@
           outlined
           dense
           hide-details="auto"
-          placeholder="Digite uma descrição para o evento"
-          required />
+          placeholder="Digite uma descrição para o evento" />
       </v-col>
     </v-row>
     <v-row>
@@ -156,16 +155,11 @@
 
     <!-- Outros campos -->
     <DateTimeForm
+      ref="dateTimeForm"
       :start-date="form.startDate"
       :start-time="form.startTime"
       :end-date="form.endDate"
       :end-time="form.endTime"
-      :errors="{
-        startDate: errors.startDate,
-        startTime: errors.startTime,
-        endDate: errors.endDate,
-        endTime: errors.endTime,
-      }"
       @update:startDate="updateStartDate"
       @update:startTime="updateStartTime"
       @update:endDate="updateEndDate"
@@ -180,15 +174,11 @@
 
       <!-- Endereço do Evento -->
       <AddressForm
+        ref="addressForm"
         :cep="form.cep"
         :location-name="form.location_name"
         :number="form.number"
         :address="form.address"
-        :errors="{
-          cep: errors.cep,
-          location_name: errors.location_name,
-          number: errors.number,
-        }"
         @update:cep="updateCep"
         @update:location-name="updateLocationName"
         @update:number="updateNumber"
@@ -204,28 +194,54 @@
           </v-card-title>
           <v-card-text>
             <v-row class="d-flex align-start">
-              <v-col md="4" sm="12">
-                <div class="d-flex align-center">
-                  <v-switch
-                    v-model="absorveTax"
-                    class="inline-switch-checkbox mr-4 pt-0"
-                    label="Absorver a taxa de serviço"
-                    dense
-                    hide-details="auto" />
-                  <v-tooltip top>
-                    <template #activator="{ on, attrs }">
-                      <v-icon color="gray" v-bind="attrs" v-on="on"
-                        >mdi-help-circle</v-icon
-                      >
-                    </template>
-                    <span class="tax-container">
-                      Ao selecionar essa opção, a taxa de serviço (10%) será incluída no
-                      preço final de venda do ingresso e não será mostrada ao comprador
-                    </span>
-                  </v-tooltip>
+              <v-col cols="12" md="4" sm="12">
+                <div class="d-flex flex-column">
+                  <div class="d-flex">
+                    <v-switch
+                      v-model="localForm.absorb_service_fee"
+                      class="inline-switch-checkbox mr-4 pt-0"
+                      label="Absorver a taxa de serviço"
+                      dense
+                      hide-details="auto" />
+                    <div class="d-flex">
+                      <v-tooltip top>
+                        <template #activator="{ on, attrs }">
+                          <v-icon color="gray" v-bind="attrs" v-on="on"
+                            >mdi-help-circle</v-icon
+                          >
+                        </template>
+                        <span class="tax-container">
+                          Ao selecionar essa opção, a taxa de serviço (10%) será incluída
+                          no preço final de venda do ingresso e não será mostrada ao
+                          comprador
+                        </span>
+                      </v-tooltip>
+                    </div>
+                  </div>
+                  <div v-if="isAdmin" class="d-flex">
+                    <v-switch
+                      v-model="localForm.is_featured"
+                      class="inline-switch-checkbox mr-4 pt-0"
+                      label="Marcar como destaque"
+                      dense
+                      hide-details="auto" />
+                    <div class="d-flex">
+                      <v-tooltip top>
+                        <template #activator="{ on, attrs }">
+                          <v-icon color="gray" v-bind="attrs" v-on="on"
+                            >mdi-help-circle</v-icon
+                          >
+                        </template>
+                        <span class="tax-container">
+                          Ao selecionar essa opção, o evento será marcado como destaque na
+                          plataforma.
+                        </span>
+                      </v-tooltip>
+                    </div>
+                  </div>
                 </div>
               </v-col>
-              <v-col md="4" sm="12">
+              <v-col cols="12" md="4" sm="12">
                 <v-select
                   v-model="localForm.availability"
                   label="Visibilidade"
@@ -285,63 +301,49 @@ export default {
       types: ['Presencial', 'Online', 'Híbrido'],
       debouncerAlias: null,
       imagePreview: null,
-      absorveTax: false,
-      availabilityOptions: ['Visível a todos', 'Oculto'],
+      availabilityOptions: ['Público', 'Privado', 'Página'],
       nomenclature: this.form.sale_type || 'Ingresso',
       nomenclatureOptions: ['Ingresso', 'Inscrição', 'Doação'],
-      errors: {
-        eventName: '',
-        category: '',
-        event_type: '',
-        rating: '',
-        startDate: '',
-        startTime: '',
-        endDate: '',
-        endTime: '',
-        cep: '',
-        location_name: '',
-        link_online: '',
-        number: '',
-      },
+      formHasErrors: false,
       validationRules: {
-        eventName: [(value) => !!value || 'O nome do evento é obrigatório.'],
+        eventName: [
+          (value) => !!value || 'O nome do evento é obrigatório.',
+          (value) =>
+            value.length <= 60 || 'O nome do evento deve ter no máximo 50 caracteres.',
+        ],
         category: [(value) => !!value || 'Selecione uma categoria.'],
         event_type: [(value) => !!value || 'Selecione o tipo do evento.'],
         rating: [(value) => !!value || 'Selecione uma classificação indicativa.'],
-        startDate: [(value) => !!value || 'A data de início é obrigatória.'],
-        startTime: [(value) => !!value || 'A hora de início é obrigatória.'],
         link_online: [
           (value) => !!value || 'O link do evento é obrigatório.',
           (value) =>
             /^(https?:\/\/[^\s$.?#].[^\s]*)$/i.test(value) || 'Digite um link válido.',
         ],
-        endDate: [
-          (value) => !!value || 'A data de término é obrigatória.',
-          (value) =>
-            !value ||
-            value >= this.localForm.startDate ||
-            'A data de término deve ser posterior à data de início.',
-        ],
-        endTime: [
-          (value) => !!value || 'A hora de término é obrigatória.',
-          (value) =>
-            !value ||
-            this.localForm.endDate > this.localForm.startDate ||
-            value > this.localForm.startTime ||
-            'A hora de término deve ser posterior à hora de início.',
-        ],
-        cep: [
-          (value) => !!value || 'O CEP é obrigatório.',
-          (value) =>
-            /^\d{5}-\d{3}$/.test(value) || 'O CEP deve estar no formato 00000-000.',
-        ],
-        location_name: [(value) => !!value || 'O local do evento é obrigatório.'],
-        number: [(value) => !!value || 'O número é obrigatório.'],
       },
     };
   },
 
   computed: {
+    generalInfoForm() {
+      return {
+        eventName: this.localForm.eventName,
+        category: this.localForm.category,
+        event_type: this.localForm.event_type,
+        rating: this.localForm.rating,
+        link_online: this.localForm.link_online,
+        startDate: this.localForm.startDate,
+        startTime: this.localForm.startTime,
+        endDate: this.localForm.endDate,
+        endTime: this.localForm.endTime,
+        cep: this.localForm.cep,
+        location_name: this.localForm.location_name,
+        address: this.localForm.address,
+        number: this.localForm.number,
+        availability: this.localForm.availability,
+        sale_type: this.nomenclature,
+      };
+    },
+
     isValidatingAlias() {
       return event.$isLoadingAlias;
     },
@@ -359,13 +361,23 @@ export default {
     },
     getHintByAvailability() {
       switch (this.localForm.availability) {
-        case 'Visível a todos':
+        case 'Público':
           return 'O evento será visível para todos os usuários da plataforma.';
-        case 'Oculto':
+        case 'Privado':
           return 'Apenas quem tiver o link poderá acessar a página do evento.';
         default:
-          return '';
+          return 'O evento será visível apenas na página do promotor.';
       }
+    },
+    userRole() {
+      return this.$cookies.get('user_role');
+    },
+    userId() {
+      return this.$cookies.get('user_id');
+    },
+    isAdmin() {
+      const role = this.userRole;
+      return role && role.name === 'Admin';
     },
   },
 
@@ -393,6 +405,11 @@ export default {
 
   created() {
     this.debouncerAlias = new Debounce(this.validateAlias, 300);
+
+    if (!this.localForm?.id) {
+      this.localForm.promoter_id = this.userId;
+      this.emitChanges();
+    }
   },
   methods: {
     emitChanges() {
@@ -400,7 +417,8 @@ export default {
     },
 
     canProceed(callback) {
-      if (!this.validateForm()) {
+      this.validateForm();
+      if (this.formHasErrors) {
         return callback(null, false, 'Existem campos inválidos no formulário.');
       }
 
@@ -435,7 +453,14 @@ export default {
       }
     },
     generateAlias() {
-      this.localForm.alias = this.localForm.eventName
+      const maxLength = 60;
+      let eventName = this.localForm.eventName;
+
+      if (eventName.length > maxLength) {
+        eventName = this.localForm.eventName.substring(0, maxLength);
+      }
+
+      this.localForm.alias = eventName
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
@@ -472,46 +497,48 @@ export default {
       this.imagePreview = null;
       this.localForm.banner = null;
     },
-    validateField(fieldName) {
-      const value = this.localForm[fieldName];
-      const rules = this.validationRules[fieldName];
-
-      // Ignora validação de endereço para eventos Online
-      if (['cep', 'location_name', 'number'].includes(fieldName) && this.isEventOnline) {
-        this.$set(this.errors, fieldName, '');
-        return true;
-      }
-
-      // Ignora validação de link_online para eventos Presenciais
-      if (fieldName === 'link_online' && !this.isEventOnline) {
-        this.$set(this.errors, fieldName, '');
-        return true;
-      }
-
-      // Se não houver regras definidas, retorna válido
-      if (!rules) return true;
-
-      // Aplica as regras de validação
-      const error = rules.find((rule) => rule(value) !== true);
-      this.$set(this.errors, fieldName, error ? error(value) : '');
-      return !error;
-    },
 
     validateForm() {
-      const fieldNames = Object.keys(this.validationRules);
-      let isValid = true; // Começamos assumindo que o formulário é válido
+      this.formHasErrors = false;
 
-      // Valida todos os campos e acumula os erros
-      fieldNames.forEach((fieldName) => {
-        const fieldIsValid = this.validateField(fieldName);
-        if (!fieldIsValid) {
-          isValid = false; // Se qualquer campo for inválido, marcamos como inválido
+      Object.keys(this.generalInfoForm).forEach((f) => {
+        if (this.localForm.event_type === 'Presencial' && f === 'link_online') {
+          return;
+        }
+
+        if (!this.generalInfoForm[f]) this.formHasErrors = true;
+
+        const fieldIsFromAddress = ['cep', 'location_name', 'number'].includes(f);
+
+        const fieldFromDateTimeForm = [
+          'startDate',
+          'startTime',
+          'endDate',
+          'endTime',
+        ].includes(f);
+
+        if (
+          fieldIsFromAddress &&
+          this.localForm.event_type !== 'Online' &&
+          this.localForm.event_type !== ''
+        ) {
+          this.$refs.addressForm.validate();
+        } else if (f === 'rating') {
+          this.$refs.rating.validate();
+        } else if (fieldFromDateTimeForm) {
+          this.$refs.dateTimeForm.validate();
+        } else if (this.$refs[f]) {
+          this.$refs[f].validate(true);
         }
       });
 
-      return isValid;
+      return this.formHasErrors;
     },
-
+    normalizeDate(date) {
+      const normalized = new Date(date);
+      normalized.setUTCHours(0, 0, 0, 0);
+      return normalized;
+    },
     updateStartDate(value) {
       this.localForm.startDate = value;
       eventForm.updateForm({ startDate: value });

@@ -394,12 +394,12 @@ export default {
     saveNewTicket() {
       const ticketForm = this.$refs.newTicketForm;
 
-      if (ticketForm.validateForm()) {
+      if (!ticketForm.validateForm()) {
         this.tickets.push({ ...this.newTicket });
         this.newTicketModal = false;
         this.emitChanges();
       } else {
-        console.log('[INSERÇÃO - TicketForm] Erro de validação:', ticketForm.errors);
+        console.log('[INSERÇÃO - TicketForm] Erro de validação');
       }
     },
 
@@ -415,12 +415,12 @@ export default {
       if (this.selectedTicketIndex !== null) {
         const ticketForm = this.$refs.editTicketForm;
 
-        if (ticketForm.validateForm()) {
+        if (!ticketForm.validateForm()) {
           this.$set(this.tickets, this.selectedTicketIndex, this.selectedTicket);
           this.emitChanges();
           this.editModal = false;
         } else {
-          console.log('[EDIÇÃO - TicketForm] Erro de validação:', ticketForm.errors);
+          console.log('[EDIÇÃO - TicketForm] Erro de validação');
         }
       }
     },

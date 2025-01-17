@@ -1,5 +1,6 @@
 <template>
   <v-select
+    ref="select"
     v-model="selectedRating"
     :items="ratings"
     label="Classificação Indicativa"
@@ -7,9 +8,8 @@
     item-text="text"
     dense
     outlined
-    :error="error"
-    :error-messages="errorMessages"
-    :hide-details="!errorMessages || errorMessages.length === 0"
+    hide-details="auto"
+    :rules="rules"
     :return-object="true"
     :menu-props="{ contentClass: 'rating-select-dropdown' }"
     class="rating-select">
@@ -55,15 +55,35 @@ export default {
       type: [String, Array],
       default: () => [],
     },
+    rules: {
+      type: Array,
+      default: () => [],
+    },
   },
   data() {
     return {
       selectedRating: this.value || null,
+      hasError: false,
     };
   },
   watch: {
     selectedRating(val) {
       this.$emit('input', val);
+    },
+  },
+
+  methods: {
+    validate() {
+      this.hasError = false;
+      if (!this.$refs.select) {
+        this.hasError = true;
+      }
+
+      if (this.$refs.select.validate(true)) {
+        this.hasError = true;
+      }
+
+      return this.hasError;
     },
   },
 };

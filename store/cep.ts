@@ -39,6 +39,7 @@ export default class Cep extends VuexModule {
                 neighborhood: response.bairro,
                 city: response.localidade,
                 state: response.uf,
+                state_name: response.estado	,
             };
         } catch (error) {
             console.warn('Erro ao buscar CEP na API ViaCEP:', error.message);
