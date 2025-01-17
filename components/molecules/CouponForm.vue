@@ -3,6 +3,7 @@
     <!-- Código do Cupom -->
     <v-col cols="12" md="6">
       <v-text-field
+        ref="code"
         v-model="localCoupon.code"
         label="Código do Cupom"
         placeholder="Ex: DESCONTO10"
@@ -10,8 +11,7 @@
         dense
         hide-details="auto"
         required
-        :error="errors.code.length > 0"
-        :error-messages="errors.code" />
+        :rules="validationRules.code" />
     </v-col>
 
     <!-- Ingressos Associados -->
@@ -26,7 +26,7 @@
         dense
         multiple
         hide-details="auto">
-        <template #prepend-item>
+        <template v-if="localCoupon.tickets.length" #prepend-item>
           <v-list-item ripple @mousedown.prevent @click="toggleAllTickets">
             <v-list-item-action>
               <v-icon :color="localCoupon.tickets.length > 0 ? 'primary' : ''">
@@ -45,39 +45,40 @@
     <!-- Tipo de Desconto -->
     <v-col cols="12" md="6">
       <v-select
+        ref="discountType"
         v-model="localCoupon.discountType"
         :items="discountTypes"
+        return-object
         label="Tipo de Desconto"
         outlined
         dense
         hide-details="auto"
-        required
-        :error="errors.discountType.length > 0"
-        :error-messages="errors.discountType" />
+        required />
     </v-col>
 
     <!-- Valor do Desconto -->
     <v-col cols="12" md="6">
       <v-text-field
+        ref="discountValue"
         v-model="localCoupon.discountValue"
         :label="
-          localCoupon.discountType === 'percentage'
+          localCoupon.discountType === 'PERCENTAGE'
             ? 'Valor do Desconto (%)'
             : 'Valor do Desconto (R$)'
         "
-        :prefix="localCoupon.discountType === 'fixed' ? 'R$' : '%'"
+        :prefix="localCoupon.discountType === 'FIXED' ? 'R$' : '%'"
         outlined
         dense
         hide-details="auto"
         required
-        :error="errors.discountValue.length > 0"
-        :error-messages="errors.discountValue"
+        :rules="validationRules.discountValue"
         @keypress="onPriceOrNumberChange" />
     </v-col>
 
     <!-- Máximo de Usos -->
     <v-col cols="12" md="6">
       <v-text-field
+        ref="maxUses"
         v-model="localCoupon.maxUses"
         label="Máximo de Usos"
         placeholder="Ex: 100"
@@ -87,8 +88,7 @@
         dense
         hide-details="auto"
         required
-        :error="errors.maxUses.length > 0"
-        :error-messages="errors.maxUses"
+        :rules="validationRules.maxUses"
         @keypress="onNumerFieldChange" />
     </v-col>
 
@@ -102,6 +102,7 @@
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
+            ref="formattedExpirationDate"
             :value="formattedExpirationDate"
             label="Data de Expiração"
             readonly
@@ -109,8 +110,7 @@
             dense
             hide-details="auto"
             v-bind="attrs"
-            :error="errors.expirationDate.length > 0"
-            :error-messages="errors.expirationDate"
+            :rules="validationRules.expirationDate"
             v-on="on" />
         </template>
         <v-date-picker
@@ -148,21 +148,13 @@ export default {
     return {
       localCoupon: { ...this.coupon },
       discountTypes: [
-        { text: 'Fixo', value: 'fixed' },
-        { text: 'Porcentagem', value: 'percentage' },
+        { text: 'Fixo', value: 'FIXED' },
+        { text: 'Porcentagem', value: 'PERCENTAGE' },
       ],
+      formHasErrors: false,
       expirationMenu: false,
-      errors: {
-        code: [],
-        tickets: [],
-        discountType: [],
-        discountValue: [],
-        maxUses: [],
-        expirationDate: [],
-      },
       validationRules: {
         code: [(value) => !!value || 'O código do cupom é obrigatório.'],
-        discountType: [(v) => !!v || 'O tipo de desconto é obrigatório.'],
         discountValue: [
           (v) => !!v || 'O valor do desconto é obrigatório.',
           (v) => parseFloat(v) > 0 || 'O valor do desconto deve ser maior que 0.',
@@ -200,6 +192,14 @@ export default {
       if (this.selectedSomeTickets) return 'mdi-minus-box';
       return 'mdi-checkbox-blank-outline';
     },
+    form() {
+      return {
+        code: this.localCoupon.code,
+        discountValue: this.localCoupon.discountValue,
+        maxUses: this.localCoupon.maxUses,
+        formattedExpirationDate: this.localCoupon.expirationDate,
+      };
+    },
   },
   watch: {
     coupon: {
@@ -233,7 +233,7 @@ export default {
     },
 
     onPriceOrNumberChange(event) {
-      if (this.coupon.discountType === 'percentage') {
+      if (this.coupon.discountType === 'PERCENTAGE') {
         this.onNumerFieldChange(event);
         this.localCoupon.discountValue = Math.min(this.localCoupon.discountValue, 100);
       } else {
@@ -258,30 +258,20 @@ export default {
     onDateChange() {
       this.expirationMenu = false;
     },
-    validateField(fieldName) {
-      const rules = this.validationRules[fieldName];
-      if (!rules) return true;
-
-      const value = this.localCoupon[fieldName];
-      const error = rules.find((rule) => rule(value) !== true);
-
-      this.$set(this.errors, fieldName, error ? error(value) : '');
-      return !error;
-    },
     validateForm() {
-      let isValid = true;
+      this.formHasErrors = false;
 
-      Object.keys(this.validationRules).forEach((fieldName) => {
-        if (!this.validateField(fieldName)) {
-          isValid = false;
-        }
+      Object.keys(this.form).forEach((f) => {
+        if (!this.form[f]) this.formHasErrors = true;
+
+        this.$refs[f].validate(true);
       });
 
-      if (isValid) {
+      if (!this.formHasErrors) {
         this.emitChanges();
       }
 
-      return isValid;
+      return this.formHasErrors;
     },
   },
 };

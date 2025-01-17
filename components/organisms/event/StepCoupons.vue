@@ -61,6 +61,7 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CouponForm
+            v-if="newCouponModal"
             ref="newCupomForm"
             :coupon="newCoupon"
             :tickets="tickets"
@@ -86,6 +87,7 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CouponForm
+            v-if="editModal"
             ref="editCupomForm"
             :coupon="selectedCoupon"
             :tickets="tickets"
@@ -159,7 +161,10 @@ export default {
     getEmptyCoupon() {
       return {
         code: '',
-        discountType: 'fixed',
+        discountType: {
+          text: 'Fixo',
+          value: 'FIXED',
+        },
         discountValue: '',
         maxUses: 1,
         expirationDate: '',
@@ -195,7 +200,7 @@ export default {
     saveNewCoupon() {
       const cupomForm = this.$refs.newCupomForm;
 
-      if (!cupomForm.validateForm()) {
+      if (cupomForm.validateForm()) {
         console.log('[INSERÇÃO - CoupomForm] Erro de validação:', cupomForm.errors);
         return;
       }
@@ -218,7 +223,7 @@ export default {
     saveEditedCoupon() {
       const cupomForm = this.$refs.editCupomForm;
 
-      if (!cupomForm.validateForm()) {
+      if (cupomForm.validateForm()) {
         console.log('[EDIÇÃO - CoupomForm] Erro de validação:', cupomForm.errors);
         return;
       }

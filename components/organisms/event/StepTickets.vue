@@ -112,6 +112,7 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <TicketForm
+            v-if="newTicketModal"
             ref="newTicketForm"
             :ticket="newTicket"
             :categories="categories"
@@ -139,6 +140,7 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <TicketForm
+            v-if="editModal"
             ref="editTicketForm"
             :ticket="selectedTicket"
             :categories="categories"

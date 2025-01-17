@@ -3,7 +3,7 @@
     <!-- Nome do Campo -->
     <v-col cols="12" md="6">
       <v-text-field
-        ref="nameField"
+        ref="name"
         v-model="localField.name"
         label="Nome do Campo"
         placeholder="Ex: CPF"
@@ -11,16 +11,13 @@
         dense
         hide-details="auto"
         required
-        :error="errors.name.length > 0"
-        :error-messages="errors.name" 
-        :rules="validationRules.name"
-        />
+        :rules="validationRules.name" />
     </v-col>
 
     <!-- Tipo do Campo -->
     <v-col cols="12" md="6">
       <v-select
-        ref="typeField"
+        ref="type"
         v-model="localField.type"
         :items="fieldTypes"
         label="Tipo do Campo"
@@ -30,8 +27,6 @@
         hide-details="auto"
         return-object
         required
-        :error="errors.type.length > 0"
-        :error-messages="errors.type"
         :rules="validationRules.type"
         @input="onTypeChange" />
     </v-col>
@@ -61,6 +56,7 @@
             :label="`Opção ${index + 1}`"
             outlined
             dense
+            required
             hide-details="auto"
             :error="optionErrors[index]?.length > 0"
             :error-messages="optionErrors[index]"
@@ -90,22 +86,22 @@
     <!-- Campo de Termos -->
     <v-col v-else-if="localField.type?.value === 'terms'" cols="12">
       <v-textarea
+        ref="termsContent"
         v-model="localField.termsContent"
         label="Conteúdo dos Termos"
         placeholder="Insira aqui os termos que o usuário deve aceitar"
         outlined
+        required
         dense
         rows="6"
         hide-details="auto"
-        :error="errors.termsContent?.length > 0"
-        :error-messages="errors.termsContent"
-        :rules="validationRules.termsContent"
-         />
+        :rules="validationRules.termsContent" />
     </v-col>
 
     <!-- Ingressos Associados -->
     <v-col cols="12" md="12">
       <v-select
+        ref="tickets"
         v-model="localField.tickets"
         :items="tickets"
         label="Ingressos"
@@ -114,16 +110,15 @@
         outlined
         dense
         multiple
+        required
         hide-details="auto"
-        :error="errors.tickets.length > 0"
-        :error-messages="errors.tickets"
-        :rules="validationRules.tickets"
-         />
+        :rules="validationRules.tickets" />
     </v-col>
 
     <!-- Tipos de Pessoa -->
     <v-col cols="12" md="12">
       <v-select
+        ref="personTypes"
         v-model="localField.personTypes"
         :items="personTypes"
         label="Tipos de Pessoa"
@@ -131,12 +126,10 @@
         outlined
         dense
         multiple
+        required
         hide-details="auto"
         return-object
-        :error="errors.personTypes.length > 0"
-        :error-messages="errors.personTypes" 
-        :rules="validationRules.personTypes"
-        />
+        :rules="validationRules.personTypes" />
     </v-col>
 
     <!-- Opções de Configuração -->
@@ -196,6 +189,7 @@ export default {
         optionsValues: this.field.optionsValues || [],
         termsContent: this.field.termsContent || '',
       },
+      formHasErrors: false,
       fieldTypes: [
         { text: 'CPF', value: 'cpf' },
         { text: 'CNPJ', value: 'cnpj' },
@@ -239,6 +233,15 @@ export default {
   computed: {
     isFieldTypeWithOptions() {
       return ['autocomplete', 'combobox'].includes(this.localField.type?.value);
+    },
+    form() {
+      return {
+        name: this.localField.name,
+        type: this.localField.type,
+        termsContent: this.localField.termsContent,
+        tickets: this.localField.tickets,
+        personTypes: this.localField.personTypes,
+      };
     },
   },
 
@@ -328,49 +331,39 @@ export default {
       return isValid;
     },
 
-    validateField(fieldName) {
-      const rules = this.validationRules[fieldName];
-      if (!rules) return true;
-
-      const value = this.localField[fieldName];
-      const error = rules.find((rule) => rule(value) !== true);
-
-      this.$set(this.errors, fieldName, error ? error(value) : '');
-
-      // Validação específica para termos
-      if (this.localField.type?.value === 'terms' && fieldName === 'termsContent') {
-        console.log('value', value);
-
-        if (!value) {
-          this.$set(this.errors, 'termsContent', 'O conteúdo dos termos é obrigatório.');
-          return false;
-        } else {
-          this.$set(this.errors, 'termsContent', '');
-        }
-      }
-
-      return !error;
-    },
-
     validateForm() {
-      let isValid = true;
+      this.formHasErrors = false;
 
-      Object.keys(this.validationRules).forEach((fieldName) => {
-        if (!this.validateField(fieldName)) {
-          isValid = false;
+      Object.keys(this.form).forEach((f) => {
+        if (f === 'termsContent' && !this.localField.type?.value !== 'terms') {
+          return;
         }
+
+        if (f === 'tickets' && this.form[f].length === 0) {
+          this.formHasErrors = true;
+        }
+
+        if (f === 'personTypes' && this.form[f].length === 0) {
+          this.formHasErrors = true;
+        }
+
+        if (!this.form[f]) {
+          this.formHasErrors = true;
+        }
+
+        this.$refs[f].validate(true);
       });
 
       // Valida as opções do campo se o tipo for um dos que possuem opções
       if (this.isFieldTypeWithOptions && !this.validateOptions()) {
-        isValid = false;
+        this.formHasErrors = true;
       }
 
-      if (isValid) {
+      if (!this.formHasErrors) {
         this.emitChanges();
       }
 
-      return isValid;
+      return this.formHasErrors;
     },
   },
 };

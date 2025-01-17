@@ -97,6 +97,7 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CustomFieldForm
+            v-if="newFieldModal"
             ref="newCustomFieldForm"
             :field="newField"
             :tickets="tickets"
@@ -122,6 +123,7 @@
         </v-card-title>
         <v-card-text class="px-4 py-2">
           <CustomFieldForm
+            v-if="editModal"
             ref="editCustomFieldForm"
             :field="selectedField"
             :tickets="tickets"
@@ -195,7 +197,14 @@ export default {
       fieldNameToRemove: null,
       fieldIdxToRemove: null,
       newFieldModal: false,
-      newField: this.getEmptyField(),
+      newField: {
+        name: '',
+        type: '',
+        tickets: [],
+        personTypes: [],
+        options: [],
+        description: '',
+      },
       editModal: false,
       selectedField: null,
       selectedFieldIndex: null,
@@ -263,17 +272,6 @@ export default {
 
       this.emitChanges();
     },
-
-    getEmptyField() {
-      return {
-        name: '',
-        type: '',
-        tickets: [],
-        personTypes: [],
-        options: [],
-        description: '',
-      };
-    },
     openNewFieldModal() {
       if (this.form.tickets.length === 0) {
         toast.setToast({
@@ -284,7 +282,14 @@ export default {
         return;
       }
 
-      this.newField = this.getEmptyField();
+      this.newField = {
+        name: '',
+        type: '',
+        tickets: [],
+        personTypes: [],
+        options: [],
+        description: '',
+      };
       this.newFieldModal = true;
     },
     updateNewFieldFields(updatedField) {
@@ -293,7 +298,7 @@ export default {
     saveNewField() {
       const fieldForm = this.$refs.newCustomFieldForm;
 
-      if (fieldForm.validateForm()) {
+      if (!fieldForm.validateForm()) {
         this.customFields.push({ ...this.newField });
         this.newFieldModal = false;
         this.emitChanges();
@@ -313,7 +318,7 @@ export default {
       if (this.selectedFieldIndex !== null) {
         const fieldForm = this.$refs.editCustomFieldForm;
 
-        if (fieldForm.validateForm()) {
+        if (!fieldForm.validateForm()) {
           this.$set(this.customFields, this.selectedFieldIndex, this.selectedField);
           this.editModal = false;
           this.emitChanges();
