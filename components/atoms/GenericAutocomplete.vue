@@ -6,13 +6,27 @@
       :label="label"
       :placeholder="placeholder"
       :search-input.sync="searchQuery"
+      :hint="hint"
+      :persistent-hint="persistentHint"
       outlined
       dense
       hide-details="auto"
       clearable
+      :prepend-inner-icon="prependInnerIcon"
       :no-data-text="noDataText"
       @update:search-input="onSearchInput"
       @change="onItemChange">
+      
+      
+      <template #prepend-inner>
+        <v-tooltip bottom>
+          <template #activator="{ on }">
+            <v-icon v-on="on"> {{prependInnerIcon}} </v-icon>
+          </template>
+          Este campo pode ser utilizado quando o evento possui vários setores, ex.: VIP, Mezanino, Plateia Frontal, etc
+        </v-tooltip>
+      </template>
+
       <!-- Template para exibir cada item com ações -->
       <template #item="{ item }">
         <div class="d-flex align-center justify-space-between w-full">
@@ -94,6 +108,18 @@ export default {
     placeholder: {
       type: String,
       default: 'Digite para criar ou selecionar',
+    },
+    hint: {
+      type: String,
+      default: '',
+    },
+    prependInnerIcon: {
+      type: String,
+      default: 'mdi-information-variant-circle',
+    },
+    persistentHint: {
+      type: Boolean,
+      default: false,
     },
     itemKey: {
       type: String,

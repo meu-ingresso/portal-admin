@@ -50,25 +50,15 @@ export const formatRealValue = (value: number): string => {
 
 export const formatPrice = (value: any, locale: string = 'pt-BR') => {
 
-  value = value.replace(/[^\d,]/g, '');
-
-  if (value.includes(',')) {
-    value = value.replace(',', '.');
-  }
+  if (value === null || value === undefined) return '';
 
   let returnValue: string = '';
 
-  // Converte para número float e formata como moeda
-  const numericValue = parseFloat(value);
-  if (!isNaN(numericValue)) {
-    returnValue = numericValue.toLocaleString(locale, {
-      style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  } else {
-    returnValue = '';
-  }
+  returnValue = value.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
 
   return returnValue;
 };

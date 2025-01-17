@@ -9,7 +9,7 @@
     <v-stepper v-else v-model="currentStep" flat class="bg-beige">
       <v-stepper-header class="bg-white no-box-shadow">
         <v-stepper-step
-          v-for="(step, index) in steps"
+          v-for="(step, index) in getSteps"
           :key="index"
           :step="index + 1"
           :complete="currentStep > index + 1">
@@ -19,7 +19,7 @@
 
       <v-stepper-items class="pt-8">
         <v-stepper-content
-          v-for="(step, index) in steps"
+          v-for="(step, index) in getSteps"
           :key="index"
           :step="index + 1"
           class="bg-white px-6 py-6"
@@ -29,7 +29,8 @@
             v-bind="step.props"
             :ref="'step-' + (index + 1)"
             :form.sync="form"
-            :class="{ 'fixed-height-component': isMobile }" />
+            :class="{ 'fixed-height-component': isMobile }"
+            @update:nomenclature="ticketStepperLabel = $event" />
 
           <v-row
             justify="space-between"
@@ -47,13 +48,13 @@
                 @click="previousStep" />
 
               <DefaultButton
-                v-if="index < steps.length - 1"
+                v-if="index < getSteps.length - 1"
                 text="Próximo"
                 @click="nextStep" />
 
               <DefaultButton
-                v-if="index === steps.length - 1"
-                text="Finalizar"
+                v-if="index === getSteps.length - 1"
+                text="Publicar Evento"
                 @click="submitData" />
             </v-col>
           </v-row>
@@ -75,8 +76,9 @@ import StepCoupons from '@/components/organisms/event/StepCoupons.vue';
 export default {
   data() {
     return {
-      currentStep: 1,
+      currentStep: 2,
       steps: [],
+      ticketStepperLabel: 'Ingressos',
     };
   },
 
@@ -111,6 +113,42 @@ export default {
         img: rating.image,
       }));
     },
+
+    getSteps() {
+      return [
+        {
+          label: 'Informações Gerais',
+          component: StepGeneralInfo,
+          props: {
+            form: this.form,
+            categories: this.categories,
+            ratings: this.ratings,
+          },
+        },
+        {
+          label: this.ticketStepperLabel,
+          component: StepTickets,
+          props: {
+            form: this.form,
+            nomenclature: this.ticketStepperLabel,
+          },
+        },
+        {
+          label: 'Campos Personalizados',
+          component: StepCustomFields,
+          props: {
+            form: this.form,
+          },
+        },
+        {
+          label: 'Cupons de Desconto',
+          component: StepCoupons,
+          props: {
+            form: this.form,
+          },
+        },
+      ];
+    },
   },
 
   async mounted() {
@@ -121,39 +159,6 @@ export default {
       rating.fetchRatings({ sortBy: ['name'], sortDesc: [false] }),
     ];
     await Promise.all(promises);
-
-    this.steps = [
-      {
-        label: 'Informações Gerais',
-        component: StepGeneralInfo,
-        props: {
-          form: this.form,
-          categories: this.categories,
-          ratings: this.ratings,
-        },
-      },
-      {
-        label: 'Ingressos',
-        component: StepTickets,
-        props: {
-          form: this.form,
-        },
-      },
-      {
-        label: 'Campos Personalizados',
-        component: StepCustomFields,
-        props: {
-          form: this.form,
-        },
-      },
-      {
-        label: 'Cupons de Desconto',
-        component: StepCoupons,
-        props: {
-          form: this.form,
-        },
-      },
-    ];
 
     loading.setIsLoading(false);
   },
@@ -175,12 +180,12 @@ export default {
           }
 
           if (flag) {
-            if (this.currentStep < this.steps.length) {
+            if (this.currentStep < this.getSteps.length) {
               this.currentStep++;
             }
           }
         });
-      } else if (this.currentStep < this.steps.length) {
+      } else if (this.currentStep < this.getSteps.length) {
         this.currentStep++;
       }
     },

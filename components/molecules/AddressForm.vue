@@ -2,16 +2,20 @@
   <v-row>
     <v-col cols="12" md="8" sm="12">
       <v-text-field
+        ref="localLocationName"
         v-model="localLocationName"
         label="Local do Evento"
         outlined
         dense
         hide-details="auto"
-        placeholder="Digite o local do evento" />
+        required
+        placeholder="Digite o local do evento"
+        :rules="rules?.location_name" />
     </v-col>
 
     <v-col cols="12" md="4" sm="12">
       <v-text-field
+        ref="localCep"
         v-model="localCep"
         label="CEP"
         outlined
@@ -20,6 +24,7 @@
         required
         maxlength="9"
         hide-details="auto"
+        :rules="rules?.cep"
         @input="onChangeCEP" />
     </v-col>
 
@@ -50,14 +55,17 @@
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
-        v-model="localAddress.number"
+        ref="localNumer"
+        v-model="localNumer"
         label="Número"
         type="number"
         outlined
         dense
         hide-details="auto"
         min="0"
-        placeholder="Digite o número" />
+        required
+        placeholder="Digite o número"
+        :rules="rules?.number" />
     </v-col>
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
@@ -86,19 +94,33 @@ export default {
       type: String,
       required: true,
     },
+    number: {
+      type: String,
+      required: true,
+    },
     address: {
       type: Object,
       required: true,
+    },
+    rules: {
+      type: Object,
+      default: () => ({
+        cep: [(v) => !!v || 'CEP é obrigatório', (v) => v.length === 9 || 'CEP inválido'],
+        location_name: [(v) => !!v || 'Local do evento é obrigatório'],
+        number: [(v) => !!v || 'Número é obrigatório'],
+      }),
     },
   },
   data() {
     return {
       localCep: this.cep,
       localLocationName: this.locationName,
+      localNumer: this.number,
       localAddress: { ...this.address },
       isFetchingAddress: false,
       addressError: '',
       debouncerCEP: null,
+      formHasErrors: false,
     };
   },
 
@@ -111,6 +133,13 @@ export default {
         this.localAddress.state
       );
     },
+    form() {
+      return {
+        localCep: this.localCep,
+        localLocationName: this.localLocationName,
+        localNumer: this.localNumer,
+      };
+    },
   },
 
   watch: {
@@ -120,14 +149,23 @@ export default {
     locationName(newVal) {
       this.localLocationName = newVal;
     },
+    number(newVal) {
+      this.localNumer = newVal;
+    },
+    localLocationName(newVal) {
+      this.$emit('update:location-name', newVal);
+    },
+    localCep(newVal) {
+      this.$emit('update:cep', newVal);
+    },
+    localNumer(newVal) {
+      this.$emit('update:number', newVal);
+    },
     address: {
       handler(newVal) {
         this.localAddress = { ...newVal };
       },
       deep: true,
-    },
-    localLocationName(newVal) {
-      this.$emit('update:locationName', newVal);
     },
     localAddress: {
       handler(newVal) {
@@ -138,7 +176,6 @@ export default {
           this.localAddress.state !== this.address.state
         ) {
           this.$emit('update:address', newVal);
-          this.$emit('update:cep', this.localCep);
         }
       },
       deep: true,
@@ -148,6 +185,21 @@ export default {
     this.debouncerCEP = new Debounce(this.fetchAddressByCEP, 300);
   },
   methods: {
+    validate() {
+      this.formHasErrors = false;
+
+      if (this.localCep !== '') {
+        this.$refs.localCep.validate(true);
+        this.$refs.localNumer.validate(true);
+        this.$refs.localLocationName.validate(true);
+      } else {
+        this.$refs.localCep.validate(true);
+        this.$refs.localLocationName.validate(true);
+      }
+
+      return this.formHasErrors;
+    },
+
     onChangeCEP() {
       this.localCep = onFormatCEP(this.localCep);
       this.debouncerCEP.execute();
@@ -164,6 +216,7 @@ export default {
             neighborhood: responseCEP.neighborhood,
             city: responseCEP.city,
             state: responseCEP.state,
+            state_name: responseCEP.state_name,
           };
         } catch (error) {
           console.error('Erro ao buscar endereço:', error);
