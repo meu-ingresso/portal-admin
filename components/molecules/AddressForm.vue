@@ -45,10 +45,17 @@
 
       <v-card v-else-if="isAddressFilled" outlined class="mt-3 mb-3">
         <v-card-text>
-          <p><strong>Rua:</strong> {{ localAddress.street }}</p>
-          <p><strong>Bairro:</strong> {{ localAddress.neighborhood }}</p>
-          <p><strong>Cidade:</strong> {{ localAddress.city }}</p>
-          <p><strong>Estado:</strong> {{ localAddress.state }}</p>
+          <div class="d-flex justify-space-between">
+            <div>
+              <p><strong>Rua:</strong> {{ localAddress.street }}</p>
+              <p><strong>Bairro:</strong> {{ localAddress.neighborhood }}</p>
+              <p><strong>Cidade:</strong> {{ localAddress.city }}</p>
+              <p><strong>Estado:</strong> {{ localAddress.state }}</p>
+            </div>
+            <v-btn icon class="ml-2" @click="clearAddress">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
         </v-card-text>
       </v-card>
     </v-col>
@@ -185,6 +192,19 @@ export default {
     this.debouncerCEP = new Debounce(this.fetchAddressByCEP, 300);
   },
   methods: {
+    clearAddress() {
+      this.localAddress = {
+        street: '',
+        neighborhood: '',
+        city: '',
+        state: '',
+      };
+      this.localCep = '';
+      this.addressError = '';
+      this.$emit('update:cep', '');
+      this.$emit('update:address', this.localAddress);
+    },
+
     validate() {
       this.formHasErrors = false;
 

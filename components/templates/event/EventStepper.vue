@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import { category, rating, loading, toast, eventForm } from '@/store';
+import { category, rating, loading, toast, eventForm, event } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 import StepGeneralInfo from '@/components/organisms/event/StepGeneralInfo.vue';
 import StepTickets from '@/components/organisms/event/StepTickets.vue';
@@ -194,7 +194,15 @@ export default {
         this.currentStep--;
       }
     },
-    submitData() {},
+    submitData() {
+
+      console.log('Submitting data', this.form);
+
+/*       const response  = await event.createEvent(this.form);
+
+      console.log('Response', response); */
+
+    },
   },
 };
 </script>

@@ -109,7 +109,7 @@
       <!-- Descrição do Evento -->
       <v-col cols="12" md="12" sm="12">
         <v-textarea
-          v-model="localForm.description"
+          v-model="localForm.general_information"
           label="Descrição"
           rows="5"
           outlined

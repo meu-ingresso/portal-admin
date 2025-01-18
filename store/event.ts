@@ -235,6 +235,8 @@ export default class Event extends VuexModule {
             // Step 1: Ensure City and State Exist
             const cityResponse = await $axios.$get(`cities?where[name][v]=${eventPayload.address.city}`);
 
+            console.log('cityResponse', cityResponse);
+
             if (!cityResponse || !cityResponse.body || cityResponse.body.code !== 'SEARCH_SUCCESS') {
                 throw new Error('Failed to search city');
             }
@@ -245,7 +247,9 @@ export default class Event extends VuexModule {
                 cityId = cityResponse.body.result[0].id;
             } else {
                 // Check if state exists
-                const stateResponse = await $axios.$get(`states?where[name][v]=${eventPayload.address.state}`);
+                const stateResponse = await $axios.$get(`states?where[name][v]=${eventPayload.address.state_name}`);
+
+                console.log('stateResponse', stateResponse);
 
                 if (!stateResponse || !stateResponse.body || stateResponse.body.code !== 'SEARCH_SUCCESS') {
                     throw new Error('Failed to search state');
@@ -262,6 +266,8 @@ export default class Event extends VuexModule {
                         acronym: eventPayload.address.state,
                     });
 
+                    console.log('stateCreationResponse', stateCreationResponse);
+
                     if (!stateCreationResponse || !stateCreationResponse.body || stateCreationResponse.body.code !== 'CREATE_SUCCESS') {
                         throw new Error('Failed to create state');
                     }
@@ -274,6 +280,8 @@ export default class Event extends VuexModule {
                     name: eventPayload.address.city,
                     state_id: stateId,
                 });
+
+                console.log('cityCreationResponse', cityCreationResponse);
 
                 if (!cityCreationResponse || !cityCreationResponse.body || cityCreationResponse.body.code !== 'CREATE_SUCCESS') {
                     throw new Error('Failed to create city');
@@ -294,6 +302,8 @@ export default class Event extends VuexModule {
                 longitude: eventPayload.address.longitude || null,
                 city_id: eventPayload.address.city_id || cityId,
             });
+
+            console.log('addressResponse', addressResponse);
 
             if (!addressResponse || !addressResponse.body || addressResponse.body.code !== 'CREATE_SUCCESS') {
                 throw new Error('Failed to create address');
@@ -330,6 +340,8 @@ export default class Event extends VuexModule {
                 absorb_service_fee: eventPayload.absorb_service_fee || false,
             });
 
+            console.log('eventResponse', eventResponse);
+
 
             if (!eventResponse || !eventResponse.body || eventResponse.body.code !== 'CREATE_SUCCESS') {
                 throw new Error('Failed to create event');
@@ -350,6 +362,8 @@ export default class Event extends VuexModule {
                         name: ticket.category,
                     });
 
+                    console.log('categoryResponse', categoryResponse);
+
                     if (!categoryResponse || !categoryResponse.body || categoryResponse.body.code !== 'CREATE_SUCCESS') {
                         throw new Error('Failed to create ticket category');
                     }
@@ -362,7 +376,7 @@ export default class Event extends VuexModule {
                 }
 
                 // Create Ticket
-                await $axios.$post('tickets', {
+                const ticketsResponse = await $axios.$post('tickets', {
                     event_id: eventId,
                     ticket_event_category_id: categoryId,
                     name: ticket.name,
@@ -378,6 +392,8 @@ export default class Event extends VuexModule {
                     min_quantity_per_user: ticket.min_purchase,
                     max_quantity_per_user: ticket.max_purchase,
                 });
+
+                console.log('ticketsResponse', ticketsResponse);
             }
 
             this.setLoading(false);
