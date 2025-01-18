@@ -43,7 +43,7 @@ export default class EventForm extends VuexModule {
     private form = {
         eventName: '',
         alias: '',
-        description: '',
+        general_information: '',
         category: '',
         startDate: '',
         startTime: '',

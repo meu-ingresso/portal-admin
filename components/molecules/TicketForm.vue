@@ -299,7 +299,7 @@ export default {
           (value) => value > 0 || 'A quantidade deve ser maior que zero.',
         ],
         min_purchase: [
-          (value) => value > 0 || 'A compra mínima deve ser maior ou igual a zero.',
+          (value) => value >= 0 || 'A compra mínima deve ser maior ou igual a zero.',
         ],
         max_purchase: [
           (value) => value > 0 || 'A compra máxima deve ser maior ou igual a zero.',
