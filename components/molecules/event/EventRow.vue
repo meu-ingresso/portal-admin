@@ -5,7 +5,7 @@
     </v-col>
 
     <v-col sm="12" md="2">
-      <v-img :src="image" class="event-image"></v-img>
+      <v-img :src="getImage" class="event-image"></v-img>
     </v-col>
 
     <v-col sm="12" md="3">
@@ -49,6 +49,13 @@ export default {
   computed: {
     formattedDate() {
       return formatDateTimeToBr(this.date);
+    },
+
+    getImage() {
+      if (this.image.startsWith('/assets')) {
+        return require(`@/assets/${this.image.split('/assets/')[1]}`);
+      }
+      return this.image;
     },
   },
 

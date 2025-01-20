@@ -77,7 +77,7 @@
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
-        v-model="localAddress.complement"
+        v-model="localComplement"
         label="Complemento"
         outlined
         dense
@@ -105,6 +105,10 @@ export default {
       type: String,
       required: true,
     },
+    complement: {
+      type: String,
+      default: '',
+    },
     address: {
       type: Object,
       required: true,
@@ -123,6 +127,7 @@ export default {
       localCep: this.cep,
       localLocationName: this.locationName,
       localNumer: this.number,
+      localComplement: this.complement,
       localAddress: { ...this.address },
       isFetchingAddress: false,
       addressError: '',
@@ -168,6 +173,10 @@ export default {
     localNumer(newVal) {
       this.$emit('update:number', newVal);
     },
+    localComplement(newVal) {
+      this.$emit('update:complement', newVal);
+    },
+
     address: {
       handler(newVal) {
         this.localAddress = { ...newVal };

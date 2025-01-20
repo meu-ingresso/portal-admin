@@ -57,10 +57,10 @@
         @keypress="onNumerFieldChange" />
     </v-col>
 
-    <template v-if="nomenclature != 'Doação'">
+    <template v-if="nomenclature != 'Doação' && !isMobile">
       <v-col cols="12" md="12" sm="12" class="py-0 my-4">
         <div class="d-flex align-center" style="padding: 0px 4px 0px">
-          <h4>Quantidade permitida por compra</h4>
+          <h4 class="mr-2">Quantidade permitida por compra</h4>
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
               <v-icon v-bind="attrs" v-on="on">mdi-help-circle</v-icon>
@@ -127,6 +127,8 @@
         <v-date-picker
           v-model="localTicket.open_date"
           locale="pt-br"
+          no-title
+          dense
           @input="onDateChange('open_date', $event)" />
       </v-menu>
     </v-col>
@@ -188,6 +190,7 @@
           v-model="localTicket.close_date"
           locale="pt-br"
           dense
+          no-title
           @input="onDateChange('close_date', $event)" />
       </v-menu>
     </v-col>
@@ -246,11 +249,57 @@
         class="inline-switch-checkbox"
         dense />
     </v-col>
+
+    <template v-if="nomenclature != 'Doação' && isMobile">
+      <v-col cols="12" md="12" sm="12" class="py-0 my-2">
+        <div class="d-flex align-center" style="padding: 0px 4px 0px">
+          <h4 class="mr-2">Quantidade permitida por compra</h4>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-icon v-bind="attrs" v-on="on">mdi-help-circle</v-icon>
+            </template>
+            <span
+              >Limite a quantidade permitida por compra com quantidade mínima e
+              máxima</span
+            >
+          </v-tooltip>
+        </div>
+      </v-col>
+
+      <v-col cols="12" md="6" sm="12">
+        <v-text-field
+          ref="min_purchase"
+          v-model="localTicket.min_purchase"
+          label="Compra Mínima"
+          type="number"
+          min="0"
+          outlined
+          dense
+          required
+          hide-details="auto"
+          :rules="validationRules.min_purchase"
+          @keypress="onNumerFieldChange" />
+      </v-col>
+      <v-col cols="12" md="6" sm="12">
+        <v-text-field
+          ref="max_purchase"
+          v-model="localTicket.max_purchase"
+          label="Compra Máxima"
+          type="number"
+          min="0"
+          outlined
+          dense
+          required
+          hide-details="auto"
+          :rules="validationRules.max_purchase" />
+      </v-col>
+    </template>
   </v-row>
 </template>
 
 <script>
 import { formatPrice, formatDateToBr } from '@/utils/formatters';
+import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
     ticket: {
@@ -310,10 +359,6 @@ export default {
         ],
         open_date: [
           (value) => !!value || 'A data de abertura é obrigatória.',
-          () =>
-            this.normalizeDate(this.localTicket.open_date) >=
-              this.normalizeDate(new Date()) ||
-            'A data de abertura deve ser posterior a hoje.',
         ],
         start_time: [(value) => !!value || 'A hora de início é obrigatória.'],
         close_date: [
@@ -324,15 +369,7 @@ export default {
               this.normalizeDate(this.localTicket.open_date) ||
             'A data de fechamento deve ser posterior à data de abertura.',
         ],
-        end_time: [
-          (value) => !!value || 'A hora de término é obrigatória.',
-          (value) =>
-            !value ||
-            this.normalizeDate(this.localTicket.close_date) >
-              this.normalizeDate(this.localTicket.open_date) ||
-            value > this.localTicket.start_time ||
-            'A hora de término deve ser posterior à hora de início.',
-        ],
+        end_time: [(value) => !!value || 'A hora de término é obrigatória.'],
         availability: [(value) => !!value || 'A disponibilidade é obrigatória.'],
       },
     };
@@ -378,6 +415,9 @@ export default {
           return '';
       }
     },
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
     form() {
       return {
         name: this.localTicket.name,
@@ -409,9 +449,6 @@ export default {
       this.formHasErrors = false;
 
       Object.keys(this.form).forEach((f) => {
-        // Não validar campos customizados
-        if (f === 'custom_fields') return;
-
         // Não validar grupo de ingressos
         if (f === 'category') return;
 

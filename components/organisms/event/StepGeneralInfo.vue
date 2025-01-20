@@ -175,14 +175,17 @@
       <!-- Endereço do Evento -->
       <AddressForm
         ref="addressForm"
-        :cep="form.cep"
-        :location-name="form.location_name"
-        :number="form.number"
-        :address="form.address"
+        :cep="localForm.cep"
+        :location-name="localForm.location_name"
+        :number="localForm.number"
+        :address="localForm.address"
+        :complement="localForm.complement"
         @update:cep="updateCep"
         @update:location-name="updateLocationName"
         @update:number="updateNumber"
-        @update:address="updateAddress" />
+        @update:address="updateAddress"
+        @update:complement="updateComplement"
+         />
     </template>
 
     <!-- Configurações do Evento/Ingressos -->
@@ -196,7 +199,7 @@
             <v-row class="d-flex align-start">
               <v-col cols="12" md="4" sm="12">
                 <div class="d-flex flex-column">
-                  <div class="d-flex">
+                  <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
                     <v-switch
                       v-model="localForm.absorb_service_fee"
                       class="inline-switch-checkbox mr-4 pt-0"
@@ -218,7 +221,7 @@
                       </v-tooltip>
                     </div>
                   </div>
-                  <div v-if="isAdmin" class="d-flex">
+                  <div v-if="isAdmin" class="d-flex" :class="{ 'justify-space-between': isMobile }">
                     <v-switch
                       v-model="localForm.is_featured"
                       class="inline-switch-checkbox mr-4 pt-0"
@@ -301,7 +304,7 @@ export default {
       types: ['Presencial', 'Online', 'Híbrido'],
       debouncerAlias: null,
       imagePreview: null,
-      availabilityOptions: ['Público', 'Privado', 'Página'],
+      availabilityOptions: ['Publico', 'Privado', 'Página'],
       nomenclature: this.form.sale_type || 'Ingresso',
       nomenclatureOptions: ['Ingresso', 'Inscrição', 'Doação'],
       formHasErrors: false,
@@ -502,13 +505,19 @@ export default {
       this.formHasErrors = false;
 
       Object.keys(this.generalInfoForm).forEach((f) => {
+
+
+        const fieldIsFromAddress = ['cep', 'location_name', 'number'].includes(f);
+
         if (this.localForm.event_type === 'Presencial' && f === 'link_online') {
           return;
         }
 
-        if (!this.generalInfoForm[f]) this.formHasErrors = true;
+        if (this.localForm.event_type === 'Online' && fieldIsFromAddress) {
+          return;
+        }
 
-        const fieldIsFromAddress = ['cep', 'location_name', 'number'].includes(f);
+        if (!this.generalInfoForm[f]) this.formHasErrors = true;
 
         const fieldFromDateTimeForm = [
           'startDate',
@@ -566,6 +575,10 @@ export default {
     updateLocationName(value) {
       this.localForm.location_name = value;
       eventForm.updateForm({ location_name: value });
+    },
+    updateComplement(value) {
+      this.localForm.complement = value;
+      eventForm.updateForm({ complement: value });
     },
     updateAddress(value) {
       this.localForm.address = value;

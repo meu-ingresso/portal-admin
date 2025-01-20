@@ -26,7 +26,7 @@
         dense
         multiple
         hide-details="auto">
-        <template v-if="localCoupon.tickets.length" #prepend-item>
+        <template v-if="tickets.length" #prepend-item>
           <v-list-item ripple @mousedown.prevent @click="toggleAllTickets">
             <v-list-item-action>
               <v-icon :color="localCoupon.tickets.length > 0 ? 'primary' : ''">
@@ -43,7 +43,7 @@
     </v-col>
 
     <!-- Tipo de Desconto -->
-    <v-col cols="12" md="6">
+    <v-col cols="12" md="4">
       <v-select
         ref="discountType"
         v-model="localCoupon.discountType"
@@ -57,16 +57,17 @@
     </v-col>
 
     <!-- Valor do Desconto -->
-    <v-col cols="12" md="6">
+    <v-col cols="12" md="4">
       <v-text-field
         ref="discountValue"
         v-model="localCoupon.discountValue"
         :label="
-          localCoupon.discountType === 'PERCENTAGE'
+          localCoupon.discountType?.value === 'PERCENTAGE'
             ? 'Valor do Desconto (%)'
             : 'Valor do Desconto (R$)'
         "
-        :prefix="localCoupon.discountType === 'FIXED' ? 'R$' : '%'"
+        :prefix="localCoupon.discountType?.value === 'FIXED' ? 'R$' : ''"
+        :suffix="localCoupon.discountType?.value === 'PERCENTAGE' ? '%' : ''"
         outlined
         dense
         hide-details="auto"
@@ -76,7 +77,7 @@
     </v-col>
 
     <!-- Máximo de Usos -->
-    <v-col cols="12" md="6">
+    <v-col cols="12" md="4">
       <v-text-field
         ref="maxUses"
         v-model="localCoupon.maxUses"
@@ -92,31 +93,131 @@
         @keypress="onNumerFieldChange" />
     </v-col>
 
-    <!-- Data de Expiração -->
-    <v-col cols="12" md="6">
+    <!-- Data de Início -->
+    <v-col cols="12" md="3">
       <v-menu
-        v-model="expirationMenu"
+        v-model="startDateMenu"
         :close-on-content-click="false"
         transition="scale-transition"
         offset-y
         min-width="auto">
         <template #activator="{ on, attrs }">
           <v-text-field
-            ref="formattedExpirationDate"
-            :value="formattedExpirationDate"
+            ref="formattedStartDate"
+            :value="formattedStartDate"
+            label="Data de Início"
+            readonly
+            outlined
+            dense
+            hide-details="auto"
+            v-bind="attrs"
+            :rules="validationRules.start_date"
+            v-on="on" />
+        </template>
+        <v-date-picker
+          v-model="localCoupon.start_date"
+          locale="pt-br"
+          no-title
+          dense
+          @input="onDateChange('start_date')" />
+      </v-menu>
+    </v-col>
+
+    <!-- Hora de Início -->
+    <v-col cols="12" md="3" sm="12">
+      <v-menu
+        v-model="startTimeMenu"
+        :close-on-content-click="false"
+        transition="scale-transition"
+        offset-y
+        dense
+        hide-details="auto"
+        min-width="auto">
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            ref="end_time"
+            v-model="localCoupon.start_time"
+            label="Horário de Início"
+            prepend-inner-icon="mdi-clock-outline"
+            readonly
+            outlined
+            dense
+            hide-details="auto"
+            v-bind="attrs"
+            required
+            :rules="validationRules.start_time"
+            v-on="on" />
+        </template>
+        <v-time-picker
+          v-model="localCoupon.start_time"
+          format="24hr"
+          dense
+          hide-details="auto"
+          @input="onHourChange('start_time')" />
+      </v-menu>
+    </v-col>
+
+    <!-- Data de Expiração -->
+    <v-col cols="12" md="3">
+      <v-menu
+        v-model="endDateMenu"
+        :close-on-content-click="false"
+        transition="scale-transition"
+        offset-y
+        min-width="auto">
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            ref="formattedEndDate"
+            :value="formattedEndDate"
             label="Data de Expiração"
             readonly
             outlined
             dense
             hide-details="auto"
             v-bind="attrs"
-            :rules="validationRules.expirationDate"
+            :rules="validationRules.end_date"
             v-on="on" />
         </template>
         <v-date-picker
-          v-model="localCoupon.expirationDate"
+          v-model="localCoupon.end_date"
           locale="pt-br"
-          @input="onDateChange" />
+          no-title
+          dense
+          @input="onDateChange('end_date')" />
+      </v-menu>
+    </v-col>
+
+    <!-- Hora de Expiração -->
+    <v-col cols="12" md="3" sm="12">
+      <v-menu
+        v-model="endTimeMenu"
+        :close-on-content-click="false"
+        transition="scale-transition"
+        offset-y
+        dense
+        hide-details="auto"
+        min-width="auto">
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            ref="end_time"
+            v-model="localCoupon.end_time"
+            label="Horário de Término"
+            prepend-inner-icon="mdi-clock-outline"
+            readonly
+            outlined
+            dense
+            hide-details="auto"
+            v-bind="attrs"
+            required
+            :rules="validationRules.end_time"
+            v-on="on" />
+        </template>
+        <v-time-picker
+          v-model="localCoupon.end_time"
+          format="24hr"
+          dense
+          hide-details="auto"
+          @input="onHourChange('end_time')" />
       </v-menu>
     </v-col>
   </v-row>
@@ -152,7 +253,10 @@ export default {
         { text: 'Porcentagem', value: 'PERCENTAGE' },
       ],
       formHasErrors: false,
-      expirationMenu: false,
+      startDateMenu: false,
+      endDateMenu: false,
+      startTimeMenu: false,
+      endTimeMenu: false,
       validationRules: {
         code: [(value) => !!value || 'O código do cupom é obrigatório.'],
         discountValue: [
@@ -163,22 +267,30 @@ export default {
           (v) => !!v || 'O número máximo de usos é obrigatório.',
           (v) => v > 0 || 'O número máximo de usos deve ser maior que 0.',
         ],
-        expirationDate: [
+        start_date: [(v) => !!v || 'A data de início é obrigatória.'],
+        start_time: [(value) => !!value || 'A hora de início é obrigatória.'],
+        end_date: [
           (v) => !!v || 'A data de expiração é obrigatória.',
-          (v) =>
-            this.normalizeDate(v) >= this.normalizeDate(new Date()) ||
+          () =>
+            this.normalizeDate(this.localCoupon.end_date) >=
+              this.normalizeDate(new Date()) ||
             'A data de expiração deve ser posterior a hoje.',
-          (v) =>
-            this.normalizeDate(v) >= this.normalizeDate(this.eventStartDate) ||
+          () =>
+            this.normalizeDate(this.localCoupon.end_date) >=
+              this.normalizeDate(this.localCoupon.start_date) ||
             'A data de expiração deve ser posterior à data de início do evento.',
         ],
+        end_time: [(value) => !!value || 'A hora de término é obrigatória.'],
       },
     };
   },
   computed: {
-    formattedExpirationDate() {
-      return this.localCoupon.expirationDate
-        ? formatDateToBr(this.localCoupon.expirationDate)
+    formattedEndDate() {
+      return this.localCoupon.end_date ? formatDateToBr(this.localCoupon.end_date) : '';
+    },
+    formattedStartDate() {
+      return this.localCoupon.start_date
+        ? formatDateToBr(this.localCoupon.start_date)
         : '';
     },
     selectedAllTickets() {
@@ -197,7 +309,8 @@ export default {
         code: this.localCoupon.code,
         discountValue: this.localCoupon.discountValue,
         maxUses: this.localCoupon.maxUses,
-        formattedExpirationDate: this.localCoupon.expirationDate,
+        formattedEndDate: this.localCoupon.end_date,
+        formattedStartDate: this.localCoupon.start_date,
       };
     },
   },
@@ -255,8 +368,19 @@ export default {
     emitChanges() {
       this.$emit('update:coupon', this.localCoupon);
     },
-    onDateChange() {
-      this.expirationMenu = false;
+    onDateChange(field) {
+      if (field === 'start_date') {
+        this.startDateMenu = false;
+      } else {
+        this.endDateMenu = false;
+      }
+    },
+    onHourChange(field) {
+      if (field === 'start_time') {
+        this.startTimeMenu = false;
+      } else {
+        this.endTimeMenu = false;
+      }
     },
     validateForm() {
       this.formHasErrors = false;
