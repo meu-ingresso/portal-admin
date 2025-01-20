@@ -616,7 +616,7 @@ export default class Event extends VuexModule {
     try {
       this.setSaving(true);
 
-      this.setProgressTitle('Salvando evento...');
+      this.setProgressTitle('Salvando evento');
 
       const cityId = await fetchOrCreateCity(
         eventPayload.address.city,
@@ -624,7 +624,7 @@ export default class Event extends VuexModule {
         eventPayload.address.state
       );
 
-      this.setProgressTitle('Salvando endereço...');
+      this.setProgressTitle('Salvando endereço');
 
       const addressId = await createAddress(eventPayload, cityId);
 
@@ -636,17 +636,17 @@ export default class Event extends VuexModule {
 
       await updateEventBanner(bannerId, bannerUrl);
 
-      this.setProgressTitle('Salvando ingressos e categorias...');
+      this.setProgressTitle('Salvando ingressos e categorias');
 
       const ticketMap = await createTicketsAndCategories(eventId, eventPayload.tickets);
 
-      this.setProgressTitle('Salvando campos personalizados...');
+      this.setProgressTitle('Salvando campos personalizados');
 
       const fieldTicketMap = await createCustomFields(eventId, eventPayload.customFields);
 
       await createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap);
 
-      this.setProgressTitle('Salvando códigos promocionais...');
+      this.setProgressTitle('Salvando códigos promocionais');
 
       const couponTicketMap = await createCoupons(eventId, eventPayload.coupons);
 
