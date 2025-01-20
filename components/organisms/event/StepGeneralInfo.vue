@@ -184,8 +184,7 @@
         @update:location-name="updateLocationName"
         @update:number="updateNumber"
         @update:address="updateAddress"
-        @update:complement="updateComplement"
-         />
+        @update:complement="updateComplement" />
     </template>
 
     <!-- Configurações do Evento/Ingressos -->
@@ -197,54 +196,7 @@
           </v-card-title>
           <v-card-text>
             <v-row class="d-flex align-start">
-              <v-col cols="12" md="4" sm="12">
-                <div class="d-flex flex-column">
-                  <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
-                    <v-switch
-                      v-model="localForm.absorb_service_fee"
-                      class="inline-switch-checkbox mr-4 pt-0"
-                      label="Absorver a taxa de serviço"
-                      dense
-                      hide-details="auto" />
-                    <div class="d-flex">
-                      <v-tooltip top>
-                        <template #activator="{ on, attrs }">
-                          <v-icon color="gray" v-bind="attrs" v-on="on"
-                            >mdi-help-circle</v-icon
-                          >
-                        </template>
-                        <span class="tax-container">
-                          Ao selecionar essa opção, a taxa de serviço (10%) será incluída
-                          no preço final de venda do ingresso e não será mostrada ao
-                          comprador
-                        </span>
-                      </v-tooltip>
-                    </div>
-                  </div>
-                  <div v-if="isAdmin" class="d-flex" :class="{ 'justify-space-between': isMobile }">
-                    <v-switch
-                      v-model="localForm.is_featured"
-                      class="inline-switch-checkbox mr-4 pt-0"
-                      label="Marcar como destaque"
-                      dense
-                      hide-details="auto" />
-                    <div class="d-flex">
-                      <v-tooltip top>
-                        <template #activator="{ on, attrs }">
-                          <v-icon color="gray" v-bind="attrs" v-on="on"
-                            >mdi-help-circle</v-icon
-                          >
-                        </template>
-                        <span class="tax-container">
-                          Ao selecionar essa opção, o evento será marcado como destaque na
-                          plataforma.
-                        </span>
-                      </v-tooltip>
-                    </div>
-                  </div>
-                </div>
-              </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col cols="12" md="6" sm="12">
                 <v-select
                   v-model="localForm.availability"
                   label="Visibilidade"
@@ -256,7 +208,8 @@
                   hide-details="auto"
                   required />
               </v-col>
-              <v-col md="4" sm="12" class="d-flex align-center">
+
+              <v-col cols="12" md="6" sm="12" class="d-flex align-center">
                 <v-select
                   v-model="nomenclature"
                   label="Nomenclatura"
@@ -265,6 +218,84 @@
                   dense
                   hide-details="auto"
                   required />
+              </v-col>
+
+              <v-col cols="12" md="6" sm="12">
+                <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
+                  <v-icon
+                    v-if="localForm.absorb_service_fee"
+                    class="ma-0 pa-0"
+                    size="50"
+                    color="primary"
+                    @click="handleAbsorbServiceFee">
+                    mdi-toggle-switch
+                  </v-icon>
+
+                  <v-icon
+                    v-else-if="!localForm.absorb_service_fee"
+                    class="ma-0 pa-0"
+                    size="50"
+                    @click="handleAbsorbServiceFee">
+                    mdi-toggle-switch-off
+                  </v-icon>
+
+                  <span class="mt-3" :class="!isMobile ? 'helpText' : ''">
+                    Absorver a taxa de serviço
+                  </span>
+
+                  <div class="d-flex" :class="!isMobile ? 'helpText' : ''">
+                    <v-tooltip top>
+                      <template #activator="{ on, attrs }">
+                        <v-icon color="gray" v-bind="attrs" v-on="on">
+                          mdi-help-circle
+                        </v-icon>
+                      </template>
+                      <span class="tax-container">
+                        Ao selecionar essa opção, a taxa de serviço (10%) será incluída no
+                        preço final de venda do ingresso e não será mostrada ao comprador
+                      </span>
+                    </v-tooltip>
+                  </div>
+                </div>
+              </v-col>
+
+              <v-col v-if="isAdmin" cols="12" md="6" sm="12">
+                <div class="d-flex" :class="{ 'justify-space-between': isMobile }">
+                  <v-icon
+                    v-if="localForm.is_featured"
+                    class="ma-0 pa-0"
+                    size="50"
+                    color="primary"
+                    @click="handleToggleFeatured">
+                    mdi-toggle-switch
+                  </v-icon>
+
+                  <v-icon
+                    v-else-if="!localForm.is_featured"
+                    class="ma-0 pa-0"
+                    size="50"
+                    @click="handleToggleFeatured">
+                    mdi-toggle-switch-off
+                  </v-icon>
+
+                  <span class="mt-3" :class="!isMobile ? 'helpText' : ''">
+                    Marcar como destaque
+                  </span>
+
+                  <div class="d-flex" :class="!isMobile ? 'helpText' : ''">
+                    <v-tooltip top>
+                      <template #activator="{ on, attrs }">
+                        <v-icon color="gray" v-bind="attrs" v-on="on">
+                          mdi-help-circle
+                        </v-icon>
+                      </template>
+                      <span class="tax-container">
+                        Ao selecionar essa opção, o evento será marcado como destaque na
+                        plataforma.
+                      </span>
+                    </v-tooltip>
+                  </div>
+                </div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -415,6 +446,14 @@ export default {
     }
   },
   methods: {
+    handleToggleFeatured() {
+      this.localForm.is_featured = !this.localForm.is_featured;
+    },
+
+    handleAbsorbServiceFee() {
+      this.localForm.absorb_service_fee = !this.localForm.absorb_service_fee;
+    },
+
     emitChanges() {
       this.$emit('update:form', { ...this.localForm });
     },
@@ -505,8 +544,6 @@ export default {
       this.formHasErrors = false;
 
       Object.keys(this.generalInfoForm).forEach((f) => {
-
-
         const fieldIsFromAddress = ['cep', 'location_name', 'number'].includes(f);
 
         if (this.localForm.event_type === 'Presencial' && f === 'link_online') {
@@ -646,5 +683,9 @@ export default {
 
 .ticket-configuration {
   box-shadow: 0px 0px 2.24px 0px rgba(0, 0, 0, 0.16078) !important;
+}
+
+.helpText {
+  margin-left: 10px;
 }
 </style>
