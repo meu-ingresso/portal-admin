@@ -223,8 +223,6 @@ export default {
         end_time: '',
         visible: true,
         availability: '',
-        quantity: '',
-        customFields: [],
       },
     };
   },
@@ -269,24 +267,14 @@ export default {
   },
 
   mounted() {
-    this.populateExistingFields();
+    this.populateExistingCategories();
   },
 
   methods: {
     canProceed(callback) {
       callback(null, true);
     },
-    populateExistingFields() {
-      this.existingFields = [];
 
-      this.localForm.tickets.forEach((ticket) => {
-        ticket.customFields.forEach((field) => {
-          if (!this.existingFields.some((existing) => existing.name === field.name)) {
-            this.existingFields.push(field);
-          }
-        });
-      });
-    },
     populateExistingCategories() {
       this.categories = [];
 
@@ -385,7 +373,6 @@ export default {
         visible: true,
         availability: '',
         quantity: '',
-        customFields: [],
       };
       this.newTicketModal = true;
     },

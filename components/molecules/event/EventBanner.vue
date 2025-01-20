@@ -1,6 +1,6 @@
 <template>
   <v-card class="event-card" @click="goToEventDetail">
-    <v-img :src="image" class="event-image" alt="Event Image" contain />
+    <v-img :src="getImage" class="event-image" alt="Event Image" contain />
 
     <v-card-text>
       <h3 class="event-title">{{ title }}</h3>
@@ -26,6 +26,12 @@ export default {
   computed: {
     formattedDate() {
       return formatDateTimeToBr(this.date);
+    },
+    getImage() {
+      if (this.image.startsWith('/assets')) {
+        return require(`@/assets/${this.image.split('/assets/')[1]}`);
+      }
+      return this.image;
     },
   },
 

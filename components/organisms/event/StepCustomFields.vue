@@ -191,7 +191,7 @@ export default {
       personTypes: [
         { text: 'Pessoa Física (PF)', value: 'PF' },
         { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-        { text: 'Estrangeiro', value: 'Estrangeiro' },
+        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
       ],
       confirmDialog: false,
       fieldNameToRemove: null,
@@ -243,7 +243,7 @@ export default {
           personTypes: [
             { text: 'Pessoa Física (PF)', value: 'PF' },
             { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-            { text: 'Estrangeiro', value: 'Estrangeiro' },
+            { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
           ],
           tickets: [],
         },
@@ -258,7 +258,7 @@ export default {
           personTypes: [
             { text: 'Pessoa Física (PF)', value: 'PF' },
             { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-            { text: 'Estrangeiro', value: 'Estrangeiro' },
+            { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
           ],
           tickets: [],
         },

@@ -28,6 +28,7 @@
           locale="pt-br"
           dense
           hide-details="auto"
+          no-title
           @input="onStartDateChange" />
       </v-menu>
     </v-col>
@@ -93,6 +94,7 @@
           v-model="localEndDate"
           locale="pt-br"
           dense
+          no-title
           hide-details="auto"
           @input="onEndDateChange" />
       </v-menu>
@@ -181,11 +183,6 @@ export default {
         ],
         endTime: [
           (value) => !!value || 'A hora de término é obrigatória.',
-          (value) =>
-            !value ||
-            this.localEndDate > this.localStartDate ||
-            value > this.localStartTime ||
-            'A hora de término deve ser posterior à hora de início.',
         ],
       },
     };
