@@ -449,9 +449,6 @@ export default {
       this.formHasErrors = false;
 
       Object.keys(this.form).forEach((f) => {
-        // Não validar campos customizados
-        if (f === 'custom_fields') return;
-
         // Não validar grupo de ingressos
         if (f === 'category') return;
 

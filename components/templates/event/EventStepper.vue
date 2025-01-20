@@ -39,10 +39,14 @@
             <v-col
               cols="12"
               class="d-flex"
-              :class="{ 'justify-end': !isMobile || index === 0 , 'justify-space-between': isMobile && index > 0 }">
+              :class="{
+                'justify-end': !isMobile || index === 0,
+                'justify-space-between': isMobile && index > 0,
+              }">
               <DefaultButton
                 v-if="index > 0"
                 outlined
+                :disabled="isSaving"
                 class="mr-2"
                 text="Voltar"
                 @click="previousStep" />
@@ -50,11 +54,13 @@
               <DefaultButton
                 v-if="index < getSteps.length - 1"
                 text="Próximo"
+                :disabled="isSaving"
                 @click="nextStep" />
 
               <DefaultButton
                 v-if="index === getSteps.length - 1"
                 text="Publicar Evento"
+                :disabled="isSaving"
                 @click="submitData" />
             </v-col>
           </v-row>
@@ -62,6 +68,15 @@
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>
+
+    <v-dialog v-model="showProgressDialog" persistent max-width="500">
+      <v-card>
+        <v-card-text class="text-center">
+          <v-progress-circular indeterminate size="64" color="primary" class="mb-4" />
+          <h3>{{ progressTitle }}</h3>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -79,6 +94,7 @@ export default {
       currentStep: 1,
       steps: [],
       ticketStepperLabel: 'Ingressos',
+      showProgressDialog: false,
     };
   },
 
@@ -100,12 +116,22 @@ export default {
     isLoading() {
       return loading.$isLoading;
     },
+
+    isSaving() {
+      return event.$isSaving;
+    },
+
+    progressTitle() {
+      return event.$progressTitle;
+    },
+
     categories() {
       return category.$categoryList.map((category) => ({
         value: category.id,
         text: category.name,
       }));
     },
+
     ratings() {
       return rating.$ratingList.map((rating) => ({
         value: rating.id,
@@ -195,13 +221,33 @@ export default {
       }
     },
     async submitData() {
-
       console.log('Submitting data', this.form);
 
-      const response  = await event.createEvent(this.form);
+      this.showProgressDialog = true;
 
-      console.log('Response', response);
+      try {
+        await event.postEvent(this.form);
 
+        toast.setToast({
+          text: 'Evento publicado com sucesso!',
+          type: 'success',
+          time: 5000,
+        });
+
+        setTimeout(() => {
+          this.$router.push({ name: 'Lista de Eventos' });
+        }, 1500);
+      } catch (error) {
+        console.error('Error', error);
+
+        toast.setToast({
+          text: 'Ocorreu um erro ao publicar o evento. Tente novamente.',
+          type: 'danger',
+          time: 5000,
+        });
+      } finally {
+        this.showProgressDialog = false;
+      }
     },
   },
 };

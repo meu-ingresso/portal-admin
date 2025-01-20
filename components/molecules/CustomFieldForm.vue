@@ -84,7 +84,7 @@
     </v-col>
 
     <!-- Campo de Termos -->
-    <v-col v-else-if="localField.type?.value === 'terms'" cols="12">
+    <v-col v-else-if="localField.type?.value === 'TERMO'" cols="12">
       <v-textarea
         ref="termsContent"
         v-model="localField.termsContent"
@@ -152,7 +152,7 @@
         v-model="localField.options"
         :value="localField.options"
         :items="options"
-        :disabled="localField.type?.value === 'terms'"
+        :disabled="localField.type?.value === 'TERMO'"
         label="Configurações"
         placeholder="Selecione as configurações"
         outlined
@@ -205,16 +205,16 @@ export default {
       },
       formHasErrors: false,
       fieldTypes: [
-        { text: 'CPF', value: 'cpf' },
-        { text: 'CNPJ', value: 'cnpj' },
-        { text: 'Telefone', value: 'phone' },
-        { text: 'Data', value: 'date' },
-        { text: 'Texto', value: 'text' },
-        { text: 'Parágrafo', value: 'paragraph' },
-        { text: 'Email', value: 'email' },
-        { text: 'Menu Dropdown', value: 'autocomplete' },
-        { text: 'Mútiplos Checkbox', value: 'combobox' },
-        { text: 'Termos', value: 'terms' },
+        { text: 'CPF', value: 'CPF' },
+        { text: 'CNPJ', value: 'CNPJ' },
+        { text: 'Telefone', value: 'TELEFONE' },
+        { text: 'Data', value: 'DATA' },
+        { text: 'Texto', value: 'TEXTO' },
+        { text: 'Parágrafo', value: 'PARAGRAPH' },
+        { text: 'Email', value: 'EMAIL' },
+        { text: 'Menu Dropdown', value: 'MENU_DROPDOWN' },
+        { text: 'Mútiplos Checkbox', value: 'MULTI_CHECKBOX' },
+        { text: 'Termos', value: 'TERMO' },
       ],
       optionErrors: [],
       errors: {
@@ -246,13 +246,18 @@ export default {
 
   computed: {
     isFieldTypeWithOptions() {
-      return ['autocomplete', 'combobox'].includes(this.localField.type?.value);
+      return ['MENU_DROPDOWN', 'MULTI_CHECKBOX'].includes(this.localField.type?.value);
     },
     selectedAllTickets() {
       return this.localField.tickets.length === this.tickets.length;
     },
     selectedSomeTickets() {
       return this.localField.tickets.length > 0 && !this.selectedAllTickets;
+    },
+    icon() {
+      if (this.selectedAllTickets) return 'mdi-close-box';
+      if (this.selectedSomeTickets) return 'mdi-minus-box';
+      return 'mdi-checkbox-blank-outline';
     },
     form() {
       return {
@@ -287,19 +292,13 @@ export default {
       }
     },
 
-    icon() {
-      if (this.selectedAllTickets) return 'mdi-close-box';
-      if (this.selectedSomeTickets) return 'mdi-minus-box';
-      return 'mdi-checkbox-blank-outline';
-    },
-
     onTypeChange() {
       if (this.isFieldTypeWithOptions && this.localField.optionsValues.length === 0) {
         this.addOption();
         return;
       }
 
-      if (this.localField.type?.value === 'terms') {
+      if (this.localField.type?.value === 'TERMO') {
         this.$set(this.localField, 'options', [
           {
             text: 'Obrigatório',
@@ -369,7 +368,7 @@ export default {
       this.formHasErrors = false;
 
       Object.keys(this.form).forEach((f) => {
-        if (f === 'termsContent' && !this.localField.type?.value !== 'terms') {
+        if (f === 'termsContent' && !this.localField.type?.value !== 'TERMO') {
           return;
         }
 

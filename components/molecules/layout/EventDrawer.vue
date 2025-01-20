@@ -123,7 +123,7 @@ export default {
       const banner = this.eventData.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
-      return banner ? banner.image_url : '';
+      return banner ? banner.image_url : require(`~/assets/images/default_banner.png`);;
     },
 
     routerParams() {
