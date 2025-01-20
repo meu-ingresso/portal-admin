@@ -112,7 +112,21 @@
         multiple
         required
         hide-details="auto"
-        :rules="validationRules.tickets" />
+        :rules="validationRules.tickets">
+        <template v-if="tickets.length" #prepend-item>
+          <v-list-item ripple @mousedown.prevent @click="toggleAllTickets">
+            <v-list-item-action>
+              <v-icon :color="localField.tickets.length > 0 ? 'primary' : ''">
+                {{ icon }}
+              </v-icon>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title> Todos </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-divider class="mt-2"></v-divider>
+        </template>
+      </v-select>
     </v-col>
 
     <!-- Tipos de Pessoa -->
@@ -151,7 +165,7 @@
     <!-- Descrição de Ajuda -->
     <v-col cols="12" md="12">
       <v-textarea
-        v-model="localField.description"
+        v-model="localField.help_text"
         label="Descrição de Ajuda"
         placeholder="Explique como e para o que serve este campo (opcional)"
         outlined
@@ -234,6 +248,12 @@ export default {
     isFieldTypeWithOptions() {
       return ['autocomplete', 'combobox'].includes(this.localField.type?.value);
     },
+    selectedAllTickets() {
+      return this.localField.tickets.length === this.tickets.length;
+    },
+    selectedSomeTickets() {
+      return this.localField.tickets.length > 0 && !this.selectedAllTickets;
+    },
     form() {
       return {
         name: this.localField.name,
@@ -257,6 +277,20 @@ export default {
   methods: {
     emitChanges() {
       this.$emit('update:field', this.localField);
+    },
+
+    toggleAllTickets() {
+      if (this.selectedAllTickets) {
+        this.localField.tickets = [];
+      } else {
+        this.localField.tickets = [...this.tickets];
+      }
+    },
+
+    icon() {
+      if (this.selectedAllTickets) return 'mdi-close-box';
+      if (this.selectedSomeTickets) return 'mdi-minus-box';
+      return 'mdi-checkbox-blank-outline';
     },
 
     onTypeChange() {

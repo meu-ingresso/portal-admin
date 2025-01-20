@@ -351,13 +351,13 @@ export default class Event extends VuexModule {
 
             // Step 4: Create Ticket Categories and Tickets
             const categoryMap = new Map();
-
+            const ticketCreations = {}; // Objeto para armazenar as relações entre IDs de ingressos e nomes
             for (const [index, ticket] of eventPayload.tickets.entries()) {
                 let categoryId;
 
                 if (ticket.category && !categoryMap.has(ticket.category)) {
                     // Create Category if not already created
-                    const categoryResponse = await $axios.$post('ticket-categories', {
+                    const categoryResponse = await $axios.$post('ticket-event-category', {
                         event_id: eventId,
                         name: ticket.category,
                     });
@@ -394,6 +394,115 @@ export default class Event extends VuexModule {
                 });
 
                 console.log('ticketsResponse', ticketsResponse);
+
+                if (!ticketsResponse || !ticketsResponse.body || ticketsResponse.body.code !== 'CREATE_SUCCESS') {
+                    throw new Error('Failed to create ticket field');
+                }
+
+                ticketCreations[ticket.name] = ticketsResponse.body.result.id;
+            }
+
+
+            // Step 5: Create Custom Fields (Event Checkout Fields & Ticket Fields)
+
+            const fieldTicketRelations: { [key: string]: string[] } = {};
+            const defaultFields: { [key: string]: string[] } = {};
+
+            eventPayload.customFields.forEach(async (customField, index) => {
+
+                // For each person type, create a custom field
+                for (const type of customField.personTypes) {
+                    const isRequired = customField.options.some(option => option?.value === 'required');
+                    const isUnique = customField.options.some(option => option?.value === 'unique');
+                    const visibleOnTicket = customField.options.some(option => option?.value === 'visible_on_ticket');
+
+                    const eventCheckoutFieldResponse = await $axios.$post('event-checkout-field', {
+                        event_id: eventId,
+                        name: customField.name,
+                        type: type?.value,
+                        required: isRequired,
+                        is_unique: isUnique,
+                        visible_on_ticket: visibleOnTicket,
+                        help_text: customField.help_text || '',
+                        order: index,
+                    });
+
+                    console.log('eventCheckoutFieldResponse', eventCheckoutFieldResponse);
+
+                    if (!eventCheckoutFieldResponse || !eventCheckoutFieldResponse.body || eventCheckoutFieldResponse.body.code !== 'CREATE_SUCCESS') {
+                        throw new Error('Failed to create custom field');
+                    }
+
+                    const eventCheckoutFieldId = eventCheckoutFieldResponse.body.result.id;
+
+                    if (!customField.isDefault) {
+
+                        customField.tickets.forEach(ticketName => {
+                            if (!fieldTicketRelations[ticketName]) {
+                                fieldTicketRelations[ticketName] = [];
+                            }
+                            fieldTicketRelations[ticketName].push(eventCheckoutFieldId);
+                        });
+
+                    } else {
+                        // Add default fields to all tickets
+                        for (const ticketName of Object.keys(ticketCreations)) {
+                            if (!defaultFields[ticketName]) {
+                                defaultFields[ticketName] = [];
+                            }
+                            defaultFields[ticketName].push(eventCheckoutFieldId);
+                        }
+
+                    }
+
+                }
+            });
+
+            // Step 6: Create Ticket-Field Relations
+            for (const [ticketName, fieldIds] of Object.entries(fieldTicketRelations)) {
+                const ticketId = ticketCreations[ticketName];
+                for (const fieldId of fieldIds) {
+                    const eventCheckoutFieldTicketResponse = await $axios.$post('event-checkout-field-ticket', {
+                        event_checkout_field_id: fieldId,
+                        ticket_id: ticketId,
+                    });
+
+                    if (!eventCheckoutFieldTicketResponse || !eventCheckoutFieldTicketResponse.body || eventCheckoutFieldTicketResponse.body.code !== 'CREATE_SUCCESS') {
+                        throw new Error('[non Default] Failed to create event-checkout-field-ticket relation');
+                    }
+                }
+            }
+
+            // Step 7: Create default fields
+            for (const [ticketName, fieldIds] of Object.entries(defaultFields)) {
+                const ticketId = ticketCreations[ticketName];
+                for (const fieldId of fieldIds) {
+                    const eventCheckoutFieldTicketResponse = await $axios.$post('event-checkout-field-ticket', {
+                        event_checkout_field_id: fieldId,
+                        ticket_id: ticketId,
+                    });
+                    if (!eventCheckoutFieldTicketResponse || !eventCheckoutFieldTicketResponse.body || eventCheckoutFieldTicketResponse.body.code !== 'CREATE_SUCCESS') {
+                        throw new Error('[Default] Failed to create event-checkout-field-ticket relation');
+                    }
+                }
+            }
+
+
+            // Step 8: Create Coupons
+            for (const coupon of eventPayload.coupons) {
+                const couponResponse = await $axios.$post('coupons', {
+                    event_id: eventId,
+                    status_id: '12726069-5363-4d96-b3a9-719d609ea8b0', // Default status [Disponível]
+                    code: coupon.code,
+                    discount_value: coupon.discount,
+                    discount_type: coupon.discount_type,
+                    max_uses: coupon.maxUses,
+                    uses: 0,
+                    start_date: `${coupon.start_date}T${coupon.start_time}:00.000Z`,
+                    end_date: `${coupon.end_date}T${coupon.end_time}:00.000Z`,
+                });
+
+                console.log('couponResponse', couponResponse);
             }
 
             this.setLoading(false);

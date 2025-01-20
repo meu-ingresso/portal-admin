@@ -167,7 +167,10 @@ export default {
         },
         discountValue: '',
         maxUses: 1,
-        expirationDate: '',
+        end_date: '',
+        end_time: '',
+        start_date: '',
+        start_time: '',
         tickets: [],
       };
     },

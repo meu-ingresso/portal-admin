@@ -72,7 +72,7 @@ export default class EventForm extends VuexModule {
         attachments: [],
         link_online: '',
         sale_type: 'Ingresso',
-        availability: 'Visível a todos',
+        availability: 'Público',
         promoter_id: null,
     };
 

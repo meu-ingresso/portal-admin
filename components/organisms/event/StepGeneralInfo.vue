@@ -196,7 +196,7 @@
             <v-row class="d-flex align-start">
               <v-col cols="12" md="4" sm="12">
                 <div class="d-flex flex-column">
-                  <div class="d-flex">
+                  <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
                     <v-switch
                       v-model="localForm.absorb_service_fee"
                       class="inline-switch-checkbox mr-4 pt-0"
@@ -218,7 +218,7 @@
                       </v-tooltip>
                     </div>
                   </div>
-                  <div v-if="isAdmin" class="d-flex">
+                  <div v-if="isAdmin" class="d-flex" :class="{ 'justify-space-between': isMobile }">
                     <v-switch
                       v-model="localForm.is_featured"
                       class="inline-switch-checkbox mr-4 pt-0"

@@ -194,13 +194,13 @@ export default {
         this.currentStep--;
       }
     },
-    submitData() {
+    async submitData() {
 
       console.log('Submitting data', this.form);
 
-/*       const response  = await event.createEvent(this.form);
+      const response  = await event.createEvent(this.form);
 
-      console.log('Response', response); */
+      console.log('Response', response);
 
     },
   },
