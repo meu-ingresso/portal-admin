@@ -399,6 +399,26 @@ export default class Event extends VuexModule {
         this.isLoadingAlias = value;
     }
 
+    @Mutation
+    private SET_IS_SAVING(value: boolean) {
+        this.isSaving = value;
+    }
+
+    @Mutation
+    private SET_IS_EDITING(value: boolean) {
+        this.isEditing = value;
+    }
+
+    @Mutation
+    private SET_IS_DELETING(value: boolean) {
+        this.isDeleting = value;
+    }
+
+    @Mutation
+    private SET_PROGRESS_TITLE(value: string) {
+        this.progressTitle = value;
+    }
+
     @Action
     public setLoading(value: boolean) {
         this.context.commit('SET_IS_LOADING', value);
@@ -416,12 +436,12 @@ export default class Event extends VuexModule {
 
     @Action
     public setProgressTitle(value: string) {
-        this.progressTitle = value;
+      this.context.commit('SET_PROGRESS_TITLE', value);
     }
 
     @Action
     public setSaving(value: boolean) {
-        this.isSaving = value;
+      this.context.commit('SET_IS_SAVING', value);
     }
 
     @Action
@@ -552,7 +572,7 @@ export default class Event extends VuexModule {
     public async postEvent(eventPayload) {
         try {
             this.setSaving(true);
-            
+
             this.setProgressTitle('Salvando evento...');
 
             const cityId = await fetchOrCreateCity(

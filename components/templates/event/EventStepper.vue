@@ -69,11 +69,11 @@
       </v-stepper-items>
     </v-stepper>
 
-    <v-dialog v-model="showProgressDialog" persistent max-width="500">
+    <v-dialog v-model="showProgressDialog" persistent max-width="600">
       <v-card>
         <v-card-text class="text-center">
-          <v-progress-circular indeterminate size="64" color="primary" class="mb-4" />
-          <h3>{{ progressTitle }}</h3>
+          <h2 class="py-4">{{ progressTitle }}</h2>
+          <Lottie path="./animations/loading_default.json" height="200" width="500" />
         </v-card-text>
       </v-card>
     </v-dialog>

@@ -40,7 +40,7 @@ export default class EventForm extends VuexModule {
         },
     ];
 
-    /* private form = {
+    private form = {
         "eventName":"Festa do Vinícius",
         "alias":"festa-do-vincius",
         "general_information":"Vamos comemorar o aniversário de 28 anos do Vinícius",
@@ -159,7 +159,7 @@ export default class EventForm extends VuexModule {
                  }
               ],
               "tickets":[
-                 
+
               ]
            },
            {
@@ -194,7 +194,7 @@ export default class EventForm extends VuexModule {
                  }
               ],
               "tickets":[
-                 
+
               ]
            },
            {
@@ -229,22 +229,22 @@ export default class EventForm extends VuexModule {
               ],
               "description":"",
               "optionsValues":[
-                 
+
               ],
               "termsContent":""
            }
         ],
         "attachments":[
-           
+
         ],
         "link_online":"",
         "sale_type":"Ingresso",
         "availability":"Publico",
         "promoter_id":"73d98b21-a13a-4c66-9262-ffea1aafa436"
-     } */
+     }
 
 
-    private form = {
+   /*  private form = {
         eventName: '',
         alias: '',
         general_information: '',
@@ -279,7 +279,7 @@ export default class EventForm extends VuexModule {
         sale_type: 'Ingresso',
         availability: 'Público',
         promoter_id: null,
-    };
+    }; */
 
     public get $form() {
         return this.form;

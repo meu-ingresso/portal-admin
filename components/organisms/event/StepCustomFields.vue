@@ -56,6 +56,7 @@
                         icon
                         small
                         v-bind="attrs"
+                        class="mr-2"
                         :disabled="field.isDefault"
                         v-on="on"
                         @click="openEditModal(field, index)">
