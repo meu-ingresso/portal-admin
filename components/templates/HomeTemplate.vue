@@ -5,9 +5,14 @@
     <template v-if="!isLoadingEvents">
       <EventBannerList :events="events" />
 
-      <v-row>
+      <v-row v-if="events.length > 0">
         <v-col cols="12" class="d-flex justify-center">
           <SeeMoreButton text="Ver mais eventos" :to="'/events'" />
+        </v-col>
+      </v-row>
+      <v-row v-else>
+        <v-col cols="12" class="d-flex justify-center">
+          <p>Nenhum evento cadastrado</p>
         </v-col>
       </v-row>
     </template>

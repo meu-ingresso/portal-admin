@@ -35,7 +35,7 @@
           </div>
           <div class="table-cell">{{ getArrayObjectText(coupon.tickets, null) }}</div>
           <div class="table-cell actions">
-            <v-btn icon small @click="openEditModal(coupon, index)">
+            <v-btn icon small class="mr-2" @click="openEditModal(coupon, index)">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
             <v-btn icon small @click="removeCoupon(index)">

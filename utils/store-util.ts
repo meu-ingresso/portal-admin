@@ -12,6 +12,8 @@ import Category from '@/store/category';
 import Rating from '@/store/rating';
 import Cep from '@/store/cep';
 import EventForm from '@/store/eventForm';
+import Status from '@/store/status';
+import OpenAi from '@/store/openAi';
 
 let auth: Auth;
 let toast: Toast;
@@ -23,6 +25,8 @@ let category: Category;
 let rating: Rating;
 let cep: Cep;
 let eventForm: EventForm;
+let status: Status;
+let openAi: OpenAi;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -35,6 +39,8 @@ const initializeStores = (store: Store<any>) => {
   rating = getModule(Rating, store);
   cep = getModule(Cep, store);
   eventForm = getModule(EventForm, store);
+  status = getModule(Status, store);
+  openAi = getModule(OpenAi, store);
 };
 
 export {
@@ -49,4 +55,6 @@ export {
   rating,
   cep,
   eventForm,
+  status,
+  openAi,
 };

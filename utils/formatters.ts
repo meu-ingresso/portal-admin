@@ -1,4 +1,5 @@
 import moment from 'moment';
+import 'moment/locale/pt-br';
 
 export const formatDateTimeToBr = (date: string): String => {
   if (!date) return '';
@@ -11,8 +12,11 @@ export const formatDateToBr = (date: string): String => {
 
 export const formatDateToCustomString = (date: string): String => {
   if (!date) return '';
+
+  moment.locale('pt-br');
+
   return moment(date).format('DD MMM YYYY').toUpperCase();
-}
+};
 
 export const formatHourToBr = (hour: string): String => {
   if (!hour) return '';
@@ -49,7 +53,6 @@ export const formatRealValue = (value: number): string => {
 };
 
 export const formatPrice = (value: any, locale: string = 'pt-BR') => {
-
   if (value === null || value === undefined) return '';
 
   let returnValue: string = '';
@@ -58,7 +61,6 @@ export const formatPrice = (value: any, locale: string = 'pt-BR') => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-
 
   return returnValue;
 };
@@ -131,4 +133,4 @@ export const onFormatCEP = (value: string): string => {
   if (!value) return '';
   const cleaned = value.replace(/\D/g, '');
   return cleaned.replace(/^(\d{5})(\d)/, '$1-$2').slice(0, 9);
-}
+};

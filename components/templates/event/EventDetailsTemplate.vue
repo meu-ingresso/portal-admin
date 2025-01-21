@@ -6,9 +6,9 @@
       :location="event.location"
       :start-date="event.start_date"
       :end-date="event.end_date"
-      :opening-hour="event.opening_hour"
-      :ending-hour="event.ending_hour"
-      :promoters="event.promoters" />
+      :promoters="event.promoters"
+      :latitude="event.address.latitude"
+      :longitude="event.address.longitude" />
 
     <div class="event-details-wrapper">
       <EventStatistics :statistics="event.statistics" />
@@ -16,6 +16,7 @@
       <EventSales :sales="event.sales" />
 
       <EventTickets
+        v-if="hasTickets"
         disable-menu
         :tickets="event.tickets.filter((ticket) => ticket.hasSales)" />
     </div>
@@ -27,6 +28,12 @@ export default {
   props: {
     event: { type: Object, required: true },
   },
+
+  computed: {
+    hasTickets() {
+      return this.event.tickets.some((ticket) => ticket.hasSales);
+    },
+  },
 };
 </script>
 
@@ -34,7 +41,7 @@ export default {
 .event-details {
   padding-top: 16px;
 }
-.event-details-wrapper{
+.event-details-wrapper {
   max-width: 1480px;
 }
 </style>

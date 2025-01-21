@@ -20,6 +20,10 @@ export default {
           return '#E0700D';
         case 'Aguardando Aprovação':
           return 'warning';
+        case 'Excluído':
+        case 'Cancelado':
+        case 'Reprovado':
+          return 'error';
         default:
           return 'warning';
       }
