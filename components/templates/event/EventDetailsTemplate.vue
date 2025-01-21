@@ -16,6 +16,7 @@
       <EventSales :sales="event.sales" />
 
       <EventTickets
+        v-if="hasTickets"
         disable-menu
         :tickets="event.tickets.filter((ticket) => ticket.hasSales)" />
     </div>
@@ -26,6 +27,12 @@
 export default {
   props: {
     event: { type: Object, required: true },
+  },
+
+  computed: {
+    hasTickets() {
+      return this.event.tickets.some((ticket) => ticket.hasSales);
+    },
   },
 };
 </script>

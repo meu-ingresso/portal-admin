@@ -288,6 +288,10 @@ export default {
   opacity: 0.6;
 }
 
+.event-row.deleted:hover {
+  transform: none;
+}
+
 .event-status {
   display: flex;
   align-items: center;

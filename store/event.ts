@@ -378,7 +378,7 @@ export default class Event extends VuexModule {
   private SET_EVENT_LIST(data: any) {
     this.eventList = data.map((event: any) => ({
       ...event,
-      location: `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city.name} - ${event.address.city.state.name}`,
+      location: `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.city.state}`,
     }));
   }
 

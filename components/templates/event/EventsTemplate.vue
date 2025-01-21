@@ -18,13 +18,14 @@
     <FilterButtons
       :filters="statusList"
       :selected="selectedFilter"
+      :is-loading="isLoadingStatus"
       @filter-selected="handleFilterChange" />
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
     <EventList :events="filteredEvents" />
 
-    <v-row>
+    <v-row v-if="filteredEvents.length > 0">
       <v-col cols="12" class="text-center">
         <v-btn color="primary" text>Ver mais...</v-btn>
       </v-col>
@@ -48,6 +49,10 @@ export default {
   computed: {
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+
+    isLoadingStatus() {
+      return status.$isLoading;
     },
 
     statusList() {
