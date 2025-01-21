@@ -9,47 +9,7 @@ const STATUS = {
   COUPON_AVAILABLE: 'c11e2b61-51b6-48fe-9464-03b60713642d',
 };
 
-async function fetchOrCreateState(stateName, stateAcronym) {
-  const stateResponse = await $axios.$get(`states?where[name][v]=${stateName}`);
-
-  if (!stateResponse.body || stateResponse.body.code !== 'SEARCH_SUCCESS') {
-    throw new Error('Failed to fetch or create state.');
-  }
-
-  if (stateResponse.body?.result.data.length > 0) {
-    return stateResponse.body.result.data[0].id;
-  }
-
-  const stateCreationResponse = await $axios.$post('state', {
-    name: stateName,
-    acronym: stateAcronym,
-  });
-
-  return stateCreationResponse.body.result.id;
-}
-
-async function fetchOrCreateCity(cityName, stateName, stateAcronym) {
-  const cityResponse = await $axios.$get(`cities?where[name][v]=${cityName}`);
-
-  if (!cityResponse.body || cityResponse.body.code !== 'SEARCH_SUCCESS') {
-    throw new Error('Failed to fetch or create city.');
-  }
-
-  if (cityResponse.body?.result.data.length > 0) {
-    return cityResponse.body.result.data[0].id;
-  }
-
-  const stateId = await fetchOrCreateState(stateName, stateAcronym);
-
-  const cityCreationResponse = await $axios.$post('city', {
-    name: cityName,
-    state_id: stateId,
-  });
-
-  return cityCreationResponse.body.result.id;
-}
-
-async function createAddress(eventPayload, cityId) {
+async function createAddress(eventPayload) {
   const addressResponse = await $axios.$post('address', {
     street: eventPayload.address.street,
     zipcode: eventPayload.cep,
@@ -58,7 +18,8 @@ async function createAddress(eventPayload, cityId) {
     neighborhood: eventPayload.address.neighborhood,
     latitude: eventPayload.address.latitude || null,
     longitude: eventPayload.address.longitude || null,
-    city_id: cityId,
+    city: eventPayload.address.city,
+    state: eventPayload.address.state,
   });
 
   if (!addressResponse.body || addressResponse.body.code !== 'CREATE_SUCCESS') {
@@ -624,17 +585,9 @@ export default class Event extends VuexModule {
     try {
       this.setSaving(true);
 
-      this.setProgressTitle('Salvando evento');
-
-      const cityId = await fetchOrCreateCity(
-        eventPayload.address.city,
-        eventPayload.address.state_name,
-        eventPayload.address.state
-      );
-
       this.setProgressTitle('Salvando endereço');
 
-      const addressId = await createAddress(eventPayload, cityId);
+      const addressId = await createAddress(eventPayload);
 
       const eventId = await createEvent(eventPayload, addressId);
 
