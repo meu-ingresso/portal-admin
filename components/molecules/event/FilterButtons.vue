@@ -1,7 +1,8 @@
+<!-- eslint-disable vue/no-useless-template-attributes -->
 <template>
   <div class="filter-buttons">
-    <v-slide-group class="filter-slide-group" multiple show-arrows>
-      <v-slide-item v-for="filter in filters" :key="filter.text" v-slot="{ active }">
+    <v-slide-group v-if="!isLoading" class="filter-slide-group" multiple show-arrows>
+      <v-slide-item v-for="filter in filters" :key="filter.name" v-slot="{ active }">
         <v-btn
           color="primary"
           :input-value="active"
@@ -9,12 +10,15 @@
           depressed
           :elevation="0"
           rounded
-          :outlined="selected !== filter.value"
-          @click="$emit('filter-selected', filter.value)">
-          {{ filter.text }}
+          :outlined="selected.name !== filter.name"
+          @click="$emit('filter-selected', filter)">
+          {{ filter.name }}
         </v-btn>
       </v-slide-item>
     </v-slide-group>
+    <div v-else class="d-flex">
+      <v-skeleton-loader v-for="n in 6" :key="n" width="64px" type="button" class="mr-2 filter-button-loading" />
+    </div>
   </div>
 </template>
 
@@ -22,7 +26,8 @@
 export default {
   props: {
     filters: { type: Array, required: true },
-    selected: { type: String, required: true },
+    selected: { type: Object, required: true },
+    isLoading: { type: Boolean, default: false },
   },
 };
 </script>
@@ -38,5 +43,13 @@ export default {
 }
 .filter-button{
   font-size: 12px;
+}
+
+.filter-button-loading{
+  height: 32px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  margin-top: 16px;
+  width: 64px;
 }
 </style>

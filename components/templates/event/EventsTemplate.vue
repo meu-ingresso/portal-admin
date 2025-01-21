@@ -16,15 +16,16 @@
     </div>
 
     <FilterButtons
-      :filters="filters"
+      :filters="statusList"
       :selected="selectedFilter"
+      :is-loading="isLoadingStatus"
       @filter-selected="handleFilterChange" />
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
     <EventList :events="filteredEvents" />
 
-    <v-row>
+    <v-row v-if="filteredEvents.length > 0">
       <v-col cols="12" class="text-center">
         <v-btn color="primary" text>Ver mais...</v-btn>
       </v-col>
@@ -33,6 +34,7 @@
 </template>
 
 <script>
+import { status } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
@@ -41,27 +43,52 @@ export default {
   data() {
     return {
       search: '',
-      selectedFilter: 'all',
-      filters: [
-        { text: 'Todos', value: 'all' },
-        { text: 'Publicado', value: 'Publicado' },
-        { text: 'Rascunho', value: 'Rascunho' },
-        { text: 'Aguardando Aprovação', value: 'Aguardando Aprovação' },
-      ],
+      selectedFilter: { name: 'Todos' },
     };
   },
   computed: {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
+
+    isLoadingStatus() {
+      return status.$isLoading;
+    },
+
+    statusList() {
+      return [
+        { name: 'Todos' },
+        ...status.$getStatusByModule('event'),
+        { name: 'Excluído' },
+      ];
+    },
+
+    selectedAll() {
+      return this.selectedFilter.name === 'Todos';
+    },
+
+    selectedDeleted() {
+      return this.selectedFilter.name === 'Excluído';
+    },
+
     filteredEvents() {
+
+      if (this.selectedDeleted) {
+        return this.events.filter((event) => event.deleted_at !== null);
+      }
+
       return this.events.filter(
         (event) =>
-          (this.selectedFilter === 'all' || event.status.name === this.selectedFilter) &&
+          (this.selectedAll || event.status.name === this.selectedFilter) &&
           event.name.toLowerCase().includes(this.search.toLowerCase())
       );
     },
   },
+
+  async mounted() {
+    await this.handleFetchFilterStatus();
+  },
+
   methods: {
     handleFilterChange(filter) {
       this.selectedFilter = filter;
@@ -69,6 +96,13 @@ export default {
     handleSearch(search) {
       this.search = search;
       this.$emit('update-search', search);
+    },
+    async handleFetchFilterStatus() {
+      try {
+        await status.fetchStatusByModule('event');
+      } catch (error) {
+        console.error('Erro ao carregar lista de status de eventos', error);
+      }
     },
   },
 };

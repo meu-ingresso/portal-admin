@@ -22,7 +22,9 @@
       </v-col>
     </v-row>
 
-    <v-row v-if="aliasValidation.isValid !== null && localForm.alias.length > 0">
+    <v-row
+      v-if="aliasValidation.isValid !== null && localForm.alias.length > 0"
+      :class="!isMobile ? 'eventAlias' : ''">
       <v-col cols="12" class="pt-0">
         <div class="d-flex align-center">
           <v-progress-circular
@@ -37,18 +39,76 @@
               mdi-check-circle
             </v-icon>
 
-            <p class="caption">{{ aliasValidation.alias }}</p>
+            <p v-if="!editAlias" class="caption">
+              https://meuingresso.com.br/event/{{ aliasValidation.alias }}
+            </p>
+
+            <p v-if="editAlias && !isMobile" class="caption">
+              https://meuingresso.com.br/event/
+            </p>
+
+            <v-text-field
+              v-if="editAlias"
+              ref="aliasInput"
+              v-model="localForm.alias"
+              :class="!isMobile ? 'alias-input' : 'alias-input-mobile'"
+              dense
+              placeholder="Digite o identificador do evento"
+              hide-details="auto"
+              @input="onAliasChange" />
+
+            <v-icon
+              v-if="editAlias"
+              class="ml-2 cursor-pointer"
+              color="primary"
+              size="22"
+              @click="handleSaveNewAlias">
+              mdi-check
+            </v-icon>
           </template>
 
           <template v-else>
-            <v-icon v-if="!isValidatingAlias" class="mr-1" color="red">
+            <v-icon v-if="!isValidatingAlias" class="mr-1" color="orange">
               mdi-alert-box
             </v-icon>
 
-            <p class="caption">
-              {{ aliasValidation.alias }} <span class="red--text">(já reservado)</span>
+            <p v-if="!editAlias" class="caption">
+              https://meuingresso.com.br/event/{{ aliasValidation.alias }}
+              <span class="red--text">(em uso)</span>
             </p>
+
+            <p v-if="editAlias && !isMobile" class="caption">
+              https://meuingresso.com.br/event/
+            </p>
+
+            <v-text-field
+              v-if="editAlias"
+              ref="aliasInput"
+              v-model="localForm.alias"
+              :class="!isMobile ? 'alias-input' : 'alias-input-mobile'"
+              dense
+              placeholder="Digite o identificador do evento"
+              hide-details="auto"
+              @input="onAliasChange" />
+
+            <v-icon
+              v-if="editAlias"
+              class="ml-2 cursor-pointer"
+              color="primary"
+              size="22"
+              @click="handleSaveNewAlias">
+              mdi-check
+            </v-icon>
           </template>
+
+          <v-icon
+            v-if="!editAlias"
+            class="ml-2 cursor-pointer"
+            color="primary"
+            size="16"
+            @click="handleEditAlias">
+            mdi-pencil
+          </v-icon>
         </div>
       </v-col>
     </v-row>
@@ -114,8 +174,30 @@
           rows="5"
           outlined
           dense
+          :loading="isImprovingDescription"
+          :disabled="isImprovingDescription"
+          loader-height="4"
+          :messages="
+            isImprovingDescription
+              ? 'Melhorando descrição com nossa Inteligência Artificial...'
+              : ''
+          "
           hide-details="auto"
           placeholder="Digite uma descrição para o evento" />
+
+        <div class="d-flex justify-end ma-0 pa-0">
+          <v-btn
+            color="primary"
+            text
+            outlined
+            class="mt-4"
+            :disabled="isImprovingDescription"
+            @click="enhanceDescription">
+            <v-icon left> mdi-magic-staff </v-icon>
+
+            Melhorar descrição com IA
+          </v-btn>
+        </div>
       </v-col>
     </v-row>
     <v-row>
@@ -184,8 +266,7 @@
         @update:location-name="updateLocationName"
         @update:number="updateNumber"
         @update:address="updateAddress"
-        @update:complement="updateComplement"
-         />
+        @update:complement="updateComplement" />
     </template>
 
     <!-- Configurações do Evento/Ingressos -->
@@ -197,54 +278,7 @@
           </v-card-title>
           <v-card-text>
             <v-row class="d-flex align-start">
-              <v-col cols="12" md="4" sm="12">
-                <div class="d-flex flex-column">
-                  <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
-                    <v-switch
-                      v-model="localForm.absorb_service_fee"
-                      class="inline-switch-checkbox mr-4 pt-0"
-                      label="Absorver a taxa de serviço"
-                      dense
-                      hide-details="auto" />
-                    <div class="d-flex">
-                      <v-tooltip top>
-                        <template #activator="{ on, attrs }">
-                          <v-icon color="gray" v-bind="attrs" v-on="on"
-                            >mdi-help-circle</v-icon
-                          >
-                        </template>
-                        <span class="tax-container">
-                          Ao selecionar essa opção, a taxa de serviço (10%) será incluída
-                          no preço final de venda do ingresso e não será mostrada ao
-                          comprador
-                        </span>
-                      </v-tooltip>
-                    </div>
-                  </div>
-                  <div v-if="isAdmin" class="d-flex" :class="{ 'justify-space-between': isMobile }">
-                    <v-switch
-                      v-model="localForm.is_featured"
-                      class="inline-switch-checkbox mr-4 pt-0"
-                      label="Marcar como destaque"
-                      dense
-                      hide-details="auto" />
-                    <div class="d-flex">
-                      <v-tooltip top>
-                        <template #activator="{ on, attrs }">
-                          <v-icon color="gray" v-bind="attrs" v-on="on"
-                            >mdi-help-circle</v-icon
-                          >
-                        </template>
-                        <span class="tax-container">
-                          Ao selecionar essa opção, o evento será marcado como destaque na
-                          plataforma.
-                        </span>
-                      </v-tooltip>
-                    </div>
-                  </div>
-                </div>
-              </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col cols="12" md="6" sm="12">
                 <v-select
                   v-model="localForm.availability"
                   label="Visibilidade"
@@ -256,7 +290,8 @@
                   hide-details="auto"
                   required />
               </v-col>
-              <v-col md="4" sm="12" class="d-flex align-center">
+
+              <v-col cols="12" md="6" sm="12" class="d-flex align-center">
                 <v-select
                   v-model="nomenclature"
                   label="Nomenclatura"
@@ -265,6 +300,84 @@
                   dense
                   hide-details="auto"
                   required />
+              </v-col>
+
+              <v-col cols="12" md="6" sm="12">
+                <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
+                  <v-icon
+                    v-if="localForm.absorb_service_fee"
+                    class="ma-0 pa-0"
+                    size="50"
+                    color="primary"
+                    @click="handleAbsorbServiceFee">
+                    mdi-toggle-switch
+                  </v-icon>
+
+                  <v-icon
+                    v-else-if="!localForm.absorb_service_fee"
+                    class="ma-0 pa-0"
+                    size="50"
+                    @click="handleAbsorbServiceFee">
+                    mdi-toggle-switch-off
+                  </v-icon>
+
+                  <span class="mt-3" :class="!isMobile ? 'helpText' : ''">
+                    Absorver a taxa de serviço
+                  </span>
+
+                  <div class="d-flex" :class="!isMobile ? 'helpText' : ''">
+                    <v-tooltip top>
+                      <template #activator="{ on, attrs }">
+                        <v-icon color="gray" v-bind="attrs" v-on="on">
+                          mdi-help-circle
+                        </v-icon>
+                      </template>
+                      <span class="tax-container">
+                        Ao selecionar essa opção, a taxa de serviço (10%) será incluída no
+                        preço final de venda do ingresso e não será mostrada ao comprador
+                      </span>
+                    </v-tooltip>
+                  </div>
+                </div>
+              </v-col>
+
+              <v-col v-if="isAdmin" cols="12" md="6" sm="12">
+                <div class="d-flex" :class="{ 'justify-space-between': isMobile }">
+                  <v-icon
+                    v-if="localForm.is_featured"
+                    class="ma-0 pa-0"
+                    size="50"
+                    color="primary"
+                    @click="handleToggleFeatured">
+                    mdi-toggle-switch
+                  </v-icon>
+
+                  <v-icon
+                    v-else-if="!localForm.is_featured"
+                    class="ma-0 pa-0"
+                    size="50"
+                    @click="handleToggleFeatured">
+                    mdi-toggle-switch-off
+                  </v-icon>
+
+                  <span class="mt-3" :class="!isMobile ? 'helpText' : ''">
+                    Marcar como destaque
+                  </span>
+
+                  <div class="d-flex" :class="!isMobile ? 'helpText' : ''">
+                    <v-tooltip top>
+                      <template #activator="{ on, attrs }">
+                        <v-icon color="gray" v-bind="attrs" v-on="on">
+                          mdi-help-circle
+                        </v-icon>
+                      </template>
+                      <span class="tax-container">
+                        Ao selecionar essa opção, o evento será marcado como destaque na
+                        plataforma.
+                      </span>
+                    </v-tooltip>
+                  </div>
+                </div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -276,7 +389,7 @@
 
 <script>
 import Debounce from '@/utils/Debounce';
-import { event, eventForm, toast } from '@/store';
+import { event, eventForm, toast, openAi } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
@@ -301,6 +414,8 @@ export default {
         isValid: null,
         alias: '',
       },
+      editAlias: false,
+      isImprovingDescription: false,
       types: ['Presencial', 'Online', 'Híbrido'],
       debouncerAlias: null,
       imagePreview: null,
@@ -350,18 +465,23 @@ export default {
     isValidatingAlias() {
       return event.$isLoadingAlias;
     },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
+
     isEventPresencialOrHibrito() {
       return ['Presencial', 'Híbrido'].includes(this.localForm.event_type);
     },
+
     isEventOnline() {
       return this.localForm.event_type === 'Online';
     },
+
     isEventOnlineOrHibrido() {
       return ['Online', 'Híbrido'].includes(this.localForm.event_type);
     },
+
     getHintByAvailability() {
       switch (this.localForm.availability) {
         case 'Público':
@@ -372,12 +492,15 @@ export default {
           return 'O evento será visível apenas na página do promotor.';
       }
     },
+
     userRole() {
       return this.$cookies.get('user_role');
     },
+
     userId() {
       return this.$cookies.get('user_id');
     },
+
     isAdmin() {
       const role = this.userRole;
       return role && role.name === 'Admin';
@@ -391,6 +514,7 @@ export default {
       },
       deep: true,
     },
+
     nomenclature(value) {
       // Atualiza o tipo de venda do evento
       this.localForm.sale_type = value;
@@ -414,7 +538,48 @@ export default {
       this.emitChanges();
     }
   },
+
   methods: {
+    onAliasChange(value) {
+      const formattedValue = value
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-');
+
+      this.localForm.alias = formattedValue;
+    },
+
+    async handleSaveNewAlias() {
+      this.editAlias = false;
+
+      await this.validateAlias();
+    },
+
+    async enhanceDescription() {
+      this.isImprovingDescription = true;
+
+      const payload = {
+        event_description: this.localForm.general_information,
+      };
+
+      const result = await openAi.improveDescription(payload);
+
+      if (result?.body?.code === 'IMPROVE_SUCCESS') {
+        this.localForm.general_information = result.body.result;
+      }
+
+      this.isImprovingDescription = false;
+    },
+
+    handleToggleFeatured() {
+      this.localForm.is_featured = !this.localForm.is_featured;
+    },
+
+    handleAbsorbServiceFee() {
+      this.localForm.absorb_service_fee = !this.localForm.absorb_service_fee;
+    },
+
     emitChanges() {
       this.$emit('update:form', { ...this.localForm });
     },
@@ -447,6 +612,7 @@ export default {
         };
       }
     },
+
     onEventNameChange() {
       this.generateAlias();
       if (this.localForm.alias && this.localForm.alias.length > 0) {
@@ -455,6 +621,7 @@ export default {
         this.setAliasValidation(null, '');
       }
     },
+
     generateAlias() {
       const maxLength = 60;
       let eventName = this.localForm.eventName;
@@ -505,8 +672,6 @@ export default {
       this.formHasErrors = false;
 
       Object.keys(this.generalInfoForm).forEach((f) => {
-
-
         const fieldIsFromAddress = ['cep', 'location_name', 'number'].includes(f);
 
         if (this.localForm.event_type === 'Presencial' && f === 'link_online') {
@@ -568,21 +733,34 @@ export default {
       this.localForm.number = value;
       eventForm.updateForm({ number: value });
     },
+
     updateCep(value) {
       this.localForm.cep = value;
       eventForm.updateForm({ cep: value });
     },
+
     updateLocationName(value) {
       this.localForm.location_name = value;
       eventForm.updateForm({ location_name: value });
     },
+
     updateComplement(value) {
       this.localForm.complement = value;
       eventForm.updateForm({ complement: value });
     },
+
     updateAddress(value) {
       this.localForm.address = value;
       eventForm.updateForm({ address: value });
+    },
+
+    handleEditAlias() {
+      this.editAlias = true;
+      this.$nextTick(() => {
+        if (this.$refs.aliasInput) {
+          this.$refs.aliasInput.$el.querySelector('input').focus();
+        }
+      });
     },
   },
 };
@@ -646,5 +824,27 @@ export default {
 
 .ticket-configuration {
   box-shadow: 0px 0px 2.24px 0px rgba(0, 0, 0, 0.16078) !important;
+}
+
+.helpText {
+  margin-left: 10px;
+}
+
+.eventAlias {
+  margin-top: -20px;
+}
+
+::v-deep .alias-input {
+  max-width: 350px !important;
+  margin-top: -5px;
+}
+
+::v-deep .alias-input.primary--text {
+  color: transparent !important;
+  caret-color: rgba(0, 0, 0, 0.87) !important;
+}
+
+::v-deep .alias-input-mobile {
+  max-width: 250px !important;
 }
 </style>

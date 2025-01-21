@@ -3,7 +3,10 @@
     <v-snackbar
       v-model="getToast.show"
       :color="getToast.toastType"
-      :timeout="-1">
+      :timeout="-1"
+      :bottom="!isMobile"
+      :right="!isMobile"
+      :centered="isMobile || $route.fullPath === '/'">
       <v-row :class="`toast-${getToast.toastType} toast`">
         <v-col cols="12" :class="`toast-${getToast.toastType} toast-title`">
           <strong>Notificação</strong>

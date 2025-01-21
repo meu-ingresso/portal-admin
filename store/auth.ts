@@ -48,13 +48,12 @@ export default class Auth extends VuexModule {
 
   @Mutation
   private UPDATE_TOKEN(result: any) {
-
     if (!result) {
       this.token = null;
       this.credentials.user_id = undefined;
       this.credentials.email = '';
       this.credentials.password = '';
-      return
+      return;
     }
 
     this.token = {
@@ -82,7 +81,6 @@ export default class Auth extends VuexModule {
     return await $axios
       .$post('login', payload)
       .then((response) => {
-
         const { body } = response;
 
         if (body.code !== 'LOGIN_SUCCESS') throw new Error('Login failed');
