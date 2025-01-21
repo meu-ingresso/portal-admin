@@ -16,7 +16,7 @@
     </div>
 
     <FilterButtons
-      :filters="filters"
+      :filters="statusList"
       :selected="selectedFilter"
       @filter-selected="handleFilterChange" />
 
@@ -42,13 +42,7 @@ export default {
   data() {
     return {
       search: '',
-      selectedFilter: 'all',
-      filters: [
-        { text: 'Todos', value: 'all' },
-        { text: 'Publicado', value: 'Publicado' },
-        { text: 'Rascunho', value: 'Rascunho' },
-        { text: 'Aguardando Aprovação', value: 'Aguardando Aprovação' },
-      ],
+      selectedFilter: { name: 'Todos' },
     };
   },
   computed: {
@@ -57,14 +51,14 @@ export default {
     },
 
     statusList() {
-      return status.$getStatusByModule('event');
+      return [{ name: 'Todos' }, ...status.$getStatusByModule('event')];
     },
-
 
     filteredEvents() {
       return this.events.filter(
         (event) =>
-          (this.selectedFilter === 'all' || event.status.name === this.selectedFilter) &&
+          (this.selectedFilter.name === 'Todos' ||
+            event.status.name === this.selectedFilter) &&
           event.name.toLowerCase().includes(this.search.toLowerCase())
       );
     },
