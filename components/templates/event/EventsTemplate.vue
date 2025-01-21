@@ -33,6 +33,7 @@
 </template>
 
 <script>
+import { status } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
@@ -54,6 +55,12 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
+
+    statusList() {
+      return status.$getStatusByModule('event');
+    },
+
+
     filteredEvents() {
       return this.events.filter(
         (event) =>
@@ -62,6 +69,11 @@ export default {
       );
     },
   },
+
+  async mounted() {
+    await this.handleFetchFilterStatus();
+  },
+
   methods: {
     handleFilterChange(filter) {
       this.selectedFilter = filter;
@@ -69,6 +81,13 @@ export default {
     handleSearch(search) {
       this.search = search;
       this.$emit('update-search', search);
+    },
+    async handleFetchFilterStatus() {
+      try {
+        await status.fetchStatusByModule('event');
+      } catch (error) {
+        console.error('Erro ao carregar lista de status de eventos', error);
+      }
     },
   },
 };

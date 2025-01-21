@@ -652,7 +652,7 @@ export default class Event extends VuexModule {
 
       await createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap);
 
-      this.setProgressTitle('Salvando códigos promocionais');
+      this.setProgressTitle('Salvando cupons de desconto');
 
       const couponTicketMap = await createCoupons(eventId, eventPayload.coupons);
 
@@ -667,4 +667,58 @@ export default class Event extends VuexModule {
       throw error;
     }
   }
+
+  @Action
+  public async fetchEventStatuses(payload) {
+    try {
+      const { status } = payload;
+
+      const response = await $axios.$get(`statuses?where[name][v]=${status}&where[module][v]=event`, payload);
+
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Falha ao buscar lista de status de eventos.');
+      }
+
+      return { success: true, data: response.body.result.data[0] };
+    } catch (error) {
+      console.error('Error fetching event statuses:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async updateEvent(payload) {
+    try {
+      const response = await $axios.$patch('event', payload);
+
+      if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error('Falha ao atualizar o evento.');
+      }
+      return { success: true, data: response.body.result };
+    } catch (error) {
+      console.error('Error updating event:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async deleteEvent(payload) {
+    try {
+
+      const { eventId } = payload;
+
+      const response = await $axios.$delete(`event/${eventId}`);
+
+      if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
+        throw new Error('Falha ao atualizar o evento.');
+      }
+
+      return { success: true, data: response.body.result };
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      throw error;
+    }
+  }
+
+
 }

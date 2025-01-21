@@ -13,7 +13,9 @@
         :tickets="event.totalizers.totalSales"
         :tickets-today="event.totalizers.totalSalesToday"
         :status-text="event.status.name"
-        :image="findBannerImage(event)" />
+        :deleted-at="event.deleted_at"
+        :image="findBannerImage(event)"
+        />
     </template>
     <template v-else>
       <EventCard
@@ -27,7 +29,9 @@
         :revenue-today="event.totalizers.totalSalesAmountToday"
         :tickets="event.totalizers.totalSales"
         :tickets-today="event.totalizers.totalSalesToday"
-        :status-text="event.status.name"/>
+        :status-text="event.status.name"
+        :deleted-at="event.deleted_at"
+        />
     </template>
   </div>
 

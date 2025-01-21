@@ -19,19 +19,21 @@ export default {
   },
 
   async mounted() {
-    try {
-      loading.setIsLoading(true);
-      await event.fetchEvents({
-        sortBy: ['name'],
-        sortDesc: [false],
-      });
-      loading.setIsLoading(false);
-    } catch (error) {
-      console.error('Erro ao carregar eventos:', error);
-    }
+    this.getData();
   },
 
   methods: {
+    async getData() {
+      try {
+        await event.fetchEvents({
+          sortBy: ['name'],
+          sortDesc: [false],
+        });
+      } catch (error) {
+        console.error('Erro ao carregar eventos:', error);
+      }
+    },
+
     async handleSearchEvents(search) {
       try {
         await event.fetchEvents({
