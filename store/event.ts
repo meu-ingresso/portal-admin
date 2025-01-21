@@ -512,7 +512,7 @@ export default class Event extends VuexModule {
       'rating',
       'tickets:status',
       'status',
-      'address:city:state',
+      'address',
       'category',
       'attachments',
     ];
@@ -673,7 +673,10 @@ export default class Event extends VuexModule {
     try {
       const { status } = payload;
 
-      const response = await $axios.$get(`statuses?where[name][v]=${status}&where[module][v]=event`, payload);
+      const response = await $axios.$get(
+        `statuses?where[name][v]=${status}&where[module][v]=event`,
+        payload
+      );
 
       if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
         throw new Error('Falha ao buscar lista de status de eventos.');
@@ -704,7 +707,6 @@ export default class Event extends VuexModule {
   @Action
   public async deleteEvent(payload) {
     try {
-
       const { eventId } = payload;
 
       const response = await $axios.$delete(`event/${eventId}`);
@@ -719,6 +721,4 @@ export default class Event extends VuexModule {
       throw error;
     }
   }
-
-
 }
