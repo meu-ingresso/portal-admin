@@ -154,7 +154,7 @@ export default {
     },
 
     googleMapsEmbedUrl() {
-      return `https://www.google.com/maps/embed/v1/place?key=AIzaSyCAOCaH86soquJjQzMooPA9jBKmbSr1W2A&zoom=14&q=${this.latitude},${this.longitude}`;
+      return `https://www.google.com/maps/embed/v1/place?key=AIzaSyAnkqplDONBqIfUvJCGfFWpLXAhPPx8ig0&zoom=14&q=${this.latitude},${this.longitude}`;
     },
   },
 
