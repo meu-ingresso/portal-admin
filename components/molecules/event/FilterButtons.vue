@@ -22,7 +22,7 @@
 export default {
   props: {
     filters: { type: Array, required: true },
-    selected: { type: String, required: true },
+    selected: { type: Object, required: true },
   },
 };
 </script>

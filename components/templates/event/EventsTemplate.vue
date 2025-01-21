@@ -51,14 +51,30 @@ export default {
     },
 
     statusList() {
-      return [{ name: 'Todos' }, ...status.$getStatusByModule('event')];
+      return [
+        { name: 'Todos' },
+        ...status.$getStatusByModule('event'),
+        { name: 'Excluído' },
+      ];
+    },
+
+    selectedAll() {
+      return this.selectedFilter.name === 'Todos';
+    },
+
+    selectedDeleted() {
+      return this.selectedFilter.name === 'Excluído';
     },
 
     filteredEvents() {
+
+      if (this.selectedDeleted) {
+        return this.events.filter((event) => event.deleted_at !== null);
+      }
+
       return this.events.filter(
         (event) =>
-          (this.selectedFilter.name === 'Todos' ||
-            event.status.name === this.selectedFilter) &&
+          (this.selectedAll || event.status.name === this.selectedFilter) &&
           event.name.toLowerCase().includes(this.search.toLowerCase())
       );
     },

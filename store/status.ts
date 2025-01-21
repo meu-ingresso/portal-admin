@@ -41,7 +41,7 @@ export default class Status extends VuexModule {
     try {
       this.setLoading(true);
 
-      const response = await $axios.$get(`statuses?where[module][v]=${module}`);
+      const response = await $axios.$get(`statuses?where[module][v]=${module}&orderBy[]=name:asc`);
 
       if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
         throw new Error(`Falha ao buscar status do módulo: ${module}.`);
