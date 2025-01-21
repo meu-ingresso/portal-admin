@@ -38,7 +38,8 @@
         prefix="R$"
         hide-details="auto"
         :rules="validationRules.price"
-        @keypress="onPriceChange" />
+        @input="onPriceChange"
+        @keypress="onPriceKeyPress" />
     </v-col>
     <v-col cols="12" md="6" sm="12">
       <v-text-field
@@ -349,10 +350,7 @@ export default {
       formHasErrors: false,
       validationRules: {
         name: [(value) => !!value || 'O nome é obrigatório.'],
-        price: [
-          (value) => !!value || 'O preço é obrigatório.',
-          (value) => parseFloat(value) > 0 || 'O preço deve ser maior que zero.',
-        ],
+        price: [(value) => !!value || 'O preço é obrigatório.'],
         max_quantity: [
           (value) => !!value || 'A quantidade máxima é obrigatória.',
           (value) => value > 0 || 'A quantidade deve ser maior que zero.',
@@ -492,28 +490,31 @@ export default {
     onCategoryChange(value) {
       this.localTicket.category = value;
     },
-    onPriceChange(event) {
+    onPriceKeyPress(event) {
       const charCode = event.charCode || event.keyCode;
       const char = String.fromCharCode(charCode);
 
-      if (
-        !/[0-9,]/.test(char) ||
-        (char === ',' && this.localTicket.price.includes(','))
-      ) {
+      if (!/[0-9]/.test(char)) {
         event.preventDefault();
       }
-
-      const value = event.target.value;
-      this.localTicket.price = formatPrice(value);
     },
+    onPriceChange(value) {
+      if (!value) {
+        this.localTicket.price = '';
+        return;
+      }
 
+      const numericValue = value.replace(/\D/g, '');
+      const floatValue = parseFloat(numericValue) / 100;
+
+      this.localTicket.price = formatPrice(floatValue);
+    },
     onNumerFieldChange(event) {
       const charCode = event.charCode || event.keyCode;
       if (charCode < 48 || charCode > 57) {
         event.preventDefault();
       }
     },
-
     onDateChange(field, value) {
       this.localTicket[field] = value;
       this.openDateMenu = false;
