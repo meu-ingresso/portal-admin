@@ -1,7 +1,7 @@
 <template>
   <div class="filter-buttons">
     <v-slide-group class="filter-slide-group" multiple show-arrows>
-      <v-slide-item v-for="filter in filters" :key="filter.text" v-slot="{ active }">
+      <v-slide-item v-for="filter in filters" :key="filter.name" v-slot="{ active }">
         <v-btn
           color="primary"
           :input-value="active"
@@ -9,9 +9,9 @@
           depressed
           :elevation="0"
           rounded
-          :outlined="selected !== filter.value"
-          @click="$emit('filter-selected', filter.value)">
-          {{ filter.text }}
+          :outlined="selected.name !== filter.name"
+          @click="$emit('filter-selected', filter)">
+          {{ filter.name }}
         </v-btn>
       </v-slide-item>
     </v-slide-group>
@@ -22,7 +22,7 @@
 export default {
   props: {
     filters: { type: Array, required: true },
-    selected: { type: String, required: true },
+    selected: { type: Object, required: true },
   },
 };
 </script>
