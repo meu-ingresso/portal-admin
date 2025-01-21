@@ -7,13 +7,6 @@ export const eventsSideBar = [
     needPermissions: false,
   },
   {
-    icon: 'mdi-account-check-outline',
-    iconActive: 'mdi-account-check',
-    title: 'Lineup',
-    to: '/events/:id/lineup',
-    needPermissions: false,
-  },
-  {
     icon: 'mdi-ticket-outline',
     iconActive: 'mdi-ticket',
     title: 'Ingressos',
@@ -32,13 +25,6 @@ export const eventsSideBar = [
     iconActive: 'mdi-account-group',
     title: 'Promoters',
     to: '/events/:id/promoters',
-    needPermissions: false,
-  },
-  {
-    icon: 'mdi-hand-coin-outline',
-    iconActive: 'mdi-hand-coin',
-    title: 'Promover',
-    to: '/events/:id/promote',
     needPermissions: false,
   },
 ];

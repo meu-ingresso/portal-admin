@@ -11,10 +11,37 @@
         <PromotersBadge :count="promoters" />
       </div>
 
-      <div class="location d-flex align-center mb-2">
+      <div class="location d-flex align-center mb-2 cursor-pointer">
         <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
-        <p>{{ location }}</p>
+        <p @click="handleMapDialog">{{ location }}</p>
+
+        <v-dialog
+          v-if="latitude && longitude && latitude !== '' && longitude !== ''"
+          v-model="mapDialog"
+          width="500">
+          <v-card>
+            <v-card-title>
+              <b>{{ title }}</b>
+              <v-spacer />
+              <v-btn icon @click="handleMapDialog">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </v-card-title>
+
+            <v-card-text>
+              <iframe
+                :src="googleMapsEmbedUrl"
+                width="100%"
+                height="450"
+                frameborder="0"
+                style="border: 0"
+                allowfullscreen
+                loading="lazy">
+              </iframe>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
       </div>
 
       <div class="date d-flex align-center">
@@ -23,18 +50,24 @@
         <div class="d-flex align-center">
           <p>{{ formattedStartDate }}</p>
           <v-icon class="details-icon">mdi-circle-small</v-icon>
+
           <p>{{ formattedOpeningHour }}</p>
         </div>
+
         <div class="mr-2 ml-2">
           <v-icon class="details-icon">mdi-chevron-right</v-icon>
         </div>
+
         <div class="d-flex align-center">
           <p>{{ formattedEndDate }}</p>
+
           <v-icon class="details-icon">mdi-circle-small</v-icon>
+
           <p>{{ formattedEndingHour }}</p>
         </div>
       </div>
     </template>
+
     <template v-else>
       <div class="event-title-wrapper is-mobile mb-2">
         <div class="badge-list">
@@ -55,15 +88,21 @@
 
           <div class="d-flex align-center">
             <p>{{ formattedStartDate }}</p>
+
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
+
             <p>{{ formattedOpeningHour }}</p>
           </div>
+
           <div class="mr-2 ml-2">
             <v-icon class="details-icon is-mobile">mdi-chevron-right</v-icon>
           </div>
+
           <div class="d-flex align-center">
             <p>{{ formattedEndDate }}</p>
+
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
+
             <p>{{ formattedEndingHour }}</p>
           </div>
         </div>
@@ -82,26 +121,50 @@ export default {
     location: { type: String, default: '-' },
     startDate: { type: String, default: '-' },
     endDate: { type: String, default: '-' },
-    openingHour: { type: String, default: '-' },
-    endingHour: { type: String, default: '-' },
     promoters: { type: Number, default: 0 },
+    latitude: { type: String, default: '' },
+    longitude: { type: String, default: '' },
+  },
+
+  data() {
+    return {
+      mapDialog: false,
+    };
   },
 
   computed: {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
+
     formattedStartDate() {
       return formatDateToCustomString(this.startDate);
     },
+
     formattedOpeningHour() {
-      return formatHourToBr(this.openingHour);
+      return formatHourToBr(this.startDate);
     },
+
     formattedEndDate() {
       return formatDateToCustomString(this.endDate);
     },
+
     formattedEndingHour() {
-      return formatHourToBr(this.openingHour);
+      return formatHourToBr(this.endDate);
+    },
+
+    googleMapsEmbedUrl() {
+      return `https://www.google.com/maps/embed/v1/place?key=AIzaSyCAOCaH86soquJjQzMooPA9jBKmbSr1W2A&zoom=14&q=${this.latitude},${this.longitude}`;
+    },
+  },
+
+  mounted() {
+    console.log(this.latitude, this.longitude);
+  },
+
+  methods: {
+    handleMapDialog() {
+      this.mapDialog = !this.mapDialog;
     },
   },
 };
@@ -144,7 +207,7 @@ export default {
 }
 
 .details-icon.is-mobile {
-  font-size: .95rem !important;
+  font-size: 0.95rem !important;
 }
 
 .opening-icon,
@@ -165,7 +228,7 @@ export default {
   font-size: 12px;
 }
 
-.date.is-mobile{
-  font-size: .75rem;
+.date.is-mobile {
+  font-size: 0.75rem;
 }
 </style>

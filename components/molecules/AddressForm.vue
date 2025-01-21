@@ -246,6 +246,8 @@ export default {
             city: responseCEP.city,
             state: responseCEP.state,
             state_name: responseCEP.state_name,
+            latitude: responseCEP.latitude,
+            longitude: responseCEP.longitude,
           };
         } catch (error) {
           console.error('Erro ao buscar endereço:', error);

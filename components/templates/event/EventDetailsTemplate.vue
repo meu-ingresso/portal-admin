@@ -6,9 +6,9 @@
       :location="event.location"
       :start-date="event.start_date"
       :end-date="event.end_date"
-      :opening-hour="event.opening_hour"
-      :ending-hour="event.ending_hour"
-      :promoters="event.promoters" />
+      :promoters="event.promoters"
+      :latitude="event.address.latitude"
+      :longitude="event.address.longitude" />
 
     <div class="event-details-wrapper">
       <EventStatistics :statistics="event.statistics" />
@@ -34,7 +34,7 @@ export default {
 .event-details {
   padding-top: 16px;
 }
-.event-details-wrapper{
+.event-details-wrapper {
   max-width: 1480px;
 }
 </style>

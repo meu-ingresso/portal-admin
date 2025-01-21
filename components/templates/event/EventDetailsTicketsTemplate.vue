@@ -6,8 +6,6 @@
       :location="event.location"
       :start-date="event.start_date"
       :end-date="event.end_date"
-      :opening-hour="event.opening_hour"
-      :ending-hour="event.ending_hour"
       :promoters="event.promoters" />
     <div class="event-details-wrapper">
       <TicketStatistics :statistics="statistics" />

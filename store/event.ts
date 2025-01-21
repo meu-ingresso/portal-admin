@@ -79,8 +79,6 @@ async function createEvent(eventPayload, addressId) {
     rating_id: eventPayload.rating.value,
     start_date: `${eventPayload.startDate}T${eventPayload.startTime}:00.000Z`,
     end_date: `${eventPayload.endDate}T${eventPayload.endTime}:00.000Z`,
-    opening_hour: eventPayload.startTime,
-    ending_hour: eventPayload.endTime,
     general_information: eventPayload.general_information,
     location_name: eventPayload.location_name,
     availability: eventPayload.availability,
@@ -398,12 +396,20 @@ export default class Event extends VuexModule {
       statusText: data.status.name,
       date: data.start_date,
       statistics: [
-        { title: 'Visualizações', value: data.totalizers.totalViews },
-        { title: 'Visibilidade', value: data.availability },
-        { title: 'Tipos de ingressos', value: `${ticketsTypes.length} Tipos` },
         {
-          title: 'Códigos Promocionais',
-          value: `${data.coupons.length} Códigos`,
+          title: 'Visualizações',
+          value: `${
+            data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
+          }`,
+        },
+        { title: 'Visibilidade', value: data.availability },
+        {
+          title: 'Tipos de ingressos',
+          value: `${ticketsTypes.length === 0 ? 'Nenhum' : `${ticketsTypes.length}`}`,
+        },
+        {
+          title: 'Cupons de Desconto',
+          value: `${data.coupons.length === 0 ? 'Nenhum' : `${data.coupons.length}`}`,
         },
       ],
       sales: [
