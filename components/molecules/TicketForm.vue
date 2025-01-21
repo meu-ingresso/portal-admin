@@ -243,11 +243,21 @@
         hide-details="auto" />
     </v-col>
     <v-col md="3" sm="8">
-      <v-checkbox
-        v-model="localTicket.visible"
-        label="Visível"
-        class="inline-switch-checkbox"
-        dense />
+      <div class="mt-2">
+        <v-icon
+          v-if="localTicket.visible"
+          color="primary"
+          size="24"
+          @click="handleVisibility">
+          mdi-checkbox-marked
+        </v-icon>
+
+        <v-icon v-else size="24" @click="handleVisibility">
+          mdi-checkbox-blank-outline
+        </v-icon>
+
+        <span class="ml-1"> Visível </span>
+      </div>
     </v-col>
 
     <template v-if="nomenclature != 'Doação' && isMobile">
@@ -357,9 +367,7 @@ export default {
             value >= this.localTicket.min_purchase ||
             'A compra máxima deve ser maior ou igual à compra mínima.',
         ],
-        open_date: [
-          (value) => !!value || 'A data de abertura é obrigatória.',
-        ],
+        open_date: [(value) => !!value || 'A data de abertura é obrigatória.'],
         start_time: [(value) => !!value || 'A hora de início é obrigatória.'],
         close_date: [
           (value) => !!value || 'A data de fechamento é obrigatória.',
@@ -445,6 +453,10 @@ export default {
   },
 
   methods: {
+    handleVisibility() {
+      this.localTicket.visible = !this.localTicket.visible;
+    },
+
     validateForm() {
       this.formHasErrors = false;
 
@@ -519,5 +531,4 @@ export default {
 };
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
