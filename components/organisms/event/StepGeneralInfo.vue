@@ -409,7 +409,7 @@ export default {
   },
   data() {
     return {
-      localForm: { ...this.form },
+      localForm: { ...this.form, availability: 'Publico' },
       aliasValidation: {
         isValid: null,
         alias: '',
