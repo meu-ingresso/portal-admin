@@ -93,14 +93,18 @@ export default {
       try {
         const response = await event.getById(this.$route.params.id);
 
-        if (!response || response.code === 'FIND_NOTFOUND') {
+        if (!response?.body || response.body.code !== 'SEARCH_SUCCESS') {
           this.eventInvalid = true;
-        } else {
-          this.eventData = event.$selectedEvent;
-          this.eventInvalid = false;
+          this.eventData = null;
+          return;
         }
+
+        this.eventData = event.$selectedEvent;
+        this.eventInvalid = false;
       } catch (error) {
+        console.error('Erro ao buscar dados do evento:', error);
         this.eventInvalid = true;
+        this.eventData = null;
       }
     },
   },
