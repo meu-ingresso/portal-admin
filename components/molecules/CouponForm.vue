@@ -260,10 +260,7 @@ export default {
       endTimeMenu: false,
       validationRules: {
         code: [(value) => !!value || 'O código do cupom é obrigatório.'],
-        discountValue: [
-          (v) => !!v || 'O valor do desconto é obrigatório.',
-          (v) => parseFloat(v) > 0 || 'O valor do desconto deve ser maior que 0.',
-        ],
+        discountValue: [(v) => !!v || 'O valor do desconto é obrigatório.'],
         maxUses: [
           (v) => !!v || 'O número máximo de usos é obrigatório.',
           (v) => v > 0 || 'O número máximo de usos deve ser maior que 0.',
@@ -407,6 +404,4 @@ export default {
 };
 </script>
 
-<style scoped>
-</style>
-
+<style scoped></style>
