@@ -675,17 +675,12 @@ export default class Event extends VuexModule {
 
         ticketMap = await createTicketsAndCategories(eventId, eventPayload.tickets);
 
-      }
-
-      // Se houver campos personalizados, cria
-      if (eventPayload.customFields.length > 0) {
-
         this.setProgressTitle('Salvando campos personalizados');
 
-        const fieldTicketMap = await createCustomFields(eventId, eventPayload.customFields);
+        // Se houver campos personalizados, cria e relaciona com os ingressos
+        if (eventPayload.customFields.length > 0) {
 
-        // Se houver ingressos e campos personalizados, relaciona-os
-        if (Object.keys(ticketMap).length > 0) {
+          const fieldTicketMap = await createCustomFields(eventId, eventPayload.customFields);
 
           await createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap);
 

@@ -319,7 +319,7 @@ export default {
 
     emitChanges() {
       this.$emit('update:form', {
-        ...this.localForm,
+        ...this.form,
         tickets: this.tickets,
         customFields: this.customFields,
       });

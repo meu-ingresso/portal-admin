@@ -30,8 +30,8 @@
 
     <v-col cols="12">
       <v-card v-if="isFetchingAddress" outlined class="mt-3 mb-3">
-        <v-card-text>
-          <v-progress-circular indeterminate color="primary" />
+        <v-card-text class="d-flex align-center justify-center">
+          <v-progress-circular indeterminate color="primary" class="mr-2" />
           <p>Buscando endereço...</p>
         </v-card-text>
       </v-card>
