@@ -8,7 +8,8 @@
       :end-date="event.end_date"
       :promoters="event.promoters"
       :latitude="event.address.latitude"
-      :longitude="event.address.longitude" />
+      :longitude="event.address.longitude"
+      :alias="event.alias" />
 
     <div class="event-details-wrapper">
       <EventStatistics :statistics="event.statistics" />
