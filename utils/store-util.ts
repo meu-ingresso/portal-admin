@@ -14,6 +14,7 @@ import Cep from '@/store/cep';
 import EventForm from '@/store/eventForm';
 import Status from '@/store/status';
 import OpenAi from '@/store/openAi';
+import Address from '@/store/address';
 
 let auth: Auth;
 let toast: Toast;
@@ -27,6 +28,7 @@ let cep: Cep;
 let eventForm: EventForm;
 let status: Status;
 let openAi: OpenAi;
+let address: Address;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -41,6 +43,7 @@ const initializeStores = (store: Store<any>) => {
   eventForm = getModule(EventForm, store);
   status = getModule(Status, store);
   openAi = getModule(OpenAi, store);
+  address = getModule(Address, store);
 };
 
 export {
@@ -57,4 +60,5 @@ export {
   eventForm,
   status,
   openAi,
+  address,
 };

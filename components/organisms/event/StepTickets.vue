@@ -1,4 +1,3 @@
-
 <template>
   <v-container class="step-tickets py-0 px-0">
     <v-row>
@@ -47,7 +46,9 @@
                 <div class="table-cell">
                   {{ ticket.category ? ticket.category : '-' }}
                 </div>
-                <div class="table-cell">R$ {{ ticket.price }}</div>
+                <div class="table-cell">
+                  {{ ticket.price ? `R$ ${formattedPrice(ticket.price)}` : '-' }}
+                </div>
                 <div class="table-cell actions">
                   <ActionsMenu
                     :index="index"
@@ -182,6 +183,8 @@
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
 import { toast } from '@/store';
+import { formatPrice } from '@/utils/formatters';
+
 export default {
   components: { Container, Draggable },
   props: {
@@ -271,6 +274,10 @@ export default {
   },
 
   methods: {
+    formattedPrice(price) {
+      return formatPrice(price);
+    },
+
     canProceed(callback) {
       callback(null, true);
     },
@@ -312,7 +319,7 @@ export default {
 
     emitChanges() {
       this.$emit('update:form', {
-        ...this.localForm,
+        ...this.form,
         tickets: this.tickets,
         customFields: this.customFields,
       });

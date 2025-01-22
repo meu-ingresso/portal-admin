@@ -9,7 +9,7 @@
     dense
     outlined
     hide-details="auto"
-    :rules="rules"
+    :rules="validationRules.rating"
     :return-object="true"
     :menu-props="{ contentClass: 'rating-select-dropdown' }"
     class="rating-select">
@@ -55,15 +55,14 @@ export default {
       type: [String, Array],
       default: () => [],
     },
-    rules: {
-      type: Array,
-      default: () => [],
-    },
   },
   data() {
     return {
       selectedRating: this.value || null,
       hasError: false,
+      validationRules: {
+        rating: [(value) => !!value || 'Selecione uma classificação indicativa.'],
+      },
     };
   },
   watch: {
@@ -75,13 +74,11 @@ export default {
   methods: {
     validate() {
       this.hasError = false;
-      if (!this.$refs.select) {
+      if (!this.selectedRating?.value) {
         this.hasError = true;
       }
 
-      if (this.$refs.select.validate(true)) {
-        this.hasError = true;
-      }
+      this.$refs.select.validate(true);
 
       return this.hasError;
     },

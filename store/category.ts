@@ -2,6 +2,31 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
 
+function buildSearchParams({
+  page,
+  limit,
+  search,
+  sortBy,
+  sortDesc,
+}: SearchPayload): URLSearchParams {
+  const params = new URLSearchParams();
+
+  params.append('page', page.toString());
+  params.append('limit', limit.toString());
+
+  sortBy.forEach((field: string, index: number) => {
+    const order = sortDesc[index] ? 'desc' : 'asc';
+    params.append('orderBy[]', `${field}:${order}`);
+  });
+
+  if (search) {
+    params.append('search[name][o]', '_LIKE_');
+    params.append('search[name][v]', encodeURIComponent(String(search)));
+  }
+
+  return params;
+}
+
 @Module({
   name: 'category',
   stateFactory: true,
@@ -44,38 +69,15 @@ export default class Category extends VuexModule {
   }: SearchPayload) {
     this.setLoading(true);
 
-    const params = new URLSearchParams();
+    const params = buildSearchParams({ page, limit, search, sortBy, sortDesc });
 
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
+    const response = await $axios.$get(`categories?${params.toString()}`);
 
-    sortBy.forEach((field: string, index: number) => {
-      const order = sortDesc[index] ? 'desc' : 'asc';
-      params.append('orderBy[]', `${field}:${order}`);
-    });
-
-    if (search) {
-      params.append('search[name][o]', '_LIKE_');
-      params.append('search[name][v]', encodeURIComponent(String(search)));
+    if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+      throw new Error('Invalid response format');
     }
 
-    return await $axios
-      .$get(`categories?${params.toString()}`)
-      .then((response) => {
-        if (response.body && response.body.code !== 'SEARCH_SUCCESS')
-          throw new Error(response);
-
-        this.setLoading(false);
-        this.context.commit('SET_CATEGORY_LIST', response.body.result.data);
-        return response;
-      })
-      .catch(() => {
-        this.setLoading(false);
-        return {
-          data: 'Error',
-          code: 'FIND_NOTFOUND',
-          total: 0,
-        };
-      });
+    this.context.commit('SET_CATEGORY_LIST', response.body.result.data);
+    return response;
   }
 }
