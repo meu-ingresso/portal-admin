@@ -364,7 +364,7 @@ export default class Event extends VuexModule {
 
     return {
       ...this.selectedEvent,
-      location: `${this.selectedEvent.address.street}, ${this.selectedEvent.address.number} - ${this.selectedEvent.address.neighborhood}, ${this.selectedEvent.address.city.name} - ${this.selectedEvent.address.city.state.name}`,
+      location: `${this.selectedEvent.address.street}, ${this.selectedEvent.address.number} - ${this.selectedEvent.address.neighborhood}, ${this.selectedEvent.address.city} - ${this.selectedEvent.address.state}`,
     };
   }
 
