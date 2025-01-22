@@ -73,7 +73,8 @@
         hide-details="auto"
         required
         :rules="validationRules.discountValue"
-        @keypress="onPriceOrNumberChange" />
+        @input="onPriceOrNumberChange"
+        @keypress="onPriceOrNumberKeyPress" />
     </v-col>
 
     <!-- Máximo de Usos -->
@@ -345,23 +346,28 @@ export default {
       }
     },
 
-    onPriceOrNumberChange(event) {
-      if (this.coupon.discountType === 'PERCENTAGE') {
-        this.onNumerFieldChange(event);
-        this.localCoupon.discountValue = Math.min(this.localCoupon.discountValue, 100);
+    onPriceOrNumberKeyPress(event) {
+      const charCode = event.charCode || event.keyCode;
+      const char = String.fromCharCode(charCode);
+
+      if (!/[0-9]/.test(char)) {
+        event.preventDefault();
+      }
+    },
+
+    onPriceOrNumberChange(value) {
+      if (!value) {
+        this.localCoupon.discountValue = '';
+        return;
+      }
+
+      if (this.coupon.discountType?.value === 'PERCENTAGE') {
+        this.localCoupon.discountValue = Math.min(value, 100);
       } else {
-        const charCode = event.charCode || event.keyCode;
-        const char = String.fromCharCode(charCode);
+        const numericValue = value.replace(/\D/g, '');
+        const floatValue = parseFloat(numericValue) / 100;
 
-        if (
-          !/[0-9,]/.test(char) ||
-          (char === ',' && this.localCoupon.discountValue.includes(','))
-        ) {
-          event.preventDefault();
-        }
-
-        const value = event.target.value;
-        this.localCoupon.discountValue = formatPrice(value);
+        this.localCoupon.discountValue = formatPrice(floatValue);
       }
     },
 
