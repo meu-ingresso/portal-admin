@@ -1,7 +1,7 @@
 <template>
   <v-row class="mb-4">
     <v-col cols="12">
-      <div class="event-statistics-title">Estatísticas</div>
+      <div class="event-statistics-title">Painel</div>
     </v-col>
 
     <v-col
