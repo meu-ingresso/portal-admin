@@ -289,7 +289,7 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
 
   const couponPromises = coupons.map(async (coupon) => {
 
-    const couponDiscountValue = parseFloat(coupon.discount_value.replace(',', '.'));
+    const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
 
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,
@@ -325,7 +325,7 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
 async function createCouponsWithoutTickets(eventId, coupons, statusId) {
   const couponPromises = coupons.map(async (coupon) => {
 
-    const couponDiscountValue = parseFloat(coupon.discount_value.replace(',', '.'));
+    const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
 
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,

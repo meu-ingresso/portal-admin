@@ -1,5 +1,8 @@
 <template>
-  <v-row class="event-row cursor-pointer" :class="{'deleted' : deletedAt !== null}" @click="goToEventDetail">
+  <v-row
+    class="event-row cursor-pointer"
+    :class="{ deleted: deletedAt !== null }"
+    @click="goToEventDetail">
     <v-col sm="12" md="2" class="event-status">
       <StatusBadge :text="deletedAt !== null ? 'Excluído' : statusText" />
     </v-col>
@@ -35,9 +38,9 @@
 
       <template v-else>
         <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <v-btn
-              v-if="statusText === 'Rascunho'"
+              v-if="statusText === 'Rascunho' && deletedAt === null"
               class="approve-icon"
               icon
               v-bind="attrs"
@@ -50,9 +53,9 @@
         </v-tooltip>
 
         <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <v-btn
-              v-if="statusText === 'Rascunho'"
+              v-if="statusText === 'Rascunho' && deletedAt === null"
               class="reject-icon"
               icon
               v-bind="attrs"
@@ -65,7 +68,7 @@
         </v-tooltip>
 
         <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
+          <template #activator="{ on, attrs }">
             <v-btn
               v-if="deletedAt === null"
               class="delete-icon"
