@@ -66,6 +66,14 @@
           <p>{{ formattedEndingHour }}</p>
         </div>
       </div>
+
+      <div class="alias d-flex align-center">
+        <v-icon class="mr-2 details-icon">mdi-link</v-icon>
+
+        <div class="d-flex align-center">
+          <a :href="aliasUrl" target="_blank">{{ aliasUrl }}</a>
+        </div>
+      </div>
     </template>
 
     <template v-else>
@@ -124,6 +132,7 @@ export default {
     promoters: { type: Number, default: 0 },
     latitude: { type: String, default: '' },
     longitude: { type: String, default: '' },
+    alias: { type: String, default: '' },
   },
 
   data() {
@@ -155,6 +164,10 @@ export default {
 
     googleMapsEmbedUrl() {
       return `https://www.google.com/maps/embed/v1/place?key=AIzaSyAnkqplDONBqIfUvJCGfFWpLXAhPPx8ig0&zoom=14&q=${this.latitude},${this.longitude}`;
+    },
+
+    aliasUrl() {
+      return `https://meuingresso.com.br/evento/${this.alias}`;
     },
   },
 
@@ -226,5 +239,9 @@ export default {
 
 .date.is-mobile {
   font-size: 0.75rem;
+}
+
+.alias {
+  padding-top: 5px;
 }
 </style>
