@@ -139,37 +139,37 @@ async function createTicketsAndCategories(eventId, tickets) {
       }
     }
 
+    const ticketPrice = parseFloat(ticket.price.replace(',', '.'));
+
     // Cria ingresso condicionando se envia a categoria ou não
-    const payload = categoryId
-      ? {
-          event_id: eventId,
-          ticket_event_category_id: categoryId,
-          name: ticket.name,
-          total_quantity: ticket.max_quantity,
-          remaining_quantity: ticket.max_quantity,
-          price: ticket.price,
-          status_id: statusResponse.id,
-          start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
-          end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
-          availability: ticket.availability.value,
-          display_order: index + 1,
-          min_quantity_per_user: ticket.min_purchase,
-          max_quantity_per_user: ticket.max_purchase,
-        }
-      : {
-          event_id: eventId,
-          name: ticket.name,
-          total_quantity: ticket.max_quantity,
-          remaining_quantity: ticket.max_quantity,
-          price: ticket.price,
-          status_id: statusResponse.id,
-          start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
-          end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
-          availability: ticket.availability.value,
-          display_order: index + 1,
-          min_quantity_per_user: ticket.min_purchase,
-          max_quantity_per_user: ticket.max_purchase,
-        };
+    const payload = categoryId ? {
+      event_id: eventId,
+      ticket_event_category_id: categoryId,
+      name: ticket.name,
+      total_quantity: ticket.max_quantity,
+      remaining_quantity: ticket.max_quantity,
+      price: ticketPrice,
+      status_id: statusResponse.id,
+      start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
+      end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
+      availability: ticket.availability.value,
+      display_order: index + 1,
+      min_quantity_per_user: ticket.min_purchase,
+      max_quantity_per_user: ticket.max_purchase,
+    } : {
+      event_id: eventId,
+      name: ticket.name,
+      total_quantity: ticket.max_quantity,
+      remaining_quantity: ticket.max_quantity,
+      price: ticketPrice,
+      status_id: statusResponse.id,
+      start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
+      end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
+      availability: ticket.availability.value,
+      display_order: index + 1,
+      min_quantity_per_user: ticket.min_purchase,
+      max_quantity_per_user: ticket.max_purchase,
+    }
 
     const ticketResponse = await $axios.$post('ticket', payload);
 
@@ -288,11 +288,14 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
   const couponTicketMap = {}; // Mapeia cupom -> ingressos
 
   const couponPromises = coupons.map(async (coupon) => {
+
+    const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
+
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,
       status_id: statusId,
       code: coupon.code,
-      discount_value: coupon.discountValue,
+      discount_value: couponDiscountValue,
       discount_type: coupon.discountType.value,
       max_uses: coupon.maxUses,
       start_date: `${coupon.start_date}T${coupon.start_time}:00.000Z`,
@@ -321,11 +324,14 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
 
 async function createCouponsWithoutTickets(eventId, coupons, statusId) {
   const couponPromises = coupons.map(async (coupon) => {
+
+    const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
+
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,
       status_id: statusId,
       code: coupon.code,
-      discount_value: coupon.discountValue,
+      discount_value: couponDiscountValue,
       discount_type: coupon.discountType.value,
       max_uses: coupon.maxUses,
       start_date: `${coupon.start_date}T${coupon.start_time}:00.000Z`,
@@ -416,9 +422,8 @@ export default class Event extends VuexModule {
       statistics: [
         {
           title: 'Visualizações',
-          value: `${
-            data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
-          }`,
+          value: `${data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
+            }`,
         },
         { title: 'Visibilidade', value: data.availability },
         {
