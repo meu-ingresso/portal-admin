@@ -208,7 +208,12 @@ export default {
 
           if (flag) {
             if (this.currentStep < this.getSteps.length) {
-              this.currentStep++;
+              // Se estou nos ingressos e dei próximo sem ingressos = CUPOM
+              if (this.currentStep === 2 && this.form.tickets.length === 0) {
+                this.currentStep = 4;
+              } else {
+                this.currentStep++;
+              }
             }
           }
         });
@@ -218,7 +223,11 @@ export default {
     },
     previousStep() {
       if (this.currentStep > 1) {
-        this.currentStep--;
+        if (this.currentStep === 4 && this.form.tickets.length === 0) {
+          this.currentStep = 2;
+        } else {
+          this.currentStep--;
+        }
       }
     },
     async submitData() {

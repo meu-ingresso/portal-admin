@@ -150,8 +150,7 @@
           ref="rating"
           v-model="localForm.rating"
           :value="localForm.rating"
-          :ratings="ratings"
-          :rules="validationRules.rating" />
+          :ratings="ratings" />
       </v-col>
 
       <v-col v-if="isEventOnlineOrHibrido" cols="12" md="12" sm="12">
@@ -257,16 +256,8 @@
       <!-- Endereço do Evento -->
       <AddressForm
         ref="addressForm"
-        :cep="localForm.cep"
-        :location-name="localForm.location_name"
-        :number="localForm.number"
         :address="localForm.address"
-        :complement="localForm.complement"
-        @update:cep="updateCep"
-        @update:location-name="updateLocationName"
-        @update:number="updateNumber"
-        @update:address="updateAddress"
-        @update:complement="updateComplement" />
+        @update:address="updateAddress" />
     </template>
 
     <!-- Configurações do Evento/Ingressos -->
@@ -409,7 +400,7 @@ export default {
   },
   data() {
     return {
-      localForm: { ...this.form },
+      localForm: { ...this.form, availability: 'Publico' },
       aliasValidation: {
         isValid: null,
         alias: '',
@@ -431,7 +422,6 @@ export default {
         ],
         category: [(value) => !!value || 'Selecione uma categoria.'],
         event_type: [(value) => !!value || 'Selecione o tipo do evento.'],
-        rating: [(value) => !!value || 'Selecione uma classificação indicativa.'],
         link_online: [
           (value) => !!value || 'O link do evento é obrigatório.',
           (value) =>
@@ -445,20 +435,15 @@ export default {
     generalInfoForm() {
       return {
         eventName: this.localForm.eventName,
-        category: this.localForm.category,
+        category: this.localForm.category?.value,
         event_type: this.localForm.event_type,
-        rating: this.localForm.rating,
+        rating: this.localForm.rating?.value,
         link_online: this.localForm.link_online,
         startDate: this.localForm.startDate,
         startTime: this.localForm.startTime,
         endDate: this.localForm.endDate,
         endTime: this.localForm.endTime,
-        cep: this.localForm.cep,
-        location_name: this.localForm.location_name,
         address: this.localForm.address,
-        number: this.localForm.number,
-        availability: this.localForm.availability,
-        sale_type: this.nomenclature,
       };
     },
 
@@ -669,44 +654,56 @@ export default {
     },
 
     validateForm() {
-      this.formHasErrors = false;
+      try {
+        this.formHasErrors = false;
 
-      Object.keys(this.generalInfoForm).forEach((f) => {
-        const fieldIsFromAddress = ['cep', 'location_name', 'number'].includes(f);
+        Object.keys(this.generalInfoForm).forEach((f) => {
+          if (!this.generalInfoForm[f]) {
+            console.log('1 Campo', f, 'não preenchido');
+            this.formHasErrors = true;
+          }
 
-        if (this.localForm.event_type === 'Presencial' && f === 'link_online') {
-          return;
-        }
+          if (f === 'link_online' && this.localForm.event_type === 'Presencial') {
+            this.formHasErrors = false;
+          }
 
-        if (this.localForm.event_type === 'Online' && fieldIsFromAddress) {
-          return;
-        }
+          const fieldFromDateTimeForm = [
+            'startDate',
+            'startTime',
+            'endDate',
+            'endTime',
+          ].includes(f);
 
-        if (!this.generalInfoForm[f]) this.formHasErrors = true;
+          if (
+            this.localForm.event_type !== 'Online' &&
+            this.localForm.event_type !== ''
+          ) {
+            if (f === 'address' && this.$refs.addressForm.validate(true)) {
+              console.log('2 Campo', f, 'não preenchido');
+              this.formHasErrors = true;
+            }
+          }
 
-        const fieldFromDateTimeForm = [
-          'startDate',
-          'startTime',
-          'endDate',
-          'endTime',
-        ].includes(f);
+          if (f === 'rating' && this.$refs.rating.validate(true)) {
+            console.log('3 Campo', f, 'não preenchido');
+            this.formHasErrors = true;
+          }
 
-        if (
-          fieldIsFromAddress &&
-          this.localForm.event_type !== 'Online' &&
-          this.localForm.event_type !== ''
-        ) {
-          this.$refs.addressForm.validate();
-        } else if (f === 'rating') {
-          this.$refs.rating.validate();
-        } else if (fieldFromDateTimeForm) {
-          this.$refs.dateTimeForm.validate();
-        } else if (this.$refs[f]) {
-          this.$refs[f].validate(true);
-        }
-      });
+          if (fieldFromDateTimeForm && this.$refs.dateTimeForm.validate(true)) {
+            console.log('4 Campo', f, 'não preenchido');
+            this.formHasErrors = true;
+          }
 
-      return this.formHasErrors;
+          if (this.$refs[f] && !this.$refs[f].validate(true) && f !== 'rating') {
+            console.log('5 Campo', f, 'não preenchido');
+            this.formHasErrors = true;
+          }
+        });
+
+        return this.formHasErrors;
+      } catch (error) {
+        console.error('Erro ao validar formulário:', error);
+      }
     },
     normalizeDate(date) {
       const normalized = new Date(date);
@@ -728,25 +725,6 @@ export default {
     updateEndTime(value) {
       this.localForm.endTime = value;
       eventForm.updateForm({ endTime: value });
-    },
-    updateNumber(value) {
-      this.localForm.number = value;
-      eventForm.updateForm({ number: value });
-    },
-
-    updateCep(value) {
-      this.localForm.cep = value;
-      eventForm.updateForm({ cep: value });
-    },
-
-    updateLocationName(value) {
-      this.localForm.location_name = value;
-      eventForm.updateForm({ location_name: value });
-    },
-
-    updateComplement(value) {
-      this.localForm.complement = value;
-      eventForm.updateForm({ complement: value });
     },
 
     updateAddress(value) {

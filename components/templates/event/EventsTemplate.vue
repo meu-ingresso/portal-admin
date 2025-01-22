@@ -79,7 +79,7 @@ export default {
 
       return this.events.filter(
         (event) =>
-          (this.selectedAll || event.status.name === this.selectedFilter) &&
+          (this.selectedAll || event.status.name === this.selectedFilter.name) &&
           event.name.toLowerCase().includes(this.search.toLowerCase())
       );
     },

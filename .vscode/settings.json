@@ -1,0 +1,88 @@
+{
+  "git.autofetch": true,
+  "editor.suggestSelection": "first",
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+  "diffEditor.ignoreTrimWhitespace": true,
+  "workbench.editor.enablePreview": true,
+
+  // Font Style
+  "editor.fontSize": 13,
+
+  // Material Icon
+  "workbench.iconTheme": "material-icon-theme",
+  "material-icon-theme.folders.associations": {
+    "bosons": "components",
+    "quarks": "components",
+    "atoms": "components",
+    "molecules": "components",
+    "organisms": "components",
+    "templates": "components",
+    "pages": "components",
+    "reports": ""
+  },
+  // Prettier
+  "prettier.singleQuote": true,
+  "prettier.semi": true,
+  "prettier.arrowParens": "always",
+
+  // VSCode
+  "workbench.statusBar.visible": true,
+  "editor.tabSize": 2,
+  "git.decorations.enabled": false,
+  "editor.formatOnType": true,
+  "editor.wordWrap": "on",
+  "editor.formatOnPaste": true,
+  "explorer.compactFolders": false,
+  "breadcrumbs.enabled": true,
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "editor.formatOnSave": true,
+
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "support.class.component.html",
+        "settings": {
+          "foreground": "#569CD6"
+        }
+      }
+    ]
+  },
+
+  "[javascript]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "terminal.integrated.env.osx": {
+    "FIG_NEW_SESSION": "1",
+    "CW_NEW_SESSION": "1",
+    "Q_NEW_SESSION": "1"
+  },
+  "editor.accessibilitySupport": "off",
+  "terminal.integrated.fontFamily": "Menlo",
+  "[javascript][typescript]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "git.confirmSync": false,
+  "workbench.colorTheme": "Default Dark Modern"
+}

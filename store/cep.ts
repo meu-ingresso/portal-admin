@@ -28,7 +28,7 @@ export default class Cep extends VuexModule {
     this.setLoading(true);
 
     try {
-      const response = await $axios.$get(`https://brasilapi.com.br/api/cep/v2/${cep}`);
+      const response = await $axios.$get(`https://brasilapi.com.br/api/cep/v2/${cep}`, { timeout: 5000 });
       if (
         !response.street ||
         !response.neighborhood ||
@@ -50,7 +50,7 @@ export default class Cep extends VuexModule {
       };
     } catch (error) {
       try {
-        const response = await $axios.$get(`https://viacep.com.br/ws/${cep}/json/`);
+        const response = await $axios.$get(`https://viacep.com.br/ws/${cep}/json/`, { timeout: 5000 });
         if (
           !response.logradouro ||
           !response.bairro ||
