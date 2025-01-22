@@ -3,18 +3,22 @@ import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
 import { formatRealValue } from '~/utils/formatters';
 
-const STATUS = {
-  DRAFT: '17ea4e6f-9092-4fe4-8c65-28f4e2cf5580',
-  TICKET_AVAILABLE: 'ce053c91-01a6-40bc-ae8c-046856698687',
-  COUPON_AVAILABLE: 'c11e2b61-51b6-48fe-9464-03b60713642d',
-};
+async function getStatusByModuleName(module, name) {
+  const response = await $axios.$get(`statuses?where[module][v]=${module}&where[name][v]=${name}`);
+
+  if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+    throw new Error(`Falha ao buscar status do módulo: ${module}.`);
+  }
+
+  return response.body.result.data[0];
+}
 
 async function createAddress(eventPayload) {
   const addressResponse = await $axios.$post('address', {
     street: eventPayload.address.street,
-    zipcode: eventPayload.cep,
-    number: eventPayload.number,
-    complement: eventPayload.complement || '',
+    zipcode: eventPayload.address.cep,
+    number: eventPayload.address.number,
+    complement: eventPayload.address.complement || '',
     neighborhood: eventPayload.address.neighborhood,
     latitude: eventPayload.address.latitude || null,
     longitude: eventPayload.address.longitude || null,
@@ -30,18 +34,22 @@ async function createAddress(eventPayload) {
 }
 
 async function createEvent(eventPayload, addressId) {
+
+  // Busca o status de evento rascunho
+  const statusResponse = await getStatusByModuleName('event', 'Rascunho');
+
   const eventResponse = await $axios.$post('event', {
     alias: eventPayload.alias,
     name: eventPayload.eventName,
     description: eventPayload.general_information,
-    status_id: STATUS.DRAFT,
+    status_id: statusResponse.id,
     address_id: addressId,
     category_id: eventPayload.category.value,
     rating_id: eventPayload.rating.value,
     start_date: `${eventPayload.startDate}T${eventPayload.startTime}:00.000Z`,
     end_date: `${eventPayload.endDate}T${eventPayload.endTime}:00.000Z`,
     general_information: eventPayload.general_information,
-    location_name: eventPayload.location_name,
+    location_name: eventPayload.address.location_name,
     availability: eventPayload.availability,
     sale_type: eventPayload.sale_type,
     event_type: eventPayload.event_type,
@@ -104,38 +112,66 @@ async function uploadEventBanner(attachmentId, banner) {
 async function createTicketsAndCategories(eventId, tickets) {
   const ticketMap = {}; // Mapeia nome do ingresso -> ID
   const categoryMap = new Map();
+
+  // Busca o status de ingresso disponível
+  const statusResponse = await getStatusByModuleName('ticket', 'Disponível');
+
   const ticketPromises = tickets.map(async (ticket, index) => {
-    let categoryId = categoryMap.get(ticket.category);
 
-    if (!categoryId) {
-      const categoryResponse = await $axios.$post('ticket-event-category', {
-        event_id: eventId,
-        name: ticket.category,
-      });
+    let categoryId = null;
 
-      if (!categoryResponse.body || categoryResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Failed to create ticket-event-category.');
+    // Se houver categoria, cria
+    if (ticket.category !== '') {
+
+      categoryId = categoryMap.get(ticket.category);
+
+      if (!categoryId) {
+        const categoryResponse = await $axios.$post('ticket-event-category', {
+          event_id: eventId,
+          name: ticket.category,
+        });
+
+        if (!categoryResponse.body || categoryResponse.body.code !== 'CREATE_SUCCESS') {
+          throw new Error('Failed to create ticket-event-category.');
+        }
+
+        categoryId = categoryResponse.body.result.id;
+        categoryMap.set(ticket.category, categoryId);
       }
 
-      categoryId = categoryResponse.body.result.id;
-      categoryMap.set(ticket.category, categoryId);
     }
 
-    const ticketResponse = await $axios.$post('ticket', {
+    // Cria ingresso condicionando se envia a categoria ou não
+    const payload = categoryId ? {
       event_id: eventId,
       ticket_event_category_id: categoryId,
       name: ticket.name,
       total_quantity: ticket.max_quantity,
       remaining_quantity: ticket.max_quantity,
       price: ticket.price,
-      status_id: STATUS.TICKET_AVAILABLE,
+      status_id: statusResponse.id,
       start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
       end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
       availability: ticket.availability.value,
       display_order: index + 1,
       min_quantity_per_user: ticket.min_purchase,
       max_quantity_per_user: ticket.max_purchase,
-    });
+    } : {
+      event_id: eventId,
+      name: ticket.name,
+      total_quantity: ticket.max_quantity,
+      remaining_quantity: ticket.max_quantity,
+      price: ticket.price,
+      status_id: statusResponse.id,
+      start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
+      end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
+      availability: ticket.availability.value,
+      display_order: index + 1,
+      min_quantity_per_user: ticket.min_purchase,
+      max_quantity_per_user: ticket.max_purchase,
+    }
+
+    const ticketResponse = await $axios.$post('ticket', payload);
 
     if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
       throw new Error('Failed to create ticket.');
@@ -248,13 +284,13 @@ async function createCouponTicketRelations(couponTicketMap, ticketMap) {
   }
 }
 
-async function createCoupons(eventId, coupons) {
+async function createCouponsWithTickets(eventId, coupons, statusId) {
   const couponTicketMap = {}; // Mapeia cupom -> ingressos
 
   const couponPromises = coupons.map(async (coupon) => {
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,
-      status_id: STATUS.COUPON_AVAILABLE,
+      status_id: statusId,
       code: coupon.code,
       discount_value: coupon.discountValue,
       discount_type: coupon.discountType.value,
@@ -281,6 +317,28 @@ async function createCoupons(eventId, coupons) {
   await Promise.all(couponPromises);
 
   return couponTicketMap; // Retorna o mapeamento dos cupons para os ingressos
+}
+
+async function createCouponsWithoutTickets(eventId, coupons, statusId) {
+
+  const couponPromises = coupons.map(async (coupon) => {
+    const couponResponse = await $axios.$post('coupon', {
+      event_id: eventId,
+      status_id: statusId,
+      code: coupon.code,
+      discount_value: coupon.discountValue,
+      discount_type: coupon.discountType.value,
+      max_uses: coupon.maxUses,
+      start_date: `${coupon.start_date}T${coupon.start_time}:00.000Z`,
+      end_date: `${coupon.end_date}T${coupon.end_time}:00.000Z`,
+    });
+
+    if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
+      throw new Error('Failed to event coupon.');
+    }
+  });
+
+  await Promise.all(couponPromises);
 }
 
 @Module({
@@ -359,9 +417,8 @@ export default class Event extends VuexModule {
       statistics: [
         {
           title: 'Visualizações',
-          value: `${
-            data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
-          }`,
+          value: `${data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
+            }`,
         },
         { title: 'Visibilidade', value: data.availability },
         {
@@ -587,31 +644,75 @@ export default class Event extends VuexModule {
 
       this.setProgressTitle('Salvando endereço');
 
-      const addressId = await createAddress(eventPayload);
+      let addressId = null;
+
+      if (eventPayload.event_type !== 'Online') {
+
+        addressId = await createAddress(eventPayload);
+
+      }
 
       const eventId = await createEvent(eventPayload, addressId);
 
-      const bannerId = await createEventBanner(eventId);
+      // Se houver banner, cria e faz upload
+      if (eventPayload.banner) {
 
-      const bannerUrl = await uploadEventBanner(bannerId, eventPayload.banner);
+        const bannerId = await createEventBanner(eventId);
 
-      await updateEventBanner(bannerId, bannerUrl);
+        const bannerUrl = await uploadEventBanner(bannerId, eventPayload.banner);
+
+        await updateEventBanner(bannerId, bannerUrl);
+
+      }
 
       this.setProgressTitle('Salvando ingressos e categorias');
 
-      const ticketMap = await createTicketsAndCategories(eventId, eventPayload.tickets);
+      // Se houver ingressos, cria e relaciona campos personalizados
 
-      this.setProgressTitle('Salvando campos personalizados');
+      let ticketMap = {};
 
-      const fieldTicketMap = await createCustomFields(eventId, eventPayload.customFields);
+      if (eventPayload.tickets.length > 0) {
 
-      await createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap);
+        ticketMap = await createTicketsAndCategories(eventId, eventPayload.tickets);
+
+        this.setProgressTitle('Salvando campos personalizados');
+
+        // Se houver campos personalizados, cria e relaciona com os ingressos
+        if (eventPayload.customFields.length > 0) {
+
+          const fieldTicketMap = await createCustomFields(eventId, eventPayload.customFields);
+
+          await createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap);
+
+        }
+
+      }
 
       this.setProgressTitle('Salvando cupons de desconto');
 
-      const couponTicketMap = await createCoupons(eventId, eventPayload.coupons);
+      let couponTicketMap = {};
 
-      await createCouponTicketRelations(couponTicketMap, ticketMap);
+      // Se houver cupons, cria
+      if (eventPayload.coupons.length > 0) {
+
+        const statusResponse = await getStatusByModuleName('coupon', 'Disponível');
+
+        const couponsWithTickets = eventPayload.coupons.filter((coupon) => coupon.tickets.length > 0);
+        const couponsWithoutTickets = eventPayload.coupons.filter((coupon) => coupon.tickets.length === 0);
+
+        if (couponsWithTickets.length > 0) {
+          couponTicketMap = await createCouponsWithTickets(eventId, couponsWithTickets, statusResponse.id);
+        }
+
+        if (couponsWithoutTickets.length > 0) {
+          await createCouponsWithoutTickets(eventId, couponsWithoutTickets, statusResponse.id);
+        }
+      }
+
+      // Se tiver ingressos e cupons, relaciona-os
+      if (Object.keys(ticketMap).length > 0 && Object.keys(couponTicketMap).length > 0) {
+        await createCouponTicketRelations(couponTicketMap, ticketMap);
+      }
 
       this.setSaving(false);
 

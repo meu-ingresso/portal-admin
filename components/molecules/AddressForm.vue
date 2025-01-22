@@ -2,8 +2,8 @@
   <v-row>
     <v-col cols="12" md="8" sm="12">
       <v-text-field
-        ref="localLocationName"
-        v-model="localLocationName"
+        ref="location_name"
+        v-model="localAddress.location_name"
         label="Local do Evento"
         outlined
         dense
@@ -15,8 +15,8 @@
 
     <v-col cols="12" md="4" sm="12">
       <v-text-field
-        ref="localCep"
-        v-model="localCep"
+        ref="cep"
+        v-model="localAddress.cep"
         label="CEP"
         outlined
         dense
@@ -62,8 +62,8 @@
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
-        ref="localNumer"
-        v-model="localNumer"
+        ref="number"
+        v-model="localAddress.number"
         label="Número"
         type="number"
         outlined
@@ -77,7 +77,7 @@
 
     <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
       <v-text-field
-        v-model="localComplement"
+        v-model="localAddress.complement"
         label="Complemento"
         outlined
         dense
@@ -93,22 +93,6 @@ import { onFormatCEP } from '@/utils/formatters';
 import { cep } from '@/store';
 export default {
   props: {
-    cep: {
-      type: String,
-      required: true,
-    },
-    locationName: {
-      type: String,
-      required: true,
-    },
-    number: {
-      type: String,
-      required: true,
-    },
-    complement: {
-      type: String,
-      default: '',
-    },
     address: {
       type: Object,
       required: true,
@@ -124,10 +108,6 @@ export default {
   },
   data() {
     return {
-      localCep: this.cep,
-      localLocationName: this.locationName,
-      localNumer: this.number,
-      localComplement: this.complement,
       localAddress: { ...this.address },
       isFetchingAddress: false,
       addressError: '',
@@ -147,36 +127,14 @@ export default {
     },
     form() {
       return {
-        localCep: this.localCep,
-        localLocationName: this.localLocationName,
-        localNumer: this.localNumer,
+        cep: this.localAddress.cep,
+        location_name: this.localAddress.location_name,
+        number: this.localAddress.number,
       };
     },
   },
 
   watch: {
-    cep(newVal) {
-      this.localCep = newVal;
-    },
-    locationName(newVal) {
-      this.localLocationName = newVal;
-    },
-    number(newVal) {
-      this.localNumer = newVal;
-    },
-    localLocationName(newVal) {
-      this.$emit('update:location-name', newVal);
-    },
-    localCep(newVal) {
-      this.$emit('update:cep', newVal);
-    },
-    localNumer(newVal) {
-      this.$emit('update:number', newVal);
-    },
-    localComplement(newVal) {
-      this.$emit('update:complement', newVal);
-    },
-
     address: {
       handler(newVal) {
         this.localAddress = { ...newVal };
@@ -189,7 +147,11 @@ export default {
           this.localAddress.street !== this.address.street ||
           this.localAddress.neighborhood !== this.address.neighborhood ||
           this.localAddress.city !== this.address.city ||
-          this.localAddress.state !== this.address.state
+          this.localAddress.state !== this.address.state ||
+          this.localAddress.cep !== this.address.cep ||
+          this.localAddress.number !== this.address.number ||
+          this.localAddress.complement !== this.address.complement ||
+          this.localAddress.location_name !== this.address.location_name
         ) {
           this.$emit('update:address', newVal);
         }
@@ -200,6 +162,11 @@ export default {
   created() {
     this.debouncerCEP = new Debounce(this.fetchAddressByCEP, 300);
   },
+
+  mounted() {
+    this.clearAddress();
+  },
+
   methods: {
     clearAddress() {
       this.localAddress = {
@@ -207,40 +174,43 @@ export default {
         neighborhood: '',
         city: '',
         state: '',
+        cep: '',
+        number: '',
+        complement: '',
+        location_name: '',
       };
-      this.localCep = '';
-      this.addressError = '';
-      this.$emit('update:cep', '');
       this.$emit('update:address', this.localAddress);
     },
 
     validate() {
       this.formHasErrors = false;
 
-      if (this.localCep !== '') {
-        this.$refs.localCep.validate(true);
-        this.$refs.localNumer.validate(true);
-        this.$refs.localLocationName.validate(true);
-      } else {
-        this.$refs.localCep.validate(true);
-        this.$refs.localLocationName.validate(true);
-      }
+      Object.keys(this.form).forEach((f) => {
+        if (!this.form[f]) {
+          this.formHasErrors = true;
+        }
+
+        if (this.$refs[f] && !this.$refs[f].validate(true)) {
+          this.formHasErrors = true;
+        }
+      });
 
       return this.formHasErrors;
     },
 
     onChangeCEP() {
-      this.localCep = onFormatCEP(this.localCep);
+      this.localAddress.cep = onFormatCEP(this.localAddress.cep);
       this.debouncerCEP.execute();
     },
     async fetchAddressByCEP() {
-      if (this.localCep.length === 9) {
+      if (this.localAddress.cep.length === 9) {
         this.isFetchingAddress = true;
         this.addressError = '';
         try {
-          const responseCEP = await cep.fetchCep(this.localCep);
+          const responseCEP = await cep.fetchCep(this.localAddress.cep);
 
           this.localAddress = {
+            ...this.localAddress,
             street: responseCEP.street,
             neighborhood: responseCEP.neighborhood,
             city: responseCEP.city,
@@ -252,12 +222,7 @@ export default {
         } catch (error) {
           console.error('Erro ao buscar endereço:', error);
           this.addressError = 'Endereço não encontrado. Verifique o CEP digitado.';
-          this.localAddress = {
-            street: '',
-            neighborhood: '',
-            city: '',
-            state: '',
-          };
+          this.clearAddress();
         } finally {
           this.isFetchingAddress = false;
         }
