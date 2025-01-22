@@ -72,6 +72,8 @@
 
         <div class="d-flex align-center">
           <a :href="aliasUrl" target="_blank">{{ aliasUrl }}</a>
+
+          <v-icon size="16" class="ml-2" @click="copyAlias">mdi-content-copy</v-icon>
         </div>
       </div>
     </template>
@@ -122,6 +124,8 @@
 <script>
 import { formatDateToCustomString, formatHourToBr } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
+import { toast } from '@/store';
+
 export default {
   props: {
     title: { type: String, default: '-' },
@@ -174,6 +178,16 @@ export default {
   methods: {
     handleMapDialog() {
       this.mapDialog = !this.mapDialog;
+    },
+
+    copyAlias() {
+      navigator.clipboard.writeText(this.aliasUrl);
+
+      toast.setToast({
+        text: `Link copiado com sucesso!`,
+        type: 'success',
+        time: 5000,
+      });
     },
   },
 };
