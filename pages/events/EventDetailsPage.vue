@@ -1,26 +1,30 @@
 <template>
-  <v-container>
-    <Lottie
-      v-if="isLoading || isLoadingEvent"
-      path="./animations/loading_default.json"
-      height="300"
-      width="300" />
+  <div>
+    <v-container>
+      <Lottie
+        v-if="isLoading || isLoadingEvent"
+        path="./animations/loading_default.json"
+        height="300"
+        width="300" />
 
-    <div v-else>
-      <EventDrawer :drawer="drawer" :event-data="eventData" />
+      <div v-else>
+        <EventDrawer :drawer="drawer" :event-data="eventData" />
 
-      <div v-if="eventData && !eventInvalid && userHasPermission">
-        <EventDetailsTemplate v-if="isDetails" :event="eventData" />
-        <EventDetailsTicketsTemplate v-if="isTickets" :event="eventData" />
+        <div v-if="eventData && !eventInvalid && userHasPermission">
+          <EventDetailsTemplate v-if="isDetails" :event="eventData" />
+          <EventDetailsTicketsTemplate v-if="isTickets" :event="eventData" />
+        </div>
+
+        <ValueNoExists v-if="eventInvalid" text="Evento não encontrado" />
+
+        <ValueNoExists
+          v-else-if="eventData && !userHasPermission"
+          text="Você não possui acesso à esse evento" />
       </div>
+    </v-container>
 
-      <ValueNoExists v-if="eventInvalid" text="Evento não encontrado" />
-
-      <ValueNoExists
-        v-else-if="eventData && !userHasPermission"
-        text="Você não possui acesso à esse evento" />
-    </div>
-  </v-container>
+    <Toast />
+  </div>
 </template>
 
 <script>
