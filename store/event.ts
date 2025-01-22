@@ -4,7 +4,9 @@ import { SearchPayload } from '~/models';
 import { formatRealValue } from '~/utils/formatters';
 
 async function getStatusByModuleName(module, name) {
-  const response = await $axios.$get(`statuses?where[module][v]=${module}&where[name][v]=${name}`);
+  const response = await $axios.$get(
+    `statuses?where[module][v]=${module}&where[name][v]=${name}`
+  );
 
   if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
     throw new Error(`Falha ao buscar status do módulo: ${module}.`);
@@ -34,7 +36,6 @@ async function createAddress(eventPayload) {
 }
 
 async function createEvent(eventPayload, addressId) {
-
   // Busca o status de evento rascunho
   const statusResponse = await getStatusByModuleName('event', 'Rascunho');
 
@@ -117,12 +118,10 @@ async function createTicketsAndCategories(eventId, tickets) {
   const statusResponse = await getStatusByModuleName('ticket', 'Disponível');
 
   const ticketPromises = tickets.map(async (ticket, index) => {
-
     let categoryId = null;
 
     // Se houver categoria, cria
     if (ticket.category !== '') {
-
       categoryId = categoryMap.get(ticket.category);
 
       if (!categoryId) {
@@ -138,38 +137,39 @@ async function createTicketsAndCategories(eventId, tickets) {
         categoryId = categoryResponse.body.result.id;
         categoryMap.set(ticket.category, categoryId);
       }
-
     }
 
     // Cria ingresso condicionando se envia a categoria ou não
-    const payload = categoryId ? {
-      event_id: eventId,
-      ticket_event_category_id: categoryId,
-      name: ticket.name,
-      total_quantity: ticket.max_quantity,
-      remaining_quantity: ticket.max_quantity,
-      price: ticket.price,
-      status_id: statusResponse.id,
-      start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
-      end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
-      availability: ticket.availability.value,
-      display_order: index + 1,
-      min_quantity_per_user: ticket.min_purchase,
-      max_quantity_per_user: ticket.max_purchase,
-    } : {
-      event_id: eventId,
-      name: ticket.name,
-      total_quantity: ticket.max_quantity,
-      remaining_quantity: ticket.max_quantity,
-      price: ticket.price,
-      status_id: statusResponse.id,
-      start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
-      end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
-      availability: ticket.availability.value,
-      display_order: index + 1,
-      min_quantity_per_user: ticket.min_purchase,
-      max_quantity_per_user: ticket.max_purchase,
-    }
+    const payload = categoryId
+      ? {
+          event_id: eventId,
+          ticket_event_category_id: categoryId,
+          name: ticket.name,
+          total_quantity: ticket.max_quantity,
+          remaining_quantity: ticket.max_quantity,
+          price: ticket.price,
+          status_id: statusResponse.id,
+          start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
+          end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
+          availability: ticket.availability.value,
+          display_order: index + 1,
+          min_quantity_per_user: ticket.min_purchase,
+          max_quantity_per_user: ticket.max_purchase,
+        }
+      : {
+          event_id: eventId,
+          name: ticket.name,
+          total_quantity: ticket.max_quantity,
+          remaining_quantity: ticket.max_quantity,
+          price: ticket.price,
+          status_id: statusResponse.id,
+          start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
+          end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
+          availability: ticket.availability.value,
+          display_order: index + 1,
+          min_quantity_per_user: ticket.min_purchase,
+          max_quantity_per_user: ticket.max_purchase,
+        };
 
     const ticketResponse = await $axios.$post('ticket', payload);
 
@@ -320,7 +320,6 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
 }
 
 async function createCouponsWithoutTickets(eventId, coupons, statusId) {
-
   const couponPromises = coupons.map(async (coupon) => {
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,
@@ -417,8 +416,9 @@ export default class Event extends VuexModule {
       statistics: [
         {
           title: 'Visualizações',
-          value: `${data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
-            }`,
+          value: `${
+            data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
+          }`,
         },
         { title: 'Visibilidade', value: data.availability },
         {
@@ -582,7 +582,7 @@ export default class Event extends VuexModule {
       'rating',
       'tickets:status',
       'status',
-      'address:city:state',
+      'address',
       'category',
       'attachments',
       'collaborators',
@@ -647,22 +647,18 @@ export default class Event extends VuexModule {
       let addressId = null;
 
       if (eventPayload.event_type !== 'Online') {
-
         addressId = await createAddress(eventPayload);
-
       }
 
       const eventId = await createEvent(eventPayload, addressId);
 
       // Se houver banner, cria e faz upload
       if (eventPayload.banner) {
-
         const bannerId = await createEventBanner(eventId);
 
         const bannerUrl = await uploadEventBanner(bannerId, eventPayload.banner);
 
         await updateEventBanner(bannerId, bannerUrl);
-
       }
 
       // Se houver ingressos, cria e relaciona campos personalizados
@@ -670,7 +666,6 @@ export default class Event extends VuexModule {
       let ticketMap = {};
 
       if (eventPayload.tickets.length > 0) {
-
         this.setProgressTitle('Salvando ingressos e categorias');
 
         ticketMap = await createTicketsAndCategories(eventId, eventPayload.tickets);
@@ -679,13 +674,13 @@ export default class Event extends VuexModule {
 
         // Se houver campos personalizados, cria e relaciona com os ingressos
         if (eventPayload.customFields.length > 0) {
-
-          const fieldTicketMap = await createCustomFields(eventId, eventPayload.customFields);
+          const fieldTicketMap = await createCustomFields(
+            eventId,
+            eventPayload.customFields
+          );
 
           await createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap);
-
         }
-
       }
 
       this.setProgressTitle('Salvando cupons de desconto');
@@ -694,18 +689,29 @@ export default class Event extends VuexModule {
 
       // Se houver cupons, cria
       if (eventPayload.coupons.length > 0) {
-
         const statusResponse = await getStatusByModuleName('coupon', 'Disponível');
 
-        const couponsWithTickets = eventPayload.coupons.filter((coupon) => coupon.tickets.length > 0);
-        const couponsWithoutTickets = eventPayload.coupons.filter((coupon) => coupon.tickets.length === 0);
+        const couponsWithTickets = eventPayload.coupons.filter(
+          (coupon) => coupon.tickets.length > 0
+        );
+        const couponsWithoutTickets = eventPayload.coupons.filter(
+          (coupon) => coupon.tickets.length === 0
+        );
 
         if (couponsWithTickets.length > 0) {
-          couponTicketMap = await createCouponsWithTickets(eventId, couponsWithTickets, statusResponse.id);
+          couponTicketMap = await createCouponsWithTickets(
+            eventId,
+            couponsWithTickets,
+            statusResponse.id
+          );
         }
 
         if (couponsWithoutTickets.length > 0) {
-          await createCouponsWithoutTickets(eventId, couponsWithoutTickets, statusResponse.id);
+          await createCouponsWithoutTickets(
+            eventId,
+            couponsWithoutTickets,
+            statusResponse.id
+          );
         }
       }
 
