@@ -158,10 +158,6 @@ export default {
     },
   },
 
-  mounted() {
-    console.log(this.latitude, this.longitude);
-  },
-
   methods: {
     handleMapDialog() {
       this.mapDialog = !this.mapDialog;
