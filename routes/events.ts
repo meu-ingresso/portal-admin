@@ -43,7 +43,7 @@ export default [
     name: 'Detalhe de Eventos',
     meta: {
       name: 'eventsDetails',
-      template: 'details'
+      template: 'panel',
     },
     children: [
       {
@@ -51,7 +51,15 @@ export default [
         name: 'eventsDetails',
         meta: {
           name: 'eventsDetails',
-          template: 'details'
+          template: 'panel',
+        },
+      },
+      {
+        path: 'details',
+        name: 'eventsDetailsInfo',
+        meta: {
+          name: 'eventsDetails',
+          template: 'details',
         },
       },
       {
@@ -59,9 +67,9 @@ export default [
         name: 'eventsDetailsTickets',
         meta: {
           name: 'eventsDetails',
-          template: 'tickets'
+          template: 'tickets',
         },
       },
     ],
-  }
+  },
 ];
