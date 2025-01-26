@@ -1,25 +1,26 @@
 <template>
   <div>
     <v-container>
+      <EventDrawer :drawer="drawer" :event-data="currentEvent" />
+
       <Lottie
-        v-if="isLoading || isLoadingEvent"
+        v-if="(isLoading || isLoadingEvent) && !currentEvent"
         path="./animations/loading_default.json"
         height="300"
         width="300" />
 
-      <div v-else>
-        <EventDrawer :drawer="drawer" :event-data="eventData" />
+      <div v-else-if="eventInvalid">
+        <ValueNoExists text="Evento não encontrado" />
+      </div>
 
-        <div v-if="eventData && !eventInvalid && userHasPermission">
-          <EventDetailsTemplate v-if="isDetails" :event="eventData" />
-          <EventDetailsTicketsTemplate v-if="isTickets" :event="eventData" />
-        </div>
+      <div v-else-if="currentEvent && !userHasPermission">
+        <ValueNoExists text="Você não possui acesso à esse evento" />
+      </div>
 
-        <ValueNoExists v-if="eventInvalid" text="Evento não encontrado" />
-
-        <ValueNoExists
-          v-else-if="eventData && !userHasPermission"
-          text="Você não possui acesso à esse evento" />
+      <div v-else-if="currentEvent">
+        <EventDetailsTemplate v-if="isPanel" />
+        <EventGeneralInfoTemplate v-if="isDetails" />
+        <EventDetailsTicketsTemplate v-if="isTickets" />
       </div>
     </v-container>
 
@@ -35,7 +36,6 @@ export default {
     return {
       eventInvalid: false,
       drawer: true,
-      eventData: null,
     };
   },
 
@@ -48,13 +48,22 @@ export default {
       return event.$isLoading;
     },
 
+    currentEvent() {
+      return event.$selectedEvent;
+    },
+
     currentRouter() {
       return this.$route;
+    },
+
+    isPanel() {
+      return this.$route.meta.template === 'panel';
     },
 
     isDetails() {
       return this.$route.meta.template === 'details';
     },
+
     isTickets() {
       return this.$route.meta.template === 'tickets';
     },
@@ -73,42 +82,57 @@ export default {
     },
 
     userHasPermission() {
-      const eventSelected = this.eventData;
-
-      if (!eventSelected || !eventSelected.id) return false;
+      if (!this.currentEvent) return true;
 
       return (
-        eventSelected.collaborators?.some(
+        this.currentEvent.collaborators?.some(
           (collaborator) => collaborator.id === this.userId
         ) ||
-        eventSelected.promoter_id === this.userId ||
+        this.currentEvent.promoter_id === this.userId ||
         this.isAdmin
       );
     },
   },
 
-  mounted() {
-    console.log('Buscando dados do evento');
-    this.fetchEventData();
+  watch: {
+    '$route.params.id': {
+      immediate: true,
+      handler(newId) {
+        if (newId) {
+          this.fetchEventData();
+        }
+      },
+    },
+
+    '$route.meta.template': {
+      handler() {
+        if (this.$route.params.id && !this.currentEvent) {
+          this.fetchEventData();
+        }
+      },
+    },
   },
 
   methods: {
     async fetchEventData() {
       try {
+        this.eventInvalid = false;
+        if (!this.$route.params.id || this.currentEvent?.id === this.$route.params.id) {
+          return;
+        }
+
         const response = await event.getById(this.$route.params.id);
 
         if (!response?.body || response.body.code !== 'SEARCH_SUCCESS') {
           this.eventInvalid = true;
-          this.eventData = null;
           return;
         }
 
-        this.eventData = event.$selectedEvent;
-        this.eventInvalid = false;
+        if (!event.$selectedEvent) {
+          this.eventInvalid = true;
+        }
       } catch (error) {
-        console.error('Erro ao buscar dados do evento:', error);
         this.eventInvalid = true;
-        this.eventData = null;
       }
     },
   },
