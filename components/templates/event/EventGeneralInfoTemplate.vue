@@ -35,7 +35,7 @@
             <h4 class="card-title">Local e Data</h4>
 
             <div class="info-item">
-              <span class="info-label">Nome do Local:</span>
+              <span class="info-label">Nome:</span>
               <span class="info-value">{{ currentEvent.location_name || '-' }}</span>
             </div>
 
