@@ -8,7 +8,10 @@
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
     <v-list class="py-0">
       <v-list-item class="event-detail-image">
-        <v-img v-if="selectedEventBanner" :src="selectedEventBanner"></v-img>
+        <v-img
+          v-if="selectedEventBanner || cachedBanner?.url"
+          :src="selectedEventBanner || cachedBanner?.url"></v-img>
+
         <div v-else class="d-flex justify-center align-center" style="margin: 0 auto">
           <v-progress-circular
             indeterminate
@@ -101,6 +104,7 @@ export default {
   data() {
     return {
       selectedItem: null,
+      cachedBanner: null,
     };
   },
 
@@ -118,12 +122,13 @@ export default {
     },
 
     selectedEventBanner() {
-      if (!this.eventData) return null;
+      if (!this.eventData) return this.cachedBanner?.url || null;
 
       const banner = this.eventData.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
-      return banner ? banner.image_url : require(`~/assets/images/default_banner.png`);;
+
+      return banner ? banner.image_url : require(`~/assets/images/default_banner.png`);
     },
 
     routerParams() {
@@ -202,9 +207,32 @@ export default {
         }
       },
     },
+
+    'eventData.id': {
+      handler(newId) {
+        if (!newId) return;
+
+        if (this.selectedEventBanner) {
+          this.cachedBanner = {
+            eventId: newId,
+            url: this.selectedEventBanner,
+          };
+        }
+      },
+    },
   },
 
-  methods: {},
+  methods: {
+    getCurrentBannerUrl() {
+      if (!this.eventData) return null;
+
+      const banner = this.eventData.attachments.find(
+        (attach) => attach.type === 'image' && attach.name === 'banner'
+      );
+
+      return banner ? banner.image_url : require(`~/assets/images/default_banner.png`);
+    },
+  },
 };
 </script>
 
@@ -244,5 +272,13 @@ export default {
 .event-detail-image {
   margin: 8px;
   padding: 0;
+  height: 200px;
+  overflow: hidden;
+
+  .v-image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
 }
 </style>
