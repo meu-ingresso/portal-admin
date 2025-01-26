@@ -380,7 +380,7 @@
 
 <script>
 import Debounce from '@/utils/Debounce';
-import { event, eventForm, toast, openAi } from '@/store';
+import { event, eventForm, toast, openAI } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
@@ -548,7 +548,7 @@ export default {
         event_description: this.localForm.general_information,
       };
 
-      const result = await openAi.improveDescription(payload);
+      const result = await openAI.improveDescription(payload);
 
       if (result?.body?.code === 'IMPROVE_SUCCESS') {
         this.localForm.general_information = result.body.result;
