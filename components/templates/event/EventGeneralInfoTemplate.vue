@@ -1,7 +1,26 @@
 <template>
   <div v-if="currentEvent" class="event-details">
     <div class="event-details-wrapper">
-      <h3 class="section-title">Informações Gerais</h3>
+      <div class="d-flex align-center mb-6">
+        <h3 class="section-title mb-0">Informações Gerais</h3>
+
+        <v-spacer />
+
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              class="ml-4"
+              v-bind="attrs"
+              v-on="on"
+              @click="editDialog = true">
+              <v-icon color="primary">mdi-pencil</v-icon>
+            </v-btn>
+          </template>
+          <span>Editar Evento</span>
+        </v-tooltip>
+      </div>
 
       <v-row>
         <v-col cols="12" md="6">
@@ -118,7 +137,7 @@
             <p v-else class="info-text">{{ currentEvent.description || '-' }}</p>
           </div>
 
-          <v-dialog v-model="improveDescriptionDialog" max-width="700px">
+          <v-dialog v-model="improveDescriptionDialog" max-width="700px" persistent>
             <v-card>
               <v-card-title class="d-flex align-center">
                 Melhorar Descrição com IA
@@ -233,6 +252,8 @@
         </v-col>
       </v-row>
     </div>
+
+    <EventEditForm v-if="editDialog" v-model="editDialog" />
   </div>
 </template>
 
@@ -248,12 +269,13 @@ export default {
       improvedDescription: '',
       isLoadingDescription: false,
       isUpdatingDescription: false,
+      editDialog: false,
     };
   },
 
   computed: {
     currentEvent() {
-      return event.$selectedEvent;
+      return event.$event;
     },
 
     fullAddress() {
@@ -278,7 +300,8 @@ export default {
     },
 
     googleMapsEmbedUrl() {
-      const { latitude, longitude } = this.currentEvent?.address || {};
+      if (!this.hasValidCoordinates) return '';
+      const { latitude, longitude } = this.currentEvent.address;
       return `https://www.google.com/maps/embed/v1/place?key=AIzaSyAnkqplDONBqIfUvJCGfFWpLXAhPPx8ig0&q=${latitude},${longitude}`;
     },
   },
