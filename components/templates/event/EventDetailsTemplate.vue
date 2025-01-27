@@ -21,7 +21,7 @@ import { event } from '@/store';
 export default {
   computed: {
     currentEvent() {
-      return event.$selectedEvent;
+      return event.$event;
     },
 
     hasTickets() {

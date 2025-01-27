@@ -82,8 +82,12 @@
 </template>
 
 <script>
-import { category, rating, loading, toast, eventForm, event } from '@/store';
+import StepGeneralInfo from '../../organisms/event/StepGeneralInfo.vue';
+import StepTickets from '../../organisms/event/StepTickets.vue';
+import StepCustomFields from '../../organisms/event/StepCustomFields.vue';
+import StepCoupons from '../../organisms/event/StepCoupons.vue';
 import { isMobileDevice } from '@/utils/utils';
+import { category, rating, loading, toast, eventForm, event } from '@/store';
 
 export default {
   data() {

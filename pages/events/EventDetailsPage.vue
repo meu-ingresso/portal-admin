@@ -49,7 +49,7 @@ export default {
     },
 
     currentEvent() {
-      return event.$selectedEvent;
+      return event.$event;
     },
 
     currentRouter() {
@@ -128,7 +128,7 @@ export default {
           return;
         }
 
-        if (!event.$selectedEvent) {
+        if (!event.$event) {
           this.eventInvalid = true;
         }
       } catch (error) {
