@@ -106,7 +106,9 @@
             :options="options"
             @update:field="updateNewFieldFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-5">
+        <v-card-actions class="d-flex align-center py-5">
+          <v-spacer />
+
           <DefaultButton outlined text="Cancelar" @click="newFieldModal = false" />
           <DefaultButton text="Salvar" @click="saveNewField" />
         </v-card-actions>

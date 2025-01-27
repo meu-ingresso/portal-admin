@@ -69,7 +69,9 @@
             :event-end-date="form.endDate"
             @update:coupon="updateNewCouponFields" />
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-5">
+        <v-card-actions class="d-flex align-center py-5">
+          <v-spacer />
+
           <DefaultButton outlined text="Cancelar" @click="newCouponModal = false" />
           <DefaultButton text="Salvar" @click="saveNewCoupon" />
         </v-card-actions>
