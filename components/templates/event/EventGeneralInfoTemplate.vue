@@ -189,7 +189,7 @@
                 </div>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3">
+              <v-col cols="12" sm="6" md="3" class="pl-2">
                 <div class="info-item mb-0 d-flex justify-space-between">
                   <div class="d-flex align-center">
                     <v-tooltip bottom>
