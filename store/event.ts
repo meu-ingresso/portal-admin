@@ -18,7 +18,7 @@ async function getStatusByModuleName(module, name) {
 async function createAddress(eventPayload) {
   const addressResponse = await $axios.$post('address', {
     street: eventPayload.address.street,
-    zipcode: eventPayload.address.cep,
+    zipcode: eventPayload.address.zipcode,
     number: eventPayload.address.number,
     complement: eventPayload.address.complement || '',
     neighborhood: eventPayload.address.neighborhood,
@@ -341,7 +341,6 @@ async function createCouponsWithoutTickets(eventId, coupons, statusId) {
 })
 export default class Event extends VuexModule {
   private eventList = [];
-  private selectedEvent = null;
   private isLoading: boolean = false;
   private isLoadingAlias: boolean = false;
   private isSaving: boolean = false;
@@ -353,12 +352,28 @@ export default class Event extends VuexModule {
     return this.eventList;
   }
 
-  public get $selectedEvent() {
-    if (!this.selectedEvent) return null;
+  private event: any = {
+    location_name: '',
+    address: {
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zipcode: '',
+    },
+  };
+
+  private copyEvent = null;
+
+  public get $event() {
+    if (!this.event) return null;
 
     return {
-      ...this.selectedEvent,
-      location: `${this.selectedEvent.address.street}, ${this.selectedEvent.address.number} - ${this.selectedEvent.address.neighborhood}, ${this.selectedEvent.address.city} - ${this.selectedEvent.address.state}`,
+      ...this.event,
+
+      location: `${this.event.address.street}, ${this.event.address.number} - ${this.event.address.neighborhood}, ${this.event.address.city} - ${this.event.address.state}`,
     };
   }
 
@@ -395,14 +410,14 @@ export default class Event extends VuexModule {
   }
 
   @Mutation
-  private SET_SELECTED_EVENT(data: any) {
+  private SET_EVENT(data: any) {
     const ticketsTypes = data.tickets.map((ticket) => ticket.name);
 
     const ticketSales = data.tickets.filter(
       (ticket) => ticket.total_quantity > ticket.remaining_quantity
     );
 
-    this.selectedEvent = {
+    this.event = {
       ...data,
       title: data.name,
       statusText: data.status.name,
@@ -443,6 +458,13 @@ export default class Event extends VuexModule {
         hasSales: ticket.total_quantity > ticket.remaining_quantity,
       })),
     };
+
+    this.copyEvent = {
+      ...this.event,
+    };
+
+    console.log('this.copyEvent', this.copyEvent);
+    console.log('this.event', this.event);
   }
 
   @Mutation
@@ -506,8 +528,8 @@ export default class Event extends VuexModule {
   }
 
   @Action
-  public setSelectedEvent(data: any) {
-    this.context.commit('SET_SELECTED_EVENT', data);
+  public setEvent(data: any) {
+    this.context.commit('SET_EVENT', data);
   }
 
   @Action
@@ -595,7 +617,7 @@ export default class Event extends VuexModule {
 
         this.setLoading(false);
 
-        this.context.commit('SET_SELECTED_EVENT', response.body.result.data[0]);
+        this.context.commit('SET_EVENT', response.body.result.data[0]);
         return response;
       })
       .catch(() => {
