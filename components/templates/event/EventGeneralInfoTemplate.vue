@@ -163,53 +163,55 @@
             <h4 class="card-title">Configurações</h4>
 
             <v-row>
-              <v-col cols="12" sm="6" md="3">
+              <v-col cols="12" sm="6" md="3" class="pl-2">
                 <div class="info-item mb-0 d-flex justify-space-between">
                   <div class="d-flex align-center">
-                    <span class="info-label">Evento em Destaque:</span>
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <v-icon color="grey" v-bind="attrs" v-on="on">
+                          mdi-information
+                        </v-icon>
+                      </template>
+                      <span>
+                        {{
+                          currentEvent.is_featured
+                            ? 'Este evento aparecerá em destaque na página inicial do site'
+                            : 'Este evento não aparecerá em destaque na página inicial do site'
+                        }}
+                      </span>
+                    </v-tooltip>
+
+                    <span class="info-label ml-2">Evento em Destaque:</span>
                     <span class="info-value">{{
                       currentEvent.is_featured ? 'Sim' : 'Não'
                     }}</span>
                   </div>
-                  <v-tooltip bottom>
-                    <template #activator="{ on, attrs }">
-                      <v-icon color="grey" class="ml-1" v-bind="attrs" v-on="on">
-                        mdi-information
-                      </v-icon>
-                    </template>
-                    <span>
-                      {{
-                        currentEvent.is_featured
-                          ? 'Este evento aparecerá em destaque na página inicial do site'
-                          : 'Este evento não aparecerá em destaque na página inicial do site'
-                      }}
-                    </span>
-                  </v-tooltip>
                 </div>
               </v-col>
 
               <v-col cols="12" sm="6" md="3">
                 <div class="info-item mb-0 d-flex justify-space-between">
                   <div class="d-flex align-center">
-                    <span class="info-label">Absorver Taxa:</span>
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <v-icon color="grey" v-bind="attrs" v-on="on">
+                          mdi-information
+                        </v-icon>
+                      </template>
+                      <span>
+                        {{
+                          currentEvent.absorb_service_fee
+                            ? 'O organizador absorverá a taxa de serviço do ingresso'
+                            : 'A taxa de serviço será repassada ao comprador do ingresso'
+                        }}
+                      </span>
+                    </v-tooltip>
+
+                    <span class="info-label ml-2">Absorver Taxa:</span>
                     <span class="info-value">{{
                       currentEvent.absorb_service_fee ? 'Sim' : 'Não'
                     }}</span>
                   </div>
-                  <v-tooltip bottom>
-                    <template #activator="{ on, attrs }">
-                      <v-icon color="grey" class="ml-1" v-bind="attrs" v-on="on">
-                        mdi-information
-                      </v-icon>
-                    </template>
-                    <span>
-                      {{
-                        currentEvent.absorb_service_fee
-                          ? 'O organizador absorverá a taxa de serviço do ingresso'
-                          : 'A taxa de serviço será repassada ao comprador do ingresso'
-                      }}
-                    </span>
-                  </v-tooltip>
                 </div>
               </v-col>
 
