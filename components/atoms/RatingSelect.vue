@@ -13,9 +13,6 @@
     :return-object="true"
     :menu-props="{ contentClass: 'rating-select-dropdown' }"
     class="rating-select">
-    <!-- Template Customizado para Itens -->
-
-    <!-- Template Customizado para Itens -->
     <template #selection="{ item }">
       <div v-if="item && item.img" class="d-flex align-center">
         <v-img :src="item.img" alt="Rating Image" class="rating-image" />

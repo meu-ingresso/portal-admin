@@ -140,7 +140,7 @@ export default {
     },
 
     currentEvent() {
-      return event.$selectedEvent;
+      return event.$event;
     },
 
     hasValidCoordinates() {
