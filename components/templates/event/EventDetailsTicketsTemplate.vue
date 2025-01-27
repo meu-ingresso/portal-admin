@@ -1,16 +1,10 @@
 <template>
-  <div class="event-details">
-    <EventDetailsHeader
-      :title="event.title"
-      :status-text="event.statusText"
-      :location="event.location"
-      :start-date="event.start_date"
-      :end-date="event.end_date"
-      :promoters="event.promoters" />
+  <div v-if="currentEvent" class="event-details">
+    <EventDetailsHeader />
     <div class="event-details-wrapper">
       <TicketStatistics :statistics="statistics" />
       <EventTickets
-        :tickets="event.tickets"
+        :tickets="currentEvent.tickets"
         title="Tipos de ingressos"
         title-size="16px" />
     </div>
@@ -18,26 +12,30 @@
 </template>
 
 <script>
+import { event } from '@/store';
+
 export default {
-  props: {
-    event: { type: Object, required: true },
-  },
-
   computed: {
-    statistics() {
-      if (!this.event) return [];
+    currentEvent() {
+      return event.$selectedEvent;
+    },
 
-      const totalSales = this.event.tickets.reduce(
+    statistics() {
+      if (!this.currentEvent?.tickets) return [];
+
+      const totalSales = this.currentEvent.tickets.reduce(
         (acc, ticket) => acc + (ticket.total_quantity - ticket.remaining_quantity),
         0
       );
 
-      const totalQuantity = this.event.tickets.reduce(
+      const totalQuantity = this.currentEvent.tickets.reduce(
         (acc, ticket) => acc + ticket.total_quantity,
         0
       );
 
-      const totalHasSales = this.event.tickets.filter((ticket) => ticket.hasSales).length;
+      const totalHasSales = this.currentEvent.tickets.filter(
+        (ticket) => ticket.hasSales
+      ).length;
 
       return [
         {
@@ -46,7 +44,7 @@ export default {
         },
         {
           title: 'Ingressos à venda',
-          value: `${totalHasSales} / ${this.event.tickets.length}`,
+          value: `${totalHasSales} / ${this.currentEvent.tickets.length}`,
         },
       ];
     },

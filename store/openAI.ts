@@ -2,11 +2,11 @@ import { Module, VuexModule, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 
 @Module({
-  name: 'openAi',
+  name: 'openAI',
   stateFactory: true,
   namespaced: true,
 })
-export default class OpenAi extends VuexModule {
+export default class OpenAI extends VuexModule {
   @Action
   public async improveDescription(payload: any) {
     return await $axios

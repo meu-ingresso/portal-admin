@@ -142,21 +142,7 @@ async function createTicketsAndCategories(eventId, tickets) {
     const ticketPrice = parseFloat(ticket.price.replace(',', '.'));
 
     // Cria ingresso condicionando se envia a categoria ou não
-    const payload = categoryId ? {
-      event_id: eventId,
-      ticket_event_category_id: categoryId,
-      name: ticket.name,
-      total_quantity: ticket.max_quantity,
-      remaining_quantity: ticket.max_quantity,
-      price: ticketPrice,
-      status_id: statusResponse.id,
-      start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
-      end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
-      availability: ticket.availability.value,
-      display_order: index + 1,
-      min_quantity_per_user: ticket.min_purchase,
-      max_quantity_per_user: ticket.max_purchase,
-    } : {
+    const payload: any = {
       event_id: eventId,
       name: ticket.name,
       total_quantity: ticket.max_quantity,
@@ -169,6 +155,10 @@ async function createTicketsAndCategories(eventId, tickets) {
       display_order: index + 1,
       min_quantity_per_user: ticket.min_purchase,
       max_quantity_per_user: ticket.max_purchase,
+    };
+
+    if (categoryId) {
+      payload.ticket_event_category_id = categoryId;
     }
 
     const ticketResponse = await $axios.$post('ticket', payload);
@@ -288,7 +278,6 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
   const couponTicketMap = {}; // Mapeia cupom -> ingressos
 
   const couponPromises = coupons.map(async (coupon) => {
-
     const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
 
     const couponResponse = await $axios.$post('coupon', {
@@ -324,7 +313,6 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
 
 async function createCouponsWithoutTickets(eventId, coupons, statusId) {
   const couponPromises = coupons.map(async (coupon) => {
-
     const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
 
     const couponResponse = await $axios.$post('coupon', {
@@ -422,8 +410,9 @@ export default class Event extends VuexModule {
       statistics: [
         {
           title: 'Visualizações',
-          value: `${data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
-            }`,
+          value: `${
+            data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
+          }`,
         },
         { title: 'Visibilidade', value: data.availability },
         {
@@ -605,6 +594,7 @@ export default class Event extends VuexModule {
           throw new Error(response);
 
         this.setLoading(false);
+
         this.context.commit('SET_SELECTED_EVENT', response.body.result.data[0]);
         return response;
       })
