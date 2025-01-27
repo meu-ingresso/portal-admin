@@ -1,28 +1,25 @@
 <template>
-  <div class="event-details-header">
+  <div v-if="currentEvent" class="event-details-header">
     <template v-if="!isMobile">
       <div class="event-title-wrapper mb-2">
-        <div class="event-title">{{ title }}</div>
+        <div class="event-title">{{ currentEvent.title }}</div>
 
         <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-        <StatusBadge :text="statusText" />
+        <StatusBadge :text="currentEvent.statusText" />
 
-        <PromotersBadge :count="promoters" />
+        <PromotersBadge :count="currentEvent.promoters" />
       </div>
 
       <div class="location d-flex align-center mb-2 cursor-pointer">
         <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
-        <p @click="handleMapDialog">{{ location }}</p>
+        <p @click="handleMapDialog">{{ currentEvent.location }}</p>
 
-        <v-dialog
-          v-if="latitude && longitude && latitude !== '' && longitude !== ''"
-          v-model="mapDialog"
-          width="500">
+        <v-dialog v-if="hasValidCoordinates" v-model="mapDialog" width="500">
           <v-card>
             <v-card-title>
-              <b>{{ title }}</b>
+              <b>{{ currentEvent.title }}</b>
               <v-spacer />
               <v-btn icon @click="handleMapDialog">
                 <v-icon>mdi-close</v-icon>
@@ -48,10 +45,10 @@
         <v-icon class="mr-2 details-icon">mdi-calendar</v-icon>
 
         <div class="d-flex align-center">
-          <p>{{ formattedStartDate }}</p>
+          <p>{{ formatDateToCustomString(currentEvent.start_date) }}</p>
           <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-          <p>{{ formattedOpeningHour }}</p>
+          <p>{{ formatHourToBr(currentEvent.start_date) }}</p>
         </div>
 
         <div class="mr-2 ml-2">
@@ -59,11 +56,11 @@
         </div>
 
         <div class="d-flex align-center">
-          <p>{{ formattedEndDate }}</p>
+          <p>{{ formatDateToCustomString(currentEvent.end_date) }}</p>
 
           <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-          <p>{{ formattedEndingHour }}</p>
+          <p>{{ formatHourToBr(currentEvent.end_date) }}</p>
         </div>
       </div>
 
@@ -81,27 +78,27 @@
     <template v-else>
       <div class="event-title-wrapper is-mobile mb-2">
         <div class="badge-list">
-          <StatusBadge :text="statusText" class="mr-2" />
+          <StatusBadge :text="currentEvent.statusText" class="mr-2" />
 
-          <PromotersBadge :count="promoters" />
+          <PromotersBadge :count="currentEvent.promoters" />
         </div>
-        <div class="event-title is-mobile">{{ title }}</div>
+        <div class="event-title is-mobile">{{ currentEvent.title }}</div>
 
         <div class="location d-flex align-center mb-2">
           <v-icon class="mr-2 details-icon is-mobile">mdi-map-marker</v-icon>
 
-          <p class="location is-mobile">{{ location }}</p>
+          <p class="location is-mobile">{{ currentEvent.location }}</p>
         </div>
 
         <div class="date is-mobile d-flex align-center">
           <v-icon class="mr-2 details-icon is-mobile">mdi-calendar</v-icon>
 
           <div class="d-flex align-center">
-            <p>{{ formattedStartDate }}</p>
+            <p>{{ formatDateToCustomString(currentEvent.start_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ formattedOpeningHour }}</p>
+            <p>{{ formatHourToBr(currentEvent.start_date) }}</p>
           </div>
 
           <div class="mr-2 ml-2">
@@ -109,11 +106,11 @@
           </div>
 
           <div class="d-flex align-center">
-            <p>{{ formattedEndDate }}</p>
+            <p>{{ formatDateToCustomString(currentEvent.end_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ formattedEndingHour }}</p>
+            <p>{{ formatHourToBr(currentEvent.end_date) }}</p>
           </div>
         </div>
       </div>
@@ -122,23 +119,15 @@
 </template>
 
 <script>
-import { formatDateToCustomString, formatHourToBr } from '@/utils/formatters';
+import {
+  formatDateToCustomString,
+  formatHourToBr,
+  formatDateTimeToBr,
+} from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
-import { toast } from '@/store';
+import { toast, event } from '@/store';
 
 export default {
-  props: {
-    title: { type: String, default: '-' },
-    statusText: { type: String, default: '-' },
-    location: { type: String, default: '-' },
-    startDate: { type: String, default: '-' },
-    endDate: { type: String, default: '-' },
-    promoters: { type: Number, default: 0 },
-    latitude: { type: String, default: '' },
-    longitude: { type: String, default: '' },
-    alias: { type: String, default: '' },
-  },
-
   data() {
     return {
       mapDialog: false,
@@ -150,34 +139,35 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
 
-    formattedStartDate() {
-      return formatDateToCustomString(this.startDate);
+    currentEvent() {
+      return event.$selectedEvent;
     },
 
-    formattedOpeningHour() {
-      return formatHourToBr(this.startDate);
-    },
-
-    formattedEndDate() {
-      return formatDateToCustomString(this.endDate);
-    },
-
-    formattedEndingHour() {
-      return formatHourToBr(this.endDate);
+    hasValidCoordinates() {
+      const { latitude, longitude } = this.currentEvent?.address || {};
+      return latitude && longitude && latitude !== '' && longitude !== '';
     },
 
     googleMapsEmbedUrl() {
-      return `https://www.google.com/maps/embed/v1/place?key=AIzaSyAnkqplDONBqIfUvJCGfFWpLXAhPPx8ig0&zoom=14&q=${this.latitude},${this.longitude}`;
+      if (!this.hasValidCoordinates) return '';
+      const { latitude, longitude } = this.currentEvent.address;
+      return `https://www.google.com/maps/embed/v1/place?key=AIzaSyAnkqplDONBqIfUvJCGfFWpLXAhPPx8ig0&q=${latitude},${longitude}`;
     },
 
     aliasUrl() {
-      return `https://meuingresso.com.br/evento/${this.alias}`;
+      return `https://meuingresso.com.br/evento/${this.currentEvent.alias}`;
     },
   },
 
   methods: {
+    formatDateToCustomString,
+    formatHourToBr,
+    formatDateTimeToBr,
+
     handleMapDialog() {
-      this.mapDialog = !this.mapDialog;
+      if (this.hasValidCoordinates) {
+        this.mapDialog = !this.mapDialog;
+      }
     },
 
     copyAlias() {

@@ -1,38 +1,31 @@
 <template>
-  <div class="event-details">
-    <EventDetailsHeader
-      :title="event.title"
-      :status-text="event.statusText"
-      :location="event.location"
-      :start-date="event.start_date"
-      :end-date="event.end_date"
-      :promoters="event.promoters"
-      :latitude="event.address.latitude"
-      :longitude="event.address.longitude"
-      :alias="event.alias" />
+  <div v-if="currentEvent" class="event-details">
+    <EventDetailsHeader />
 
     <div class="event-details-wrapper">
-      <EventStatistics :statistics="event.statistics" />
+      <EventStatistics :statistics="currentEvent.statistics" />
 
-      <EventSales :sales="event.sales" />
+      <EventSales :sales="currentEvent.sales" />
 
       <EventTickets
         v-if="hasTickets"
         disable-menu
-        :tickets="event.tickets.filter((ticket) => ticket.hasSales)" />
+        :tickets="currentEvent.tickets.filter((ticket) => ticket.hasSales)" />
     </div>
   </div>
 </template>
 
 <script>
-export default {
-  props: {
-    event: { type: Object, required: true },
-  },
+import { event } from '@/store';
 
+export default {
   computed: {
+    currentEvent() {
+      return event.$selectedEvent;
+    },
+
     hasTickets() {
-      return this.event.tickets.some((ticket) => ticket.hasSales);
+      return this.currentEvent?.tickets?.some((ticket) => ticket.hasSales) || false;
     },
   },
 };

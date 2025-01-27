@@ -7,6 +7,13 @@ export const eventsSideBar = [
     needPermissions: false,
   },
   {
+    icon: 'mdi-information-outline',
+    iconActive: 'mdi-information',
+    title: 'Detalhes',
+    to: '/events/:id/details',
+    needPermissions: false,
+  },
+  {
     icon: 'mdi-ticket-outline',
     iconActive: 'mdi-ticket',
     title: 'Ingressos',

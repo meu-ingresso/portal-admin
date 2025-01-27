@@ -84,10 +84,6 @@
 <script>
 import { category, rating, loading, toast, eventForm, event } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
-import StepGeneralInfo from '@/components/organisms/event/StepGeneralInfo.vue';
-import StepTickets from '@/components/organisms/event/StepTickets.vue';
-import StepCustomFields from '@/components/organisms/event/StepCustomFields.vue';
-import StepCoupons from '@/components/organisms/event/StepCoupons.vue';
 
 export default {
   data() {
