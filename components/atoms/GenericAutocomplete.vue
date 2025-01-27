@@ -16,14 +16,13 @@
       :no-data-text="noDataText"
       @update:search-input="onSearchInput"
       @change="onItemChange">
-      
-      
       <template #prepend-inner>
         <v-tooltip bottom>
           <template #activator="{ on }">
-            <v-icon v-on="on"> {{prependInnerIcon}} </v-icon>
+            <v-icon v-on="on"> {{ prependInnerIcon }} </v-icon>
           </template>
-          Este campo pode ser utilizado quando o evento possui vários setores, ex.: VIP, Mezanino, Plateia Frontal, etc
+          Este campo pode ser utilizado quando o evento possui vários setores, ex.: VIP,
+          Mezanino, Plateia Frontal, etc
         </v-tooltip>
       </template>
 
@@ -55,7 +54,9 @@
         <v-card-text>
           Tem certeza de que deseja excluir "{{ formatItem(itemToRemove) }}"?
         </v-card-text>
-        <v-card-actions class="d-flex justify-space-between align-center">
+        <v-card-actions class="d-flex align-center py-5">
+          <v-spacer />
+
           <DefaultButton outlined text="Cancelar" @click="confirmDialog = false" />
           <DefaultButton text="Excluir" @click="removeItem" />
         </v-card-actions>
@@ -261,5 +262,4 @@ export default {
 };
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
