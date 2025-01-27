@@ -4,7 +4,7 @@
     <v-col cols="12" md="6">
       <v-text-field
         ref="code"
-        v-model="localCoupon.code"
+        v-model.trim="localCoupon.code"
         label="Código do Cupom"
         placeholder="Ex: DESCONTO10"
         outlined
@@ -318,6 +318,13 @@ export default {
         this.localCoupon = { ...this.coupon };
       },
       deep: true,
+    },
+    'localCoupon.code': {
+      handler(newValue) {
+        if (newValue) {
+          this.localCoupon.code = newValue.toUpperCase().replace(/\s+/g, '-');
+        }
+      },
     },
   },
 
