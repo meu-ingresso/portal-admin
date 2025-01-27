@@ -451,6 +451,10 @@ export default {
       return event.$isLoadingAlias;
     },
 
+    $event() {
+      return event.$event;
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },

@@ -282,18 +282,19 @@ export default {
 
     fullAddress() {
       const address = this.currentEvent?.address;
+
       if (!address) return '';
 
       const parts = [
         address.street,
-        address.number,
-        address.complement ? `- ${address.complement}` : '',
-        address.neighborhood,
-        address.city,
-        address.state,
+        address.number ? `, nº ${address.number}` : '',
+        address.complement ? `, ${address.complement}` : '',
+        address.neighborhood ? `, ${address.neighborhood}` : '',
+        address.city ? ` - ${address.city}` : '',
+        address.state ? `/${address.state}` : '',
       ].filter(Boolean);
 
-      return parts.join(', ');
+      return parts.join('');
     },
 
     hasValidCoordinates() {
