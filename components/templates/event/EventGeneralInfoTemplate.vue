@@ -91,16 +91,18 @@
 
             <div class="info-item">
               <span class="info-label">Início:</span>
-              <span class="info-value">{{
-                formatDateTimeToBr(currentEvent.start_date) || '-'
-              }}</span>
+              <span class="info-value">
+                {{ formatDateToCustomString(currentEvent.start_date) || '-' }}
+                | {{ formatHourToBr(currentEvent.start_date) || '-' }}
+              </span>
             </div>
 
             <div class="info-item">
               <span class="info-label">Término:</span>
-              <span class="info-value">{{
-                formatDateTimeToBr(currentEvent.end_date) || '-'
-              }}</span>
+              <span class="info-value">
+                {{ formatDateToCustomString(currentEvent.end_date) || '-' }}
+                | {{ formatHourToBr(currentEvent.end_date) || '-' }}
+              </span>
             </div>
           </div>
         </v-col>
@@ -258,7 +260,7 @@
 </template>
 
 <script>
-import { formatDateTimeToBr } from '@/utils/formatters';
+import { formatDateToCustomString, formatHourToBr } from '@/utils/formatters';
 import { openAI, event } from '@/store';
 
 export default {
@@ -314,7 +316,8 @@ export default {
   },
 
   methods: {
-    formatDateTimeToBr,
+    formatDateToCustomString,
+    formatHourToBr,
 
     handleMapDialog() {
       if (this.hasValidCoordinates) {

@@ -20,7 +20,7 @@ export const formatDateToCustomString = (date: string): String => {
 
 export const formatHourToBr = (hour: string): String => {
   if (!hour) return '';
-  return moment(hour, 'HH:mm:ss').format('HH:mm');
+  return moment(hour).format('HH:mm');
 };
 
 export const formatDateToUs = (date: string): String => {
