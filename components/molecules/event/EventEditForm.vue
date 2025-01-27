@@ -167,8 +167,9 @@
         </v-container>
       </v-card-text>
 
-      <v-card-actions class="pa-6">
+      <v-card-actions v-if="!isLoading" class="pa-6">
         <v-spacer />
+
         <v-btn
           color="primary"
           :loading="isUpdating"
@@ -177,6 +178,8 @@
           Salvar
         </v-btn>
       </v-card-actions>
+
+      <Loading v-else />
     </v-card>
   </v-dialog>
 </template>

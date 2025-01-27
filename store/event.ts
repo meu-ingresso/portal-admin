@@ -2,7 +2,6 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
 import { formatRealValue } from '~/utils/formatters';
-import { category } from '~/utils/store-util';
 
 async function getStatusByModuleName(module, name) {
   const response = await $axios.$get(
@@ -373,7 +372,25 @@ export default class Event extends VuexModule {
     },
   };
 
-  private copyEvent = null;
+  private copyEvent: any = {
+    location_name: '',
+    description: 'teste',
+    category_id: '',
+    rating_id: '',
+    start_date: '',
+    end_date: '',
+    name: '',
+    event_type: '',
+    address: {
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zipcode: '',
+    },
+  };
 
   public get $event() {
     if (!this.event) return null;
@@ -530,6 +547,36 @@ export default class Event extends VuexModule {
   @Action
   public setLoadingAlias(value: boolean) {
     this.context.commit('SET_IS_LOADING_ALIAS', value);
+  }
+
+  @Mutation
+  private RESET() {
+    this.event = {
+      id: undefined,
+      location_name: '',
+      description: '',
+      category_id: '',
+      rating_id: '',
+      start_date: '',
+      end_date: '',
+      name: '',
+      event_type: '',
+      address: {
+        street: '',
+        number: '',
+        complement: '',
+        neighborhood: '',
+        city: '',
+        state: '',
+        zipcode: '',
+      },
+      availability: '',
+      sale_type: '',
+      promoter_id: '',
+      is_featured: false,
+      absorb_service_fee: false,
+    };
+    this.copyEvent = { ...this.event };
   }
 
   @Action
@@ -804,5 +851,10 @@ export default class Event extends VuexModule {
       console.error('Error deleting event:', error);
       throw error;
     }
+  }
+
+  @Action
+  public reset() {
+    this.context.commit('RESET');
   }
 }
