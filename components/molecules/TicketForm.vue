@@ -62,13 +62,11 @@
       <v-col cols="12" md="12" sm="12" class="py-0 my-4">
         <div class="d-flex align-center" style="padding: 0px 4px 0px">
           <h4 class="mr-2">Quantidade permitida por compra</h4>
-          <v-tooltip bottom>
+          <v-tooltip :right="!isMobile" :bottom="isMobile">
             <template #activator="{ on, attrs }">
               <v-icon v-bind="attrs" v-on="on">mdi-help-circle</v-icon>
             </template>
-            <span>
-              Limite a quantidade mínima e máxima permitida por compra
-            </span>
+            <span> Limite a quantidade mínima e máxima permitida por compra </span>
           </v-tooltip>
         </div>
       </v-col>
@@ -361,7 +359,7 @@ export default {
           (value) => value > 0 || 'A compra máxima deve ser maior ou igual a zero.',
           (value) =>
             !value ||
-            value >= this.localTicket.min_purchase ||
+            Number(value) >= Number(this.localTicket.min_purchase) ||
             'A compra máxima deve ser maior ou igual à compra mínima.',
         ],
         open_date: [(value) => !!value || 'A data de abertura é obrigatória.'],

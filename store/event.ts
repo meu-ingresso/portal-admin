@@ -18,7 +18,7 @@ async function getStatusByModuleName(module, name) {
 async function createAddress(eventPayload) {
   const addressResponse = await $axios.$post('address', {
     street: eventPayload.address.street,
-    zipcode: eventPayload.address.zipcode,
+    zipcode: eventPayload.address.cep,
     number: eventPayload.address.number,
     complement: eventPayload.address.complement || '',
     neighborhood: eventPayload.address.neighborhood,
@@ -35,28 +35,33 @@ async function createAddress(eventPayload) {
   return addressResponse.body.result.id;
 }
 
-async function createEvent(eventPayload, addressId) {
-  // Busca o status de evento rascunho
-  const statusResponse = await getStatusByModuleName('event', 'Rascunho');
+async function createEvent(payload) {
+  // Combina data e hora em uma única string ISO
+  const startDateTime = `${payload.startDate}T${payload.startTime}:00.000Z`;
+  const endDateTime = `${payload.endDate}T${payload.endTime}:00.000Z`;
+
+  // Converte para Date para manipulação
+  const startDate = new Date(startDateTime);
+  const endDate = new Date(endDateTime);
 
   const eventResponse = await $axios.$post('event', {
-    alias: eventPayload.alias,
-    name: eventPayload.eventName,
-    description: eventPayload.general_information,
-    status_id: statusResponse.id,
-    address_id: addressId,
-    category_id: eventPayload.category.value,
-    rating_id: eventPayload.rating.value,
-    start_date: `${eventPayload.startDate}T${eventPayload.startTime}:00.000Z`,
-    end_date: `${eventPayload.endDate}T${eventPayload.endTime}:00.000Z`,
-    general_information: eventPayload.general_information,
-    location_name: eventPayload.address.location_name,
-    availability: eventPayload.availability,
-    sale_type: eventPayload.sale_type,
-    event_type: eventPayload.event_type,
-    promoter_id: eventPayload.promoter_id || '',
-    is_featured: eventPayload.is_featured,
-    absorb_service_fee: eventPayload.absorb_service_fee || false,
+    alias: payload.alias,
+    name: payload.eventName,
+    description: payload.general_information,
+    status_id: payload.statusId,
+    address_id: payload.addressId,
+    category_id: payload.category.value,
+    rating_id: payload.rating.value,
+    start_date: startDate.toISOString().replace('Z', '-0300'),
+    end_date: endDate.toISOString().replace('Z', '-0300'),
+    general_information: payload.general_information,
+    location_name: payload.address?.location_name,
+    availability: payload.availability,
+    sale_type: payload.sale_type,
+    event_type: payload.event_type,
+    promoter_id: payload.promoter_id || '',
+    is_featured: payload.is_featured,
+    absorb_service_fee: payload.absorb_service_fee || false,
   });
 
   if (!eventResponse.body || eventResponse.body.code !== 'CREATE_SUCCESS') {
@@ -110,143 +115,220 @@ async function uploadEventBanner(attachmentId, banner) {
   return uploadResponse.body.result.s3_url;
 }
 
-async function createTicketsAndCategories(eventId, tickets) {
-  const ticketMap = {}; // Mapeia nome do ingresso -> ID
-  const categoryMap = new Map();
+async function createCategory(eventId, categoryName, categoryMap) {
+  if (!categoryName) return null;
 
-  // Busca o status de ingresso disponível
-  const statusResponse = await getStatusByModuleName('ticket', 'Disponível');
+  const existingCategoryId = categoryMap.get(categoryName);
+  if (existingCategoryId) return existingCategoryId;
 
-  const ticketPromises = tickets.map(async (ticket, index) => {
-    let categoryId = null;
-
-    // Se houver categoria, cria
-    if (ticket.category !== '') {
-      categoryId = categoryMap.get(ticket.category);
-
-      if (!categoryId) {
-        const categoryResponse = await $axios.$post('ticket-event-category', {
-          event_id: eventId,
-          name: ticket.category,
-        });
-
-        if (!categoryResponse.body || categoryResponse.body.code !== 'CREATE_SUCCESS') {
-          throw new Error('Failed to create ticket-event-category.');
-        }
-
-        categoryId = categoryResponse.body.result.id;
-        categoryMap.set(ticket.category, categoryId);
-      }
-    }
-
-    const ticketPrice = parseFloat(ticket.price.replace(',', '.'));
-
-    // Cria ingresso condicionando se envia a categoria ou não
-    const payload: any = {
-      event_id: eventId,
-      name: ticket.name,
-      total_quantity: ticket.max_quantity,
-      remaining_quantity: ticket.max_quantity,
-      price: ticketPrice,
-      status_id: statusResponse.id,
-      start_date: `${ticket.open_date}T${ticket.start_time}:00.000Z`,
-      end_date: `${ticket.close_date}T${ticket.end_time}:00.000Z`,
-      availability: ticket.availability.value,
-      display_order: index + 1,
-      min_quantity_per_user: ticket.min_purchase,
-      max_quantity_per_user: ticket.max_purchase,
-    };
-
-    if (categoryId) {
-      payload.ticket_event_category_id = categoryId;
-    }
-
-    const ticketResponse = await $axios.$post('ticket', payload);
-
-    if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
-      throw new Error('Failed to create ticket.');
-    }
-
-    ticketMap[ticket.name] = ticketResponse.body.result.id;
+  const categoryResponse = await $axios.$post('ticket-event-category', {
+    event_id: eventId,
+    name: categoryName,
   });
 
-  await Promise.all(ticketPromises);
+  if (!categoryResponse.body || categoryResponse?.body?.code !== 'CREATE_SUCCESS') {
+    throw new Error(`Falha ao criar categoria de ingresso: ${categoryName}`);
+  }
 
-  return ticketMap;
+  const categoryId = categoryResponse?.body?.result?.id;
+  categoryMap.set(categoryName, categoryId);
+
+  return categoryId;
+}
+
+async function createSingleTicket(eventId, ticket, statusId, categoryId, index) {
+  const ticketPrice = parseFloat(ticket.price.replace(',', '.'));
+
+  // Converte as datas para o timezone correto
+  const startDateTime = `${ticket.open_date}T${ticket.start_time}:00.000Z`;
+  const endDateTime = `${ticket.close_date}T${ticket.end_time}:00.000Z`;
+
+  const startDate = new Date(startDateTime);
+  const endDate = new Date(endDateTime);
+
+  const payload: any = {
+    event_id: eventId,
+    name: ticket.name,
+    total_quantity: ticket.max_quantity,
+    remaining_quantity: ticket.max_quantity,
+    price: ticketPrice,
+    status_id: statusId,
+    start_date: startDate.toISOString().replace('Z', '-0300'),
+    end_date: endDate.toISOString().replace('Z', '-0300'),
+    availability: ticket.availability.value,
+    display_order: index + 1,
+    min_quantity_per_user: ticket.min_purchase,
+    max_quantity_per_user: ticket.max_purchase,
+  };
+
+  if (categoryId) {
+    payload.ticket_event_category_id = categoryId;
+  }
+
+  const ticketResponse = await $axios.$post('ticket', payload);
+
+  if (!ticketResponse.body || ticketResponse?.body?.code !== 'CREATE_SUCCESS') {
+    throw new Error(`Falha ao criar ingresso: ${ticket.name}`);
+  }
+
+  return ticketResponse?.body?.result?.id;
+}
+
+async function createTicketsAndCategories(eventId, tickets) {
+  try {
+    const ticketMap = {};
+    const categoryMap = new Map();
+
+    const statusResponse = await getStatusByModuleName('ticket', 'Disponível');
+
+    const ticketPromises = tickets.map(async (ticket, index) => {
+      try {
+        const categoryId = await createCategory(eventId, ticket.category, categoryMap);
+
+        const ticketId = await createSingleTicket(
+          eventId,
+          ticket,
+          statusResponse.id,
+          categoryId,
+          index
+        );
+
+        ticketMap[ticket.name] = ticketId;
+      } catch (error) {
+        throw new Error(`Erro ao processar ingresso ${ticket.name}: ${error.message}`);
+      }
+    });
+
+    await Promise.all(ticketPromises);
+    return ticketMap;
+  } catch (error) {
+    console.error('Erro ao criar ingressos e categorias:', error);
+    throw error;
+  }
+}
+
+function getCustomFieldOptions(customField) {
+  return {
+    isRequired: customField.options.some((option) => option.value === 'required'),
+    visibleOnTicket: customField.options.some(
+      (option) => option.value === 'visible_on_ticket'
+    ),
+    isUnique: customField.options.some((option) => option.value === 'is_unique'),
+  };
+}
+
+async function createSingleCustomField(eventId, customField, personType, index) {
+  const { isRequired, visibleOnTicket, isUnique } = getCustomFieldOptions(customField);
+
+  const fieldResponse = await $axios.$post('event-checkout-field', {
+    event_id: eventId,
+    name: customField.name,
+    type: customField.type.value,
+    person_type: personType.value,
+    required: isRequired,
+    is_unique: isUnique,
+    visible_on_ticket: visibleOnTicket,
+    help_text: customField.help_text || '',
+    order: customField.order || index + 1,
+  });
+
+  if (!fieldResponse.body || fieldResponse.body.code !== 'CREATE_SUCCESS') {
+    throw new Error(`Falha ao criar campo personalizado: ${customField.name}`);
+  }
+
+  return fieldResponse.body.result.id;
+}
+
+function updateFieldTicketMap(fieldTicketMap, ticketNames, fieldId) {
+  for (const ticketName of ticketNames) {
+    if (!fieldTicketMap[ticketName]) {
+      fieldTicketMap[ticketName] = [];
+    }
+    fieldTicketMap[ticketName].push(fieldId);
+  }
 }
 
 async function createCustomFields(eventId, customFields) {
-  const fieldTicketMap = {}; // Mapeia campo -> ingressos
+  const fieldTicketMap = {};
 
   try {
-    for (const [index, customField] of customFields.entries()) {
-      for (const personType of customField.personTypes) {
-        const isRequired = customField.options.some(
-          (option) => option.value === 'required'
-        );
-        const visibleOnTicket = customField.options.some(
-          (option) => option.value === 'visible_on_ticket'
-        );
-        const isUnique = customField.options.some(
-          (option) => option.value === 'is_unique'
-        );
+    const fieldPromises = customFields.flatMap((customField, index) => {
+      return customField.personTypes.map(async (personType) => {
+        try {
+          const fieldId = await createSingleCustomField(
+            eventId,
+            customField,
+            personType,
+            index
+          );
 
-        const fieldResponse = await $axios.$post('event-checkout-field', {
-          event_id: eventId,
-          name: customField.name,
-          type: customField.type.value,
-          person_type: personType.value,
-          required: isRequired,
-          is_unique: isUnique,
-          visible_on_ticket: visibleOnTicket,
-          help_text: customField.help_text || '',
-          order: customField.order || index + 1,
-        });
-
-        if (!fieldResponse.body || fieldResponse.body.code !== 'CREATE_SUCCESS') {
-          throw new Error('Failed to event checkout field.');
+          return {
+            fieldId,
+            tickets: customField.tickets,
+          };
+        } catch (error) {
+          throw new Error(
+            `Erro ao processar campo ${customField.name}: ${error.message}`
+          );
         }
+      });
+    });
 
-        const fieldId = fieldResponse.body.result.id;
+    const results = await Promise.all(fieldPromises);
 
-        // Relaciona o campo aos ingressos especificados
-        customField.tickets.forEach((ticketName) => {
-          if (!fieldTicketMap[ticketName]) {
-            fieldTicketMap[ticketName] = [];
-          }
-          fieldTicketMap[ticketName].push(fieldId);
-        });
-      }
-    }
+    results.forEach(({ fieldId, tickets }) => {
+      updateFieldTicketMap(fieldTicketMap, tickets, fieldId);
+    });
 
-    return fieldTicketMap; // Retorna o mapeamento dos campos para os ingressos
+    return fieldTicketMap;
   } catch (error) {
-    console.error('Error in createCustomFields:', error);
-    throw new Error('Failed to create custom fields.');
+    console.error('Erro ao criar campos personalizados:', error);
+    throw error;
   }
+}
+
+async function createSingleFieldTicketRelation(fieldId, ticketId) {
+  const response = await $axios.$post('event-checkout-field-ticket', {
+    event_checkout_field_id: fieldId,
+    ticket_id: ticketId,
+  });
+
+  if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+    throw new Error(`Falha ao vincular campo ${fieldId} ao ingresso ${ticketId}`);
+  }
+
+  return response.body.result;
 }
 
 async function createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap) {
   try {
-    const relationsPromises = [];
-
-    for (const [ticketName, fieldIds] of Object.entries(fieldTicketMap)) {
+    const relations = Object.entries(fieldTicketMap).flatMap(([ticketName, fieldIds]) => {
       const ticketId = ticketMap[ticketName];
+      if (!ticketId) {
+        throw new Error(`Ingresso não encontrado: ${ticketName}`);
+      }
 
-      (fieldIds as any[]).forEach((fieldId) => {
-        relationsPromises.push(
-          $axios.$post('event-checkout-field-ticket', {
-            event_checkout_field_id: fieldId,
-            ticket_id: ticketId,
-          })
-        );
-      });
-    }
+      return (fieldIds as string[]).map((fieldId) => ({
+        fieldId,
+        ticketId,
+        ticketName,
+      }));
+    });
 
-    await Promise.all(relationsPromises);
+    await Promise.all(
+      relations.map(async ({ fieldId, ticketId, ticketName }) => {
+        try {
+          await createSingleFieldTicketRelation(fieldId, ticketId);
+        } catch (error) {
+          throw new Error(
+            `Falha ao criar relação entre campo ${fieldId} e ingresso ${ticketName}: ${error.message}`
+          );
+        }
+      })
+    );
   } catch (error) {
-    console.error('Error in createEventCheckoutFieldTicketRelations:', error);
-    throw new Error('Failed to create event-checkout-field-ticket relations.');
+    console.error('Erro ao criar relações entre campos e ingressos:', error);
+    throw error;
   }
 }
 
@@ -280,6 +362,13 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
   const couponPromises = coupons.map(async (coupon) => {
     const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
 
+    // Converte as datas para o timezone correto
+    const startDateTime = `${coupon.start_date}T${coupon.start_time}:00.000Z`;
+    const endDateTime = `${coupon.end_date}T${coupon.end_time}:00.000Z`;
+
+    const startDate = new Date(startDateTime);
+    const endDate = new Date(endDateTime);
+
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,
       status_id: statusId,
@@ -287,8 +376,8 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
       discount_value: couponDiscountValue,
       discount_type: coupon.discountType.value,
       max_uses: coupon.maxUses,
-      start_date: `${coupon.start_date}T${coupon.start_time}:00.000Z`,
-      end_date: `${coupon.end_date}T${coupon.end_time}:00.000Z`,
+      start_date: startDate.toISOString().replace('Z', '-0300'),
+      end_date: endDate.toISOString().replace('Z', '-0300'),
     });
 
     if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
@@ -308,12 +397,19 @@ async function createCouponsWithTickets(eventId, coupons, statusId) {
 
   await Promise.all(couponPromises);
 
-  return couponTicketMap; // Retorna o mapeamento dos cupons para os ingressos
+  return couponTicketMap;
 }
 
 async function createCouponsWithoutTickets(eventId, coupons, statusId) {
   const couponPromises = coupons.map(async (coupon) => {
     const couponDiscountValue = parseFloat(coupon.discountValue.replace(',', '.'));
+
+    // Converte as datas para o timezone correto
+    const startDateTime = `${coupon.start_date}T${coupon.start_time}:00.000Z`;
+    const endDateTime = `${coupon.end_date}T${coupon.end_time}:00.000Z`;
+
+    const startDate = new Date(startDateTime);
+    const endDate = new Date(endDateTime);
 
     const couponResponse = await $axios.$post('coupon', {
       event_id: eventId,
@@ -322,8 +418,8 @@ async function createCouponsWithoutTickets(eventId, coupons, statusId) {
       discount_value: couponDiscountValue,
       discount_type: coupon.discountType.value,
       max_uses: coupon.maxUses,
-      start_date: `${coupon.start_date}T${coupon.start_time}:00.000Z`,
-      end_date: `${coupon.end_date}T${coupon.end_time}:00.000Z`,
+      start_date: startDate.toISOString().replace('Z', '-0300'),
+      end_date: endDate.toISOString().replace('Z', '-0300'),
     });
 
     if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
@@ -332,6 +428,57 @@ async function createCouponsWithoutTickets(eventId, coupons, statusId) {
   });
 
   await Promise.all(couponPromises);
+}
+
+async function handleEventBanner(eventId, banner) {
+  if (!banner) return null;
+
+  const bannerId = await createEventBanner(eventId);
+  const bannerUrl = await uploadEventBanner(bannerId, banner);
+  await updateEventBanner(bannerId, bannerUrl);
+
+  return bannerId;
+}
+
+async function handleCoupons(eventId, coupons) {
+  if (!coupons.length) return {};
+
+  const statusResponse = await getStatusByModuleName('coupon', 'Disponível');
+
+  const [couponsWithTickets, couponsWithoutTickets] = coupons.reduce(
+    (acc, coupon) => {
+      acc[coupon.tickets.length > 0 ? 0 : 1].push(coupon);
+      return acc;
+    },
+    [[], []]
+  );
+
+  const results = await Promise.all([
+    couponsWithTickets.length > 0
+      ? createCouponsWithTickets(eventId, couponsWithTickets, statusResponse.id)
+      : {},
+    couponsWithoutTickets.length > 0
+      ? createCouponsWithoutTickets(eventId, couponsWithoutTickets, statusResponse.id)
+      : null,
+  ]);
+
+  return results[0];
+}
+
+function validateEventData(eventPayload) {
+  if (eventPayload.event_type !== 'Online' && !eventPayload.address) {
+    throw new Error('Endereço é obrigatório para eventos presenciais');
+  }
+
+  if (eventPayload.tickets?.length > 0) {
+    const ticketNames = new Set();
+    for (const ticket of eventPayload.tickets) {
+      if (ticketNames.has(ticket.name)) {
+        throw new Error(`Nome de ingresso duplicado: ${ticket.name}`);
+      }
+      ticketNames.add(ticket.name);
+    }
+  }
 }
 
 @Module({
@@ -369,6 +516,7 @@ export default class Event extends VuexModule {
       city: '',
       state: '',
       zipcode: '',
+      cep: '',
     },
   };
 
@@ -389,6 +537,7 @@ export default class Event extends VuexModule {
       city: '',
       state: '',
       zipcode: '',
+      cep: '',
     },
   };
 
@@ -569,6 +718,7 @@ export default class Event extends VuexModule {
         city: '',
         state: '',
         zipcode: '',
+        cep: '',
       },
       availability: '',
       sale_type: '',
@@ -711,90 +861,67 @@ export default class Event extends VuexModule {
     try {
       this.setSaving(true);
 
+      // Validação inicial dos dados
+      await validateEventData(eventPayload);
+
       this.setProgressTitle('Salvando endereço');
+      // Cria endereço e evento em paralelo
+      const [addressId, draftStatus] = await Promise.all([
+        eventPayload.event_type !== 'Online' ? createAddress(eventPayload) : null,
+        getStatusByModuleName('event', 'Rascunho'),
+      ]);
 
-      let addressId = null;
+      this.setProgressTitle('Criando evento');
+      // Cria o evento
+      const eventId = await createEvent({
+        ...eventPayload,
+        addressId,
+        statusId: draftStatus.id,
+      });
 
-      if (eventPayload.event_type !== 'Online') {
-        addressId = await createAddress(eventPayload);
-      }
+      this.setProgressTitle('Processando Ingressos e Cupons');
+      // Processa banner, tickets e cupons em paralelo
+      const [, ticketMap, fieldTicketMap, couponTicketMap] = await Promise.all([
+        handleEventBanner(eventId, eventPayload.banner),
 
-      const eventId = await createEvent(eventPayload, addressId);
+        eventPayload.tickets?.length > 0
+          ? createTicketsAndCategories(eventId, eventPayload.tickets)
+          : {},
 
-      // Se houver banner, cria e faz upload
-      if (eventPayload.banner) {
-        const bannerId = await createEventBanner(eventId);
+        eventPayload.customFields?.length > 0 && eventPayload.tickets?.length > 0
+          ? createCustomFields(eventId, eventPayload.customFields)
+          : {},
 
-        const bannerUrl = await uploadEventBanner(bannerId, eventPayload.banner);
+        eventPayload.coupons?.length > 0
+          ? handleCoupons(eventId, eventPayload.coupons)
+          : {},
+      ]);
 
-        await updateEventBanner(bannerId, bannerUrl);
-      }
+      // Cria relações em paralelo se necessário
+      if (Object.keys(ticketMap).length > 0) {
+        this.setProgressTitle('Finalizando configurações');
+        const relationPromises = [];
 
-      // Se houver ingressos, cria e relaciona campos personalizados
-
-      let ticketMap = {};
-
-      if (eventPayload.tickets.length > 0) {
-        this.setProgressTitle('Salvando ingressos e categorias');
-
-        ticketMap = await createTicketsAndCategories(eventId, eventPayload.tickets);
-
-        this.setProgressTitle('Salvando campos personalizados');
-
-        // Se houver campos personalizados, cria e relaciona com os ingressos
-        if (eventPayload.customFields.length > 0) {
-          const fieldTicketMap = await createCustomFields(
-            eventId,
-            eventPayload.customFields
-          );
-
-          await createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap);
-        }
-      }
-
-      this.setProgressTitle('Salvando cupons de desconto');
-
-      let couponTicketMap = {};
-
-      // Se houver cupons, cria
-      if (eventPayload.coupons.length > 0) {
-        const statusResponse = await getStatusByModuleName('coupon', 'Disponível');
-
-        const couponsWithTickets = eventPayload.coupons.filter(
-          (coupon) => coupon.tickets.length > 0
-        );
-        const couponsWithoutTickets = eventPayload.coupons.filter(
-          (coupon) => coupon.tickets.length === 0
-        );
-
-        if (couponsWithTickets.length > 0) {
-          couponTicketMap = await createCouponsWithTickets(
-            eventId,
-            couponsWithTickets,
-            statusResponse.id
+        if (Object.keys(fieldTicketMap).length > 0) {
+          relationPromises.push(
+            createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap)
           );
         }
 
-        if (couponsWithoutTickets.length > 0) {
-          await createCouponsWithoutTickets(
-            eventId,
-            couponsWithoutTickets,
-            statusResponse.id
-          );
+        if (Object.keys(couponTicketMap).length > 0) {
+          relationPromises.push(createCouponTicketRelations(couponTicketMap, ticketMap));
         }
-      }
 
-      // Se tiver ingressos e cupons, relaciona-os
-      if (Object.keys(ticketMap).length > 0 && Object.keys(couponTicketMap).length > 0) {
-        await createCouponTicketRelations(couponTicketMap, ticketMap);
+        if (relationPromises.length > 0) {
+          await Promise.all(relationPromises);
+        }
       }
 
       this.setSaving(false);
-
       return { success: true, eventId };
     } catch (error) {
       this.setSaving(false);
-      console.error('Error creating event:', error);
+      console.error('Erro ao criar evento:', error);
       throw error;
     }
   }
