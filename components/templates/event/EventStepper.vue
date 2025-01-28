@@ -44,7 +44,6 @@
                 'justify-space-between': isMobile && index > 0,
               }">
               <DefaultButton
-                v-if="index > 0"
                 outlined
                 :disabled="isSaving"
                 class="mr-2"
@@ -228,7 +227,9 @@ export default {
       }
     },
     previousStep() {
-      if (this.currentStep > 1) {
+      if (this.currentStep === 1) {
+        this.$router.replace('/events');
+      } else if (this.currentStep > 1) {
         if (this.currentStep === 4 && this.form.tickets.length === 0) {
           this.currentStep = 2;
         } else {
