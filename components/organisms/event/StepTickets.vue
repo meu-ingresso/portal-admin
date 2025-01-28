@@ -299,7 +299,6 @@ export default {
       const baseName = `Cópia de ${ticketToDuplicate.name}`;
       let newName = baseName;
 
-      // Se já existir "Cópia de <nome>", começamos a adicionar sufixos numéricos
       if (this.tickets.some((ticket) => ticket.name === baseName)) {
         let counter = 2;
         while (this.tickets.some((ticket) => ticket.name === newName)) {
@@ -308,15 +307,16 @@ export default {
         }
       }
 
-      // Define o nome único e adiciona o ingresso duplicado
       ticketToDuplicate.name = newName;
       this.tickets.push(ticketToDuplicate);
 
-      // Emite a mudança
       this.emitChanges();
 
-      // Feedback visual
-      this.$toast.success(`Ingresso "${newName}" duplicado com sucesso!`);
+      toast.setToast({
+        text: `Ingresso "${newName}" duplicado com sucesso!`,
+        type: 'success',
+        time: 5000,
+      });
     },
 
     emitChanges() {
