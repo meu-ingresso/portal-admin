@@ -66,10 +66,9 @@
             <template #activator="{ on, attrs }">
               <v-icon v-bind="attrs" v-on="on">mdi-help-circle</v-icon>
             </template>
-            <span
-              >Limite a quantidade permitida por compra com quantidade mínima e
-              máxima</span
-            >
+            <span>
+              Limite a quantidade mínima e máxima permitida por compra
+            </span>
           </v-tooltip>
         </div>
       </v-col>
@@ -78,7 +77,7 @@
         <v-text-field
           ref="min_purchase"
           v-model="localTicket.min_purchase"
-          label="Compra Mínima"
+          label="Mínima"
           type="number"
           min="0"
           outlined
@@ -92,7 +91,7 @@
         <v-text-field
           ref="max_purchase"
           v-model="localTicket.max_purchase"
-          label="Compra Máxima"
+          label="Máxima"
           type="number"
           min="0"
           outlined

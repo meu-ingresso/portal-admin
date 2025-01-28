@@ -181,9 +181,7 @@ export default {
               this.normalizeDate(this.localStartDate) ||
             'A data de término deve ser posterior à data de início.',
         ],
-        endTime: [
-          (value) => !!value || 'A hora de término é obrigatória.',
-        ],
+        endTime: [(value) => !!value || 'A hora de término é obrigatória.'],
       },
     };
   },
@@ -212,7 +210,27 @@ export default {
       const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
       const minutes = totalMinutes % 60;
 
-      return `Seu evento vai durar <strong>${days} dias, ${hours} horas, ${minutes} minutos</strong>.`;
+      const durationText = 'Seu evento vai durar <strong>';
+      const parts = [];
+
+      if (days > 0) {
+        parts.push(`${days} ${days === 1 ? 'dia' : 'dias'}`);
+      }
+      if (hours > 0) {
+        parts.push(`${hours} ${hours === 1 ? 'hora' : 'horas'}`);
+      }
+      if (minutes > 0) {
+        parts.push(`${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`);
+      }
+
+      if (parts.length === 0) {
+        return '';
+      } else if (parts.length === 1) {
+        return durationText + parts[0] + '</strong>.';
+      } else {
+        const lastPart = parts.pop();
+        return durationText + parts.join(', ') + ' e ' + lastPart + '</strong>.';
+      }
     },
     form() {
       return {

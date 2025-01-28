@@ -69,12 +69,18 @@
       </v-stepper-items>
     </v-stepper>
 
-    <v-dialog v-model="showProgressDialog" persistent max-width="600">
+    <v-dialog v-model="showProgressDialog" persistent max-width="450">
       <v-card>
         <v-card-text class="text-center">
-          <h2 class="pt-2 titleProgress">{{ progressTitle }}</h2>
+          <div class="pt-10">
+            <h2 class="pt-10">{{ progressTitle }}</h2>
+          </div>
 
-          <Lottie path="./animations/loading_default.json" height="200" width="500" />
+          <Lottie
+            path="./animations/loading_default.json"
+            height="130"
+            width="200"
+            class="teste" />
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -296,11 +302,11 @@ export default {
   border-top: 1px solid var(--tertiary);
 }
 
-.titleProgress {
-  position: absolute !important;
-  z-index: 1000;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
+.teste {
+  margin-top: -10% !important;
+}
+
+.progress-title {
+  margin-top: 10% !important;
 }
 </style>
