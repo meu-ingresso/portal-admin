@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { formatDateTimeToBr } from '@/utils/formatters';
+import { formatDateToCustomString, formatHourToBr } from '@/utils/formatters';
 export default {
   props: {
     eventId: { type: String, required: true },
@@ -25,7 +25,7 @@ export default {
 
   computed: {
     formattedDate() {
-      return formatDateTimeToBr(this.date);
+      return `${formatDateToCustomString(this.date)} - ${formatHourToBr(this.date)}`;
     },
     getImage() {
       if (this.image.startsWith('/assets')) {

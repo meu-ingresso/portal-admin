@@ -107,7 +107,11 @@
 </template>
 
 <script>
-import { formatDateTimeToBr, formatRealValue } from '@/utils/formatters';
+import {
+  formatHourToBr,
+  formatRealValue,
+  formatDateToCustomString,
+} from '@/utils/formatters';
 import { toast, event } from '@/store';
 export default {
   props: {
@@ -139,7 +143,7 @@ export default {
 
   computed: {
     formattedDate() {
-      return formatDateTimeToBr(this.date);
+      return `${formatDateToCustomString(this.date)} - ${formatHourToBr(this.date)}`;
     },
 
     getImage() {
