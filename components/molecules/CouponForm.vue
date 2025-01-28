@@ -82,7 +82,7 @@
       <v-text-field
         ref="maxUses"
         v-model="localCoupon.maxUses"
-        label="Máximo de Usos"
+        label="Quantidade"
         placeholder="Ex: 100"
         type="number"
         min="1"
@@ -202,7 +202,7 @@
           <v-text-field
             ref="end_time"
             v-model="localCoupon.end_time"
-            label="Horário de Término"
+            label="Horário de Expiração"
             prepend-inner-icon="mdi-clock-outline"
             readonly
             outlined
