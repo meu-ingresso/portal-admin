@@ -499,15 +499,52 @@ export default class Event extends VuexModule {
     return this.eventList;
   }
 
+  private defaultFields = [
+    {
+      name: 'Nome Completo',
+      type: { text: 'Texto', value: 'TEXTO' },
+      is_default: true,
+      options: [
+        { text: 'Obrigatório', value: 'required' },
+        { text: 'Visível no ingresso', value: 'visible_on_ticket' },
+      ],
+      person_types: [
+        { text: 'Pessoa Física (PF)', value: 'PF' },
+        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
+      ],
+      tickets: [],
+    },
+    {
+      name: 'Email',
+      type: { text: 'Email', value: 'EMAIL' },
+      is_default: true,
+      options: [
+        { text: 'Obrigatório', value: 'required' },
+        { text: 'Visível na Impressão', value: 'visible_on_ticket' },
+      ],
+      person_types: [
+        { text: 'Pessoa Física (PF)', value: 'PF' },
+        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
+      ],
+      tickets: [],
+    },
+  ];
+
   private event: any = {
     location_name: '',
     description: '',
-    category_id: '',
-    rating_id: '',
     start_date: '',
     end_date: '',
     name: '',
+    alias: '',
     event_type: '',
+    rating: {
+      value: '',
+      text: '',
+      img: '',
+    },
     address: {
       street: '',
       number: '',
@@ -518,6 +555,21 @@ export default class Event extends VuexModule {
       zipcode: '',
       cep: '',
     },
+    is_featured: false,
+    absorb_service_fee: false,
+    tickets: [],
+    coupons: [],
+    collaborators: [],
+    attachments: [],
+    customFields: [...this.defaultFields],
+    link_online: '',
+    sale_type: 'Ingresso',
+    availability: 'Público',
+    promoter_id: null,
+    status_id: '',
+    rating_id: '',
+    category_id: '',
+    general_information: '',
   };
 
   private copyEvent: any = {
@@ -599,9 +651,8 @@ export default class Event extends VuexModule {
       statistics: [
         {
           title: 'Visualizações',
-          value: `${
-            data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
-          }`,
+          value: `${data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
+            }`,
         },
         { title: 'Visibilidade', value: data.availability },
         {

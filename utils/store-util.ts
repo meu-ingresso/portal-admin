@@ -14,7 +14,10 @@ import Cep from '@/store/cep';
 import EventForm from '@/store/eventForm';
 import Status from '@/store/status';
 import OpenAI from '~/store/openAI';
-import Address from '@/store/address';
+import GeneralInfo from '@/store/event/modules/generalInfo';
+import Tickets from '@/store/event/modules/tickets';
+import CustomFields from '@/store/event/modules/customFields';
+import Coupons from '@/store/event/modules/coupons';
 
 let auth: Auth;
 let toast: Toast;
@@ -28,7 +31,10 @@ let cep: Cep;
 let eventForm: EventForm;
 let status: Status;
 let openAI: OpenAI;
-let address: Address;
+let generalInfo: GeneralInfo;
+let tickets: Tickets;
+let customFields: CustomFields;
+let coupons: Coupons;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -43,7 +49,10 @@ const initializeStores = (store: Store<any>) => {
   eventForm = getModule(EventForm, store);
   status = getModule(Status, store);
   openAI = getModule(OpenAI, store);
-  address = getModule(Address, store);
+  generalInfo = getModule(GeneralInfo, store);
+  tickets = getModule(Tickets, store);
+  customFields = getModule(CustomFields, store);
+  coupons = getModule(Coupons, store);
 };
 
 export {
@@ -60,5 +69,8 @@ export {
   eventForm,
   status,
   openAI,
-  address,
+  generalInfo,
+  tickets,
+  customFields,
+  coupons,
 };
