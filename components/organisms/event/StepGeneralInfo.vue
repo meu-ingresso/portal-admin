@@ -651,7 +651,7 @@ export default {
             'end_time',
           ].includes(f);
 
-          if (this.formData.event_type !== 'Online' && this.formData.event_type !== '') {
+          if (this.isEventPresencialOrHibrito) {
             if (f === 'address' && this.$refs.addressForm.validate(true)) {
               this.formHasErrors = true;
             }

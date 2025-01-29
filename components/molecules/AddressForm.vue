@@ -100,15 +100,9 @@ export default {
       debouncerCEP: null,
       formHasErrors: false,
       rules: {
-        type: Object,
-        default: () => ({
-          cep: [
-            (v) => !!v || 'CEP é obrigatório',
-            (v) => v.length === 9 || 'CEP inválido',
-          ],
-          location_name: [(v) => !!v || 'Local do evento é obrigatório'],
-          number: [(v) => !!v || 'Número é obrigatório'],
-        }),
+        cep: [(v) => !!v || 'CEP é obrigatório', (v) => v.length === 9 || 'CEP inválido'],
+        location_name: [(v) => !!v || 'Local do evento é obrigatório'],
+        number: [(v) => !!v || 'Número é obrigatório'],
       },
     };
   },
