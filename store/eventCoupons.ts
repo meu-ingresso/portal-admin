@@ -3,11 +3,11 @@ import { Coupon, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 
 @Module({
-  name: 'coupons',
+  name: 'eventCoupons',
   stateFactory: true,
   namespaced: true,
 })
-export default class CouponsModule extends VuexModule {
+export default class EventCoupons extends VuexModule {
   private couponList: Coupon[] = [];
 
   public get $coupons() {

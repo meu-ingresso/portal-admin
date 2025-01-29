@@ -15,7 +15,9 @@ import EventForm from '@/store/eventForm';
 import Status from '@/store/status';
 import OpenAI from '@/store/openAI';
 import EventGeneralInfo from '@/store/eventGeneralInfo';
-
+import EventTickets from '@/store/eventTickets';
+import EventCustomFields from '@/store/eventCustomFields';
+import EventCoupons from '@/store/eventCoupons';
 
 let auth: Auth;
 let toast: Toast;
@@ -30,6 +32,9 @@ let eventForm: EventForm;
 let status: Status;
 let openAI: OpenAI;
 let eventGeneralInfo: EventGeneralInfo;
+let eventTickets: EventTickets;
+let eventCustomFields: EventCustomFields;
+let eventCoupons: EventCoupons;
 
 
 const initializeStores = (store: Store<any>) => {
@@ -46,6 +51,9 @@ const initializeStores = (store: Store<any>) => {
   status = getModule(Status, store);
   openAI = getModule(OpenAI, store);
   eventGeneralInfo = getModule(EventGeneralInfo, store);
+  eventTickets = getModule(EventTickets, store);
+  eventCustomFields = getModule(EventCustomFields, store);
+  eventCoupons = getModule(EventCoupons, store);
 };
 
 export {
@@ -63,4 +71,7 @@ export {
   status,
   openAI,
   eventGeneralInfo,
+  eventTickets,
+  eventCustomFields,
+  eventCoupons,
 };

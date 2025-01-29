@@ -3,15 +3,19 @@ import { Ticket, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 
 @Module({
-  name: 'tickets',
+  name: 'eventTickets',
   stateFactory: true,
   namespaced: true,
 })
-export default class TicketsModule extends VuexModule {
+export default class EventTickets extends VuexModule {
   private ticketList: Ticket[] = [];
 
   public get $tickets() {
     return this.ticketList;
+  }
+
+  public get $ticketCategories() {
+    return this.ticketList.map((ticket) => ticket.category);
   }
 
   @Mutation
@@ -21,18 +25,22 @@ export default class TicketsModule extends VuexModule {
 
   @Mutation
   private ADD_TICKET(ticket: Ticket) {
-    this.ticketList.push(ticket);
+    this.ticketList = [...this.ticketList, ticket];
   }
 
   @Mutation
   private UPDATE_TICKET({ index, ticket }: { index: number; ticket: Ticket }) {
-    this.ticketList[index] = ticket;
+      // Criar uma nova referência do array para garantir reatividade
+    const updatedList = [...this.ticketList];
+    updatedList[index] = { ...ticket };
+    this.ticketList = updatedList;
   }
 
   @Mutation
   private REMOVE_TICKET(index: number) {
     this.ticketList.splice(index, 1);
   }
+
 
   @Action
   public setTickets(tickets: Ticket[]) {

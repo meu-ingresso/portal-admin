@@ -97,7 +97,7 @@ import { category, rating, loading, toast, eventForm, event } from '@/store';
 export default {
   data() {
     return {
-      currentStep: 1,
+      currentStep: 2,
       steps: [],
       ticketStepperLabel: 'Ingressos',
       showProgressDialog: false,

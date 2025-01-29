@@ -3,11 +3,11 @@ import { CustomField, PersonType, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 
 @Module({
-  name: 'customFields',
+  name: 'eventCustomFields',
   stateFactory: true,
   namespaced: true,
 })
-export default class CustomFieldsModule extends VuexModule {
+export default class EventCustomFields extends VuexModule {
   private fieldList: CustomField[] = [];
 
   private defaultFields: CustomField[] = [
@@ -47,6 +47,10 @@ export default class CustomFieldsModule extends VuexModule {
 
   public get $customFields() {
     return this.fieldList;
+  }
+
+  public get $defaultFields() {
+    return this.defaultFields;
   }
 
   @Mutation

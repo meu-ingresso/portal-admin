@@ -18,7 +18,7 @@
 
     <v-row>
       <v-col cols="12">
-        <template v-if="tickets.length">
+        <template v-if="getTickets.length">
           <!-- Estrutura de Tabela Desktop -->
           <div v-if="!isMobile" class="table-container">
             <!-- Cabeçalho -->
@@ -36,7 +36,7 @@
               :non-drag-area-selector="'.actions'"
               @drop="onDrop">
               <Draggable
-                v-for="(ticket, index) in tickets"
+                v-for="(ticket, index) in getTickets"
                 :key="index"
                 class="table-row">
                 <div class="table-cell hover-icon">
@@ -55,7 +55,7 @@
                     :show-edit="true"
                     :show-duplicate="true"
                     :show-delete="true"
-                    @edit="openEditModal(ticket, $event)"
+                    @edit="openEditModal(index)"
                     @duplicate="duplicateTicket"
                     @delete="handleRemoveTicket" />
                 </div>
@@ -115,13 +115,7 @@
           <TicketForm
             v-if="newTicketModal"
             ref="newTicketForm"
-            :ticket="newTicket"
-            :categories="categories"
-            :nomenclature="getNomenclature"
-            :event-start-date="form.startDate"
-            :event-end-date="form.endDate"
-            @update:ticket="updateNewTicketFields"
-            @update:categories="handleUpdateCategories" />
+            :nomenclature="getNomenclature" />
         </v-card-text>
         <v-card-actions class="d-flex align-center py-5">
           <v-spacer />
@@ -145,13 +139,8 @@
           <TicketForm
             v-if="editModal"
             ref="editTicketForm"
-            :ticket="selectedTicket"
-            :categories="categories"
             :nomenclature="getNomenclature"
-            :event-start-date="form.startDate"
-            :event-end-date="form.endDate"
-            @update:ticket="updateTicketFields"
-            @update:categories="handleUpdateCategories" />
+            :edit-index="selectedTicketIndex" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
@@ -184,16 +173,12 @@
 <script>
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
-import { toast } from '@/store';
+import { toast, eventTickets, eventCustomFields } from '@/store';
 import { formatPrice } from '@/utils/formatters';
 
 export default {
   components: { Container, Draggable },
   props: {
-    form: {
-      type: Object,
-      required: true,
-    },
     nomenclature: {
       type: String,
       required: true,
@@ -202,17 +187,11 @@ export default {
 
   data() {
     return {
-      localForm: { ...this.form },
-      tickets: this.form.tickets || [],
-      customFields: this.form.customFields || [],
-      existingFields: [],
-      categories: [],
       confirmDialog: false,
       confirmMessage: '',
       ticketIdxToRemove: null,
       ticketNameToRemove: null,
       editModal: false,
-      selectedTicket: null,
       selectedTicketIndex: null,
       newTicketModal: false,
       newTicket: {
@@ -254,25 +233,13 @@ export default {
       }
       return `Nova ${this.getNomenclature}`;
     },
-  },
 
-  watch: {
-    localForm: {
-      handler() {
-        this.emitChanges();
-      },
-      deep: true,
+    getTickets() {
+      return eventTickets.$tickets;
     },
-    'form.customFields': {
-      handler(newFields) {
-        this.customFields = [...newFields];
-      },
-      deep: true,
+    getCustomFields() {
+      return eventCustomFields.$customFields;
     },
-  },
-
-  mounted() {
-    this.populateExistingCategories();
   },
 
   methods: {
@@ -284,33 +251,22 @@ export default {
       callback(null, true);
     },
 
-    populateExistingCategories() {
-      this.categories = [];
-
-      this.localForm.tickets.forEach((ticket) => {
-        if (!this.categories.includes(ticket.category)) {
-          this.categories.push(ticket.category);
-        }
-      });
-    },
-
     duplicateTicket(index) {
-      const ticketToDuplicate = { ...this.tickets[index] };
+      const ticketToDuplicate = { ...this.getTickets[index] };
       const baseName = `Cópia de ${ticketToDuplicate.name}`;
       let newName = baseName;
 
-      if (this.tickets.some((ticket) => ticket.name === baseName)) {
+      if (this.getTickets.some((ticket) => ticket.name === baseName)) {
         let counter = 2;
-        while (this.tickets.some((ticket) => ticket.name === newName)) {
+        while (this.getTickets.some((ticket) => ticket.name === newName)) {
           newName = `${baseName} (${counter})`;
           counter++;
         }
       }
 
       ticketToDuplicate.name = newName;
-      this.tickets.push(ticketToDuplicate);
 
-      this.emitChanges();
+      eventTickets.addTicket(ticketToDuplicate);
 
       toast.setToast({
         text: `Ingresso "${newName}" duplicado com sucesso!`,
@@ -319,22 +275,12 @@ export default {
       });
     },
 
-    emitChanges() {
-      this.$emit('update:form', {
-        ...this.form,
-        tickets: this.tickets,
-        customFields: this.customFields,
-      });
+    handleUpdateTicket(ticket, index) {
+      eventTickets.updateTicket({ index, ticket });
     },
 
-    handleUpdateTicket(ticket, index) {
-      this.tickets[index] = ticket;
-    },
-    handleUpdateCategories(categories) {
-      this.categories = [...categories];
-    },
     confirmRemoveTicket() {
-      const removedTicket = this.tickets.splice(this.ticketIdxToRemove, 1)[0];
+      const removedTicket = this.getTickets.splice(this.ticketIdxToRemove, 1)[0];
       const relatedFields = this.getRelatedCustomFields(removedTicket.name);
       const hasReletedFields = relatedFields.length > 0;
 
@@ -342,7 +288,6 @@ export default {
         this.removeCustomFieldsLinkedToTicket(removedTicket.name);
       }
 
-      this.emitChanges();
       toast.setToast({
         text: hasReletedFields
           ? 'Ingresso e seus respectivos campos removidos com sucesso'
@@ -355,7 +300,7 @@ export default {
 
     handleRemoveTicket(index) {
       this.ticketIdxToRemove = index;
-      this.ticketNameToRemove = this.tickets[index]?.name || `Ingresso ${index + 1}`;
+      this.ticketNameToRemove = this.getTickets[index]?.name || `Ingresso ${index + 1}`;
       const relatedFields = this.getRelatedCustomFields(this.ticketNameToRemove);
 
       if (relatedFields.length > 0) {
@@ -368,55 +313,33 @@ export default {
     },
 
     openNewTicketModal() {
-      this.newTicket = {
-        name: '',
-        category: '',
-        price: '',
-        max_quantity: '',
-        min_purchase: '',
-        max_purchase: '',
-        open_date: '',
-        start_time: '',
-        close_date: '',
-        end_time: '',
-        visible: true,
-        availability: '',
-        quantity: '',
-      };
       this.newTicketModal = true;
     },
 
     updateNewTicketFields(updatedTicket) {
       this.newTicket = updatedTicket;
     },
+
     saveNewTicket() {
       const ticketForm = this.$refs.newTicketForm;
-
-      if (!ticketForm.validateForm()) {
-        this.tickets.push({ ...this.newTicket });
+      if (ticketForm.handleSubmit()) {
         this.newTicketModal = false;
-        this.emitChanges();
       } else {
         console.log('[INSERÇÃO - TicketForm] Erro de validação');
       }
     },
 
-    openEditModal(ticket, index) {
-      this.selectedTicket = { ...ticket };
+    openEditModal(index) {
       this.selectedTicketIndex = index;
       this.editModal = true;
-    },
-    updateTicketFields(updatedTicket) {
-      this.selectedTicket = updatedTicket;
     },
     saveEditedTicket() {
       if (this.selectedTicketIndex !== null) {
         const ticketForm = this.$refs.editTicketForm;
 
-        if (!ticketForm.validateForm()) {
-          this.$set(this.tickets, this.selectedTicketIndex, this.selectedTicket);
-          this.emitChanges();
+        if (ticketForm.handleSubmit()) {
           this.editModal = false;
+          this.selectedTicketIndex = null;
         } else {
           console.log('[EDIÇÃO - TicketForm] Erro de validação');
         }
@@ -424,27 +347,28 @@ export default {
     },
 
     getRelatedCustomFields(ticketName) {
-      return this.customFields.filter((field) => field?.tickets.includes(ticketName));
+      return this.getCustomFields.filter((field) => field?.tickets.includes(ticketName));
     },
 
     removeCustomFieldsLinkedToTicket(ticketName) {
-      this.customFields.forEach((field) => {
+      this.getCustomFields.forEach((field) => {
         const index = field.tickets.indexOf(ticketName);
         if (index !== -1) {
           field?.tickets.splice(index, 1);
         }
       });
 
-      // Remove campos personalizados que não estão vinculados a nenhum ingresso e não sejam padrão
-      this.customFields = this.customFields.filter(
+      const filteredFields = this.getCustomFields.filter(
         (field) => field.tickets.length > 0 || field.isDefault
       );
+
+      eventCustomFields.setFields(filteredFields);
     },
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
-        const movedTicket = this.tickets.splice(removedIndex, 1)[0];
-        this.tickets.splice(addedIndex, 0, movedTicket);
+        const movedTicket = this.getTickets.splice(removedIndex, 1)[0];
+        this.getTickets.splice(addedIndex, 0, movedTicket);
       }
     },
   },
