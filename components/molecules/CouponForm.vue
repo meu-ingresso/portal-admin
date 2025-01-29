@@ -216,7 +216,7 @@ export default {
       isFormValid: false,
       localCoupon: {
         code: '',
-        discount_type: { text: 'Fixo', value: 'FIXED' },
+        discount_type: 'FIXED',
         discount_value: '',
         max_uses: 1,
         start_date: '',
@@ -257,10 +257,21 @@ export default {
           (v) => !!v || 'A data de início é obrigatória',
           (v) => {
             if (!v) return true;
-            const startDate = new Date(v);
+            const startDate = new Date(this.localCoupon.start_date + 'T00:00:00');
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            return startDate >= today || 'A data deve ser posterior ou igual a hoje';
+
+            const todayDate = new Date(
+              today.getFullYear(),
+              today.getMonth(),
+              today.getDate()
+            );
+            const couponDate = new Date(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate()
+            );
+
+            return couponDate >= todayDate || 'A data deve ser posterior ou igual a hoje';
           },
         ],
         start_time: [
@@ -281,8 +292,8 @@ export default {
           (v) => !!v || 'A data de término é obrigatória',
           (v) => {
             if (!v || !this.localCoupon.start_date) return true;
-            const startDate = new Date(this.localCoupon.start_date);
-            const endDate = new Date(v);
+            const startDate = new Date(this.localCoupon.start_date + 'T00:00:00');
+            const endDate = new Date(this.localCoupon.end_date + 'T00:00:00');
             return endDate >= startDate || 'A data deve ser posterior à data de início';
           },
         ],
@@ -389,7 +400,6 @@ export default {
           eventCoupons.addCoupon(this.localCoupon);
         }
 
-        this.resetForm();
         return true;
       } catch (error) {
         console.error('Erro ao salvar cupom:', error);

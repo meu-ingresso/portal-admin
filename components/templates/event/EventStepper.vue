@@ -92,7 +92,16 @@ import StepTickets from '../../organisms/event/StepTickets.vue';
 import StepCustomFields from '../../organisms/event/StepCustomFields.vue';
 import StepCoupons from '../../organisms/event/StepCoupons.vue';
 import { isMobileDevice } from '@/utils/utils';
-import { category, rating, loading, toast, eventForm, event } from '@/store';
+import {
+  category,
+  rating,
+  loading,
+  toast,
+  eventForm,
+  event,
+  eventTickets,
+  eventCustomFields,
+} from '@/store';
 
 export default {
   data() {
@@ -144,6 +153,13 @@ export default {
         text: rating.description,
         img: rating.image,
       }));
+    },
+
+    getTickets() {
+      return eventTickets.$tickets;
+    },
+    getCustomFields() {
+      return eventCustomFields.$customFields;
     },
 
     getSteps() {
@@ -214,7 +230,7 @@ export default {
           if (flag) {
             if (this.currentStep < this.getSteps.length) {
               // Se estou nos ingressos e dei próximo sem ingressos = CUPOM
-              if (this.currentStep === 2 && this.form.tickets.length === 0) {
+              if (this.currentStep === 2 && this.getTickets.length === 0) {
                 this.currentStep = 4;
               } else {
                 this.currentStep++;
@@ -230,7 +246,7 @@ export default {
       if (this.currentStep === 1) {
         this.$router.replace('/events');
       } else if (this.currentStep > 1) {
-        if (this.currentStep === 4 && this.form.tickets.length === 0) {
+        if (this.currentStep === 4 && this.getTickets.length === 0) {
           this.currentStep = 2;
         } else {
           this.currentStep--;

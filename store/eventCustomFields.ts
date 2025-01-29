@@ -13,32 +13,32 @@ export default class EventCustomFields extends VuexModule {
   private defaultFields: CustomField[] = [
     {
       name: 'Nome Completo',
-      type: { text: 'Texto', value: 'TEXTO' },
+      type: 'TEXTO',
       is_default: true,
       options: [
-        { text: 'Obrigatório', value: 'required' },
-        { text: 'Visível no ingresso', value: 'visible_on_ticket' },
+        'required',
+        'visible_on_ticket',
       ],
       person_types: [
-        { text: 'Pessoa Física (PF)', value: 'PF' },
-        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
+        'PF',
+        'PJ',
+        'ESTRANGEIRO',
       ],
       tickets: [],
       selected_options: []
     },
     {
       name: 'Email',
-      type: { text: 'Email', value: 'EMAIL' },
+      type: 'EMAIL',
       is_default: true,
       options: [
-        { text: 'Obrigatório', value: 'required' },
-        { text: 'Visível na Impressão', value: 'visible_on_ticket' },
+        'required',
+        'visible_on_ticket',
       ],
       person_types: [
-        { text: 'Pessoa Física (PF)', value: 'PF' },
-        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
+        'PF',
+        'PJ',
+        'ESTRANGEIRO',
       ],
       tickets: [],
       selected_options: []
@@ -60,12 +60,14 @@ export default class EventCustomFields extends VuexModule {
 
   @Mutation
   private ADD_FIELD(field: CustomField) {
-    this.fieldList.push(field);
+    this.fieldList = [...this.fieldList, field];
   }
 
   @Mutation
   private UPDATE_FIELD({ index, field }: { index: number; field: CustomField }) {
-    this.fieldList[index] = field;
+    const updatedList = [...this.fieldList];
+    updatedList[index] = { ...field };
+    this.fieldList = updatedList;
   }
 
   @Mutation
@@ -166,7 +168,7 @@ export default class EventCustomFields extends VuexModule {
         errors.push(`Campo ${index + 1}: Selecione pelo menos um ingresso`);
       }
 
-      const fieldIsMultiOptions = field.type?.value === 'multiselect' || field.type?.value === 'autocomplete';
+      const fieldIsMultiOptions = field.type === 'MULTI_CHECKBOX' || field.type === 'MENU_DROPDOWN';
 
       // Validações específicas por tipo
       if (fieldIsMultiOptions) {
@@ -203,8 +205,8 @@ export default class EventCustomFields extends VuexModule {
     const fieldResponse = await $axios.$post('event-checkout-field', {
       event_id: eventId,
       name: customField.name,
-      type: customField.type.value,
-      person_type: personType.value,
+      type: customField.type,
+      person_type: personType,
       required: isRequired,
       is_unique: isUnique,
       visible_on_ticket: visibleOnTicket,
@@ -221,11 +223,9 @@ export default class EventCustomFields extends VuexModule {
 
   private getCustomFieldOptions(customField: CustomField) {
     return {
-      isRequired: customField.options.some((option) => option.value === 'required'),
-      visibleOnTicket: customField.options.some(
-        (option) => option.value === 'visible_on_ticket'
-      ),
-      isUnique: customField.options.some((option) => option.value === 'is_unique'),
+      isRequired: customField.options.includes('required'),
+      visibleOnTicket: customField.options.includes('visible_on_ticket'),
+      isUnique: customField.options.includes('is_unique'),
     };
   }
 

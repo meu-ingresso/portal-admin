@@ -79,7 +79,7 @@ export default class EventCoupons extends VuexModule {
         errors.push(`Cupom ${index + 1}: Valor do desconto deve ser maior que zero`);
       }
 
-      if (coupon.discount_type?.value === 'PERCENTAGE' && parseFloat(coupon.discount_value) > 100) {
+      if (coupon.discount_type === 'PERCENTAGE' && parseFloat(coupon.discount_value) > 100) {
         errors.push(`Cupom ${index + 1}: Desconto percentual não pode ser maior que 100%`);
       }
 
@@ -188,7 +188,7 @@ export default class EventCoupons extends VuexModule {
         status_id: statusId,
         code: coupon.code,
         discount_value: couponDiscountValue,
-        discount_type: coupon.discount_type.value,
+        discount_type: coupon.discount_type,
         max_uses: coupon.max_uses,
         start_date: startDate.toISOString().replace('Z', '-0300'),
         end_date: endDate.toISOString().replace('Z', '-0300'),
@@ -230,7 +230,7 @@ export default class EventCoupons extends VuexModule {
         status_id: statusId,
         code: coupon.code,
         discount_value: couponDiscountValue,
-        discount_type: coupon.discount_type.value,
+        discount_type: coupon.discount_type,
         max_uses: coupon.max_uses,
         start_date: startDate.toISOString().replace('Z', '-0300'),
         end_date: endDate.toISOString().replace('Z', '-0300'),

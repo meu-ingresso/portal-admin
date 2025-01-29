@@ -351,20 +351,20 @@ export default {
           (v) => {
             if (!v) return true;
             const today = new Date();
-            const startDate = new Date(v + 'T00:00:00');
+            const startDate = new Date(this.localTicket.start_date + 'T00:00:00');
 
             const todayDate = new Date(
               today.getFullYear(),
               today.getMonth(),
               today.getDate()
             );
-            const eventDate = new Date(
+            const ticketDate = new Date(
               startDate.getFullYear(),
               startDate.getMonth(),
               startDate.getDate()
             );
 
-            if (eventDate >= todayDate) return true;
+            if (ticketDate >= todayDate) return true;
             return 'A data de início não pode ser anterior à data atual.';
           },
         ],
@@ -388,7 +388,7 @@ export default {
             if (!v || !this.localTicket.start_date) return true;
 
             const startDate = new Date(this.localTicket.start_date + 'T00:00:00');
-            const endDate = new Date(v + 'T00:00:00');
+            const endDate = new Date(this.localTicket.end_date + 'T00:00:00');
 
             if (endDate >= startDate) return true;
             return 'A data de término deve ser posterior ou igual à data de início.';

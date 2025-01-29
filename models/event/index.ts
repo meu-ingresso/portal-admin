@@ -16,25 +16,13 @@ export interface AvailabilityOption {
   value: string;
 }
 
-export interface FieldType {
-  text: string;
-  value: 'TEXTO' | 'number' | 'date' | 'EMAIL' | 'phone' | 'autocomplete' | 'multiselect';
-}
+export type FieldType = 'CPF' | 'CNPJ' | 'TELEFONE' | 'DATA' | 'TEXTO' | 'PARAGRAPH' | 'EMAIL' | 'MENU_DROPDOWN' | 'MULTI_CHECKBOX' | 'TERMO';
 
-export interface FieldOption {
-  text: string;
-  value: 'required' | 'is_unique' | 'visible_on_ticket';
-}
+export type FieldOption = 'required' | 'is_unique' | 'visible_on_ticket';
 
-export interface PersonType {
-  text: string;
-  value: 'PF' | 'PJ' | 'ESTRANGEIRO';
-}
+export type PersonType = 'PF' | 'PJ' | 'ESTRANGEIRO';
 
-export interface DiscountType {
-  text: string;
-  value: 'FIXED' | 'PERCENTAGE';
-}
+export type DiscountType = 'FIXED' | 'PERCENTAGE';
 
 export interface CustomField {
   id?: string;
@@ -48,6 +36,7 @@ export interface CustomField {
   tickets: string[];
   order?: number;
   help_text?: string;
+  terms_content?: string;
 }
 
 export interface Ticket {

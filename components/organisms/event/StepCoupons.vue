@@ -28,14 +28,14 @@
           <div class="table-cell">{{ coupon.code }}</div>
           <div class="table-cell">
             {{
-              coupon.discount_type === 'fixed'
-                ? `R$ ${coupon.discount_value}`
+              coupon.discount_type === 'FIXED'
+                ? `R$ ${coupon.discount_value.replace('.', ',')}`
                 : `${coupon.discount_value}%`
             }}
           </div>
-          <div class="table-cell">{{ getArrayObjectText(coupon.tickets, null) }}</div>
+          <div class="table-cell">{{ getArrayObjectText(coupon.tickets) }}</div>
           <div class="table-cell actions">
-            <v-btn icon small class="mr-2" @click="openEditModal(coupon, index)">
+            <v-btn icon small class="mr-2" @click="openEditModal(index)">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
             <v-btn icon small @click="handleRemoveCoupon(index)">
@@ -193,6 +193,8 @@ export default {
     },
 
     getArrayObjectText(array) {
+      if (!array) return '-';
+
       return array?.join(', ') || '';
     },
   },

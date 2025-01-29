@@ -16,7 +16,7 @@
 
     <v-row>
       <v-col cols="12">
-        <template v-if="customFields.length">
+        <template v-if="getCustomFields.length">
           <div class="table-container">
             <!-- Cabeçalho -->
             <div class="table-header">
@@ -34,20 +34,20 @@
               :non-drag-area-selector="'.actions'"
               @drop="onDrop">
               <Draggable
-                v-for="(field, index) in customFields"
+                v-for="(field, index) in getCustomFields"
                 :key="index"
                 class="table-row"
-                :class="{ 'disabled-row': field.isDefault }">
+                :class="{ 'disabled-row': field.is_default }">
                 <div class="table-cell hover-icon">
                   <v-icon>mdi-drag-vertical</v-icon>
                 </div>
                 <div class="table-cell">{{ field.name ? field.name : '-' }}</div>
-                <div class="table-cell">{{ field.type ? field.type?.value : '-' }}</div>
+                <div class="table-cell">{{ field.type ? field.type : '-' }}</div>
                 <div class="table-cell">
-                  {{ field.personTypes ? getArrayObjectText(field.personTypes) : '-' }}
+                  {{ getArrayObjectText(field.person_types, 'text') }}
                 </div>
                 <div class="table-cell">
-                  {{ field.tickets ? getArrayObjectText(field.tickets, null) : '-' }}
+                  {{ getArrayObjectText(field.tickets) }}
                 </div>
                 <div class="table-cell actions">
                   <v-tooltip bottom>
@@ -57,9 +57,9 @@
                         small
                         v-bind="attrs"
                         class="mr-2"
-                        :disabled="field.isDefault"
+                        :disabled="field.is_default"
                         v-on="on"
-                        @click="openEditModal(field, index)">
+                        @click="openEditModal(index)">
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
                     </template>
@@ -71,7 +71,7 @@
                         icon
                         small
                         v-bind="attrs"
-                        :disabled="field.isDefault"
+                        :disabled="field.is_default"
                         v-on="on"
                         @click="removeCustomField(index)">
                         <v-icon color="red">mdi-delete</v-icon>
@@ -99,12 +99,8 @@
         <v-card-text class="px-4 py-2">
           <CustomFieldForm
             v-if="newFieldModal"
-            ref="newCustomFieldForm"
-            :field="newField"
-            :tickets="tickets"
-            :person-types="personTypes"
-            :options="options"
-            @update:field="updateNewFieldFields" />
+            ref="newFieldForm"
+            :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center py-5">
           <v-spacer />
@@ -127,12 +123,9 @@
         <v-card-text class="px-4 py-2">
           <CustomFieldForm
             v-if="editModal"
-            ref="editCustomFieldForm"
-            :field="selectedField"
-            :tickets="tickets"
-            :person-types="personTypes"
-            :options="options"
-            @update:field="updateFieldFields" />
+            ref="editFieldForm"
+            :edit-index="selectedFieldIndex"
+            :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
@@ -150,9 +143,7 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
-          Tem certeza de que deseja excluir "{{ fieldNameToRemove }}"?
-        </v-card-text>
+        <v-card-text>{{ confirmMessage }}</v-card-text>
         <v-card-actions class="d-flex justify-space-between align-center">
           <DefaultButton outlined text="Cancelar" @click="confirmDialog = false" />
           <DefaultButton text="Excluir" @click="confirmRemoveField" />
@@ -165,7 +156,8 @@
 <script>
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
-import { toast } from '@/store';
+import { toast, eventTickets, eventCustomFields } from '@/store';
+
 export default {
   components: { Container, Draggable },
   props: {
@@ -176,201 +168,83 @@ export default {
   },
   data() {
     return {
-      customFields: this.form.customFields || [],
-      fieldTypes: [
-        { text: 'Texto', value: 'text' },
-        { text: 'Número', value: 'number' },
-        { text: 'Data', value: 'date' },
-        { text: 'Email', value: 'email' },
-        { text: 'Telefone', value: 'phone' },
-        { text: 'Autocomplete', value: 'autocomplete' },
-        { text: 'Multiselect', value: 'multiselect' },
-      ],
-      options: [
-        { text: 'Obrigatório', value: 'required' },
-        { text: 'Único', value: 'unique' },
-        { text: 'Visível na Impressão', value: 'visible_on_ticket' },
-      ],
-      personTypes: [
-        { text: 'Pessoa Física (PF)', value: 'PF' },
-        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
-      ],
       confirmDialog: false,
-      fieldNameToRemove: null,
+      confirmMessage: '',
       fieldIdxToRemove: null,
-      newFieldModal: false,
-      newField: {
-        name: '',
-        type: '',
-        tickets: [],
-        personTypes: [],
-        options: [],
-        description: '',
-      },
       editModal: false,
-      selectedField: null,
       selectedFieldIndex: null,
+      newFieldModal: false,
     };
   },
 
   computed: {
-    tickets() {
-      return this.form?.tickets.map((ticket) => ticket.name) || [];
-    },
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
-  },
 
-  watch: {
-    'form.customFields': {
-      handler(newFields) {
-        this.customFields = [...newFields];
-      },
-      deep: true,
+    getTickets() {
+      return eventTickets.$tickets.map((ticket) => ticket.name);
+    },
+
+    getCustomFields() {
+      return eventCustomFields.$customFields;
     },
   },
 
   methods: {
-    ensureDefaultFields() {
-      const defaultFields = [
-        {
-          name: 'Nome Completo',
-          type: 'text',
-          isDefault: true,
-          options: [
-            { text: 'Obrigatório', value: 'required' },
-            { text: 'Visível no ingresso', value: 'visible_on_ticket' },
-          ],
-          personTypes: [
-            { text: 'Pessoa Física (PF)', value: 'PF' },
-            { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-            { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
-          ],
-          tickets: [],
-        },
-        {
-          name: 'Email',
-          type: 'email',
-          isDefault: true,
-          options: [
-            { text: 'Obrigatório', value: 'required' },
-            { text: 'Visível na Impressão', value: 'visible_on_ticket' },
-          ],
-          personTypes: [
-            { text: 'Pessoa Física (PF)', value: 'PF' },
-            { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-            { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
-          ],
-          tickets: [],
-        },
-      ];
-
-      defaultFields.forEach((defaultField) => {
-        if (!this.customFields.some((field) => field.name === defaultField.name)) {
-          this.customFields.push({ ...defaultField });
-        }
-      });
-
-      this.emitChanges();
-    },
-    openNewFieldModal() {
-      if (this.form.tickets.length === 0) {
-        toast.setToast({
-          text: 'É necessário adicionar pelo menos um ingresso para criar um campo personalizado.',
-          type: 'danger',
-          time: 5000,
-        });
-        return;
-      }
-
-      this.newField = {
-        name: '',
-        type: '',
-        tickets: [],
-        personTypes: [],
-        options: [],
-        description: '',
-      };
-      this.newFieldModal = true;
-    },
-    updateNewFieldFields(updatedField) {
-      this.newField = updatedField;
-    },
-    saveNewField() {
-      const fieldForm = this.$refs.newCustomFieldForm;
-
-      if (!fieldForm.validateForm()) {
-        this.customFields.push({ ...this.newField });
-        this.newFieldModal = false;
-        this.emitChanges();
-      } else {
-        console.log('[INSERÇÃO - FieldForm] Erro de validação:', fieldForm.errors);
-      }
-    },
-    openEditModal(field, index) {
-      this.selectedField = { ...field };
-      this.selectedFieldIndex = index;
-      this.editModal = true;
-    },
-    updateFieldFields(updatedField) {
-      this.selectedField = updatedField;
-    },
-    saveEditedField() {
-      if (this.selectedFieldIndex !== null) {
-        const fieldForm = this.$refs.editCustomFieldForm;
-
-        if (!fieldForm.validateForm()) {
-          this.$set(this.customFields, this.selectedFieldIndex, this.selectedField);
-          this.editModal = false;
-          this.emitChanges();
-        } else {
-          console.log('[EDIÇÃO - FieldForm] Erro de validação:', fieldForm.errors);
-        }
-      }
-    },
     handleRemoveField(index) {
-      this.customFields.splice(index, 1);
-      this.emitChanges();
+      this.fieldIdxToRemove = index;
+      const fieldToRemove = this.getCustomFields[index];
+      this.confirmMessage = `Tem certeza de que deseja excluir o campo ${fieldToRemove.name} ?`;
+      this.confirmDialog = true;
     },
 
     confirmRemoveField() {
-      this.customFields.splice(this.fieldIdxToRemove, 1);
-      this.emitChanges();
-      this.confirmDialog = false;
+      eventCustomFields.removeField(this.fieldIdxToRemove);
       toast.setToast({
         text: 'Campo removido com sucesso.',
         type: 'success',
         time: 5000,
       });
-    },
-    removeCustomField(index) {
-      this.fieldIdxToRemove = index;
-      this.fieldNameToRemove =
-        this.customFields[index].name || 'Campo de número ' + (index + 1);
-      this.confirmDialog = true;
+      this.confirmDialog = false;
     },
 
-    emitChanges() {
-      this.$emit('update:form', {
-        ...this.form,
-        customFields: [...this.customFields],
-      });
+    openNewFieldModal() {
+      this.newFieldModal = true;
+    },
+
+    saveNewField() {
+      const fieldForm = this.$refs.newFieldForm;
+      if (fieldForm.handleSubmit()) {
+        this.newFieldModal = false;
+      }
+    },
+
+    openEditModal(index) {
+      this.selectedFieldIndex = index;
+      this.editModal = true;
+    },
+
+    saveEditedField() {
+      if (this.selectedFieldIndex !== null) {
+        const fieldForm = this.$refs.editFieldForm;
+        if (fieldForm.handleSubmit()) {
+          this.editModal = false;
+          this.selectedFieldIndex = null;
+        }
+      }
     },
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
-        const movedTicket = this.customFields.splice(removedIndex, 1)[0];
-        this.customFields.splice(addedIndex, 0, movedTicket);
+        const movedField = this.getCustomFields.splice(removedIndex, 1)[0];
+        this.getCustomFields.splice(addedIndex, 0, movedField);
       }
     },
 
-    getArrayObjectText(arrayValue, key = 'text') {
-      if (!key) {
-        return arrayValue.map((item) => item).join(', ');
-      }
-      return arrayValue.map((item) => item[key]).join(', ');
+    getArrayObjectText(array, key = null) {
+      if (!array) return '-';
+      return array.map((item) => (key ? item[key] : item)).join(', ') || '-';
     },
   },
 };
