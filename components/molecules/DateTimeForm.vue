@@ -266,8 +266,14 @@ export default {
             )
               return true;
 
-            if (this.localStartDate !== this.localEndDate) return true;
+            // Verifica se as datas são iguais
+            const startDate = new Date(this.formData.start_date);
+            const endDate = new Date(this.formData.end_date);
 
+            // Se as datas forem diferentes, não precisa validar o horário
+            if (startDate.getTime() !== endDate.getTime()) return true;
+
+            // Se for o mesmo dia, valida o horário
             const [startHour, startMinute] = this.formData.start_time
               .split(':')
               .map(Number);
@@ -348,6 +354,26 @@ export default {
         formattedEndDate: this.formattedEndDate,
         end_time: this.formData.end_time,
       };
+    },
+  },
+  watch: {
+    'formData.start_date'() {
+      // Força revalidação do campo de horário de término
+      if (this.$refs.end_time) {
+        this.$refs.end_time.validate();
+      }
+    },
+    'formData.start_time'() {
+      // Força revalidação do campo de horário de término
+      if (this.$refs.end_time) {
+        this.$refs.end_time.validate();
+      }
+    },
+    'formData.end_date'() {
+      // Força revalidação do campo de horário de término
+      if (this.$refs.end_time) {
+        this.$refs.end_time.validate();
+      }
     },
   },
   methods: {
