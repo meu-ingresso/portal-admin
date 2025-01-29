@@ -368,10 +368,10 @@ export default {
       const [hours, minutes] = value.split(':').map(Number);
 
       if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
-        this[field] = value;
+        this.formData[field] = value;
       } else {
         // Se o valor for inválido, limpa o campo
-        this[field] = '';
+        this.formData[field] = '';
       }
     },
     onStartDateChange() {
