@@ -24,46 +24,29 @@
             v-on="on" />
         </template>
         <v-date-picker
-          v-model="localStartDate"
+          v-model="formData.start_date"
           locale="pt-br"
           dense
           hide-details="auto"
           no-title
+          :min="minDate"
           @input="onStartDateChange" />
       </v-menu>
     </v-col>
     <v-col cols="12" md="3" sm="12">
-      <v-menu
-        ref="startTimeMenu"
-        v-model="startTimeMenu"
-        :close-on-content-click="false"
-        transition="scale-transition"
-        offset-y
+      <v-text-field
+        ref="start_time"
+        v-model="formData.start_time"
+        v-mask="'##:##'"
+        label="Hora de Início"
+        prepend-inner-icon="mdi-clock-outline"
+        placeholder="21:30"
+        outlined
         dense
         hide-details="auto"
-        min-width="auto">
-        <template #activator="{ on, attrs }">
-          <v-text-field
-            ref="localStartTime"
-            v-model="localStartTime"
-            label="Hora de Início"
-            prepend-inner-icon="mdi-clock-outline"
-            readonly
-            outlined
-            dense
-            hide-details="auto"
-            v-bind="attrs"
-            required
-            :rules="rules?.startTime"
-            v-on="on" />
-        </template>
-        <v-time-picker
-          v-model="localStartTime"
-          format="24hr"
-          dense
-          hide-details="auto"
-          @input="startTimeMenu = false" />
-      </v-menu>
+        required
+        :rules="rules?.startTime"
+        @input="validateTime($event, 'start_time')" />
     </v-col>
     <v-col cols="12" md="3" sm="12">
       <v-menu
@@ -91,110 +74,231 @@
             v-on="on" />
         </template>
         <v-date-picker
-          v-model="localEndDate"
+          v-model="formData.end_date"
           locale="pt-br"
           dense
           no-title
           hide-details="auto"
+          :min="formData.start_date || minDate"
           @input="onEndDateChange" />
       </v-menu>
     </v-col>
     <v-col cols="12" md="3" sm="12">
-      <v-menu
-        ref="endTimeMenu"
-        v-model="endTimeMenu"
-        :close-on-content-click="false"
-        transition="scale-transition"
-        offset-y
+      <v-text-field
+        ref="end_time"
+        v-model="formData.end_time"
+        v-mask="'##:##'"
+        label="Hora de Término"
+        prepend-inner-icon="mdi-clock-outline"
+        placeholder="00:00"
+        outlined
         dense
         hide-details="auto"
-        min-width="auto">
-        <template #activator="{ on, attrs }">
-          <v-text-field
-            ref="localEndTime"
-            v-model="localEndTime"
-            label="Hora de Término"
-            prepend-inner-icon="mdi-clock-outline"
-            readonly
-            outlined
-            dense
-            hide-details="auto"
-            v-bind="attrs"
-            required
-            :rules="rules?.endTime"
-            v-on="on" />
-        </template>
-        <v-time-picker
-          v-model="localEndTime"
-          format="24hr"
-          dense
-          hide-details="auto"
-          @input="endTimeMenu = false" />
-      </v-menu>
+        required
+        :rules="rules?.endTime"
+        @input="validateTime($event, 'end_time')" />
     </v-col>
-    <v-col v-if="localStartDate && localEndDate" cols="12">
+    <v-col v-if="formData.start_date && formData.end_date" cols="12">
       <p class="subtitle-2" v-html="eventDuration" />
     </v-col>
   </v-row>
 </template>
 
 <script>
+import { mask } from 'vue-the-mask';
 import { formatDateToBr } from '@/utils/formatters';
+import { eventGeneralInfo } from '@/store';
+
 export default {
-  props: {
-    startDate: {
-      type: String,
-      required: true,
-    },
-    startTime: {
-      type: String,
-      required: true,
-    },
-    endDate: {
-      type: String,
-      required: true,
-    },
-    endTime: {
-      type: String,
-      required: true,
-    },
+  directives: {
+    mask,
   },
   data() {
+    const today = new Date();
+    const minDate =
+      today.getFullYear() +
+      '-' +
+      String(today.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(today.getDate()).padStart(2, '0');
+
     return {
-      localStartDate: this.startDate,
-      localStartTime: this.startTime,
-      localEndDate: this.endDate,
-      localEndTime: this.endTime,
       startDateMenu: false,
       startTimeMenu: false,
       endDateMenu: false,
       endTimeMenu: false,
       hasErrors: false,
+      minDate,
       rules: {
-        startDate: [(value) => !!value || 'A data de início é obrigatória.'],
-        startTime: [(value) => !!value || 'A hora de início é obrigatória.'],
+        startDate: [
+          (value) => !!value || 'A data de início é obrigatória.',
+          (value) => {
+            if (!value) return true;
+
+            const today = new Date();
+            const startDate = new Date(this.formData.start_date + 'T00:00:00');
+
+            const todayDate = new Date(
+              today.getFullYear(),
+              today.getMonth(),
+              today.getDate()
+            );
+            const eventDate = new Date(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate()
+            );
+
+            if (eventDate > todayDate) return true;
+
+            if (eventDate < todayDate)
+              return 'A data de início não pode ser anterior à data atual.';
+
+            if (this.formData.start_time) {
+              const [hours, minutes] = this.formData.start_time.split(':').map(Number);
+              const eventTime = hours * 60 + minutes;
+              const currentTime = today.getHours() * 60 + today.getMinutes();
+
+              return (
+                eventTime > currentTime ||
+                'O horário de início deve ser posterior ao horário atual.'
+              );
+            }
+
+            return true;
+          },
+        ],
+        startTime: [
+          (value) => !!value || 'A hora de início é obrigatória.',
+          (value) => {
+            if (!value) return true;
+            const [hours, minutes] = value.split(':').map(Number);
+            if (isNaN(hours) || hours < 0 || hours > 23) {
+              return 'Hora inválida. Use valores entre 00 e 23.';
+            }
+            if (isNaN(minutes) || minutes < 0 || minutes > 59) {
+              return 'Minutos inválidos. Use valores entre 00 e 59.';
+            }
+
+            const today = new Date();
+            const startDate = new Date(this.formData.start_date + 'T00:00:00');
+
+            if (
+              startDate.getDate() === today.getDate() &&
+              startDate.getMonth() === today.getMonth() &&
+              startDate.getFullYear() === today.getFullYear()
+            ) {
+              const eventTime = hours * 60 + minutes;
+              const currentTime = today.getHours() * 60 + today.getMinutes();
+
+              return (
+                eventTime > currentTime ||
+                'O horário de início deve ser posterior ao horário atual.'
+              );
+            }
+
+            return true;
+          },
+        ],
         endDate: [
           (value) => !!value || 'A data de término é obrigatória.',
-          (value) =>
-            !value ||
-            this.normalizeDate(this.localEndDate) >=
-              this.normalizeDate(this.localStartDate) ||
-            'A data de término deve ser posterior à data de início.',
+          (value) => {
+            if (!value || !this.localStartDate) return true;
+
+            const startDate = new Date(this.formData.start_date + 'T00:00:00');
+            const endDate = new Date(this.formData.end_date + 'T00:00:00');
+
+            const startDateOnly = new Date(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate()
+            );
+            const endDateOnly = new Date(
+              endDate.getFullYear(),
+              endDate.getMonth(),
+              endDate.getDate()
+            );
+
+            if (endDateOnly < startDateOnly) {
+              return 'A data de término não pode ser anterior à data de início.';
+            }
+
+            if (endDateOnly.getTime() === startDateOnly.getTime()) {
+              if (!this.localStartTime || !this.localEndTime) return true;
+
+              const [startHour, startMinute] = this.formData.start_time
+                .split(':')
+                .map(Number);
+              const [endHour, endMinute] = this.formData.end_time.split(':').map(Number);
+
+              const startMinutes = startHour * 60 + startMinute;
+              const endMinutes = endHour * 60 + endMinute;
+
+              return (
+                endMinutes > startMinutes ||
+                'O horário de término deve ser posterior ao horário de início.'
+              );
+            }
+
+            return true;
+          },
         ],
-        endTime: [(value) => !!value || 'A hora de término é obrigatória.'],
+        endTime: [
+          (value) => !!value || 'A hora de término é obrigatória.',
+          (value) => {
+            if (!value) return true;
+            const [hours, minutes] = value.split(':').map(Number);
+            if (isNaN(hours) || hours < 0 || hours > 23) {
+              return 'Hora inválida. Use valores entre 00 e 23.';
+            }
+            if (isNaN(minutes) || minutes < 0 || minutes > 59) {
+              return 'Minutos inválidos. Use valores entre 00 e 59.';
+            }
+            return true;
+          },
+          (value) => {
+            if (
+              !value ||
+              !this.formData.start_time ||
+              !this.formData.end_time ||
+              !this.formData.start_date ||
+              !this.formData.end_date
+            )
+              return true;
+
+            if (this.localStartDate !== this.localEndDate) return true;
+
+            const [startHour, startMinute] = this.formData.start_time
+              .split(':')
+              .map(Number);
+            const [endHour, endMinute] = this.formData.end_time.split(':').map(Number);
+
+            const startMinutes = startHour * 60 + startMinute;
+            const endMinutes = endHour * 60 + endMinute;
+
+            return (
+              endMinutes > startMinutes ||
+              'O horário de término deve ser posterior ao horário de início'
+            );
+          },
+        ],
       },
     };
   },
   computed: {
     formattedStartDate() {
-      return this.localStartDate ? formatDateToBr(this.localStartDate) : '';
+      return this.formData.start_date ? formatDateToBr(this.formData.start_date) : '';
     },
     formattedEndDate() {
-      return this.localEndDate ? formatDateToBr(this.localEndDate) : '';
+      return this.formData.end_date ? formatDateToBr(this.formData.end_date) : '';
     },
     eventDuration() {
-      const startDateTime = new Date(`${this.localStartDate}T${this.localStartTime}:00`);
-      const endDateTime = new Date(`${this.localEndDate}T${this.localEndTime}:00`);
+      const startDateTime = new Date(
+        `${this.formData.start_date}T${this.formData.start_time}:00`
+      );
+      const endDateTime = new Date(
+        `${this.formData.end_date}T${this.formData.end_time}:00`
+      );
 
       if (
         isNaN(startDateTime.getTime()) ||
@@ -232,30 +336,20 @@ export default {
         return durationText + parts.join(', ') + ' e ' + lastPart + '</strong>.';
       }
     },
+
+    formData() {
+      return eventGeneralInfo.$info;
+    },
+
     form() {
       return {
         formattedStartDate: this.formattedStartDate,
-        localStartTime: this.localStartTime,
+        start_time: this.formData.start_time,
         formattedEndDate: this.formattedEndDate,
-        localEndTime: this.localEndTime,
+        end_time: this.formData.end_time,
       };
     },
   },
-  watch: {
-    localStartDate(newVal) {
-      this.$emit('update:startDate', newVal);
-    },
-    localStartTime(newVal) {
-      this.$emit('update:startTime', newVal);
-    },
-    localEndDate(newVal) {
-      this.$emit('update:endDate', newVal);
-    },
-    localEndTime(newVal) {
-      this.$emit('update:endTime', newVal);
-    },
-  },
-
   methods: {
     validate() {
       this.hasErrors = false;
@@ -268,7 +362,18 @@ export default {
 
       return this.hasErrors;
     },
+    validateTime(value, field) {
+      if (!value) return;
 
+      const [hours, minutes] = value.split(':').map(Number);
+
+      if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+        this[field] = value;
+      } else {
+        // Se o valor for inválido, limpa o campo
+        this[field] = '';
+      }
+    },
     onStartDateChange() {
       this.startDateMenu = false;
     },

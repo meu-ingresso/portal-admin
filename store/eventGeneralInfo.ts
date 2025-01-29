@@ -4,12 +4,14 @@ import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 
 @Module({
-  name: 'generalInfo',
+  name: 'eventGeneralInfo',
   stateFactory: true,
   namespaced: true,
 })
-export default class GeneralInfoModule extends VuexModule {
+export default class EventGeneralInfo extends VuexModule {
+
   private info: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
+    id: '',
     name: '',
     alias: '',
     description: '',
@@ -25,11 +27,38 @@ export default class GeneralInfoModule extends VuexModule {
     availability: 'Publico',
     is_featured: false,
     absorb_service_fee: false,
+    banner: null,
+    address: {
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zipcode: '',
+      location_name: '',
+      latitude: null,
+      longitude: null,
+    },
   };
+
+  public get $info() {
+    return this.info;
+  }
 
   @Mutation
   private UPDATE_INFO(payload: Partial<Event>) {
     this.info = { ...this.info, ...payload };
+  }
+
+  @Mutation
+  private UPDATE_INFO_ADDRESS(payload: Partial<EventAddress>) {
+    this.info.address = { ...this.info.address, ...payload };
+  }
+
+  @Action
+  public updateGeneralInfoAddress(payload: Partial<EventAddress>) {
+    this.context.commit('UPDATE_INFO_ADDRESS', payload);
   }
 
   @Action

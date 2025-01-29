@@ -1,4 +1,4 @@
-
+/* 
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { generalInfo, tickets, customFields, coupons } from '@/utils/store-util';
 import { $axios } from '@/utils/nuxt-instance';
@@ -426,3 +426,4 @@ export default class EventModule extends VuexModule {
     }
   }
 }
+ */
