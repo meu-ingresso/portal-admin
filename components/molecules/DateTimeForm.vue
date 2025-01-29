@@ -12,7 +12,7 @@
           <v-text-field
             ref="formattedStartDate"
             v-model="formattedStartDate"
-            label="Data de Início"
+            label="Data de Início*"
             prepend-inner-icon="mdi-calendar"
             readonly
             outlined
@@ -38,7 +38,7 @@
         ref="start_time"
         v-model="formData.start_time"
         v-mask="'##:##'"
-        label="Hora de Início"
+        label="Hora de Início*"
         prepend-inner-icon="mdi-clock-outline"
         placeholder="21:30"
         outlined
@@ -69,7 +69,6 @@
             dense
             hide-details="auto"
             v-bind="attrs"
-            required
             :rules="rules?.endDate"
             v-on="on" />
         </template>
@@ -94,7 +93,6 @@
         outlined
         dense
         hide-details="auto"
-        required
         :rules="rules?.endTime"
         @input="validateTime($event, 'end_time')" />
     </v-col>
