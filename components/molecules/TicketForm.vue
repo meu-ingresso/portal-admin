@@ -193,7 +193,6 @@
           ref="availability"
           v-model="localTicket.availability"
           :items="availabilityList"
-          return-object
           label="Disponibilidade"
           outlined
           placeholder="Selecione a disponibilidade"
@@ -308,7 +307,7 @@ export default {
         start_time: '',
         end_date: '',
         end_time: '',
-        availability: { text: 'Para todo o público', value: 'Publico' },
+        availability: 'Publico',
         visible: true,
       },
       availabilityList: [
@@ -439,7 +438,7 @@ export default {
     },
 
     getHintByAvailability() {
-      switch (this.localTicket.availability?.value) {
+      switch (this.localTicket.availability) {
         case 'Publico':
           if (this.nomenclature === 'Doação') {
             return 'A doação ficará visível para todos que acessarem a página de vendas.';
@@ -449,7 +448,7 @@ export default {
             return 'A inscrição ficará visível para todos que acessarem a página de vendas.';
           }
 
-        case 'Restrito':
+        case 'Privado':
           if (this.nomenclature === 'Doação') {
             return 'Um link será criado e somente pessoas que acessarem através dele poderão fazer doações.';
           } else if (this.nomenclature === 'Ingresso') {
@@ -457,7 +456,7 @@ export default {
           } else {
             return 'Um link será criado e somente pessoas que acessarem através dele poderão comprar a inscrição.';
           }
-        case 'Interno':
+        case 'PDV':
           if (this.nomenclature === 'Doação') {
             return 'Somente o proprietário do evento e pessoas autorizadas da equipe poderão ver e emitir doações através do PDV';
           } else if (this.nomenclature === 'Ingresso') {
@@ -551,7 +550,7 @@ export default {
         start_time: '',
         end_date: '',
         end_time: '',
-        availability: { text: 'Para todo o público', value: 'Publico' },
+        availability: 'Publico',
         visible: true,
       };
 

@@ -44,7 +44,7 @@
                 <div class="table-cell">{{ field.name ? field.name : '-' }}</div>
                 <div class="table-cell">{{ field.type ? field.type : '-' }}</div>
                 <div class="table-cell">
-                  {{ getArrayObjectText(field.person_types, 'text') }}
+                  {{ getArrayObjectText(field.person_types) }}
                 </div>
                 <div class="table-cell">
                   {{ getArrayObjectText(field.tickets) }}
@@ -73,7 +73,7 @@
                         v-bind="attrs"
                         :disabled="field.is_default"
                         v-on="on"
-                        @click="removeCustomField(index)">
+                        @click="handleRemoveField(index)">
                         <v-icon color="red">mdi-delete</v-icon>
                       </v-btn>
                     </template>

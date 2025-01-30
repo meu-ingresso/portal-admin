@@ -21,12 +21,14 @@ export default class EventCoupons extends VuexModule {
 
   @Mutation
   private ADD_COUPON(coupon: Coupon) {
-    this.couponList.push(coupon);
+    this.couponList = [...this.couponList, coupon];
   }
 
   @Mutation
   private UPDATE_COUPON({ index, coupon }: { index: number; coupon: Coupon }) {
-    this.couponList[index] = coupon;
+    const updatedList = [...this.couponList];
+    updatedList[index] = { ...coupon };
+    this.couponList = updatedList;
   }
 
   @Mutation

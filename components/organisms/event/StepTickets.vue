@@ -173,7 +173,7 @@
 <script>
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
-import { toast, eventTickets, eventCustomFields } from '@/store';
+import { toast, eventTickets, eventCustomFields, eventCoupons } from '@/store';
 import { formatPrice } from '@/utils/formatters';
 
 export default {
@@ -234,6 +234,10 @@ export default {
       return `Nova ${this.getNomenclature}`;
     },
 
+    getCoupons() {
+      return eventCoupons.$coupons;
+    },
+
     getTickets() {
       return eventTickets.$tickets;
     },
@@ -288,9 +292,16 @@ export default {
         this.removeCustomFieldsLinkedToTicket(removedTicket.name);
       }
 
+      const relatedCoupons = this.getRelatedCoupons(removedTicket.name);
+      const hasReletedCoupons = relatedCoupons.length > 0;
+
+      if (hasReletedCoupons) {
+        this.removeCouponsLinkedToTicket(removedTicket.name);
+      }
+
       toast.setToast({
         text: hasReletedFields
-          ? 'Ingresso e seus respectivos campos removidos com sucesso'
+          ? 'Ingresso e seus respectivos campos/cupons removidos com sucesso'
           : 'Ingresso removido com sucesso.',
         type: 'success',
         time: 5000,
@@ -337,9 +348,40 @@ export default {
       if (this.selectedTicketIndex !== null) {
         const ticketForm = this.$refs.editTicketForm;
 
+        const ticket = this.getTickets[this.selectedTicketIndex];
+        const relatedFields = this.getRelatedCustomFields(ticket.name);
+        const relatedCoupons = this.getRelatedCoupons(ticket.name);
+        const hasReletedFields = relatedFields.length > 0;
+        const hasReletedCoupons = relatedCoupons.length > 0;
+
         if (ticketForm.handleSubmit()) {
+          // Mesmo index porém atualizado
+          const updatedTicket = this.getTickets[this.selectedTicketIndex];
+
           this.editModal = false;
           this.selectedTicketIndex = null;
+
+          if (hasReletedFields) {
+            relatedFields.forEach((field, indexField) => {
+              const index = field.tickets.indexOf(ticket.name);
+              if (index !== -1) {
+                field.tickets.splice(index, 1);
+                field.tickets.push(updatedTicket.name);
+                eventCustomFields.updateField({ indexField, field });
+              }
+            });
+          }
+
+          if (hasReletedCoupons) {
+            relatedCoupons.forEach((coupon, indexCoupon) => {
+              const index = coupon.tickets.indexOf(ticket.name);
+              if (index !== -1) {
+                coupon.tickets.splice(index, 1);
+                coupon.tickets.push(updatedTicket.name);
+                eventCoupons.updateCoupon({ indexCoupon, coupon });
+              }
+            });
+          }
         } else {
           console.log('[EDIÇÃO - TicketForm] Erro de validação');
         }
@@ -348,6 +390,10 @@ export default {
 
     getRelatedCustomFields(ticketName) {
       return this.getCustomFields.filter((field) => field?.tickets.includes(ticketName));
+    },
+
+    getRelatedCoupons(ticketName) {
+      return this.getCoupons.filter((coupon) => coupon?.tickets.includes(ticketName));
     },
 
     removeCustomFieldsLinkedToTicket(ticketName) {
@@ -363,6 +409,20 @@ export default {
       );
 
       eventCustomFields.setFields(filteredFields);
+    },
+
+    removeCouponsLinkedToTicket(ticketName) {
+      this.getCoupons.forEach((coupon) => {
+        const index = coupon.tickets.indexOf(ticketName);
+        if (index !== -1) {
+          coupon.tickets.splice(index, 1);
+        }
+      });
+
+      const filteredCoupons = this.getCoupons.filter(
+        (coupon) => coupon.tickets.length > 0
+      );
+      eventCoupons.setCoupons(filteredCoupons);
     },
 
     onDrop({ removedIndex, addedIndex }) {
