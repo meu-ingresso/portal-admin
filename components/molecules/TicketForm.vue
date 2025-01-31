@@ -344,6 +344,10 @@ export default {
             !v ||
             Number(v) >= Number(this.localTicket.min_purchase) ||
             'A compra máxima deve ser maior ou igual à compra mínima.',
+          (v) =>
+            !v ||
+            Number(v) <= Number(this.localTicket.quantity) ||
+            'A compra máxima por compra deve ser menor ou igual à quantidade total.',
         ],
         start_date: [
           (v) => !!v || 'A data de início é obrigatória.',
@@ -535,28 +539,6 @@ export default {
 
     handleVisibility() {
       this.localTicket.visible = !this.localTicket.visible;
-    },
-
-    resetForm() {
-      console.log('Resetando formulario');
-      this.localTicket = {
-        name: '',
-        category: null,
-        price: '',
-        max_quantity: '',
-        min_purchase: 1,
-        max_purchase: '',
-        start_date: '',
-        start_time: '',
-        end_date: '',
-        end_time: '',
-        availability: 'Publico',
-        visible: true,
-      };
-
-      if (this.$refs.form) {
-        this.$refs.form.reset();
-      }
     },
 
     validateForm() {

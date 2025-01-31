@@ -28,7 +28,6 @@
             :is="step.component"
             v-bind="step.props"
             :ref="'step-' + (index + 1)"
-            :form.sync="form"
             :class="{ 'fixed-height-component': isMobile }"
             @update:nomenclature="ticketStepperLabel = $event" />
 
@@ -97,10 +96,9 @@ import {
   rating,
   loading,
   toast,
-  eventForm,
-  event,
   eventTickets,
   eventCustomFields,
+  eventPrincipal,
 } from '@/store';
 
 export default {
@@ -114,15 +112,6 @@ export default {
   },
 
   computed: {
-    form: {
-      get() {
-        return eventForm.$form;
-      },
-      set(value) {
-        console.log('Setting form', value);
-        eventForm.updateForm(value);
-      },
-    },
 
     isMobile() {
       return isMobileDevice(this.$vuetify);
@@ -133,11 +122,11 @@ export default {
     },
 
     isSaving() {
-      return event.$isSaving;
+      return eventPrincipal.$isSaving;
     },
 
     progressTitle() {
-      return event.$progressTitle;
+      return eventPrincipal.$progressTitle;
     },
 
     categories() {
@@ -158,6 +147,7 @@ export default {
     getTickets() {
       return eventTickets.$tickets;
     },
+
     getCustomFields() {
       return eventCustomFields.$customFields;
     },
@@ -168,7 +158,6 @@ export default {
           label: 'Informações Gerais',
           component: StepGeneralInfo,
           props: {
-            form: this.form,
             categories: this.categories,
             ratings: this.ratings,
           },
@@ -177,23 +166,16 @@ export default {
           label: this.ticketStepperLabel,
           component: StepTickets,
           props: {
-            form: this.form,
             nomenclature: this.ticketStepperLabel,
           },
         },
         {
           label: 'Campos Personalizados',
           component: StepCustomFields,
-          props: {
-            form: this.form,
-          },
         },
         {
           label: 'Cupons de Desconto',
           component: StepCoupons,
-          props: {
-            form: this.form,
-          },
         },
       ];
     },
@@ -254,12 +236,10 @@ export default {
       }
     },
     async submitData() {
-      console.log('Submitting data', this.form);
-
       this.showProgressDialog = true;
 
       try {
-        await event.postEvent(this.form);
+        await eventPrincipal.createEvent();
 
         toast.setToast({
           text: 'Evento publicado com sucesso!',

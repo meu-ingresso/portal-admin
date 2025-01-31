@@ -49,7 +49,7 @@
                 <div class="table-cell">
                   {{ getArrayObjectText(field.tickets) }}
                 </div>
-                <div class="table-cell actions">
+                <div v-if="!field.is_default" class="table-cell actions">
                   <v-tooltip bottom>
                     <template #activator="{ on, attrs }">
                       <v-btn
@@ -80,6 +80,7 @@
                     <span>Remover Registro</span>
                   </v-tooltip>
                 </div>
+                <div v-else class="table-cell">-</div>
               </Draggable>
             </Container>
           </div>
@@ -160,12 +161,6 @@ import { toast, eventTickets, eventCustomFields } from '@/store';
 
 export default {
   components: { Container, Draggable },
-  props: {
-    form: {
-      type: Object,
-      required: true,
-    },
-  },
   data() {
     return {
       confirmDialog: false,

@@ -1,16 +1,16 @@
-/* 
+
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { generalInfo, tickets, customFields, coupons } from '@/utils/store-util';
+import { eventGeneralInfo, eventTickets, eventCustomFields, eventCoupons } from '@/utils/store-util';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
 import { Event, ValidationResult } from '~/models/event';
 
 @Module({
-  name: 'event',
+  name: 'eventPrincipal',
   stateFactory: true,
   namespaced: true,
 })
-export default class EventModule extends VuexModule {
+export default class EventPrincipalModule extends VuexModule {
 
   private eventData: Event | null = null;
   private eventList: Event[] = [];
@@ -248,7 +248,7 @@ export default class EventModule extends VuexModule {
 
       // 1. Criar evento base (inclui criação do endereço se necessário)
       this.context.commit('SET_PROGRESS_TITLE', 'Criando Evento');
-      const { eventId } = await generalInfo.createEventBase();
+      const { eventId } = await eventGeneralInfo.createEventBase();
 
       this.context.commit('SET_PROGRESS_TITLE', 'Processando Ingressos e Cupons');
 
@@ -258,18 +258,18 @@ export default class EventModule extends VuexModule {
         ticketMap,
         fieldTicketMap,
         couponTicketMap] = await Promise.all([
-          generalInfo.handleEventBanner(eventId, this.eventData.banner),
+          eventGeneralInfo.handleEventBanner(eventId),
 
-          tickets.$tickets.length > 0
-            ? tickets.createTickets(eventId)
+          eventTickets.$tickets.length > 0
+            ? eventTickets.createTickets(eventId)
             : {},
 
-          customFields.$customFields.length > 0
-            ? customFields.createCustomFields(eventId)
+          eventCustomFields.$customFields.length > 0
+            ? eventCustomFields.createCustomFields(eventId)
             : {},
 
-          coupons.$coupons.length > 0
-            ? coupons.createCoupons(eventId)
+          eventCoupons.$coupons.length > 0
+            ? eventCoupons.createCoupons(eventId)
             : {},
         ]);
 
@@ -280,12 +280,12 @@ export default class EventModule extends VuexModule {
 
         if (Object.keys(fieldTicketMap).length > 0) {
           relationPromises.push(
-            this.createEventCheckoutFieldTicketRelations(fieldTicketMap, ticketMap)
+            this.createEventCheckoutFieldTicketRelations({ fieldTicketMap, ticketMap })
           );
         }
 
         if (Object.keys(couponTicketMap).length > 0) {
-          relationPromises.push(this.createCouponTicketRelations(couponTicketMap, ticketMap));
+          relationPromises.push(this.createCouponTicketRelations({ couponTicketMap, ticketMap }));
         }
 
         if (relationPromises.length > 0) {
@@ -316,10 +316,10 @@ export default class EventModule extends VuexModule {
       customFieldsValidation,
       couponsValidation
     ] = await Promise.all([
-      generalInfo.validateGeneralInfo(),
-      tickets.validateTickets(),
-      customFields.validateCustomFields(),
-      coupons.validateCoupons()
+      eventGeneralInfo.validateGeneralInfo(),
+      eventTickets.validateTickets(),
+      eventCustomFields.validateCustomFields(),
+      eventCoupons.validateCoupons()
     ]);
 
     const errors = [
@@ -337,10 +337,10 @@ export default class EventModule extends VuexModule {
 
   @Action
   private resetAllModules() {
-    generalInfo.reset();
-    tickets.reset();
-    customFields.reset();
-    coupons.reset();
+    eventGeneralInfo.reset();
+    eventTickets.reset();
+    eventCustomFields.reset();
+    eventCoupons.reset();
     this.reset();
   }
 
@@ -353,10 +353,11 @@ export default class EventModule extends VuexModule {
     this.context.commit('SET_SAVING', false);
   }
 
-  private async createEventCheckoutFieldTicketRelations(fieldTicketMap: Record<string, string[]>, ticketMap: Record<string, string>) {
+  @Action
+  private async createEventCheckoutFieldTicketRelations(payload: { fieldTicketMap: Record<string, string[]>, ticketMap: Record<string, string> }) {
     try {
-      const relations = Object.entries(fieldTicketMap).flatMap(([ticketName, fieldIds]) => {
-        const ticketId = ticketMap[ticketName];
+      const relations = Object.entries(payload.fieldTicketMap).flatMap(([ticketName, fieldIds]) => {
+        const ticketId = payload.ticketMap[ticketName];
         if (!ticketId) {
           throw new Error(`Ingresso não encontrado: ${ticketName}`);
         }
@@ -366,12 +367,12 @@ export default class EventModule extends VuexModule {
           ticketId,
           ticketName,
         }));
-      });
+      }); 
 
       await Promise.all(
         relations.map(async ({ fieldId, ticketId, ticketName }) => {
           try {
-            await this.createSingleFieldTicketRelation(fieldId, ticketId);
+            await this.createSingleFieldTicketRelation({ fieldId, ticketId } );
           } catch (error) {
             throw new Error(
               `Falha ao criar relação entre campo ${fieldId} e ingresso ${ticketName}: ${error.message}`
@@ -385,25 +386,27 @@ export default class EventModule extends VuexModule {
     }
   }
 
-  private async createSingleFieldTicketRelation(fieldId: string, ticketId: string) {
+  @Action
+  private async createSingleFieldTicketRelation(payload: { fieldId: string, ticketId: string }) {
     const response = await $axios.$post('event-checkout-field-ticket', {
-      event_checkout_field_id: fieldId,
-      ticket_id: ticketId,
+      event_checkout_field_id: payload.fieldId,
+      ticket_id: payload.ticketId,
     });
 
     if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
-      throw new Error(`Falha ao vincular campo ${fieldId} ao ingresso ${ticketId}`);
+      throw new Error(`Falha ao vincular campo ${payload.fieldId} ao ingresso ${payload.ticketId}`);
     }
 
     return response.body.result;
   }
 
-  private async createCouponTicketRelations(couponTicketMap: Record<string, string[]>, ticketMap: Record<string, string>) {
+  @Action
+  private async createCouponTicketRelations(payload: { couponTicketMap: Record<string, string[]>, ticketMap: Record<string, string> }) {
     try {
       const relationsPromises = [];
 
-      for (const [ticketName, couponIds] of Object.entries(couponTicketMap)) {
-        const ticketId = ticketMap[ticketName];
+      for (const [ticketName, couponIds] of Object.entries(payload.couponTicketMap)) {
+        const ticketId = payload.ticketMap[ticketName];
 
         if (!ticketId) {
           throw new Error(`Ingresso não encontrado: ${ticketName}`);
@@ -426,4 +429,3 @@ export default class EventModule extends VuexModule {
     }
   }
 }
- */

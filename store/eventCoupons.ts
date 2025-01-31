@@ -1,6 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { Coupon, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
+import { status } from '@/utils/store-util';
 
 @Module({
   name: 'eventCoupons',
@@ -9,6 +10,25 @@ import { $axios } from '@/utils/nuxt-instance';
 })
 export default class EventCoupons extends VuexModule {
   private couponList: Coupon[] = [];
+
+  private mockCouponList: Coupon[] = [
+    {
+      code: '123456',
+      discount_type: 'PERCENTAGE',
+      discount_value: '10',
+      max_uses: 100,
+      start_date: '2025-02-01',
+      start_time: '10:00',
+      end_date: '2025-02-02',
+      end_time: '10:00',
+      tickets: ['Ingresso Normal', 'Ingresso Vip'],
+    },
+  ];
+
+  constructor(module: VuexModule<ThisType<EventCoupons>, EventCoupons>) {
+    super(module);
+    this.couponList = process.env.USE_MOCK_DATA === 'true' ? this.mockCouponList : this.couponList;
+  }
 
   public get $coupons() {
     return this.couponList;
@@ -127,7 +147,7 @@ export default class EventCoupons extends VuexModule {
 
     try {
 
-      const statusResponse = await this.getStatusByModuleName('coupon', 'Disponível');
+      const statusResponse = await status.fetchStatusByModuleAndName({ module: 'coupon', name: 'Disponível' });
 
       const [couponsWithTickets, couponsWithoutTickets] = this.couponList.reduce(
         (acc, coupon) => {
@@ -139,13 +159,14 @@ export default class EventCoupons extends VuexModule {
 
       const results = await Promise.all([
         couponsWithTickets.length > 0
-          ? this.createCouponsWithTickets(eventId, couponsWithTickets, statusResponse.id)
+          ? this.createCouponsWithTickets({ eventId, coupons: couponsWithTickets, statusId: statusResponse.id })
           : {},
         couponsWithoutTickets.length > 0
-          ? this.createCouponsWithoutTickets(eventId, couponsWithoutTickets, statusResponse.id)
+          ? this.createCouponsWithoutTickets({ eventId, coupons: couponsWithoutTickets, statusId: statusResponse.id })
           : null,
       ]);
 
+      // Retorna o mapa de cupons com ingressos
       return results[0];
 
     } catch (error) {
@@ -171,11 +192,11 @@ export default class EventCoupons extends VuexModule {
     return response.body.result.data[0];
   }
 
+  @Action
+  private async createCouponsWithTickets(payload: { eventId: string, coupons: Coupon[], statusId: string }) {
+    const couponTicketMap: Record<string, string[]> = {}; // Mapeia cupom -> ingressos
 
-  private async createCouponsWithTickets(eventId: string, coupons: Coupon[], statusId: string) {
-    const couponTicketMap = {}; // Mapeia cupom -> ingressos
-
-    const couponPromises = coupons.map(async (coupon) => {
+    const couponPromises = payload.coupons.map(async (coupon) => {
       const couponDiscountValue = parseFloat(coupon.discount_value.replace(',', '.'));
 
       // Converte as datas para o timezone correto
@@ -186,8 +207,8 @@ export default class EventCoupons extends VuexModule {
       const endDate = new Date(endDateTime);
 
       const couponResponse = await $axios.$post('coupon', {
-        event_id: eventId,
-        status_id: statusId,
+        event_id: payload.eventId,
+        status_id: payload.statusId,
         code: coupon.code,
         discount_value: couponDiscountValue,
         discount_type: coupon.discount_type,
@@ -216,8 +237,9 @@ export default class EventCoupons extends VuexModule {
     return couponTicketMap;
   }
 
-  private async createCouponsWithoutTickets(eventId: string, coupons: Coupon[], statusId: string) {
-    const couponPromises = coupons.map(async (coupon) => {
+  @Action
+  private async createCouponsWithoutTickets(payload: { eventId: string, coupons: Coupon[], statusId: string }) {
+    const couponPromises = payload.coupons.map(async (coupon) => {
       const couponDiscountValue = parseFloat(coupon.discount_value.replace(',', '.'));
 
       // Converte as datas para o timezone correto
@@ -228,8 +250,8 @@ export default class EventCoupons extends VuexModule {
       const endDate = new Date(endDateTime);
 
       const couponResponse = await $axios.$post('coupon', {
-        event_id: eventId,
-        status_id: statusId,
+        event_id: payload.eventId,
+        status_id: payload.statusId,
         code: coupon.code,
         discount_value: couponDiscountValue,
         discount_type: coupon.discount_type,

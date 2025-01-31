@@ -373,10 +373,6 @@ import { isMobileDevice } from '@/utils/utils';
 
 export default {
   props: {
-    form: {
-      type: Object,
-      required: true,
-    },
     categories: {
       type: Array,
       default: () => [],
@@ -398,7 +394,7 @@ export default {
       debouncerAlias: null,
       imagePreview: null,
       availabilityOptions: ['Publico', 'Privado', 'Página'],
-      nomenclature: this.form.sale_type || 'Ingresso',
+      nomenclature: 'Ingresso',
       nomenclatureOptions: ['Ingresso', 'Inscrição', 'Doação'],
       formHasErrors: false,
       validationRules: {

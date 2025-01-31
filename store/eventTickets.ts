@@ -1,6 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { Ticket, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
+import { status } from '@/utils/store-util';
 
 @Module({
   name: 'eventTickets',
@@ -9,6 +10,43 @@ import { $axios } from '@/utils/nuxt-instance';
 })
 export default class EventTickets extends VuexModule {
   private ticketList: Ticket[] = [];
+
+  private mockTicketList: Ticket[] = [
+    {
+      name: 'Ingresso Normal',
+      price: "100",
+      quantity: 100,
+      min_purchase: 1,
+      max_purchase: '10',
+      start_date: '2025-02-01',
+      start_time: '10:00',
+      end_date: '2025-02-01',
+      end_time: '12:00',
+      availability: 'Publico',
+      category: 'Ingresso Normal',
+      visible: true,
+    },
+    {
+      name: 'Ingresso Vip',
+      price: "200",
+      quantity: 50,
+      min_purchase: 1,
+      max_purchase: '5',
+      start_date: '2025-02-01',
+      start_time: '10:00',
+      end_date: '2025-02-01',
+      end_time: '12:00',
+      availability: 'Publico',
+      category: 'Ingresso Vip',
+      visible: true,
+    },
+  ];
+
+  constructor(module: VuexModule<ThisType<EventTickets>, EventTickets>) {
+    super(module);
+    this.ticketList = process.env.USE_MOCK_DATA === 'true' ? this.mockTicketList : [];
+  }
+
 
   public get $tickets() {
     return this.ticketList;
@@ -66,11 +104,11 @@ export default class EventTickets extends VuexModule {
   public async createTickets(eventId: string): Promise<Record<string, string>> {
     try {
       const ticketMap: Record<string, string> = {};
-      const statusResponse = await this.getStatusByModuleName('ticket', 'Disponível');
+      const statusResponse = await status.fetchStatusByModuleAndName({ module: 'ticket', name: 'Disponível' });
       const categoryMap = new Map<string, string>();
-      for (const ticket of this.ticketList) {
+      for (const [index, ticket] of this.ticketList.entries()) {
 
-        const categoryId = await this.createCategory(eventId, ticket.category, categoryMap);
+        const categoryId = await this.createCategory({ eventId, categoryName: ticket.category, categoryMap });
 
         // Combina data e hora em uma única string ISO
         const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
@@ -83,16 +121,17 @@ export default class EventTickets extends VuexModule {
         const ticketResponse = await $axios.$post('ticket', {
           event_id: eventId,
           name: ticket.name,
-          total_quantity: ticket.max_quantity,
-          remaining_quantity: ticket.max_quantity,
+          total_quantity: ticket.quantity,
+          remaining_quantity: ticket.quantity,
           price: parseFloat(ticket.price.toString().replace(',', '.')),
           status_id: statusResponse.id,
           start_date: startDate.toISOString().replace('Z', '-0300'),
           end_date: endDate.toISOString().replace('Z', '-0300'),
-          availability: ticket.availability.value,
+          availability: ticket.availability,
           min_quantity_per_user: ticket.min_purchase,
           max_quantity_per_user: ticket.max_purchase,
           category_id: categoryId,
+          display_order: ticket.display_order || index + 1,
         });
 
         if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
@@ -127,22 +166,16 @@ export default class EventTickets extends VuexModule {
         errors.push(`Ticket ${index + 1}: Nome é obrigatório`);
       }
 
-      if (!ticket.price || ticket.price < 0) {
+      if (!ticket.price || Number(ticket.price) < 0) {
         errors.push(`Ticket ${index + 1}: Preço deve ser maior ou igual a zero`);
       }
 
-      if (!ticket.max_quantity || ticket.max_quantity <= 0) {
+      if (!ticket.quantity || Number(ticket.quantity) <= 0) {
         errors.push(`Ticket ${index + 1}: Quantidade máxima deve ser maior que zero`);
       }
 
-      if (!ticket.min_purchase || ticket.min_purchase <= 0) {
+      if (!ticket.min_purchase || Number(ticket.min_purchase) <= 0) {
         errors.push(`Ticket ${index + 1}: Quantidade mínima deve ser maior que zero`);
-      }
-
-      if (ticket.max_purchase > ticket.max_quantity) {
-        errors.push(
-          `Ticket ${index + 1}: Quantidade máxima por compra não pode ser maior que a quantidade total`
-        );
       }
 
       // Validação de datas
@@ -154,14 +187,6 @@ export default class EventTickets extends VuexModule {
         errors.push(`Ticket ${index + 1}: Data e hora de término são obrigatórios`);
       }
 
-      if (ticket.start_date && ticket.start_time && ticket.end_date && ticket.end_time) {
-        const startDate = new Date(`${ticket.start_date}T${ticket.start_time}`);
-        const endDate = new Date(`${ticket.end_date}T${ticket.end_time}`);
-
-        if (endDate <= startDate) {
-          errors.push(`Ticket ${index + 1}: Data final deve ser maior que a data inicial`);
-        }
-      }
     });
 
     return {
@@ -175,35 +200,24 @@ export default class EventTickets extends VuexModule {
     this.context.commit('SET_TICKETS', []);
   }
 
-  private async getStatusByModuleName(module: string, name: string) {
-    const response = await $axios.$get(
-      `statuses?where[module][v]=${module}&where[name][v]=${name}`
-    );
+  @Action
+  private async createCategory(payload: { eventId: string, categoryName: string, categoryMap: Map<string, string> }) {
+    if (!payload.categoryName) return null;
 
-    if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-      throw new Error(`Falha ao buscar status do módulo: ${module}`);
-    }
-
-    return response.body.result.data[0];
-  }
-
-  private async createCategory(eventId: string, categoryName: string, categoryMap: Map<string, string>) {
-    if (!categoryName) return null;
-
-    const existingCategoryId = categoryMap.get(categoryName);
+    const existingCategoryId = payload.categoryMap.get(payload.categoryName);
     if (existingCategoryId) return existingCategoryId;
 
     const categoryResponse = await $axios.$post('ticket-event-category', {
-      event_id: eventId,
-      name: categoryName,
+      event_id: payload.eventId,
+      name: payload.categoryName,
     });
 
     if (!categoryResponse.body || categoryResponse?.body?.code !== 'CREATE_SUCCESS') {
-      throw new Error(`Falha ao criar categoria de ingresso: ${categoryName}`);
+      throw new Error(`Falha ao criar categoria de ingresso: ${payload.categoryName}`);
     }
 
     const categoryId = categoryResponse?.body?.result?.id;
-    categoryMap.set(categoryName, categoryId);
+    payload.categoryMap.set(payload.categoryName, categoryId);
 
     return categoryId;
   }

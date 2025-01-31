@@ -42,6 +42,52 @@ export default class EventGeneralInfo extends VuexModule {
     },
   };
 
+  private mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
+    id: null,
+    name: '[MOCK] Evento de Teste',
+    alias: '[MOCK] evento-de-teste',
+    description: '[MOCK] Descrição do evento de teste',
+    general_information: '[MOCK] Informações gerais do evento de teste',
+    category: {
+      text: 'E-sports',
+      value: '71b34079-d36b-4c93-9785-008e80498749',
+    },
+    event_type: 'Presencial',
+    rating: {
+      img:"https://meuingresso-attachments.s3.us-east-1.amazonaws.com/%2B14.png",
+      text: 'Maiores de 14 anos',
+      value: 'fdc6ed28-5d77-4383-9820-621491c5b075',
+    },
+    start_date: '2025-02-01',
+    start_time: '10:00',
+    end_date: '2025-02-01',
+    end_time: '12:00',
+    sale_type: 'Ingresso',
+    availability: 'Publico',
+    is_featured: false,
+    absorb_service_fee: false,
+    banner: null,
+    address: {
+      street: 'Rua da Alegria',
+      number: '100',
+      complement: '',
+      neighborhood: 'Centro',
+      city: 'Joinville',
+      state: 'SC',
+      zipcode: '89201-123',
+      location_name: 'MeuIngresso',
+      latitude: -26.304577,
+      longitude: -48.849447,
+    },
+    link_online: '',
+    promoter_id: '1',
+  };
+
+  constructor(module: VuexModule<ThisType<EventGeneralInfo>, EventGeneralInfo>) {
+    super(module);
+    this.info = process.env.USE_MOCK_DATA === 'true' ? this.mockInfo : this.info;
+  }
+
   public get $info() {
     return this.info;
   }
@@ -150,7 +196,7 @@ export default class EventGeneralInfo extends VuexModule {
       // Criar endereço se o evento for presencial
       const [addressId, draftStatus] = await Promise.all([
         this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
-        status.fetchStatusByModuleAndName('event', 'Rascunho'),
+        status.fetchStatusByModuleAndName({ module: 'event', name: 'Rascunho' }),
       ]);
 
       // Criar evento base
@@ -218,6 +264,7 @@ export default class EventGeneralInfo extends VuexModule {
     });
   }
 
+  @Action
   private async createAddress(address: EventAddress): Promise<string> {
     try {
       const addressResponse = await $axios.$post('address', {
@@ -244,16 +291,17 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  public async handleEventBanner(eventId: string, banner: File) {
-    if (!banner) return null;
+  public async handleEventBanner(eventId: string) {
+    if (!this.$info.banner) return null;
 
     const bannerId = await this.createEventBanner(eventId);
-    const bannerUrl = await this.uploadEventBanner(bannerId, banner);
+    const bannerUrl = await this.uploadEventBanner(bannerId, this.$info.banner);
     await this.updateEventBanner(bannerId, bannerUrl);
 
     return bannerId;
   }
 
+  @Action
   private async createEventBanner(eventId: string) {
     const attachmentResponse = await $axios.$post('event-attachment', {
       event_id: eventId,
@@ -269,6 +317,7 @@ export default class EventGeneralInfo extends VuexModule {
     return attachmentResponse.body.result.id;
   }
 
+  @Action
   private async uploadEventBanner(attachmentId: string, banner: File) {
     const formData = new FormData();
     formData.append('event_attachment_id', attachmentId);
@@ -287,6 +336,7 @@ export default class EventGeneralInfo extends VuexModule {
     return uploadResponse.body.result.s3_url;
   }
 
+  @Action
   private async updateEventBanner(attachmentId: string, bannerUrl: string) {
     const updateResponse = await $axios.$patch('event-attachment', {
       id: attachmentId,

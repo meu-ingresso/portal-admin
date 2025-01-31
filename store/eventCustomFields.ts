@@ -8,9 +8,8 @@ import { $axios } from '@/utils/nuxt-instance';
   namespaced: true,
 })
 export default class EventCustomFields extends VuexModule {
-  private fieldList: CustomField[] = [];
 
-  private defaultFields: CustomField[] = [
+  private defaultFieldList: CustomField[] = [
     {
       name: 'Nome Completo',
       type: 'TEXTO',
@@ -45,12 +44,34 @@ export default class EventCustomFields extends VuexModule {
     },
   ];
 
-  public get $customFields() {
-    return this.fieldList;
+  private fieldList: CustomField[] = [
+    ...this.defaultFieldList,
+  ];
+
+  private mockFieldList: CustomField[] = [
+    ...this.defaultFieldList,
+    {
+      name: 'CPF',
+      type: 'CPF',
+      options: [
+        'required',
+        'visible_on_ticket',
+      ],
+      person_types: [
+        'PF',
+      ],
+      tickets: ['Ingresso Normal', 'Ingresso Vip'],
+      selected_options: []
+    },
+  ];
+
+  constructor(module: VuexModule<ThisType<EventCustomFields>, EventCustomFields>) {
+    super(module);
+    this.fieldList = process.env.USE_MOCK_DATA === 'true' ? this.mockFieldList : this.fieldList;
   }
 
-  public get $defaultFields() {
-    return this.defaultFields;
+  public get $customFields() {
+    return this.fieldList;
   }
 
   @Mutation
@@ -106,17 +127,21 @@ export default class EventCustomFields extends VuexModule {
         return field.person_types.map(async (personType) => {
 
           try {
-            const fieldId = await this.createSingleCustomField(
+            const fieldId = await this.createSingleCustomField({
               eventId,
-              field,
+              customField: field,
               personType,
               index
-            );
+            });
 
-            return {
-              fieldId,
-              tickets: field.tickets,
-            };
+          for (const ticketName of field.tickets) {
+            if (!fieldTicketMap[ticketName]) {
+              fieldTicketMap[ticketName] = [];
+            }
+            fieldTicketMap[ticketName].push(fieldId);
+          }
+
+          return fieldId;
           } catch (error) {
             throw new Error(
               `Erro ao processar campo ${field.name}: ${error.message}`
@@ -125,11 +150,7 @@ export default class EventCustomFields extends VuexModule {
         });
       });
 
-      const results = await Promise.all(fieldPromises);
-
-      results.forEach(({ fieldId, tickets }) => {
-        this.updateFieldTicketMap(fieldTicketMap, tickets, fieldId);
-      });
+      await Promise.all(fieldPromises);
 
       return fieldTicketMap;
 
@@ -144,7 +165,8 @@ export default class EventCustomFields extends VuexModule {
     const errors: string[] = [];
     const fieldNames = new Set<string>();
 
-    this.fieldList.forEach((field, index) => {
+    this.fieldList.filter(field => !field.is_default).forEach((field, index) => {
+      
       // Validação de nome duplicado
       if (fieldNames.has(field.name)) {
         errors.push(`Campo "${field.name}" está duplicado`);
@@ -199,43 +221,32 @@ export default class EventCustomFields extends VuexModule {
     this.context.commit('SET_FIELDS', []);
   }
 
-  private async createSingleCustomField(eventId: string, customField: CustomField, personType: PersonType, index: number) {
-    const { isRequired, visibleOnTicket, isUnique } = this.getCustomFieldOptions(customField);
-
-    const fieldResponse = await $axios.$post('event-checkout-field', {
-      event_id: eventId,
-      name: customField.name,
-      type: customField.type,
-      person_type: personType,
+  @Action
+  private async createSingleCustomField(payload: { eventId: string, customField: CustomField, personType: PersonType, index: number }) {
+    
+    const isRequired = payload.customField.options.includes('required');
+    const visibleOnTicket = payload.customField.options.includes('visible_on_ticket');
+    const isUnique = payload.customField.options.includes('is_unique');
+    
+    const requestPayload = {
+      event_id: payload.eventId,
+      name: payload.customField.name,
+      type: payload.customField.type,
+      person_type: payload.personType,
       required: isRequired,
       is_unique: isUnique,
       visible_on_ticket: visibleOnTicket,
-      help_text: customField.help_text || '',
-      order: customField.order || index + 1,
-    });
+      help_text: payload.customField.help_text || '',
+      order: payload.customField.order || payload.index + 1,
+    };  
+
+    const fieldResponse = await $axios.$post('event-checkout-field', requestPayload);
 
     if (!fieldResponse.body || fieldResponse.body.code !== 'CREATE_SUCCESS') {
-      throw new Error(`Falha ao criar campo personalizado: ${customField.name}`);
+      throw new Error(`Falha ao criar campo personalizado: ${payload.customField.name}`);
     }
 
     return fieldResponse.body.result.id;
-  }
-
-  private getCustomFieldOptions(customField: CustomField) {
-    return {
-      isRequired: customField.options.includes('required'),
-      visibleOnTicket: customField.options.includes('visible_on_ticket'),
-      isUnique: customField.options.includes('is_unique'),
-    };
-  }
-
-  private updateFieldTicketMap(fieldTicketMap: Record<string, string[]>, ticketNames: string[], fieldId: string) {
-    for (const ticketName of ticketNames) {
-      if (!fieldTicketMap[ticketName]) {
-        fieldTicketMap[ticketName] = [];
-      }
-      fieldTicketMap[ticketName].push(fieldId);
-    }
   }
 
 } 

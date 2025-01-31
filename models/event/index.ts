@@ -8,13 +8,10 @@ export interface CategoryOption {
 export interface RatingOption {
   text: string;
   value: string;
-  icon?: string;
+  img?: string;
 }
 
-export interface AvailabilityOption {
-  text: string;
-  value: string;
-}
+export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
 
 export type FieldType = 'CPF' | 'CNPJ' | 'TELEFONE' | 'DATA' | 'TEXTO' | 'PARAGRAPH' | 'EMAIL' | 'MENU_DROPDOWN' | 'MULTI_CHECKBOX' | 'TERMO';
 
@@ -43,17 +40,18 @@ export interface Ticket {
   id?: string;
   name: string;
   description?: string;
-  price: number;
+  price: string;
   service_fee?: number;
-  max_quantity: number;
+  quantity: number;
   min_purchase: number;
-  max_purchase: number;
+  max_purchase: string;
   start_date: string;
   start_time: string;
   end_date: string;
   end_time: string;
   visible: boolean;
   category?: string;
+  display_order?: number;
   availability: AvailabilityOption;
 }
 

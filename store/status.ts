@@ -63,21 +63,21 @@ export default class Status extends VuexModule {
   }
 
   @Action
-  public async fetchStatusByModuleAndName(module: string, name: string) {
+  public async fetchStatusByModuleAndName(payload: { module: string, name: string }) {
     try {
       this.setLoading(true);
 
       const response = await $axios.$get(
-        `statuses?where[module][v]=${module}&where[name][v]=${name}`
+        `statuses?where[module][v]=${payload.module}&where[name][v]=${payload.name}`
       );
 
       if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error(`Falha ao buscar status do módulo: ${module}.`);
+        throw new Error(`Falha ao buscar status do módulo: ${payload.module}.`);
       }
 
       return response.body.result.data[0];
     } catch (error) {
-      console.error(`[STATUS] Error fetching status for module "${module}" and name "${name}":`, error);
+      console.error(`[STATUS] Error fetching status for module "${payload.module}" and name "${payload.name}":`, error);
       throw error;
     } finally {
       this.setLoading(false);
