@@ -44,7 +44,7 @@
                 </div>
                 <div class="table-cell">{{ ticket.name ? ticket.name : '-' }}</div>
                 <div class="table-cell">
-                  {{ ticket.category ? ticket.category : '-' }}
+                  {{ ticket.category ? ticket.category.text : '-' }}
                 </div>
                 <div class="table-cell">
                   {{ ticket.price ? `R$ ${formattedPrice(ticket.price)}` : '-' }}
@@ -196,7 +196,11 @@ export default {
       newTicketModal: false,
       newTicket: {
         name: '',
-        category: '',
+        category: {
+          id: null,
+          value: '',
+          text: '',
+        },
         price: '',
         max_quantity: '',
         min_purchase: '',
@@ -219,9 +223,9 @@ export default {
       switch (this.nomenclature) {
         case 'Ingressos':
           return 'Ingresso';
-        case 'Inscrições':
+        case 'Inscrição':
           return 'Inscrição';
-        case 'Doações':
+        case 'Doação':
           return 'Doação';
         default:
           return 'Ingresso';

@@ -2,6 +2,7 @@ import Home from '@/pages/home.vue';
 import EventsPage from '~/pages/events/EventsPage.vue';
 import EventDetailsPage from '~/pages/events/EventDetailsPage.vue';
 import CreateEventPage from '~/pages/events/CreateEventPage.vue';
+import EventEditPage from '~/pages/events/EventEditPage.vue';
 
 export default [
   {
@@ -71,5 +72,14 @@ export default [
         },
       },
     ],
+  },
+  {
+    path: '/events/:id/edit',
+    component: EventEditPage,
+    name: 'Editar Evento',
+    meta: {
+      name: 'eventEdit',
+      template: 'panel',
+    },
   },
 ];

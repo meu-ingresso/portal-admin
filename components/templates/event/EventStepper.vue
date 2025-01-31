@@ -8,64 +8,87 @@
 
     <v-stepper v-else v-model="currentStep" flat class="bg-beige">
       <v-stepper-header class="bg-white no-box-shadow">
-        <v-stepper-step
-          v-for="(step, index) in getSteps"
-          :key="index"
-          :step="index + 1"
-          :complete="currentStep > index + 1">
-          {{ step.label }}
+        <v-stepper-step :step="1" :complete="currentStep > 1">
+          Informações Gerais
+        </v-stepper-step>
+
+        <v-stepper-step :step="2" :complete="currentStep > 2">
+          {{ ticketStepperLabel }}
+        </v-stepper-step>
+
+        <v-stepper-step :step="3" :complete="currentStep > 3">
+          Campos Personalizados
+        </v-stepper-step>
+
+        <v-stepper-step :step="4" :complete="currentStep > 4">
+          Cupons de Desconto
         </v-stepper-step>
       </v-stepper-header>
 
       <v-stepper-items class="pt-8">
+        <!-- Step 1: Informações Gerais -->
         <v-stepper-content
-          v-for="(step, index) in getSteps"
-          :key="index"
-          :step="index + 1"
+          step="1"
           class="bg-white px-6 py-6"
           :class="{ 'fixed-height-content': isMobile }">
-          <component
-            :is="step.component"
-            v-bind="step.props"
-            :ref="'step-' + (index + 1)"
+          <StepGeneralInfo
+            ref="step-1"
+            :is-editing="isEditing"
+            :categories="categories"
+            :ratings="ratings"
+            :class="{ 'fixed-height-component': isMobile }" />
+
+          <StepActions :is-first-step="true" @previous="previousStep" @next="nextStep" />
+        </v-stepper-content>
+
+        <!-- Step 2: Tickets -->
+        <v-stepper-content
+          step="2"
+          class="bg-white px-6 py-6"
+          :class="{ 'fixed-height-content': isMobile }">
+          <StepTickets
+            ref="step-2"
+            :is-editing="isEditing"
+            :nomenclature="ticketStepperLabel"
             :class="{ 'fixed-height-component': isMobile }"
             @update:nomenclature="ticketStepperLabel = $event" />
 
-          <v-row
-            justify="space-between"
-            class="mt-4"
-            :class="{ 'fixed-actions px-2': isMobile }">
-            <v-col
-              cols="12"
-              class="d-flex"
-              :class="{
-                'justify-end': !isMobile || index === 0,
-                'justify-space-between': isMobile && index > 0,
-              }">
-              <DefaultButton
-                outlined
-                :disabled="isSaving"
-                class="mr-2"
-                text="Voltar"
-                @click="previousStep" />
+          <StepActions @previous="previousStep" @next="nextStep" />
+        </v-stepper-content>
 
-              <DefaultButton
-                v-if="index < getSteps.length - 1"
-                text="Próximo"
-                :disabled="isSaving"
-                @click="nextStep" />
+        <!-- Step 3: Campos Personalizados -->
+        <v-stepper-content
+          step="3"
+          class="bg-white px-6 py-6"
+          :class="{ 'fixed-height-content': isMobile }">
+          <StepCustomFields
+            ref="step-3"
+            :is-editing="isEditing"
+            :class="{ 'fixed-height-component': isMobile }" />
 
-              <DefaultButton
-                v-if="index === getSteps.length - 1"
-                text="Publicar Evento"
-                :disabled="isSaving"
-                @click="submitData" />
-            </v-col>
-          </v-row>
-          <Toast />
+          <StepActions @previous="previousStep" @next="nextStep" />
+        </v-stepper-content>
+
+        <!-- Step 4: Cupons -->
+        <v-stepper-content
+          step="4"
+          class="bg-white px-6 py-6"
+          :class="{ 'fixed-height-content': isMobile }">
+          <StepCoupons
+            ref="step-4"
+            :is-editing="isEditing"
+            :class="{ 'fixed-height-component': isMobile }" />
+
+          <StepActions
+            :is-last-step="true"
+            :is-editing="isEditing"
+            @previous="previousStep"
+            @submit="submitData" />
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>
+
+    <Toast />
 
     <v-dialog v-model="showProgressDialog" persistent max-width="450">
       <v-card>
@@ -86,10 +109,6 @@
 </template>
 
 <script>
-import StepGeneralInfo from '../../organisms/event/StepGeneralInfo.vue';
-import StepTickets from '../../organisms/event/StepTickets.vue';
-import StepCustomFields from '../../organisms/event/StepCustomFields.vue';
-import StepCoupons from '../../organisms/event/StepCoupons.vue';
 import { isMobileDevice } from '@/utils/utils';
 import {
   category,
@@ -99,22 +118,35 @@ import {
   eventTickets,
   eventCustomFields,
   eventPrincipal,
+  eventGeneralInfo,
 } from '@/store';
 
 export default {
+  props: {
+    isEditing: {
+      type: Boolean,
+      default: false,
+    },
+    eventId: {
+      type: String,
+      default: '',
+    },
+  },
+
   data() {
     return {
-      currentStep: 2,
-      steps: [],
-      ticketStepperLabel: 'Ingressos',
+      currentStep: 1,
       showProgressDialog: false,
     };
   },
 
   computed: {
-
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+
+    ticketStepperLabel() {
+      return eventGeneralInfo.$info.sale_type;
     },
 
     isLoading() {
@@ -151,49 +183,33 @@ export default {
     getCustomFields() {
       return eventCustomFields.$customFields;
     },
-
-    getSteps() {
-      return [
-        {
-          label: 'Informações Gerais',
-          component: StepGeneralInfo,
-          props: {
-            categories: this.categories,
-            ratings: this.ratings,
-          },
-        },
-        {
-          label: this.ticketStepperLabel,
-          component: StepTickets,
-          props: {
-            nomenclature: this.ticketStepperLabel,
-          },
-        },
-        {
-          label: 'Campos Personalizados',
-          component: StepCustomFields,
-        },
-        {
-          label: 'Cupons de Desconto',
-          component: StepCoupons,
-        },
-      ];
-    },
   },
 
-  async mounted() {
-    loading.setIsLoading(true);
+  async created() {
+    await this.fetchCategoriesAndRatings();
 
-    const promises = [
-      category.fetchCategories({ sortBy: ['name'], sortDesc: [false] }),
-      rating.fetchRatings({ sortBy: ['name'], sortDesc: [false] }),
-    ];
-    await Promise.all(promises);
-
-    loading.setIsLoading(false);
+    if (this.isEditing && this.eventId) {
+      await this.loadEventData();
+    }
   },
 
   methods: {
+    async loadEventData() {
+      await eventGeneralInfo.fetchAndPopulateByEventId(this.eventId);
+      await eventTickets.fetchAndPopulateByEventId(this.eventId);
+      await eventCustomFields.fetchAndPopulateByEventId(this.eventId);
+    },
+
+    async fetchCategoriesAndRatings() {
+      loading.setIsLoading(true);
+      const promises = [
+        category.fetchCategories({ sortBy: ['name'], sortDesc: [false] }),
+        rating.fetchRatings({ sortBy: ['name'], sortDesc: [false] }),
+      ];
+      await Promise.all(promises);
+      loading.setIsLoading(false);
+    },
+
     nextStep() {
       const currentStepComponent = this.$refs[`step-${this.currentStep}`];
       if (
@@ -210,7 +226,7 @@ export default {
           }
 
           if (flag) {
-            if (this.currentStep < this.getSteps.length) {
+            if (this.currentStep < 4) {
               // Se estou nos ingressos e dei próximo sem ingressos = CUPOM
               if (this.currentStep === 2 && this.getTickets.length === 0) {
                 this.currentStep = 4;
@@ -220,7 +236,7 @@ export default {
             }
           }
         });
-      } else if (this.currentStep < this.getSteps.length) {
+      } else if (this.currentStep < 4) {
         this.currentStep++;
       }
     },

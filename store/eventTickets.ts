@@ -2,6 +2,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { Ticket, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
+import { splitDateTime } from '~/utils/formatters';
 
 @Module({
   name: 'eventTickets',
@@ -10,6 +11,7 @@ import { status } from '@/utils/store-util';
 })
 export default class EventTickets extends VuexModule {
   private ticketList: Ticket[] = [];
+  private isLoading: boolean = false;
 
   private mockTicketList: Ticket[] = [
     {
@@ -23,7 +25,11 @@ export default class EventTickets extends VuexModule {
       end_date: '2025-02-01',
       end_time: '12:00',
       availability: 'Publico',
-      category: 'Ingresso Normal',
+      category: {
+        id: null,
+        value: 'Ingresso Normal',
+        text: 'Ingresso Normal',
+      },
       visible: true,
     },
     {
@@ -37,7 +43,11 @@ export default class EventTickets extends VuexModule {
       end_date: '2025-02-01',
       end_time: '12:00',
       availability: 'Publico',
-      category: 'Ingresso Vip',
+      category: {
+        id: null,
+        value: 'Ingresso Vip',
+        text: 'Ingresso Vip',
+      },
       visible: true,
     },
   ];
@@ -47,6 +57,9 @@ export default class EventTickets extends VuexModule {
     this.ticketList = process.env.USE_MOCK_DATA === 'true' ? this.mockTicketList : [];
   }
 
+  public get $isLoading() {
+    return this.isLoading;
+  }
 
   public get $tickets() {
     return this.ticketList;
@@ -55,6 +68,12 @@ export default class EventTickets extends VuexModule {
   public get $ticketCategories() {
     return this.ticketList.map((ticket) => ticket.category);
   }
+
+    @Mutation
+  private SET_LOADING(payload: boolean) {
+    this.isLoading = payload;
+  }
+
 
   @Mutation
   private SET_TICKETS(tickets: Ticket[]) {
@@ -108,7 +127,7 @@ export default class EventTickets extends VuexModule {
       const categoryMap = new Map<string, string>();
       for (const [index, ticket] of this.ticketList.entries()) {
 
-        const categoryId = await this.createCategory({ eventId, categoryName: ticket.category, categoryMap });
+        const categoryId = await this.createCategory({ eventId, categoryName: ticket.category.text, categoryMap });
 
         // Combina data e hora em uma única string ISO
         const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
@@ -130,7 +149,7 @@ export default class EventTickets extends VuexModule {
           availability: ticket.availability,
           min_quantity_per_user: ticket.min_purchase,
           max_quantity_per_user: ticket.max_purchase,
-          category_id: categoryId,
+          ticket_event_category_id: categoryId,
           display_order: ticket.display_order || index + 1,
         });
 
@@ -148,6 +167,62 @@ export default class EventTickets extends VuexModule {
     }
   }
 
+  @Action
+  public async fetchAndPopulateByEventId(eventId: string) {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      const response = await $axios.$get(
+        `tickets?where[event_id][v]=${eventId}&preloads[]=category`
+      );
+
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error(`Tickets não encontrados para o evento ${eventId}`);
+      }
+
+      const tickets = response.body.result.data;
+
+      this.context.commit('SET_TICKETS', tickets.map(
+        (ticket: any) => {
+
+          const category = {
+            id: ticket.category.id,
+            value: ticket.category.name,
+            text: ticket.category.name,
+          }
+
+
+          // Separar data e hora
+          const startDateTime = splitDateTime(ticket.start_date);
+          const endDateTime = splitDateTime(ticket.end_date);
+
+          return {
+            id: ticket.id,
+            name: ticket.name,
+            price: ticket.price,
+            quantity: ticket.total_quantity,
+            min_purchase: ticket.min_quantity_per_user,
+            max_purchase: ticket.max_quantity_per_user,
+            availability: ticket.availability,
+            display_order: ticket.display_order,
+            category,
+            start_date: startDateTime.date,
+            start_time: startDateTime.time,
+            end_date: endDateTime.date,
+            end_time: endDateTime.time,
+          };
+        }
+      ));
+
+
+
+    } catch (error) {
+      console.error('Erro ao buscar ingressos:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
 
   @Action
   public validateTickets(): ValidationResult {

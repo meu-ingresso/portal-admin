@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { CustomField, PersonType, ValidationResult } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, FieldOption, PersonType, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 
 @Module({
@@ -8,6 +8,8 @@ import { $axios } from '@/utils/nuxt-instance';
   namespaced: true,
 })
 export default class EventCustomFields extends VuexModule {
+
+  private isLoading: boolean = false;
 
   private defaultFieldList: CustomField[] = [
     {
@@ -74,6 +76,15 @@ export default class EventCustomFields extends VuexModule {
     return this.fieldList;
   }
 
+  public get $isLoading() {
+    return this.isLoading;
+  }
+
+  @Mutation
+  private SET_LOADING(loading: boolean) {
+    this.isLoading = loading;
+  }
+
   @Mutation
   private SET_FIELDS(fields: CustomField[]) {
     this.fieldList = fields;
@@ -114,6 +125,80 @@ export default class EventCustomFields extends VuexModule {
   @Action
   public removeField(index: number) {
     this.context.commit('REMOVE_FIELD', index);
+  }
+
+  @Action
+  public async fetchAndPopulateByEventId(eventId: string) {
+    try {
+      this.context.commit('SET_LOADING', true); 
+      const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${eventId}`);
+
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error(`Campos personalizados não encontrados para o evento ${eventId}`);
+      }
+
+      const fieldsData = response.body.result.data;
+      const groupedFields = new Map<string, CustomField>();
+      
+      // Inicializa o objeto field_ids com todas as chaves necessárias
+      const initializeFieldIds = (): Record<PersonType, string> => ({
+        PF: '',
+        PJ: '',
+        ESTRANGEIRO: '',
+      });
+
+    // Agrupa campos por nome
+    fieldsData.forEach((field: CustomFieldApiResponse) => {
+      const existingField = groupedFields.get(field.name);
+
+      if (existingField) {
+        // Adiciona person_type ao campo existente
+        existingField.person_types.push(field.person_type);
+        
+        // Armazena o ID do campo para cada tipo de pessoa
+        existingField.field_ids = {
+          ...existingField.field_ids,
+          [field.person_type]: field.id
+        };
+      } else {
+
+        // Cria array de options baseado nas propriedades do campo
+        const options: FieldOption[] = [
+          ...(field.required ? ['required' as const] : []),
+          ...(field.visible_on_ticket ? ['visible_on_ticket' as const] : []),
+          ...(field.is_unique ? ['is_unique' as const] : []),
+        ];
+
+        // Inicializa field_ids com valores vazios
+        const fieldIds = initializeFieldIds();
+        // Define o ID para o tipo de pessoa atual
+        fieldIds[field.person_type] = field.id;
+
+        // Cria novo campo
+        groupedFields.set(field.name, {
+          name: field.name,
+          type: field.type,
+          is_default: ['Nome Completo', 'Email'].includes(field.name),
+          options,
+          person_types: [field.person_type],
+          tickets: [], // Precisará ser preenchido com a relação de tickets
+          selected_options: [],
+          help_text: field.help_text || '',
+          order: field.order,
+          field_ids: fieldIds
+        });
+      }
+    });
+
+    const fields = Array.from(groupedFields.values());
+      this.context.commit('SET_FIELDS', fields);
+      
+    } catch (error) {
+      console.error('Erro ao buscar campos personalizados:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
   }
 
   @Action

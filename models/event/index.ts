@@ -3,6 +3,7 @@ export type EventType = 'Presencial' | 'Online' | 'Híbrido';
 export interface CategoryOption {
   text: string;
   value: string;
+  id?: string;
 }
 
 export interface RatingOption {
@@ -34,6 +35,7 @@ export interface CustomField {
   order?: number;
   help_text?: string;
   terms_content?: string;
+  field_ids?: Record<PersonType, string>;
 }
 
 export interface Ticket {
@@ -50,7 +52,7 @@ export interface Ticket {
   end_date: string;
   end_time: string;
   visible: boolean;
-  category?: string;
+  category?: CategoryOption;
   display_order?: number;
   availability: AvailabilityOption;
 }
@@ -132,4 +134,16 @@ export interface EventResponse {
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
+}
+
+export interface CustomFieldApiResponse {
+  id: string;
+  name: string;
+  type: FieldType;
+  person_type: PersonType;
+  required: boolean;
+  is_unique: boolean;
+  visible_on_ticket: boolean;
+  help_text: string | null;
+  order: number;
 }

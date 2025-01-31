@@ -2,6 +2,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { Event, EventAddress, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
+import { splitDateTime } from '@/utils/formatters';
 
 @Module({
   name: 'eventGeneralInfo',
@@ -9,6 +10,8 @@ import { status } from '@/utils/store-util';
   namespaced: true,
 })
 export default class EventGeneralInfo extends VuexModule {
+
+  private isLoading: boolean = false;
 
   private info: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
     id: '',
@@ -90,6 +93,15 @@ export default class EventGeneralInfo extends VuexModule {
 
   public get $info() {
     return this.info;
+  }
+
+  public get $isLoading() {
+    return this.isLoading;
+  }
+
+  @Mutation
+  private SET_LOADING(payload: boolean) {
+    this.isLoading = payload;
   }
 
   @Mutation
@@ -187,6 +199,90 @@ export default class EventGeneralInfo extends VuexModule {
       isValid: errors.length === 0,
       errors,
     };
+  }
+
+  @Action
+  public async fetchAndPopulateByEventId(eventId: string) {
+    try {
+
+      this.context.commit('SET_LOADING', true);
+
+      const preloads = [
+        'rating',
+        'status',
+        'address',
+        'category',
+        'attachments',
+        'collaborators',
+      ];
+
+      const response = await $axios.$get(
+        `events?where[id][v]=${eventId}&${preloads
+          .map((preload) => `preloads[]=${preload}`)
+          .join('&')}`
+      );
+
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Evento não encontrado');
+      }
+
+      const event = response.body.result.data[0];
+
+      // Separar data e hora
+      const startDateTime = splitDateTime(event.start_date);
+      const endDateTime = splitDateTime(event.end_date);
+
+      const attachmentBanner = event.attachments.find((attachment) => attachment.name === 'banner')?.image_url;
+
+      this.context.commit('UPDATE_INFO', {
+        id: event.id,
+        name: event.name,
+        alias: event.alias,
+        description: event.description,
+        general_information: event.general_information,
+        category: {
+          text: event.category.name,
+          value: event.category.id,
+        },
+        event_type: event.event_type,
+        rating: {
+          text: event.rating.description,
+          value: event.rating.id,
+          img: event.rating.image,
+        },
+        start_date: startDateTime.date,
+        start_time: startDateTime.time,
+        end_date: endDateTime.date,
+        end_time: endDateTime.time,
+        banner: attachmentBanner,
+        sale_type: event.sale_type,
+        availability: event.availability,
+        is_featured: event.is_featured,
+        absorb_service_fee: event.absorb_service_fee,
+        address: event.address ? {
+          street: event.address.street,
+          number: event.address.number,
+          complement: event.address.complement || '',
+          neighborhood: event.address.neighborhood,
+          city: event.address.city,
+          state: event.address.state,
+          zipcode: event.address.zipcode,
+          location_name: event.location_name || '',
+          latitude: event.address.latitude ? Number(event.address.latitude) : null,
+          longitude: event.address.longitude ? Number(event.address.longitude) : null,
+        } : null,
+        link_online: event.link_online || '',
+        promoter_id: event.promoter_id,
+      });
+
+      return event;
+
+    } catch (error) {
+      console.error('Erro ao buscar evento:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
   }
 
   @Action
