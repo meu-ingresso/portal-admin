@@ -2,6 +2,7 @@ export default {
   env: {
     API_HOST: process.env.API_HOST,
     NODE_ENV: process.env.NODE_ENV,
+    USE_MOCK_DATA: process.env.USE_MOCK_DATA || 'false',
   },
 
   server: {
