@@ -186,9 +186,9 @@ export default class EventTickets extends VuexModule {
         (ticket: any) => {
 
           const category = {
-            id: ticket.category.id,
-            value: ticket.category.name,
-            text: ticket.category.name,
+            id: ticket?.category?.id,
+            value: ticket?.category?.name,
+            text: ticket?.category?.name,
           }
 
 
@@ -205,7 +205,7 @@ export default class EventTickets extends VuexModule {
             max_purchase: ticket.max_quantity_per_user,
             availability: ticket.availability,
             display_order: ticket.display_order,
-            category,
+            category: ticket.category ? category : null,
             start_date: startDateTime.date,
             start_time: startDateTime.time,
             end_date: endDateTime.date,

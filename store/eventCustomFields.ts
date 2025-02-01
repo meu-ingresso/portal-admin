@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { CustomField, CustomFieldApiResponse, FieldOption, PersonType, ValidationResult } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, CustomFieldTicketApiResponse, FieldOption, PersonType, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 
 @Module({
@@ -87,7 +87,7 @@ export default class EventCustomFields extends VuexModule {
 
   @Mutation
   private SET_FIELDS(fields: CustomField[]) {
-    this.fieldList = fields;
+    this.fieldList = [...fields];
   }
 
   @Mutation
@@ -128,13 +128,13 @@ export default class EventCustomFields extends VuexModule {
   }
 
   @Action
-  public async fetchAndPopulateByEventId(eventId: string) {
+  public async fetchAndPopulateByEventId(payload: {eventId: string, tickets: string[]}) {
     try {
       this.context.commit('SET_LOADING', true); 
-      const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${eventId}`);
+      const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${payload.eventId}`);
 
       if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error(`Campos personalizados não encontrados para o evento ${eventId}`);
+        throw new Error(`Campos personalizados não encontrados para o evento ${payload.eventId}`);
       }
 
       const fieldsData = response.body.result.data;
@@ -147,50 +147,61 @@ export default class EventCustomFields extends VuexModule {
         ESTRANGEIRO: '',
       });
 
-    // Agrupa campos por nome
-    fieldsData.forEach((field: CustomFieldApiResponse) => {
-      const existingField = groupedFields.get(field.name);
+      // Agrupa campos por nome
+      const promiseFields = fieldsData.map(async (field: CustomFieldApiResponse) => {
+        const existingField = groupedFields.get(field.name);
 
-      if (existingField) {
-        // Adiciona person_type ao campo existente
-        existingField.person_types.push(field.person_type);
-        
-        // Armazena o ID do campo para cada tipo de pessoa
-        existingField.field_ids = {
-          ...existingField.field_ids,
-          [field.person_type]: field.id
-        };
-      } else {
+        if (existingField) {
+          // Adiciona person_type ao campo existente
+          existingField.person_types.push(field.person_type);
+          
+          // Armazena o ID do campo para cada tipo de pessoa
+          existingField.field_ids = {
+            ...existingField.field_ids,
+            [field.person_type]: field.id
+          };
+        } else {
 
-        // Cria array de options baseado nas propriedades do campo
-        const options: FieldOption[] = [
-          ...(field.required ? ['required' as const] : []),
-          ...(field.visible_on_ticket ? ['visible_on_ticket' as const] : []),
-          ...(field.is_unique ? ['is_unique' as const] : []),
-        ];
+          // Cria array de options baseado nas propriedades do campo
+          const options: FieldOption[] = [
+            ...(field.required ? ['required' as const] : []),
+            ...(field.visible_on_ticket ? ['visible_on_ticket' as const] : []),
+            ...(field.is_unique ? ['is_unique' as const] : []),
+          ];
 
-        // Inicializa field_ids com valores vazios
-        const fieldIds = initializeFieldIds();
-        // Define o ID para o tipo de pessoa atual
-        fieldIds[field.person_type] = field.id;
+          // Inicializa field_ids com valores vazios
+          const fieldIds = initializeFieldIds();
+          // Define o ID para o tipo de pessoa atual
+          fieldIds[field.person_type] = field.id;
 
-        // Cria novo campo
-        groupedFields.set(field.name, {
-          name: field.name,
-          type: field.type,
-          is_default: ['Nome Completo', 'Email'].includes(field.name),
-          options,
-          person_types: [field.person_type],
-          tickets: [], // Precisará ser preenchido com a relação de tickets
-          selected_options: [],
-          help_text: field.help_text || '',
-          order: field.order,
-          field_ids: fieldIds
-        });
-      }
-    });
+          const responseCheckoutFieldsTickets = await $axios.$get(`event-checkout-fields-tickets?where[event_checkout_field_id][v]=${field.id}&preloads[]=ticket`);
 
-    const fields = Array.from(groupedFields.values());
+          if (!responseCheckoutFieldsTickets.body || responseCheckoutFieldsTickets.body.code !== 'SEARCH_SUCCESS') {
+            throw new Error(`Campos personalizados não encontrados para o evento ${payload.eventId}`);
+          }
+
+          const fieldsTicketsData = responseCheckoutFieldsTickets.body.result.data;
+
+          // Cria novo campo
+          groupedFields.set(field.name, {
+            name: field.name,
+            type: field.type,
+            is_default: ['Nome Completo', 'Email'].includes(field.name),
+            options,
+            person_types: [field.person_type],
+            tickets: fieldsTicketsData.length ? fieldsTicketsData.map((customFieldTicket: CustomFieldTicketApiResponse) => customFieldTicket.ticket.name) : [],
+            selected_options: [],
+            help_text: field.help_text || '',
+            order: field.order,
+            field_ids: fieldIds
+          });
+        }
+      });
+      
+      await Promise.all(promiseFields);
+
+      const fields = Array.from(groupedFields.values());
+
       this.context.commit('SET_FIELDS', fields);
       
     } catch (error) {

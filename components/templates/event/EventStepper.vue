@@ -197,7 +197,10 @@ export default {
     async loadEventData() {
       await eventGeneralInfo.fetchAndPopulateByEventId(this.eventId);
       await eventTickets.fetchAndPopulateByEventId(this.eventId);
-      await eventCustomFields.fetchAndPopulateByEventId(this.eventId);
+      await eventCustomFields.fetchAndPopulateByEventId({
+        eventId: this.eventId,
+        tickets: this.getTickets,
+      });
     },
 
     async fetchCategoriesAndRatings() {

@@ -147,3 +147,28 @@ export interface CustomFieldApiResponse {
   help_text: string | null;
   order: number;
 }
+
+export interface TicketApiResponse {
+  id: string;
+  event_id: string;
+  name: string;
+  ticket_event_category_id: string;
+  description: string;
+  price: string;
+  total_quantity: number;
+  remaining_quantity: number;
+  status_id: number;
+  start_date: string;
+  end_date: string;
+  availability: string;
+  display_order: number;
+  min_quantity_per_user: number;
+  max_quantity_per_user: number;
+}
+
+export interface CustomFieldTicketApiResponse {
+  id: string;
+  event_checkout_field_id: string;
+  ticket_id: string;
+  ticket: TicketApiResponse;
+}
