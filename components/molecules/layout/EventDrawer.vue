@@ -8,7 +8,7 @@
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
     <v-list class="py-0">
       <v-list-item class="event-detail-image">
-        <v-img
+        <!--         <v-img
           v-if="selectedEventBanner || cachedBanner?.url"
           :src="selectedEventBanner || cachedBanner?.url"></v-img>
 
@@ -18,6 +18,49 @@
             color="primary"
             size="48"
             class="progress-circular" />
+        </div> -->
+
+        <div class="image-container">
+          <v-img
+            v-if="selectedEventBanner || cachedBanner?.url"
+            :src="selectedEventBanner || cachedBanner?.url">
+          </v-img>
+
+          <div v-else class="d-flex justify-center align-center" style="margin: 0 auto">
+            <v-progress-circular
+              indeterminate
+              color="primary"
+              size="48"
+              class="progress-circular" />
+          </div>
+
+          <!-- Botão de edição -->
+          <v-btn
+            v-if="canEditEvent"
+            icon
+            small
+            color="white"
+            class="edit-button"
+            @click="showEditMenu">
+            <v-icon>mdi-cog</v-icon>
+          </v-btn>
+
+          <!-- Menu de opções -->
+          <v-menu
+            v-model="showMenu"
+            :position-x="menuX"
+            :position-y="menuY"
+            absolute
+            offset-y>
+            <v-list>
+              <v-list-item @click="editEvent">
+                <v-list-item-icon class="mr-2">
+                  <v-icon>mdi-pencil</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Editar evento</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </div>
       </v-list-item>
 
@@ -105,12 +148,19 @@ export default {
     return {
       selectedItem: null,
       cachedBanner: null,
+      showMenu: false,
+      menuX: 0,
+      menuY: 0,
     };
   },
 
   computed: {
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+
+    canEditEvent() {
+      return true;
     },
 
     currentPath() {
@@ -232,6 +282,20 @@ export default {
 
       return banner ? banner.image_url : require(`~/assets/images/default_banner.png`);
     },
+
+    showEditMenu(e) {
+      e.stopPropagation();
+      this.menuX = e.clientX;
+      this.menuY = e.clientY;
+      this.showMenu = true;
+    },
+
+    editEvent() {
+      this.showMenu = false;
+
+      const eventId = this.routerParams.id;
+      this.$router.push(`/events/${eventId}/edit`);
+    },
   },
 };
 </script>
@@ -267,6 +331,23 @@ export default {
 
 .active-item::before {
   opacity: 0 !important;
+}
+
+.image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.edit-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+  }
 }
 
 .event-detail-image {

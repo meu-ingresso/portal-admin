@@ -15,7 +15,7 @@
     </v-row>
 
     <!-- Tabela de Cupons -->
-    <template v-if="coupons.length">
+    <template v-if="getCoupons.length">
       <div class="table-container mt-4">
         <div class="table-header">
           <div class="table-cell">Código</div>
@@ -24,21 +24,21 @@
           <div class="table-cell">Ações</div>
         </div>
 
-        <div v-for="(coupon, index) in coupons" :key="index" class="table-row">
+        <div v-for="(coupon, index) in getCoupons" :key="index" class="table-row">
           <div class="table-cell">{{ coupon.code }}</div>
           <div class="table-cell">
             {{
-              coupon.discountType === 'fixed'
-                ? `R$ ${coupon.discountValue}`
-                : `${coupon.discountValue}%`
+              coupon.discount_type === 'FIXED'
+                ? `R$ ${coupon.discount_value.replace('.', ',')}`
+                : `${coupon.discount_value}%`
             }}
           </div>
-          <div class="table-cell">{{ getArrayObjectText(coupon.tickets, null) }}</div>
+          <div class="table-cell">{{ getArrayObjectText(coupon.tickets) }}</div>
           <div class="table-cell actions">
-            <v-btn icon small class="mr-2" @click="openEditModal(coupon, index)">
+            <v-btn icon small class="mr-2" @click="openEditModal(index)">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
-            <v-btn icon small @click="removeCoupon(index)">
+            <v-btn icon small @click="handleRemoveCoupon(index)">
               <v-icon color="red">mdi-delete</v-icon>
             </v-btn>
           </div>
@@ -60,14 +60,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
-          <CouponForm
-            v-if="newCouponModal"
-            ref="newCupomForm"
-            :coupon="newCoupon"
-            :tickets="tickets"
-            :event-start-date="form.startDate"
-            :event-end-date="form.endDate"
-            @update:coupon="updateNewCouponFields" />
+          <CouponForm v-if="newCouponModal" ref="newCouponForm" :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center py-5">
           <v-spacer />
@@ -90,12 +83,9 @@
         <v-card-text class="px-4 py-2">
           <CouponForm
             v-if="editModal"
-            ref="editCupomForm"
-            :coupon="selectedCoupon"
-            :tickets="tickets"
-            :event-start-date="form.startDate"
-            :event-end-date="form.endDate"
-            @update:coupon="updateCouponFields" />
+            ref="editCouponForm"
+            :edit-index="selectedCouponIndex"
+            :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
@@ -114,7 +104,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text>
-          Tem certeza de que deseja excluir "{{ couponNameToRemove }}"?
+          {{ confirmMessage }}
         </v-card-text>
         <v-card-actions class="d-flex justify-space-between align-center">
           <DefaultButton outlined text="Cancelar" @click="confirmDialog = false" />
@@ -128,25 +118,16 @@
 <script>
 import { formatDateToBr } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
-import { toast } from '@/store';
+import { toast, eventTickets, eventCoupons } from '@/store';
 export default {
-  props: {
-    form: {
-      type: Object,
-      required: true,
-    },
-  },
   data() {
     return {
-      coupons: this.form.coupons || [],
       confirmDialog: false,
-      couponNameToRemove: '',
-      couponIndexToRemove: null,
-      newCouponModal: false,
-      newCoupon: this.getEmptyCoupon(),
+      confirmMessage: '',
+      couponIdxToRemove: null,
       editModal: false,
-      selectedCoupon: null,
       selectedCouponIndex: null,
+      newCouponModal: false,
     };
   },
 
@@ -154,108 +135,67 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
-    tickets() {
-      return this.form?.tickets.map((ticket) => ticket.name) || [];
+    getTickets() {
+      return eventTickets.$tickets.map((ticket) => ticket.name);
+    },
+
+    getCoupons() {
+      return eventCoupons.$coupons;
     },
   },
 
   methods: {
-    getEmptyCoupon() {
-      return {
-        code: '',
-        discountType: {
-          text: 'Fixo',
-          value: 'FIXED',
-        },
-        discountValue: '',
-        maxUses: 1,
-        end_date: '',
-        end_time: '',
-        start_date: '',
-        start_time: '',
-        tickets: [],
-      };
+    formattedExpirationDate(coupon) {
+      return coupon.end_date ? formatDateToBr(coupon.end_date) : '';
     },
 
-    formattedExpirationDate(coupon) {
-      return coupon.expirationDate ? formatDateToBr(coupon.expirationDate) : '';
+    handleRemoveCoupon(index) {
+      this.couponIdxToRemove = index;
+      const couponToRemove = this.getCoupons[index];
+      this.confirmMessage = `Tem certeza de que deseja excluir o cupom "${couponToRemove.code}"?`;
+      this.confirmDialog = true;
     },
 
     confirmRemoveCoupon() {
-      this.coupons.splice(this.couponIndexToRemove, 1);
-      this.confirmDialog = false;
-      this.couponIndexToRemove = null;
-      this.emitChanges();
+      eventCoupons.removeCoupon(this.couponIdxToRemove);
       toast.setToast({
         text: 'Cupom removido com sucesso.',
         type: 'success',
         time: 5000,
       });
+      this.confirmDialog = false;
     },
 
     openNewCouponModal() {
-      this.newCoupon = this.getEmptyCoupon();
       this.newCouponModal = true;
     },
 
-    updateNewCouponFields(updatedCoupon) {
-      this.newCoupon = updatedCoupon;
-    },
-
     saveNewCoupon() {
-      const cupomForm = this.$refs.newCupomForm;
-
-      if (cupomForm.validateForm()) {
-        console.log('[INSERÇÃO - CoupomForm] Erro de validação:', cupomForm.errors);
-        return;
+      const couponForm = this.$refs.newCouponForm;
+      if (couponForm.handleSubmit()) {
+        this.newCouponModal = false;
       }
-
-      this.coupons.push({ ...this.newCoupon });
-      this.newCouponModal = false;
-      this.emitChanges();
     },
 
-    openEditModal(coupon, index) {
-      this.selectedCoupon = { ...coupon };
+    openEditModal(index) {
       this.selectedCouponIndex = index;
       this.editModal = true;
     },
 
-    updateCouponFields(updatedCoupon) {
-      this.selectedCoupon = updatedCoupon;
-    },
-
     saveEditedCoupon() {
-      const cupomForm = this.$refs.editCupomForm;
-
-      if (cupomForm.validateForm()) {
-        console.log('[EDIÇÃO - CoupomForm] Erro de validação:', cupomForm.errors);
-        return;
-      }
-
       if (this.selectedCouponIndex !== null) {
-        this.$set(this.coupons, this.selectedCouponIndex, this.selectedCoupon);
-        this.editModal = false;
-        this.emitChanges();
+        const couponForm = this.$refs.editCouponForm;
+        if (couponForm.handleSubmit()) {
+          this.editModal = false;
+          this.selectedCouponIndex = null;
+        }
       }
     },
 
-    emitChanges() {
-      this.$emit('update:form', { ...this.form, coupons: this.coupons });
-    },
+    getArrayObjectText(array) {
+      if (!array) return '-';
 
-    removeCoupon(index) {
-      this.couponNameToRemove =
-        this.coupons[index].code || 'Cupom de número ' + (index + 1);
-      this.couponIndexToRemove = index;
-      this.confirmDialog = true;
-    },
-
-    getArrayObjectText(arrayValue, key = 'text') {
-      if (!key) {
-        return arrayValue.map((item) => item).join(', ');
-      }
-      return arrayValue.map((item) => item[key]).join(', ');
+      return array?.join(', ') || '';
     },
   },
 };

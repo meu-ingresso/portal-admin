@@ -134,3 +134,18 @@ export const onFormatCEP = (value: string): string => {
   const cleaned = value.replace(/\D/g, '');
   return cleaned.replace(/^(\d{5})(\d)/, '$1-$2').slice(0, 9);
 };
+
+export const splitDateTime = (isoDateTime: string) => {
+  if (!isoDateTime) return { date: '', time: '' };
+  
+  const dateTime = moment(isoDateTime);
+  return {
+    date: dateTime.format('YYYY-MM-DD'),
+    time: dateTime.format('HH:mm'),
+  };
+};
+
+export const joinDateTime = (date: string, time: string) => {
+  if (!date || !time) return null;
+  return moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DDTHH:mm:00.000Z');
+};

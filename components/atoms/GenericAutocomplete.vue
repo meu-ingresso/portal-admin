@@ -124,7 +124,7 @@ export default {
     },
     itemKey: {
       type: String,
-      default: 'name',
+      default: 'text',
     },
     allowEdit: {
       type: Boolean,

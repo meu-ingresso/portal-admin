@@ -9,21 +9,21 @@
     <v-row>
       <v-col cols="12" md="12" sm="12" class="pb-0">
         <v-text-field
-          ref="eventName"
-          v-model="localForm.eventName"
+          ref="name"
+          v-model="formData.name"
           label="Nome do Evento"
           outlined
           counter="60"
           dense
           placeholder="Digite o nome do evento"
           required
-          :rules="validationRules.eventName"
+          :rules="validationRules.name"
           @input="onEventNameChange" />
       </v-col>
     </v-row>
 
     <v-row
-      v-if="aliasValidation.isValid !== null && localForm.alias.length > 0"
+      v-if="aliasValidation.isValid !== null && formData.alias.length > 0"
       :class="!isMobile ? 'eventAlias' : ''">
       <v-col cols="12" class="pt-0">
         <div class="d-flex align-center">
@@ -50,7 +50,7 @@
             <v-text-field
               v-if="editAlias"
               ref="aliasInput"
-              v-model="localForm.alias"
+              v-model="formData.alias"
               :class="!isMobile ? 'alias-input' : 'alias-input-mobile'"
               dense
               placeholder="Digite o identificador do evento"
@@ -84,7 +84,7 @@
             <v-text-field
               v-if="editAlias"
               ref="aliasInput"
-              v-model="localForm.alias"
+              v-model="formData.alias"
               :class="!isMobile ? 'alias-input' : 'alias-input-mobile'"
               dense
               placeholder="Digite o identificador do evento"
@@ -118,7 +118,7 @@
       <v-col cols="12" md="4" sm="12">
         <v-select
           ref="category"
-          v-model="localForm.category"
+          v-model="formData.category"
           label="Categoria"
           :items="categories"
           outlined
@@ -133,7 +133,7 @@
       <v-col cols="12" md="4" sm="12">
         <v-select
           ref="event_type"
-          v-model="localForm.event_type"
+          v-model="formData.event_type"
           label="Tipo do Evento"
           :items="types"
           outlined
@@ -148,15 +148,15 @@
       <v-col cols="12" md="4" sm="12">
         <RatingSelect
           ref="rating"
-          v-model="localForm.rating"
-          :value="localForm.rating"
+          v-model="formData.rating"
+          :value="formData.rating"
           :ratings="ratings" />
       </v-col>
 
       <v-col v-if="isEventOnlineOrHibrido" cols="12" md="12" sm="12">
         <v-text-field
           ref="link_online"
-          v-model="localForm.link_online"
+          v-model="formData.link_online"
           label="Link do Evento"
           outlined
           dense
@@ -168,7 +168,7 @@
       <!-- Descrição do Evento -->
       <v-col cols="12" md="12" sm="12">
         <v-textarea
-          v-model="localForm.general_information"
+          v-model="formData.general_information"
           label="Descrição"
           rows="5"
           outlined
@@ -210,7 +210,7 @@
         </div>
         <v-file-input
           v-else
-          v-model="localForm.banner"
+          v-model="formData.banner"
           label="Banner do Evento"
           accept="image/*"
           outlined
@@ -235,16 +235,7 @@
     </v-row>
 
     <!-- Outros campos -->
-    <DateTimeForm
-      ref="dateTimeForm"
-      :start-date="form.startDate"
-      :start-time="form.startTime"
-      :end-date="form.endDate"
-      :end-time="form.endTime"
-      @update:startDate="updateStartDate"
-      @update:startTime="updateStartTime"
-      @update:endDate="updateEndDate"
-      @update:endTime="updateEndTime" />
+    <DateTimeForm ref="dateTimeForm" />
 
     <template v-if="isEventPresencialOrHibrito && nomenclature !== 'Doação'">
       <v-row>
@@ -254,10 +245,7 @@
       </v-row>
 
       <!-- Endereço do Evento -->
-      <AddressForm
-        ref="addressForm"
-        :address="localForm.address"
-        @update:address="updateAddress" />
+      <AddressForm ref="addressForm" />
     </template>
 
     <!-- Configurações do Evento/Ingressos -->
@@ -271,7 +259,7 @@
             <v-row class="d-flex align-start">
               <v-col cols="12" md="6" sm="12">
                 <v-select
-                  v-model="localForm.availability"
+                  v-model="formData.availability"
                   label="Visibilidade"
                   :items="availabilityOptions"
                   persistent-hint
@@ -296,7 +284,7 @@
               <v-col cols="12" md="6" sm="12">
                 <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
                   <v-icon
-                    v-if="localForm.absorb_service_fee"
+                    v-if="formData.absorb_service_fee"
                     class="ma-0 pa-0"
                     size="50"
                     color="primary"
@@ -305,7 +293,7 @@
                   </v-icon>
 
                   <v-icon
-                    v-else-if="!localForm.absorb_service_fee"
+                    v-else-if="!formData.absorb_service_fee"
                     class="ma-0 pa-0"
                     size="50"
                     @click="handleAbsorbServiceFee">
@@ -335,7 +323,7 @@
               <v-col v-if="isAdmin" cols="12" md="6" sm="12">
                 <div class="d-flex" :class="{ 'justify-space-between': isMobile }">
                   <v-icon
-                    v-if="localForm.is_featured"
+                    v-if="formData.is_featured"
                     class="ma-0 pa-0"
                     size="50"
                     color="primary"
@@ -344,7 +332,7 @@
                   </v-icon>
 
                   <v-icon
-                    v-else-if="!localForm.is_featured"
+                    v-else-if="!formData.is_featured"
                     class="ma-0 pa-0"
                     size="50"
                     @click="handleToggleFeatured">
@@ -380,15 +368,11 @@
 
 <script>
 import Debounce from '@/utils/Debounce';
-import { event, eventForm, toast, openAI } from '@/store';
+import { event, toast, openAI, eventGeneralInfo } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
   props: {
-    form: {
-      type: Object,
-      required: true,
-    },
     categories: {
       type: Array,
       default: () => [],
@@ -400,7 +384,6 @@ export default {
   },
   data() {
     return {
-      localForm: { ...this.form, availability: 'Publico' },
       aliasValidation: {
         isValid: null,
         alias: '',
@@ -411,11 +394,11 @@ export default {
       debouncerAlias: null,
       imagePreview: null,
       availabilityOptions: ['Publico', 'Privado', 'Página'],
-      nomenclature: this.form.sale_type || 'Ingresso',
+      nomenclature: 'Ingresso',
       nomenclatureOptions: ['Ingresso', 'Inscrição', 'Doação'],
       formHasErrors: false,
       validationRules: {
-        eventName: [
+        name: [
           (value) => !!value || 'O nome do evento é obrigatório.',
           (value) =>
             value.length <= 60 || 'O nome do evento deve ter no máximo 50 caracteres.',
@@ -432,18 +415,22 @@ export default {
   },
 
   computed: {
+    formData() {
+      return eventGeneralInfo.$info;
+    },
+
     generalInfoForm() {
       return {
-        eventName: this.localForm.eventName,
-        category: this.localForm.category?.value,
-        event_type: this.localForm.event_type,
-        rating: this.localForm.rating?.value,
-        link_online: this.localForm.link_online,
-        startDate: this.localForm.startDate,
-        startTime: this.localForm.startTime,
-        endDate: this.localForm.endDate,
-        endTime: this.localForm.endTime,
-        address: this.localForm.address,
+        name: this.formData.name,
+        category: this.formData.category?.value,
+        event_type: this.formData.event_type,
+        rating: this.formData.rating?.value,
+        link_online: this.formData.link_online,
+        start_date: this.formData.start_date,
+        start_time: this.formData.start_time,
+        end_date: this.formData.end_date,
+        end_time: this.formData.end_time,
+        address: this.formData.address,
       };
     },
 
@@ -451,28 +438,24 @@ export default {
       return event.$isLoadingAlias;
     },
 
-    $event() {
-      return event.$event;
-    },
-
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
 
     isEventPresencialOrHibrito() {
-      return ['Presencial', 'Híbrido'].includes(this.localForm.event_type);
+      return ['Presencial', 'Híbrido'].includes(this.formData.event_type);
     },
 
     isEventOnline() {
-      return this.localForm.event_type === 'Online';
+      return this.formData.event_type === 'Online';
     },
 
     isEventOnlineOrHibrido() {
-      return ['Online', 'Híbrido'].includes(this.localForm.event_type);
+      return ['Online', 'Híbrido'].includes(this.formData.event_type);
     },
 
     getHintByAvailability() {
-      switch (this.localForm.availability) {
+      switch (this.formData.availability) {
         case 'Público':
           return 'O evento será visível para todos os usuários da plataforma.';
         case 'Privado':
@@ -497,23 +480,16 @@ export default {
   },
 
   watch: {
-    localForm: {
-      handler() {
-        this.emitChanges();
-      },
-      deep: true,
-    },
-
     nomenclature(value) {
       // Atualiza o tipo de venda do evento
-      this.localForm.sale_type = value;
+      this.formData.sale_type = value;
 
       if (value === 'Ingresso') {
         this.$emit('update:nomenclature', 'Ingressos');
       } else if (value === 'Inscrição') {
         this.$emit('update:nomenclature', 'Inscrições');
       } else if (value === 'Doação') {
-        this.localForm.event_type = 'Online';
+        this.formData.event_type = 'Online';
         this.$emit('update:nomenclature', 'Doações');
       }
     },
@@ -522,9 +498,8 @@ export default {
   created() {
     this.debouncerAlias = new Debounce(this.validateAlias, 300);
 
-    if (!this.localForm?.id) {
-      this.localForm.promoter_id = this.userId;
-      this.emitChanges();
+    if (!this.formData?.id) {
+      this.formData.promoter_id = this.userId;
     }
   },
 
@@ -536,12 +511,11 @@ export default {
         .replace(/[^a-z0-9-]/g, '')
         .replace(/-+/g, '-');
 
-      this.localForm.alias = formattedValue;
+      this.formData.alias = formattedValue;
     },
 
     async handleSaveNewAlias() {
       this.editAlias = false;
-
       await this.validateAlias();
     },
 
@@ -549,28 +523,24 @@ export default {
       this.isImprovingDescription = true;
 
       const payload = {
-        event_description: this.localForm.general_information,
+        event_description: this.formData.general_information,
       };
 
       const result = await openAI.improveDescription(payload);
 
       if (result?.body?.code === 'IMPROVE_SUCCESS') {
-        this.localForm.general_information = result.body.result;
+        this.formData.general_information = result.body.result;
       }
 
       this.isImprovingDescription = false;
     },
 
     handleToggleFeatured() {
-      this.localForm.is_featured = !this.localForm.is_featured;
+      this.formData.is_featured = !this.formData.is_featured;
     },
 
     handleAbsorbServiceFee() {
-      this.localForm.absorb_service_fee = !this.localForm.absorb_service_fee;
-    },
-
-    emitChanges() {
-      this.$emit('update:form', { ...this.localForm });
+      this.formData.absorb_service_fee = !this.formData.absorb_service_fee;
     },
 
     canProceed(callback) {
@@ -584,7 +554,7 @@ export default {
 
     async validateAlias() {
       try {
-        const alias = this.localForm.alias;
+        const alias = this.formData.alias;
 
         if (!alias || alias.length === 0) {
           this.setAliasValidation(null, '');
@@ -604,7 +574,7 @@ export default {
 
     onEventNameChange() {
       this.generateAlias();
-      if (this.localForm.alias && this.localForm.alias.length > 0) {
+      if (this.formData.alias && this.formData.alias.length > 0) {
         this.debouncerAlias.execute();
       } else {
         this.setAliasValidation(null, '');
@@ -613,13 +583,13 @@ export default {
 
     generateAlias() {
       const maxLength = 60;
-      let eventName = this.localForm.eventName;
+      let eventName = this.formData.name;
 
       if (eventName.length > maxLength) {
-        eventName = this.localForm.eventName.substring(0, maxLength);
+        eventName = this.formData.name.substring(0, maxLength);
       }
 
-      this.localForm.alias = eventName
+      this.formData.alias = eventName
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
@@ -627,7 +597,7 @@ export default {
     setAliasValidation(isValid, alias) {
       this.$set(this.aliasValidation, 'isValid', isValid);
       this.$set(this.aliasValidation, 'alias', alias);
-      this.$set(this.localForm, 'alias', alias);
+      this.formData.alias = alias;
     },
     validateImageDimensions(file) {
       if (!file) return;
@@ -663,43 +633,35 @@ export default {
 
         Object.keys(this.generalInfoForm).forEach((f) => {
           if (!this.generalInfoForm[f]) {
-            console.log('1 Campo', f, 'não preenchido');
             this.formHasErrors = true;
           }
 
-          if (f === 'link_online' && this.localForm.event_type === 'Presencial') {
+          if (f === 'link_online' && this.formData.event_type === 'Presencial') {
             this.formHasErrors = false;
           }
 
           const fieldFromDateTimeForm = [
-            'startDate',
-            'startTime',
-            'endDate',
-            'endTime',
+            'start_date',
+            'start_time',
+            'end_date',
+            'end_time',
           ].includes(f);
 
-          if (
-            this.localForm.event_type !== 'Online' &&
-            this.localForm.event_type !== ''
-          ) {
+          if (this.isEventPresencialOrHibrito) {
             if (f === 'address' && this.$refs.addressForm.validate(true)) {
-              console.log('2 Campo', f, 'não preenchido');
               this.formHasErrors = true;
             }
           }
 
           if (f === 'rating' && this.$refs.rating.validate(true)) {
-            console.log('3 Campo', f, 'não preenchido');
             this.formHasErrors = true;
           }
 
           if (fieldFromDateTimeForm && this.$refs.dateTimeForm.validate(true)) {
-            console.log('4 Campo', f, 'não preenchido');
             this.formHasErrors = true;
           }
 
           if (this.$refs[f] && !this.$refs[f].validate(true) && f !== 'rating') {
-            console.log('5 Campo', f, 'não preenchido');
             this.formHasErrors = true;
           }
         });
@@ -708,32 +670,6 @@ export default {
       } catch (error) {
         console.error('Erro ao validar formulário:', error);
       }
-    },
-    normalizeDate(date) {
-      const normalized = new Date(date);
-      normalized.setUTCHours(0, 0, 0, 0);
-      return normalized;
-    },
-    updateStartDate(value) {
-      this.localForm.startDate = value;
-      eventForm.updateForm({ startDate: value });
-    },
-    updateStartTime(value) {
-      this.localForm.startTime = value;
-      eventForm.updateForm({ startTime: value });
-    },
-    updateEndDate(value) {
-      this.localForm.endDate = value;
-      eventForm.updateForm({ endDate: value });
-    },
-    updateEndTime(value) {
-      this.localForm.endTime = value;
-      eventForm.updateForm({ endTime: value });
-    },
-
-    updateAddress(value) {
-      this.localForm.address = value;
-      eventForm.updateForm({ address: value });
     },
 
     handleEditAlias() {
