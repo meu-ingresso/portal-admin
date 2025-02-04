@@ -31,14 +31,24 @@
           step="1"
           class="bg-white px-6 py-6"
           :class="{ 'fixed-height-content': isMobile }">
-          <StepGeneralInfo
-            ref="step-1"
-            :is-editing="isEditing"
-            :categories="categories"
-            :ratings="ratings"
-            :class="{ 'fixed-height-component': isMobile }" />
+          <Lottie
+            v-if="isLoadingGeneralInfo"
+            path="./animations/loading_default.json"
+            height="300"
+            width="300" />
 
-          <StepActions :is-first-step="true" @previous="previousStep" @next="nextStep" />
+          <template v-else>
+            <StepGeneralInfo
+              ref="step-1"
+              :is-editing="isEditing"
+              :categories="categories"
+              :ratings="ratings"
+              :class="{ 'fixed-height-component': isMobile }" />
+            <StepActions
+              :is-first-step="true"
+              @previous="previousStep"
+              @next="nextStep" />
+          </template>
         </v-stepper-content>
 
         <!-- Step 2: Tickets -->
@@ -46,14 +56,22 @@
           step="2"
           class="bg-white px-6 py-6"
           :class="{ 'fixed-height-content': isMobile }">
-          <StepTickets
-            ref="step-2"
-            :is-editing="isEditing"
-            :nomenclature="ticketStepperLabel"
-            :class="{ 'fixed-height-component': isMobile }"
-            @update:nomenclature="ticketStepperLabel = $event" />
+          <Lottie
+            v-if="isLoadingTickets"
+            path="./animations/loading_default.json"
+            height="300"
+            width="300" />
 
-          <StepActions @previous="previousStep" @next="nextStep" />
+          <template v-else>
+            <StepTickets
+              ref="step-2"
+              :is-editing="isEditing"
+              :nomenclature="ticketStepperLabel"
+              :class="{ 'fixed-height-component': isMobile }"
+              @update:nomenclature="ticketStepperLabel = $event" />
+
+            <StepActions @previous="previousStep" @next="nextStep" />
+          </template>
         </v-stepper-content>
 
         <!-- Step 3: Campos Personalizados -->
@@ -61,12 +79,20 @@
           step="3"
           class="bg-white px-6 py-6"
           :class="{ 'fixed-height-content': isMobile }">
-          <StepCustomFields
-            ref="step-3"
-            :is-editing="isEditing"
-            :class="{ 'fixed-height-component': isMobile }" />
+          <Lottie
+            v-if="isLoadingCustomFields"
+            path="./animations/loading_default.json"
+            height="300"
+            width="300" />
 
-          <StepActions @previous="previousStep" @next="nextStep" />
+          <template v-else>
+            <StepCustomFields
+              ref="step-3"
+              :is-editing="isEditing"
+              :class="{ 'fixed-height-component': isMobile }" />
+
+            <StepActions @previous="previousStep" @next="nextStep" />
+          </template>
         </v-stepper-content>
 
         <!-- Step 4: Cupons -->
@@ -74,16 +100,23 @@
           step="4"
           class="bg-white px-6 py-6"
           :class="{ 'fixed-height-content': isMobile }">
-          <StepCoupons
-            ref="step-4"
-            :is-editing="isEditing"
-            :class="{ 'fixed-height-component': isMobile }" />
+          <Lottie
+            v-if="isLoadingCoupons"
+            path="./animations/loading_default.json"
+            height="300"
+            width="300" />
 
-          <StepActions
-            :is-last-step="true"
-            :is-editing="isEditing"
-            @previous="previousStep"
-            @submit="submitData" />
+          <template v-else>
+            <StepCoupons
+              ref="step-4"
+              :is-editing="isEditing"
+              :class="{ 'fixed-height-component': isMobile }" />
+
+            <StepActions
+              :is-last-step="true"
+              @previous="previousStep"
+              @submit="submitData" />
+          </template>
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>
@@ -119,6 +152,7 @@ import {
   eventCustomFields,
   eventPrincipal,
   eventGeneralInfo,
+  eventCoupons,
 } from '@/store';
 
 export default {
@@ -150,7 +184,23 @@ export default {
     },
 
     isLoading() {
-      return loading.$isLoading;
+      return loading.$isLoading || this.isLoadingGeneralInfo;
+    },
+
+    isLoadingGeneralInfo() {
+      return eventGeneralInfo.$isLoading;
+    },
+
+    isLoadingTickets() {
+      return eventTickets.$isLoading;
+    },
+
+    isLoadingCustomFields() {
+      return eventCustomFields.$isLoading;
+    },
+
+    isLoadingCoupons() {
+      return eventCoupons.$isLoading;
     },
 
     isSaving() {
@@ -185,22 +235,46 @@ export default {
     },
   },
 
-  async created() {
+  created() {
+    console.log('[EventStepper] created');
+    this.resetStores();
+  },
+
+  async mounted() {
+    console.log('[EventStepper] mounted');
+
     await this.fetchCategoriesAndRatings();
 
     if (this.isEditing && this.eventId) {
+      console.log('[EventStepper] isEditing && eventId');
       await this.loadEventData();
     }
   },
 
   methods: {
+    resetStores() {
+      eventGeneralInfo.reset();
+      eventTickets.reset();
+      eventCustomFields.reset();
+      eventCoupons.reset();
+    },
+
     async loadEventData() {
       await eventGeneralInfo.fetchAndPopulateByEventId(this.eventId);
       await eventTickets.fetchAndPopulateByEventId(this.eventId);
-      await eventCustomFields.fetchAndPopulateByEventId({
-        eventId: this.eventId,
-        tickets: this.getTickets,
-      });
+
+      const promises = [
+        eventCustomFields.fetchAndPopulateByEventId({
+          eventId: this.eventId,
+          tickets: this.getTickets,
+        }),
+        eventCoupons.fetchAndPopulateByEventId({
+          eventId: this.eventId,
+          tickets: this.getTickets,
+        }),
+      ];
+
+      await Promise.all(promises);
     },
 
     async fetchCategoriesAndRatings() {
@@ -215,11 +289,8 @@ export default {
 
     nextStep() {
       const currentStepComponent = this.$refs[`step-${this.currentStep}`];
-      if (
-        currentStepComponent &&
-        typeof currentStepComponent[0]?.canProceed === 'function'
-      ) {
-        currentStepComponent[0].canProceed((_canProceed, flag, msg) => {
+      if (currentStepComponent && typeof currentStepComponent.canProceed === 'function') {
+        currentStepComponent.canProceed((_canProceed, flag, msg) => {
           if (msg) {
             toast.setToast({
               text: msg,
@@ -258,17 +329,22 @@ export default {
       this.showProgressDialog = true;
 
       try {
-        await eventPrincipal.createEvent();
+        if (this.isEditing) {
+          await eventGeneralInfo.updateEventBase(this.eventId);
+          await eventTickets.updateTickets(this.eventId);
+        } else {
+          await eventPrincipal.createEvent();
 
-        toast.setToast({
-          text: 'Evento publicado com sucesso!',
-          type: 'success',
-          time: 5000,
-        });
+          toast.setToast({
+            text: 'Evento publicado com sucesso!',
+            type: 'success',
+            time: 5000,
+          });
 
-        setTimeout(() => {
-          this.$router.push({ name: 'Lista de Eventos' });
-        }, 500);
+          setTimeout(() => {
+            this.$router.push({ name: 'Lista de Eventos' });
+          }, 500);
+        }
       } catch (error) {
         console.error('Error', error);
 

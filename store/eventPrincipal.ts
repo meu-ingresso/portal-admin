@@ -265,7 +265,7 @@ export default class EventPrincipalModule extends VuexModule {
             : {},
 
           eventCustomFields.$customFields.length > 0
-            ? eventCustomFields.createCustomFields(eventId)
+            ? eventCustomFields.createCustomFields({ eventId, tickets: eventTickets.$tickets.map((ticket) => ticket.name) })
             : {},
 
           eventCoupons.$coupons.length > 0

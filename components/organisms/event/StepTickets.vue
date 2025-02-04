@@ -18,7 +18,7 @@
 
     <v-row>
       <v-col cols="12">
-        <template v-if="getTickets.length">
+        <template v-if="getNonDeletedTickets.length">
           <!-- Estrutura de Tabela Desktop -->
           <div v-if="!isMobile" class="table-container">
             <!-- Cabeçalho -->
@@ -36,7 +36,7 @@
               :non-drag-area-selector="'.actions'"
               @drop="onDrop">
               <Draggable
-                v-for="(ticket, index) in getTickets"
+                v-for="(ticket, index) in getNonDeletedTickets"
                 :key="index"
                 class="table-row">
                 <div class="table-cell hover-icon">
@@ -242,11 +242,24 @@ export default {
       return eventCoupons.$coupons;
     },
 
-    getTickets() {
-      return eventTickets.$tickets;
+    getNonDeletedTickets() {
+      return eventTickets.$tickets.filter((ticket) => !ticket._deleted);
     },
+
+    getDeletedTickets() {
+      return eventTickets.$tickets.filter((ticket) => ticket._deleted);
+    },
+
     getCustomFields() {
       return eventCustomFields.$customFields;
+    },
+
+    getDeletedCategories() {
+      return eventTickets.$deletedCategories;
+    },
+
+    getNonDeletedCategories() {
+      return eventTickets.$ticketCategories;
     },
   },
 
@@ -260,13 +273,13 @@ export default {
     },
 
     duplicateTicket(index) {
-      const ticketToDuplicate = { ...this.getTickets[index] };
+      const ticketToDuplicate = { ...this.getNonDeletedTickets[index] };
       const baseName = `Cópia de ${ticketToDuplicate.name}`;
       let newName = baseName;
 
-      if (this.getTickets.some((ticket) => ticket.name === baseName)) {
+      if (this.getNonDeletedTickets.some((ticket) => ticket.name === baseName)) {
         let counter = 2;
-        while (this.getTickets.some((ticket) => ticket.name === newName)) {
+        while (this.getNonDeletedTickets.some((ticket) => ticket.name === newName)) {
           newName = `${baseName} (${counter})`;
           counter++;
         }
@@ -274,7 +287,12 @@ export default {
 
       ticketToDuplicate.name = newName;
 
-      eventTickets.addTicket(ticketToDuplicate);
+      eventTickets.addTicket({
+        ...ticketToDuplicate,
+        display_order: ticketToDuplicate.display_order
+          ? ticketToDuplicate.display_order + 1
+          : null,
+      });
 
       toast.setToast({
         text: `Ingresso "${newName}" duplicado com sucesso!`,
@@ -288,17 +306,23 @@ export default {
     },
 
     confirmRemoveTicket() {
-      const removedTicket = this.getTickets.splice(this.ticketIdxToRemove, 1)[0];
+      const removedTicket = this.getNonDeletedTickets[this.ticketIdxToRemove];
+      eventTickets.updateTicket({
+        index: this.ticketIdxToRemove,
+        ticket: {
+          ...removedTicket,
+          _deleted: true,
+        },
+      });
+
       const relatedFields = this.getRelatedCustomFields(removedTicket.name);
       const hasReletedFields = relatedFields.length > 0;
-
       if (hasReletedFields) {
         this.removeCustomFieldsLinkedToTicket(removedTicket.name);
       }
 
       const relatedCoupons = this.getRelatedCoupons(removedTicket.name);
       const hasReletedCoupons = relatedCoupons.length > 0;
-
       if (hasReletedCoupons) {
         this.removeCouponsLinkedToTicket(removedTicket.name);
       }
@@ -315,7 +339,8 @@ export default {
 
     handleRemoveTicket(index) {
       this.ticketIdxToRemove = index;
-      this.ticketNameToRemove = this.getTickets[index]?.name || `Ingresso ${index + 1}`;
+      this.ticketNameToRemove =
+        this.getNonDeletedTickets[index]?.name || `Ingresso ${index + 1}`;
       const relatedFields = this.getRelatedCustomFields(this.ticketNameToRemove);
 
       if (relatedFields.length > 0) {
@@ -352,7 +377,7 @@ export default {
       if (this.selectedTicketIndex !== null) {
         const ticketForm = this.$refs.editTicketForm;
 
-        const ticket = this.getTickets[this.selectedTicketIndex];
+        const ticket = this.getNonDeletedTickets[this.selectedTicketIndex];
         const relatedFields = this.getRelatedCustomFields(ticket.name);
         const relatedCoupons = this.getRelatedCoupons(ticket.name);
         const hasReletedFields = relatedFields.length > 0;
@@ -360,7 +385,7 @@ export default {
 
         if (ticketForm.handleSubmit()) {
           // Mesmo index porém atualizado
-          const updatedTicket = this.getTickets[this.selectedTicketIndex];
+          const updatedTicket = this.getNonDeletedTickets[this.selectedTicketIndex];
 
           this.editModal = false;
           this.selectedTicketIndex = null;
@@ -404,35 +429,65 @@ export default {
       this.getCustomFields.forEach((field) => {
         const index = field.tickets.indexOf(ticketName);
         if (index !== -1) {
-          field?.tickets.splice(index, 1);
+          const deletedTicket = field.tickets[index];
+
+          eventCustomFields.updateField({
+            index,
+            field: {
+              ...field,
+              tickets: [
+                ...field.tickets.filter((ticket) => ticket !== deletedTicket),
+                {
+                  ...deletedTicket,
+                  _deleted: true,
+                },
+              ],
+            },
+          });
         }
       });
 
-      const filteredFields = this.getCustomFields.filter(
-        (field) => field.tickets.length > 0 || field.isDefault
+      /*       const filteredFields = this.getCustomFields.filter(
+        (field) =>
+          field.tickets.filter((ticket) => !ticket._deleted).length > 0 ||
+          field.is_default
       );
 
-      eventCustomFields.setFields(filteredFields);
+      eventCustomFields.setFields(filteredFields); */
     },
 
     removeCouponsLinkedToTicket(ticketName) {
       this.getCoupons.forEach((coupon) => {
         const index = coupon.tickets.indexOf(ticketName);
         if (index !== -1) {
-          coupon.tickets.splice(index, 1);
+          const deletedTicket = coupon.tickets[index];
+
+          eventCoupons.updateCoupon({
+            index,
+            coupon: {
+              ...coupon,
+              tickets: [
+                ...coupon.tickets.filter((ticket) => ticket !== deletedTicket),
+                {
+                  ...deletedTicket,
+                  _deleted: true,
+                },
+              ],
+            },
+          });
         }
       });
 
-      const filteredCoupons = this.getCoupons.filter(
-        (coupon) => coupon.tickets.length > 0
+      /*       const filteredCoupons = this.getCoupons.filter(
+        (coupon) => coupon.tickets.filter((ticket) => !ticket._deleted).length > 0
       );
-      eventCoupons.setCoupons(filteredCoupons);
+      eventCoupons.setCoupons(filteredCoupons); */
     },
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
-        const movedTicket = this.getTickets.splice(removedIndex, 1)[0];
-        this.getTickets.splice(addedIndex, 0, movedTicket);
+        const movedTicket = this.getNonDeletedTickets.splice(removedIndex, 1)[0];
+        this.getNonDeletedTickets.splice(addedIndex, 0, movedTicket);
       }
     },
   },

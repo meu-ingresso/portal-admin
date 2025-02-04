@@ -8,25 +8,16 @@
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
     <v-list class="py-0">
       <v-list-item class="event-detail-image">
-        <!--         <v-img
-          v-if="selectedEventBanner || cachedBanner?.url"
-          :src="selectedEventBanner || cachedBanner?.url"></v-img>
-
-        <div v-else class="d-flex justify-center align-center" style="margin: 0 auto">
-          <v-progress-circular
-            indeterminate
-            color="primary"
-            size="48"
-            class="progress-circular" />
-        </div> -->
-
         <div class="image-container">
           <v-img
             v-if="selectedEventBanner || cachedBanner?.url"
             :src="selectedEventBanner || cachedBanner?.url">
           </v-img>
 
-          <div v-else class="d-flex justify-center align-center" style="margin: 0 auto">
+          <div
+            v-else
+            class="d-flex justify-center align-center"
+            :style="{ margin: '0 auto', height: '100%', width: '100%' }">
             <v-progress-circular
               indeterminate
               color="primary"
@@ -160,7 +151,7 @@ export default {
     },
 
     canEditEvent() {
-      return true;
+      return this.selectedEventBanner || this.cachedBanner?.url;
     },
 
     currentPath() {
@@ -178,7 +169,7 @@ export default {
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
 
-      return banner ? banner.image_url : require(`~/assets/images/default_banner.png`);
+      return banner ? banner.url : require(`~/assets/images/default_banner.png`);
     },
 
     routerParams() {
@@ -280,7 +271,7 @@ export default {
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
 
-      return banner ? banner.image_url : require(`~/assets/images/default_banner.png`);
+      return banner ? banner.url : require(`~/assets/images/default_banner.png`);
     },
 
     showEditMenu(e) {

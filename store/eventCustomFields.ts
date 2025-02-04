@@ -104,7 +104,9 @@ export default class EventCustomFields extends VuexModule {
 
   @Mutation
   private REMOVE_FIELD(index: number) {
-    this.fieldList.splice(index, 1);
+    const updatedList = [...this.fieldList];
+    updatedList[index]._deleted = true;
+    this.fieldList = updatedList;
   }
 
   @Action
@@ -147,49 +149,94 @@ export default class EventCustomFields extends VuexModule {
         ESTRANGEIRO: '',
       });
 
-      // Agrupa campos por nome
-      const promiseFields = fieldsData.map(async (field: CustomFieldApiResponse) => {
+      // Primeiro, vamos processar os campos padrão
+      const defaultFields = fieldsData.filter(field => ['Nome Completo', 'Email'].includes(field.name));
+      const customFields = fieldsData.filter(field => !['Nome Completo', 'Email'].includes(field.name));
+
+      // Processa campos padrão primeiro
+      for (const defaultFieldName of ['Nome Completo', 'Email']) {
+        const fieldsForName = defaultFields.filter((f: CustomFieldApiResponse) => f.name === defaultFieldName);
+        
+        if (fieldsForName.length > 0) {
+          const firstField = fieldsForName[0];
+          const fieldIds = initializeFieldIds();
+          
+          // Coleta todos os IDs para cada tipo de pessoa
+          fieldsForName.forEach((field: CustomFieldApiResponse) => {
+            fieldIds[field.person_type] = field.id;
+          });
+
+          const options: FieldOption[] = [
+            ...(firstField.required ? ['required' as const] : []),
+            ...(firstField.visible_on_ticket ? ['visible_on_ticket' as const] : []),
+            ...(firstField.is_unique ? ['is_unique' as const] : []),
+          ];
+
+          // Busca tickets para o primeiro ID (já que são os mesmos para todos os tipos)
+          const responseCheckoutFieldsTickets = await $axios.$get(
+            `event-checkout-fields-tickets?where[event_checkout_field_id][v]=${firstField.id}&preloads[]=ticket`
+          );
+
+          const ticketNames = responseCheckoutFieldsTickets.body?.code === 'SEARCH_SUCCESS' 
+            ? responseCheckoutFieldsTickets.body.result.data.map(
+                (customFieldTicket: CustomFieldTicketApiResponse) => customFieldTicket.ticket.name
+              )
+            : [];
+
+          groupedFields.set(defaultFieldName, {
+            name: defaultFieldName,
+            type: firstField.type,
+            is_default: true,
+            options,
+            person_types: ['PF', 'PJ', 'ESTRANGEIRO'], // Campos padrão sempre têm todos os tipos
+            tickets: ticketNames,
+            selected_options: [],
+            help_text: firstField.help_text || '',
+            order: firstField.order,
+            field_ids: fieldIds
+          });
+        }
+      }
+
+      // Processa campos customizados
+      const promiseFields = customFields.map(async (field: CustomFieldApiResponse) => {
         const existingField = groupedFields.get(field.name);
 
         if (existingField) {
-          // Adiciona person_type ao campo existente
-          existingField.person_types.push(field.person_type);
-          
-          // Armazena o ID do campo para cada tipo de pessoa
+          if (!existingField.person_types.includes(field.person_type)) {
+            existingField.person_types.push(field.person_type);
+          }
           existingField.field_ids = {
             ...existingField.field_ids,
             [field.person_type]: field.id
           };
         } else {
-
-          // Cria array de options baseado nas propriedades do campo
           const options: FieldOption[] = [
             ...(field.required ? ['required' as const] : []),
             ...(field.visible_on_ticket ? ['visible_on_ticket' as const] : []),
             ...(field.is_unique ? ['is_unique' as const] : []),
           ];
 
-          // Inicializa field_ids com valores vazios
           const fieldIds = initializeFieldIds();
-          // Define o ID para o tipo de pessoa atual
           fieldIds[field.person_type] = field.id;
 
-          const responseCheckoutFieldsTickets = await $axios.$get(`event-checkout-fields-tickets?where[event_checkout_field_id][v]=${field.id}&preloads[]=ticket`);
+          const responseCheckoutFieldsTickets = await $axios.$get(
+            `event-checkout-fields-tickets?where[event_checkout_field_id][v]=${field.id}&preloads[]=ticket`
+          );
 
-          if (!responseCheckoutFieldsTickets.body || responseCheckoutFieldsTickets.body.code !== 'SEARCH_SUCCESS') {
-            throw new Error(`Campos personalizados não encontrados para o evento ${payload.eventId}`);
-          }
+          const ticketNames = responseCheckoutFieldsTickets.body?.code === 'SEARCH_SUCCESS'
+            ? responseCheckoutFieldsTickets.body.result.data.map(
+                (customFieldTicket: CustomFieldTicketApiResponse) => customFieldTicket.ticket.name
+              )
+            : [];
 
-          const fieldsTicketsData = responseCheckoutFieldsTickets.body.result.data;
-
-          // Cria novo campo
           groupedFields.set(field.name, {
             name: field.name,
             type: field.type,
-            is_default: ['Nome Completo', 'Email'].includes(field.name),
+            is_default: false,
             options,
             person_types: [field.person_type],
-            tickets: fieldsTicketsData.length ? fieldsTicketsData.map((customFieldTicket: CustomFieldTicketApiResponse) => customFieldTicket.ticket.name) : [],
+            tickets: ticketNames,
             selected_options: [],
             help_text: field.help_text || '',
             order: field.order,
@@ -199,9 +246,7 @@ export default class EventCustomFields extends VuexModule {
       });
       
       await Promise.all(promiseFields);
-
       const fields = Array.from(groupedFields.values());
-
       this.context.commit('SET_FIELDS', fields);
       
     } catch (error) {
@@ -213,18 +258,24 @@ export default class EventCustomFields extends VuexModule {
   }
 
   @Action
-  public async createCustomFields(
-    eventId: string
-  ): Promise<Record<string, string[]>> {
+  public async createCustomFields(payload: {
+    eventId: string,
+    tickets: string[]
+  }): Promise<Record<string, string[]>> {
     try {
       const fieldTicketMap: Record<string, string[]> = {};
 
       const fieldPromises = this.fieldList.flatMap((field, index) => {
+
+        if (field.is_default) {
+          field.tickets = payload.tickets;
+        }
+
         return field.person_types.map(async (personType) => {
 
           try {
             const fieldId = await this.createSingleCustomField({
-              eventId,
+              eventId: payload.eventId,
               customField: field,
               personType,
               index
@@ -252,6 +303,23 @@ export default class EventCustomFields extends VuexModule {
 
     } catch (error) {
       console.error('Erro ao criar campos personalizados:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async deleteCustomFields(fieldId: string) {
+    try {
+      const response = await $axios.$delete(`event-checkout-field/${fieldId}`);
+
+      if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
+        throw new Error(`Falha ao deletar campo personalizado`);
+      }
+
+      return response.body.result.data;
+      
+    } catch (error) {
+      console.error('Erro ao deletar campo personalizado:', error);
       throw error;
     }
   }
@@ -314,7 +382,7 @@ export default class EventCustomFields extends VuexModule {
 
   @Action
   public reset() {
-    this.context.commit('SET_FIELDS', []);
+    this.context.commit('SET_FIELDS', this.defaultFieldList);
   }
 
   @Action
@@ -342,7 +410,31 @@ export default class EventCustomFields extends VuexModule {
       throw new Error(`Falha ao criar campo personalizado: ${payload.customField.name}`);
     }
 
-    return fieldResponse.body.result.id;
+    const fieldId = fieldResponse.body.result.id;
+
+    if (payload.customField.type === 'MULTI_CHECKBOX' || payload.customField.type === 'MENU_DROPDOWN') {
+      await this.createFieldOptions({ fieldId, options: payload.customField.selected_options });
+    }
+
+    return fieldId;
   }
 
+  @Action
+  private async createFieldOptions(payload: { fieldId: string, options: string[] }) {
+
+    const promises = payload.options.map(async (option) => {
+        const requestPayload = {
+          event_checkout_field_id: payload.fieldId,
+          name: option,
+        };
+
+      const response = await $axios.$post('event-checkout-field-option', requestPayload);
+
+      if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+          throw new Error(`Falha ao criar opção ${option} do campo personalizado: ${payload.fieldId}`);
+        }
+    });
+
+    await Promise.all(promises);
+  }
 } 

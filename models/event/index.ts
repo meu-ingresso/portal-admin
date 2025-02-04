@@ -3,7 +3,8 @@ export type EventType = 'Presencial' | 'Online' | 'Híbrido';
 export interface CategoryOption {
   text: string;
   value: string;
-  id?: string;
+  id?: string | null | -1;
+  _deleted?: boolean;
 }
 
 export interface RatingOption {
@@ -36,10 +37,12 @@ export interface CustomField {
   help_text?: string;
   terms_content?: string;
   field_ids?: Record<PersonType, string>;
+  _deleted?: boolean;
 }
 
 export interface Ticket {
   id?: string;
+  event_id?: string;
   name: string;
   description?: string;
   price: string;
@@ -55,6 +58,7 @@ export interface Ticket {
   category?: CategoryOption;
   display_order?: number;
   availability: AvailabilityOption;
+  _deleted?: boolean;
 }
 
 export interface Coupon {
@@ -68,9 +72,11 @@ export interface Coupon {
   end_date: string;
   end_time: string;
   tickets: string[];
+  _deleted?: boolean;
 }
 
 export interface EventAddress {
+  id?: string;
   street: string;
   number: string;
   complement?: string;
@@ -92,7 +98,8 @@ export interface Event {
   category: CategoryOption;
   event_type: EventType | null;
   rating: RatingOption | null;
-  banner?: File;
+  banner?: File | string;
+  backup_banner?: File | string;
   start_date: string;
   start_time: string;
   end_date: string;
@@ -169,6 +176,26 @@ export interface TicketApiResponse {
 export interface CustomFieldTicketApiResponse {
   id: string;
   event_checkout_field_id: string;
+  ticket_id: string;
+  ticket: TicketApiResponse;
+}
+
+export interface CouponApiResponse {
+  id: string;
+  event_id: string;
+  status_id: string;
+  code: string; 
+  discount_type: DiscountType;
+  discount_value: string;
+  max_uses: number;
+  uses: number;
+  start_date: string;
+  end_date: string;
+}
+
+export interface CouponTicketApiResponse {
+  id: string;
+  coupon_id: string;
   ticket_id: string;
   ticket: TicketApiResponse;
 }

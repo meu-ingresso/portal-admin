@@ -118,7 +118,12 @@ export default {
     },
 
     formData() {
-      return eventGeneralInfo.$info.address;
+      return {
+        ...eventGeneralInfo.$info.address,
+        zipcode: eventGeneralInfo.$info.address?.zipcode
+          ? onFormatCEP(eventGeneralInfo.$info.address.zipcode)
+          : '',
+      };
     },
 
     form() {

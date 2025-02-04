@@ -8,6 +8,9 @@
       :search-input.sync="searchQuery"
       :hint="hint"
       :persistent-hint="persistentHint"
+      item-text="text"
+      item-value="value"
+      return-object
       outlined
       dense
       hide-details="auto"
@@ -21,16 +24,15 @@
           <template #activator="{ on }">
             <v-icon v-on="on"> {{ prependInnerIcon }} </v-icon>
           </template>
-          Este campo pode ser utilizado quando o evento possui vários setores, ex.: VIP,
-          Mezanino, Plateia Frontal, etc
+          {{ tooltipText }}
         </v-tooltip>
       </template>
 
       <!-- Template para exibir cada item com ações -->
       <template #item="{ item }">
         <div class="d-flex align-center justify-space-between w-full">
-          <span>{{ formatItem(item) }}</span>
-          <div v-if="(allowEdit || allowRemove) && !checkItemIsNew(item)" class="ml-2">
+          <span>{{ item.text }}</span>
+          <div v-if="allowEdit || allowRemove" class="ml-2">
             <v-btn v-if="allowEdit" icon small @click="openEditModal(item)">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
@@ -52,7 +54,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text>
-          Tem certeza de que deseja excluir "{{ formatItem(itemToRemove) }}"?
+          Tem certeza de que deseja excluir "{{ itemToRemove?.text }}"?
         </v-card-text>
         <v-card-actions class="d-flex align-center py-5">
           <v-spacer />
@@ -99,8 +101,8 @@ export default {
       default: () => [],
     },
     value: {
-      type: [String, Object],
-      default: '',
+      type: Object,
+      default: null,
     },
     label: {
       type: String,
@@ -118,13 +120,14 @@ export default {
       type: String,
       default: 'mdi-information-variant-circle',
     },
+    tooltipText: {
+      type: String,
+      default:
+        'Este campo pode ser utilizado quando o evento possui vários setores, ex.: VIP, Mezanino, Plateia Frontal, etc',
+    },
     persistentHint: {
       type: Boolean,
       default: false,
-    },
-    itemKey: {
-      type: String,
-      default: 'text',
     },
     allowEdit: {
       type: Boolean,
@@ -170,93 +173,95 @@ export default {
       },
       immediate: true,
     },
-    selectedItem: {
-      handler(newItem) {
-        this.$emit('input', newItem);
-      },
-    },
   },
   created() {
     this.debouncer = new Debounce(this.suggestCreateItem, 500);
   },
   methods: {
-    formatItem(item) {
-      if (!item) return 'Item inválido';
-      return typeof item === 'object' ? item[this.itemKey] || 'Item sem nome' : item;
-    },
     onSearchInput(query) {
       if (query === null) return;
       this.searchQuery = query.length ? query.trim() : '';
       this.debouncer.execute(query);
     },
+
     suggestCreateItem(query) {
       if (
         query &&
         !this.internalItems.some(
-          (item) => this.formatItem(item).toLowerCase() === query.toLowerCase()
+          (item) => item.text.toLowerCase() === query.toLowerCase()
         )
       ) {
-        this.internalItems.push(this.createPlaceholder(query));
+        this.internalItems.push(this.createNewItemObject(query));
       } else {
         this.clearPlaceholders();
       }
     },
+
+    createNewItemObject(name) {
+      return {
+        id: -1, // Indica que é um novo item
+        text: `Criar e atribuir ${name}`,
+        value: name,
+        _isNew: true, // Flag para identificar itens novos
+      };
+    },
+
     onItemChange(item) {
-      if (item && typeof item === 'string' && item.startsWith('Criar e atribuir ')) {
-        const newItem = item.replace('Criar e atribuir ', '').trim();
-        if (newItem) {
-          const formattedItem = this.formatNewItem(newItem);
-          this.internalItems.push(formattedItem);
-          this.selectedItem = formattedItem;
-        }
+      if (item && item._isNew) {
+        item.text = item.text.replace('Criar e atribuir ', '');
+        this.selectedItem = item;
         this.clearPlaceholders();
-        this.$emit('update:items', this.internalItems);
+        this.$emit('input', this.selectedItem);
+      } else {
+        this.selectedItem = item;
+        this.$emit('input', this.selectedItem);
       }
     },
-    checkItemIsNew(item) {
-      return typeof item === 'string' && item.startsWith('Criar e atribuir ');
-    },
-    createPlaceholder(query) {
-      return `Criar e atribuir ${query}`;
-    },
+
     clearPlaceholders() {
       this.internalItems = this.internalItems.filter(
-        (item) => typeof item !== 'string' || !item.startsWith('Criar e atribuir ')
+        (item) => !item.text.startsWith('Criar e atribuir ')
       );
     },
+
     confirmRemoveItem(item) {
       this.itemToRemove = item;
       this.confirmDialog = true;
     },
     removeItem() {
       this.internalItems = this.internalItems.filter(
-        (item) => item !== this.itemToRemove
+        (item) =>
+          item.value !== this.itemToRemove.value && item.text !== this.itemToRemove.text
       );
-      if (this.selectedItem === this.itemToRemove) {
+
+      if (this.selectedItem && this.selectedItem.value === this.itemToRemove.value) {
         this.selectedItem = null;
       }
+
+      this.$emit('remove', this.itemToRemove);
       this.confirmDialog = false;
-      this.$emit('update:items', this.internalItems);
     },
+
     openEditModal(item) {
       this.itemToEdit = item;
-      this.editedItemValue = this.formatItem(item);
+      this.editedItemValue = item.text;
       this.editDialog = true;
     },
+
     saveEditedItem() {
       if (this.editedItemValue.trim().length > 0) {
-        const formattedItem = this.formatNewItem(this.editedItemValue.trim());
-        const index = this.internalItems.indexOf(this.itemToEdit);
-        this.internalItems.splice(index, 1, formattedItem);
-        if (this.selectedItem === this.itemToEdit) {
-          this.selectedItem = formattedItem;
-        }
+        const editedItem = {
+          ...this.itemToEdit,
+          text: this.editedItemValue.trim(),
+          value: this.editedItemValue.trim(),
+        };
+
+        this.$set(this.selectedItem, 'text', editedItem.text);
+        this.$set(this.selectedItem, 'value', editedItem.value);
+
+        this.$emit('edit', editedItem);
         this.editDialog = false;
-        this.$emit('update:items', this.internalItems);
       }
-    },
-    formatNewItem(name) {
-      return typeof this.items[0] === 'object' ? { [this.itemKey]: name } : name;
     },
   },
 };

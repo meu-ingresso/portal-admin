@@ -1,3 +1,5 @@
+import { CategoryOption, Ticket } from '~/models/event';
+
 export const sleep = async (ms: number): Promise<void> => {
   return await new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -100,4 +102,16 @@ export const getArrayObjectText = (arrayValue: any[], key = 'text'): string => {
     return arrayValue.map((item) => item).join(', ');
   }
   return arrayValue.map((item) => item[key]).join(', ');
+};
+
+export const getUniqueCategories = (tickets: Ticket[]): CategoryOption[] => {
+  const categoryMap = new Map<string, CategoryOption>();
+    
+  tickets.forEach((ticket) => {
+    if (ticket.category) {
+      categoryMap.set(ticket.category.value, ticket.category);
+    }
+  });
+
+  return Array.from(categoryMap.values());
 };

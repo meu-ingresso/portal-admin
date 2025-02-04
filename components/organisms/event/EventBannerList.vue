@@ -22,7 +22,8 @@ export default {
       const banner = event.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
-      return banner ? banner.image_url : '/assets/images/default_banner.png';
+
+      return banner ? banner?.url : '/assets/images/default_banner.png';
     },
   },
 };

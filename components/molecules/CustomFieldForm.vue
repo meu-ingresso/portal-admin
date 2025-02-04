@@ -294,7 +294,7 @@ export default {
     },
 
     onTypeChange() {
-      if (this.isFieldTypeWithOptions && this.localField.optionsValues.length === 0) {
+      if (this.isFieldTypeWithOptions && this.localField.selected_options.length === 0) {
         this.addOption();
         return;
       }

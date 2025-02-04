@@ -381,6 +381,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    isEditing: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -401,7 +405,8 @@ export default {
         name: [
           (value) => !!value || 'O nome do evento é obrigatório.',
           (value) =>
-            value.length <= 60 || 'O nome do evento deve ter no máximo 50 caracteres.',
+            (value && value.length <= 60) ||
+            'O nome do evento deve ter no máximo 60 caracteres.',
         ],
         category: [(value) => !!value || 'Selecione uma categoria.'],
         event_type: [(value) => !!value || 'Selecione o tipo do evento.'],
@@ -498,8 +503,10 @@ export default {
   created() {
     this.debouncerAlias = new Debounce(this.validateAlias, 300);
 
-    if (!this.formData?.id) {
+    if (!this.isEditing) {
       this.formData.promoter_id = this.userId;
+    } else {
+      this.imagePreview = this.formData.banner;
     }
   },
 

@@ -1,105 +1,107 @@
 <template>
-  <v-row>
-    <v-col cols="12" md="3" sm="12">
-      <v-menu
-        ref="startDateMenu"
-        v-model="startDateMenu"
-        :close-on-content-click="false"
-        transition="scale-transition"
-        offset-y
-        min-width="auto">
-        <template #activator="{ on, attrs }">
-          <v-text-field
-            ref="formattedStartDate"
-            v-model="formattedStartDate"
-            label="Data de Início*"
-            prepend-inner-icon="mdi-calendar"
-            readonly
-            outlined
+  <v-form ref="form" v-model="isFormValid">
+    <v-row>
+      <v-col cols="12" md="3" sm="12">
+        <v-menu
+          ref="startDateMenu"
+          v-model="startDateMenu"
+          :close-on-content-click="false"
+          transition="scale-transition"
+          offset-y
+          min-width="auto">
+          <template #activator="{ on, attrs }">
+            <v-text-field
+              ref="formattedStartDate"
+              v-model="formattedStartDate"
+              label="Data de Início*"
+              prepend-inner-icon="mdi-calendar"
+              readonly
+              outlined
+              dense
+              hide-details="auto"
+              v-bind="attrs"
+              required
+              :rules="rules?.startDate"
+              v-on="on" />
+          </template>
+          <v-date-picker
+            v-model="formData.start_date"
+            locale="pt-br"
             dense
             hide-details="auto"
-            v-bind="attrs"
-            required
-            :rules="rules?.startDate"
-            v-on="on" />
-        </template>
-        <v-date-picker
-          v-model="formData.start_date"
-          locale="pt-br"
+            no-title
+            :min="minDate"
+            @input="onStartDateChange" />
+        </v-menu>
+      </v-col>
+      <v-col cols="12" md="3" sm="12">
+        <v-text-field
+          ref="start_time"
+          v-model="formData.start_time"
+          v-mask="'##:##'"
+          label="Hora de Início*"
+          prepend-inner-icon="mdi-clock-outline"
+          placeholder="21:30"
+          outlined
           dense
           hide-details="auto"
-          no-title
-          :min="minDate"
-          @input="onStartDateChange" />
-      </v-menu>
-    </v-col>
-    <v-col cols="12" md="3" sm="12">
-      <v-text-field
-        ref="start_time"
-        v-model="formData.start_time"
-        v-mask="'##:##'"
-        label="Hora de Início*"
-        prepend-inner-icon="mdi-clock-outline"
-        placeholder="21:30"
-        outlined
-        dense
-        hide-details="auto"
-        required
-        :rules="rules?.startTime"
-        @input="validateTime($event, 'start_time')" />
-    </v-col>
-    <v-col cols="12" md="3" sm="12">
-      <v-menu
-        ref="endDateMenu"
-        v-model="endDateMenu"
-        :close-on-content-click="false"
-        transition="scale-transition"
-        offset-y
-        dense
-        hide-details="auto"
-        min-width="auto">
-        <template #activator="{ on, attrs }">
-          <v-text-field
-            ref="formattedEndDate"
-            v-model="formattedEndDate"
-            label="Data de Término"
-            prepend-inner-icon="mdi-calendar"
-            readonly
-            outlined
+          required
+          :rules="rules?.startTime"
+          @input="validateTime($event, 'start_time')" />
+      </v-col>
+      <v-col cols="12" md="3" sm="12">
+        <v-menu
+          ref="endDateMenu"
+          v-model="endDateMenu"
+          :close-on-content-click="false"
+          transition="scale-transition"
+          offset-y
+          dense
+          hide-details="auto"
+          min-width="auto">
+          <template #activator="{ on, attrs }">
+            <v-text-field
+              ref="formattedEndDate"
+              v-model="formattedEndDate"
+              label="Data de Término"
+              prepend-inner-icon="mdi-calendar"
+              readonly
+              outlined
+              dense
+              hide-details="auto"
+              v-bind="attrs"
+              :rules="rules?.endDate"
+              v-on="on" />
+          </template>
+          <v-date-picker
+            v-model="formData.end_date"
+            locale="pt-br"
             dense
+            no-title
             hide-details="auto"
-            v-bind="attrs"
-            :rules="rules?.endDate"
-            v-on="on" />
-        </template>
-        <v-date-picker
-          v-model="formData.end_date"
-          locale="pt-br"
+            :min="formData.start_date || minDate"
+            @input="onEndDateChange" />
+        </v-menu>
+      </v-col>
+      <v-col cols="12" md="3" sm="12">
+        <v-text-field
+          ref="end_time"
+          v-model="formData.end_time"
+          v-mask="'##:##'"
+          label="Hora de Término"
+          prepend-inner-icon="mdi-clock-outline"
+          placeholder="00:00"
+          outlined
           dense
-          no-title
           hide-details="auto"
-          :min="formData.start_date || minDate"
-          @input="onEndDateChange" />
-      </v-menu>
-    </v-col>
-    <v-col cols="12" md="3" sm="12">
-      <v-text-field
-        ref="end_time"
-        v-model="formData.end_time"
-        v-mask="'##:##'"
-        label="Hora de Término"
-        prepend-inner-icon="mdi-clock-outline"
-        placeholder="00:00"
-        outlined
-        dense
-        hide-details="auto"
-        :rules="rules?.endTime"
-        @input="validateTime($event, 'end_time')" />
-    </v-col>
-    <v-col v-if="formData.start_date && formData.end_date" cols="12">
-      <p class="subtitle-2" v-html="eventDuration" />
-    </v-col>
-  </v-row>
+          :rules="rules?.endTime"
+          @input="validateTime($event, 'end_time')" />
+      </v-col>
+      <v-col v-if="formData.start_date && formData.end_date" cols="12">
+        <p class="subtitle-2" v-html="eventDuration" />
+      </v-col>
+    </v-row>
+  </v-form>
 </template>
 
 <script>
@@ -126,6 +128,7 @@ export default {
       endDateMenu: false,
       endTimeMenu: false,
       hasErrors: false,
+      isFormValid: false,
       minDate,
       rules: {
         startDate: [
@@ -151,17 +154,6 @@ export default {
 
             if (eventDate < todayDate)
               return 'A data de início não pode ser anterior à data atual.';
-
-            if (this.formData.start_time) {
-              const [hours, minutes] = this.formData.start_time.split(':').map(Number);
-              const eventTime = hours * 60 + minutes;
-              const currentTime = today.getHours() * 60 + today.getMinutes();
-
-              return (
-                eventTime > currentTime ||
-                'O horário de início deve ser posterior ao horário atual.'
-              );
-            }
 
             return true;
           },
@@ -375,16 +367,13 @@ export default {
     },
   },
   methods: {
+    validateForm() {
+      return this.$refs.form.validate();
+    },
+
     validate() {
-      this.hasErrors = false;
-
-      Object.keys(this.form).forEach((f) => {
-        if (!this.form[f]) this.hasErrors = true;
-
-        this.$refs[f].validate(true);
-      });
-
-      return this.hasErrors;
+      this.validateForm();
+      return !this.isFormValid;
     },
     validateTime(value, field) {
       if (!value) return;

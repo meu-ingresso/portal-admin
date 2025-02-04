@@ -89,7 +89,7 @@ async function createEventBanner(eventId) {
 async function updateEventBanner(attachmentId, bannerUrl) {
   const updateResponse = await $axios.$patch('event-attachment', {
     id: attachmentId,
-    image_url: bannerUrl,
+    url: bannerUrl,
   });
 
   if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {

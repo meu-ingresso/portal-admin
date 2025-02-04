@@ -16,7 +16,7 @@
 
     <v-row>
       <v-col cols="12">
-        <template v-if="getCustomFields.length">
+        <template v-if="getNonDeletedCustomFields.length">
           <div class="table-container">
             <!-- Cabeçalho -->
             <div class="table-header">
@@ -34,7 +34,7 @@
               :non-drag-area-selector="'.actions'"
               @drop="onDrop">
               <Draggable
-                v-for="(field, index) in getCustomFields"
+                v-for="(field, index) in getNonDeletedCustomFields"
                 :key="index"
                 class="table-row"
                 :class="{ 'disabled-row': field.is_default }">
@@ -47,7 +47,11 @@
                   {{ getArrayObjectText(field.person_types) }}
                 </div>
                 <div class="table-cell">
-                  {{ getArrayObjectText(field.tickets) }}
+                  {{
+                    field.is_default
+                      ? 'Todos os ingressos'
+                      : getArrayObjectText(field.tickets)
+                  }}
                 </div>
                 <div v-if="!field.is_default" class="table-cell actions">
                   <v-tooltip bottom>
@@ -181,15 +185,15 @@ export default {
       return eventTickets.$tickets.map((ticket) => ticket.name);
     },
 
-    getCustomFields() {
-      return eventCustomFields.$customFields;
+    getNonDeletedCustomFields() {
+      return eventCustomFields.$customFields.filter((field) => !field._deleted);
     },
   },
 
   methods: {
     handleRemoveField(index) {
       this.fieldIdxToRemove = index;
-      const fieldToRemove = this.getCustomFields[index];
+      const fieldToRemove = this.getNonDeletedCustomFields[index];
       this.confirmMessage = `Tem certeza de que deseja excluir o campo ${fieldToRemove.name} ?`;
       this.confirmDialog = true;
     },
@@ -232,8 +236,8 @@ export default {
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
-        const movedField = this.getCustomFields.splice(removedIndex, 1)[0];
-        this.getCustomFields.splice(addedIndex, 0, movedField);
+        const movedField = this.getNonDeletedCustomFields.splice(removedIndex, 1)[0];
+        this.getNonDeletedCustomFields.splice(addedIndex, 0, movedField);
       }
     },
 
