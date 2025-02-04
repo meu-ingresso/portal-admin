@@ -249,7 +249,7 @@
     </template>
 
     <!-- Configurações do Evento/Ingressos -->
-    <v-row>
+    <v-row class="mt-4">
       <v-col cols="12">
         <v-card tile elevation="1" class="ticket-configuration">
           <v-card-title>
@@ -627,11 +627,11 @@ export default {
 
       // Atualiza a prévia da imagem
       this.imagePreview = objectUrl;
-      this.localForm.banner = file;
+      this.formData.banner = file;
     },
     onClearBanner() {
       this.imagePreview = null;
-      this.localForm.banner = null;
+      this.formData.banner = null;
     },
 
     validateForm() {

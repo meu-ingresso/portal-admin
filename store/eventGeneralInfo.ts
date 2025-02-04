@@ -232,7 +232,9 @@ export default class EventGeneralInfo extends VuexModule {
       const startDateTime = splitDateTime(event.start_date);
       const endDateTime = splitDateTime(event.end_date);
 
-      const attachmentBanner = event.attachments.find((attachment) => attachment.name === 'banner')?.url;
+      const bannerAttachment = event.attachments.find((attachment) => attachment.name === 'banner');
+      const bannerUrl = bannerAttachment ? bannerAttachment.url : null;
+      const bannerId = bannerAttachment ? bannerAttachment.id : null;
 
       this.context.commit('UPDATE_INFO', {
         id: event.id,
@@ -254,8 +256,9 @@ export default class EventGeneralInfo extends VuexModule {
         start_time: startDateTime.time,
         end_date: endDateTime.date,
         end_time: endDateTime.time,
-        banner: attachmentBanner,
-        backup_banner: attachmentBanner,
+        banner: bannerUrl,
+        backup_banner: bannerUrl,
+        banner_id: bannerId,
         sale_type: event.sale_type,
         availability: event.availability,
         is_featured: event.is_featured,
@@ -496,16 +499,16 @@ export default class EventGeneralInfo extends VuexModule {
   public async handleEventBanner(eventId: string) {
     if (!this.$info.banner) return null;
 
-    if (this.info.banner instanceof File) {
-      await this.deleteEventBanner(this.$info.backup_banner as string);
+    if (this.info.banner instanceof File && this.$info.banner_id) {
+      await this.deleteEventBanner(this.$info.banner_id as string);
     } else if (this.info.banner === this.info.backup_banner) {
       // Se ambos forem iguais é porque não houve alteração
       return;
     }
 
     const bannerId = await this.createEventBanner(eventId);
-    const bannerUrl = await this.uploadEventBanner(bannerId, this.$info.banner as File);
-    await this.updateEventBanner(bannerId, bannerUrl);
+    const bannerUrl = await this.uploadEventBanner({attachmentId: bannerId, banner: this.$info.banner as File});
+    await this.updateEventBanner({attachmentId: bannerId, bannerUrl});
 
     return bannerId;
   }
@@ -536,10 +539,10 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  private async uploadEventBanner(attachmentId: string, banner: File) {
+  private async uploadEventBanner(payload: {attachmentId: string, banner: File}) {
     const formData = new FormData();
-    formData.append('event_attachment_id', attachmentId);
-    formData.append('file', banner);
+    formData.append('event_attachment_id', payload.attachmentId);
+    formData.append('file', payload.banner);
 
     const uploadResponse = await $axios.$post('upload', formData, {
       headers: {
@@ -555,10 +558,10 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  private async updateEventBanner(attachmentId: string, bannerUrl: string) {
+  private async updateEventBanner(payload: {attachmentId: string, bannerUrl: string}) {
     const updateResponse = await $axios.$patch('event-attachment', {
-      id: attachmentId,
-      url: bannerUrl,
+      id: payload.attachmentId,
+      url: payload.bannerUrl,
     });
 
     if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {

@@ -100,6 +100,7 @@ export interface Event {
   rating: RatingOption | null;
   banner?: File | string;
   backup_banner?: File | string;
+  banner_id?: string;
   start_date: string;
   start_time: string;
   end_date: string;
