@@ -46,6 +46,7 @@
               :class="{ 'fixed-height-component': isMobile }" />
             <StepActions
               :is-first-step="true"
+              :is-editing="isEditing"
               @previous="previousStep"
               @next="nextStep" />
           </template>
@@ -70,7 +71,10 @@
               :class="{ 'fixed-height-component': isMobile }"
               @update:nomenclature="ticketStepperLabel = $event" />
 
-            <StepActions @previous="previousStep" @next="nextStep" />
+            <StepActions
+              :is-editing="isEditing"
+              @previous="previousStep"
+              @next="nextStep" />
           </template>
         </v-stepper-content>
 
@@ -91,7 +95,10 @@
               :is-editing="isEditing"
               :class="{ 'fixed-height-component': isMobile }" />
 
-            <StepActions @previous="previousStep" @next="nextStep" />
+            <StepActions
+              :is-editing="isEditing"
+              @previous="previousStep"
+              @next="nextStep" />
           </template>
         </v-stepper-content>
 
@@ -114,6 +121,7 @@
 
             <StepActions
               :is-last-step="true"
+              :is-editing="isEditing"
               @previous="previousStep"
               @submit="submitData" />
           </template>
