@@ -1,6 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { CustomField, CustomFieldApiResponse, CustomFieldTicketApiResponse, FieldOption, PersonType, ValidationResult } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, CustomFieldTicketApiResponse, FieldOption, FieldSelectedOption, FieldTicketRelation, PersonType, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
+import { defaultFields } from '~/utils/customFieldsHelpers';
 
 @Module({
   name: 'eventCustomFields',
@@ -150,12 +151,12 @@ export default class EventCustomFields extends VuexModule {
       });
 
       // Primeiro, vamos processar os campos padrão
-      const defaultFields = fieldsData.filter(field => ['Nome Completo', 'Email'].includes(field.name));
-      const customFields = fieldsData.filter(field => !['Nome Completo', 'Email'].includes(field.name));
+      const defaultFieldsData = fieldsData.filter((field: CustomFieldApiResponse) => defaultFields.includes(field.name));
+      const customFieldsData = fieldsData.filter((field: CustomFieldApiResponse) => !defaultFields.includes(field.name));
 
       // Processa campos padrão primeiro
-      for (const defaultFieldName of ['Nome Completo', 'Email']) {
-        const fieldsForName = defaultFields.filter((f: CustomFieldApiResponse) => f.name === defaultFieldName);
+      for (const defaultFieldName of defaultFields) {
+        const fieldsForName = defaultFieldsData.filter((f: CustomFieldApiResponse) => f.name === defaultFieldName);
         
         if (fieldsForName.length > 0) {
           const firstField = fieldsForName[0];
@@ -199,7 +200,7 @@ export default class EventCustomFields extends VuexModule {
       }
 
       // Processa campos customizados
-      const promiseFields = customFields.map(async (field: CustomFieldApiResponse) => {
+      const promiseFields = customFieldsData.map(async (field: CustomFieldApiResponse) => {
         const existingField = groupedFields.get(field.name);
 
         if (existingField) {
@@ -229,6 +230,18 @@ export default class EventCustomFields extends VuexModule {
                 (customFieldTicket: CustomFieldTicketApiResponse) => customFieldTicket.ticket.name
               )
             : [];
+          
+          let selectedOptions: string[] = [];
+          
+          if (field.type === 'MULTI_CHECKBOX' || field.type === 'MENU_DROPDOWN') {
+            const responseFieldOptions = await $axios.$get(
+              `event-checkout-field-option?where[event_checkout_field_id][v]=${field.id}`
+            );
+
+            selectedOptions = responseFieldOptions.body?.result?.data?.map(
+              (option: FieldSelectedOption) => option.name
+            );
+          }
 
           groupedFields.set(field.name, {
             name: field.name,
@@ -237,7 +250,7 @@ export default class EventCustomFields extends VuexModule {
             options,
             person_types: [field.person_type],
             tickets: ticketNames,
-            selected_options: [],
+            selected_options: selectedOptions,
             help_text: field.help_text || '',
             order: field.order,
             field_ids: fieldIds
@@ -379,6 +392,92 @@ export default class EventCustomFields extends VuexModule {
     };
   }
 
+  @Action
+  public async updateEventCustomFields(payload: {
+    eventId: string;
+    tickets: string[];
+  }): Promise<Record<string, string[]>> {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // 1. Buscar campos existentes e suas opções/relações
+      const [fieldsResponse, optionsResponse, ticketRelationsResponse] = await Promise.all([
+        $axios.$get(`event-checkout-fields?where[event_id][v]=${payload.eventId}`),
+        $axios.$get(`event-checkout-field-options?where[event_checkout_field_id][v]=${payload.eventId}`),
+        $axios.$get(`event-checkout-fields-tickets?where[event_checkout_field_id][v]=${payload.eventId}`)
+      ]);
+
+      if (!fieldsResponse.body || fieldsResponse.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error(`Campos personalizados não encontrados para o evento ${payload.eventId}`);
+      }
+        
+      const existingFields = fieldsResponse.body?.result?.data || [];
+      const existingOptions = optionsResponse.body?.result?.data || [];
+      const existingTicketRelations = ticketRelationsResponse.body?.result?.data || [];
+
+      // Desconsiderar campos padrão
+      const fieldsAllowedToDelete = existingFields.filter((field: CustomFieldApiResponse) => !defaultFields.includes(field.name));
+
+      // 2. Deletar relações existentes
+      const deleteTicketRelationsPromises = existingTicketRelations.map(async (relation: FieldTicketRelation) => {
+        try {
+          await $axios.$delete(`event-checkout-fields-tickets/${relation.id}`);
+        } catch (error) {
+          console.error(`Erro ao deletar relação com ticket ${relation.id}:`, error);
+          throw error;
+        }
+      });
+
+      // 3. Deletar opções existentes
+      const deleteOptionsPromises = existingOptions.map(async (option: FieldSelectedOption) => {
+        try {
+          await $axios.$delete(`event-checkout-field-option/${option.id}`);
+        } catch (error) {
+          console.error(`Erro ao deletar opção ${option.name}:`, error);
+          throw error;
+        }
+      });
+
+      // 4. Deletar campos existentes
+      const deleteFieldsPromises = fieldsAllowedToDelete.map(async (field: CustomFieldApiResponse) => {
+        try {
+          await this.deleteCustomFields(field.id);
+        } catch (error) {
+          console.error(`Erro ao deletar campo ${field.name}:`, error);
+          throw error;
+        }
+      });
+
+      // Aguarda todas as deleções
+      await Promise.all([
+        ...deleteTicketRelationsPromises,
+        ...deleteOptionsPromises,
+        ...deleteFieldsPromises
+      ]);
+
+      // 5. Criar novos campos com suas opções e relações
+      const fieldTicketMap = await this.createCustomFields({
+        eventId: payload.eventId,
+        tickets: payload.tickets,
+      });
+
+
+      // 6. Recarregar campos atualizados
+      await this.fetchAndPopulateByEventId({
+        eventId: payload.eventId,
+        tickets: payload.tickets,
+      });
+
+      return fieldTicketMap;
+
+    } catch (error) {
+      console.error('Erro ao atualizar campos personalizados:', error);
+      throw new Error(`Falha ao atualizar campos personalizados: ${error.message}`);
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
 
   @Action
   public reset() {
@@ -416,7 +515,48 @@ export default class EventCustomFields extends VuexModule {
       await this.createFieldOptions({ fieldId, options: payload.customField.selected_options });
     }
 
+    if (payload.customField.tickets?.length) {
+      await this.createFieldTicketRelations({
+        fieldId,
+        eventId: payload.eventId,
+        tickets: payload.customField.tickets
+      });
+    }
+
     return fieldId;
+  }
+
+  @Action
+  private async createFieldTicketRelations(payload: { 
+    fieldId: string, 
+    eventId: string,
+    tickets: string[] 
+  }) {
+    const promises = payload.tickets.map(async (ticketName) => {
+
+      const responseTicket = await $axios.$get(
+        `tickets?where[name][v]=${ticketName}&where[event_id][v]=${payload.eventId}`
+      );
+
+      if (!responseTicket.body || responseTicket.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error(`Ticket não encontrado para o evento ${payload.eventId} e nome ${ticketName}`);
+      }
+
+      const ticketId = responseTicket.body.result.data[0].id;
+
+      const requestPayload = {
+        event_checkout_field_id: payload.fieldId,
+        ticket_id: ticketId,
+      };
+
+      const response = await $axios.$post('event-checkout-field-ticket', requestPayload);
+
+      if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+        throw new Error(`Falha ao criar relação com ticket ${ticketId}`);
+      }
+    });
+
+    await Promise.all(promises);
   }
 
   @Action
@@ -437,4 +577,5 @@ export default class EventCustomFields extends VuexModule {
 
     await Promise.all(promises);
   }
+
 } 

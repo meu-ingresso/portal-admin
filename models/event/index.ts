@@ -13,6 +13,17 @@ export interface RatingOption {
   img?: string;
 }
 
+export interface FieldSelectedOption {
+  id: string;
+  name: string;
+}
+
+export interface FieldTicketRelation {
+  id: string;
+  event_checkout_field_id: string;
+  ticket_id: string;
+}
+
 export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
 
 export type FieldType = 'CPF' | 'CNPJ' | 'TELEFONE' | 'DATA' | 'TEXTO' | 'PARAGRAPH' | 'EMAIL' | 'MENU_DROPDOWN' | 'MULTI_CHECKBOX' | 'TERMO';

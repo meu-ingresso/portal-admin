@@ -241,6 +241,10 @@ export default {
     getCustomFields() {
       return eventCustomFields.$customFields;
     },
+
+    hasOnlyDefaultCustomFields() {
+      return eventCustomFields.$customFields.every((field) => field.is_default);
+    },
   },
 
   created() {
@@ -340,6 +344,13 @@ export default {
         if (this.isEditing) {
           await eventGeneralInfo.updateEventBase(this.eventId);
           await eventTickets.updateTickets(this.eventId);
+
+          if (!this.hasOnlyDefaultCustomFields) {
+            await eventCustomFields.updateEventCustomFields({
+              eventId: this.eventId,
+              tickets: this.getTickets,
+            });
+          }
         } else {
           await eventPrincipal.createEvent();
 

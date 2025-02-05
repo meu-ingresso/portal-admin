@@ -115,3 +115,12 @@ export const getUniqueCategories = (tickets: Ticket[]): CategoryOption[] => {
 
   return Array.from(categoryMap.values());
 };
+
+export const areArraysEqual = (arr1: string[], arr2: string[]): boolean => {
+  if (arr1.length !== arr2.length) return false;
+  return arr1.every((value, index) => value === arr2[index]);
+} 
+
+export const isArrayEmpty = (array: any[]): boolean => {
+  return array.length === 0;
+}

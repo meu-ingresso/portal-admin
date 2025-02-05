@@ -280,7 +280,7 @@ export default class EventTickets extends VuexModule {
             min_quantity_per_user: ticket.min_purchase,
             max_quantity_per_user: ticket.max_purchase,
             ticket_event_category_id: categoryId,
-            // TODO: display_order: index + 1,
+            display_order: index + 1,
           });
 
           if (!ticketResponse.body || ticketResponse.body.code !== 'UPDATE_SUCCESS') {
