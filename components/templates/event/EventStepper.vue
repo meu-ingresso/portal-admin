@@ -351,6 +351,19 @@ export default {
               tickets: this.getTickets,
             });
           }
+
+          toast.setToast({
+            text: 'Evento atualizado com sucesso!',
+            type: 'success',
+            time: 5000,
+          });
+
+          setTimeout(() => {
+            this.$router.push({
+              name: 'Detalhe de Eventos',
+              params: { id: this.eventId },
+            });
+          }, 500);
         } else {
           await eventPrincipal.createEvent();
 

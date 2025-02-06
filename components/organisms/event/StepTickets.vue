@@ -289,6 +289,7 @@ export default {
 
       eventTickets.addTicket({
         ...ticketToDuplicate,
+        id: '-1',
         display_order: ticketToDuplicate.display_order
           ? ticketToDuplicate.display_order + 1
           : null,

@@ -4,7 +4,7 @@
       <v-col cols="12" md="8" sm="12">
         <v-text-field
           ref="location_name"
-          v-model="formData.location_name"
+          v-model="localLocationName"
           label="Local do Evento"
           outlined
           dense
@@ -94,7 +94,7 @@
       <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
         <v-text-field
           ref="number"
-          v-model="formData.number"
+          v-model="localNumber"
           label="Número"
           type="number"
           outlined
@@ -108,7 +108,7 @@
 
       <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
         <v-text-field
-          v-model="formData.complement"
+          v-model="localComplement"
           label="Complemento"
           outlined
           dense
@@ -195,7 +195,10 @@ export default {
       isFetchingAddress: false,
       addressError: '',
       debouncerCEP: null,
-      localZipcode: '',
+      localZipcode: eventGeneralInfo.$info.address.zipcode,
+      localLocationName: eventGeneralInfo.$info.address.location_name,
+      localNumber: eventGeneralInfo.$info.address.number,
+      localComplement: eventGeneralInfo.$info.address.complement,
       isFormValid: false,
       showAddressModal: false,
       isAddressFormValid: false,
@@ -255,6 +258,30 @@ export default {
         }
       },
     },
+    localLocationName: {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          eventGeneralInfo.$info.address.location_name = newValue;
+        }
+      },
+    },
+    localNumber: {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          eventGeneralInfo.$info.address.number = newValue;
+        }
+      },
+    },
+    localComplement: {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          eventGeneralInfo.$info.address.complement = newValue;
+        }
+      },
+    },
   },
 
   created() {
@@ -294,6 +321,9 @@ export default {
 
     clearAddress() {
       this.localZipcode = '';
+      this.localLocationName = '';
+      this.localNumber = '';
+      this.localComplement = '';
       eventGeneralInfo.updateGeneralInfoAddress({
         street: '',
         neighborhood: '',
@@ -302,6 +332,7 @@ export default {
         zipcode: '',
         number: '',
         complement: '',
+        location_name: '',
       });
     },
 
@@ -346,6 +377,9 @@ export default {
             latitude: responseCEP.latitude,
             longitude: responseCEP.longitude,
             zipcode: this.localZipcode,
+            location_name: this.localLocationName,
+            number: this.localNumber,
+            complement: this.localComplement,
           });
         } catch (error) {
           console.error('Erro ao buscar endereço:', error);

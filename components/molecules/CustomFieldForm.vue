@@ -50,7 +50,7 @@
         <v-row v-for="(option, index) in localField.selected_options" :key="index">
           <v-col md="6">
             <v-text-field
-              v-model="localField.selected_options[index]"
+              v-model="localField.selected_options[index].name"
               :label="`Opção ${index + 1}`"
               outlined
               dense
@@ -100,6 +100,8 @@
         <v-select
           v-model="localField.tickets"
           :items="tickets"
+          :item-value="(item) => item.id"
+          :item-text="(item) => item.name"
           label="Ingressos"
           placeholder="Selecione o(s) ingresso(s)"
           no-data-text="Nenhum ingresso cadastrado"
@@ -108,6 +110,7 @@
           multiple
           required
           hide-details="auto"
+          return-object
           :rules="validationRules.tickets">
           <template v-if="tickets.length" #prepend-item>
             <v-list-item ripple @mousedown.prevent @click="toggleAllTickets">
@@ -327,13 +330,19 @@ export default {
         index < 0 ||
         index >= this.localField.selected_options.length
       ) {
-        this.localField.selected_options.push('');
+        this.localField.selected_options.push({
+          id: null,
+          name: '',
+        });
         this.optionErrors.push('');
         return;
       }
 
       // Adiciona a nova opção logo após o índice fornecido
-      this.localField.selected_options.splice(index + 1, 0, '');
+      this.localField.selected_options.splice(index + 1, 0, {
+        id: null,
+        name: '',
+      });
       this.optionErrors.splice(index + 1, 0, '');
     },
     removeOption(index) {
@@ -345,11 +354,12 @@ export default {
       let isValid = true;
 
       this.localField.selected_options.forEach((option, index) => {
-        if (!option) {
+        if (!option.name) {
           this.$set(this.optionErrors, index, 'A opção não pode estar vazia.');
           isValid = false;
         } else if (
-          this.localField.selected_options.filter((val) => val === option).length > 1
+          this.localField.selected_options.filter((val) => val.name === option.name)
+            .length > 1
         ) {
           this.$set(
             this.optionErrors,

@@ -643,6 +643,10 @@ export default {
             this.formHasErrors = true;
           }
 
+          if (f === 'address' && this.formData.event_type === 'Online') {
+            this.formHasErrors = false;
+          }
+
           if (f === 'link_online' && this.formData.event_type === 'Presencial') {
             this.formHasErrors = false;
           }

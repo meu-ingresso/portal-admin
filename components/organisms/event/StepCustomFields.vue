@@ -50,7 +50,7 @@
                   {{
                     field.is_default
                       ? 'Todos os ingressos'
-                      : getArrayObjectText(field.tickets)
+                      : getArrayObjectText(field.tickets, 'name')
                   }}
                 </div>
                 <div v-if="!field.is_default" class="table-cell actions">
@@ -182,11 +182,20 @@ export default {
     },
 
     getTickets() {
-      return eventTickets.$tickets.map((ticket) => ticket.name);
+      return eventTickets.$tickets.map((ticket) => {
+        return {
+          id: ticket.id,
+          name: ticket.name,
+        };
+      });
     },
 
     getNonDeletedCustomFields() {
       return eventCustomFields.$customFields.filter((field) => !field._deleted);
+    },
+
+    getAllCustomFields() {
+      return eventCustomFields.$customFields;
     },
   },
 

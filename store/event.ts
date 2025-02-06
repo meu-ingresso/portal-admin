@@ -229,7 +229,7 @@ async function createSingleCustomField(eventId, customField, personType, index) 
     is_unique: isUnique,
     visible_on_ticket: visibleOnTicket,
     help_text: customField.help_text || '',
-    order: customField.order || index + 1,
+    display_order: customField.display_order || index + 1,
   });
 
   if (!fieldResponse.body || fieldResponse.body.code !== 'CREATE_SUCCESS') {

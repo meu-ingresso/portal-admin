@@ -3,43 +3,94 @@
     <template v-if="!isMobile">
       <div class="event-title-wrapper mb-2">
         <div class="event-title">{{ currentEvent.title }}</div>
-
         <v-icon class="details-icon">mdi-circle-small</v-icon>
-
         <StatusBadge :text="currentEvent.statusText" />
-
         <PromotersBadge :count="currentEvent.promoters" />
       </div>
 
-      <div class="location d-flex align-center mb-2 cursor-pointer">
-        <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
+      <!-- Informações de Localização/Link -->
+      <template v-if="isOnlineOrHybridEvent">
+        <div class="online-event d-flex align-center mb-2">
+          <v-icon class="mr-2 details-icon">mdi-video</v-icon>
+          <a :href="onlineLink" target="_blank" class="online-link">
+            {{ onlineLink }}
+          </a>
+          <v-icon size="16" class="ml-2 cursor-pointer" @click="copyOnlineLink">
+            mdi-content-copy
+          </v-icon>
+        </div>
+        <div class="location d-flex align-center mb-2 cursor-pointer">
+          <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
-        <p @click="handleMapDialog">{{ currentEvent.location }}</p>
+          <p @click="handleMapDialog">{{ currentEvent.location }}</p>
 
-        <v-dialog v-if="hasValidCoordinates" v-model="mapDialog" width="500">
-          <v-card>
-            <v-card-title>
-              <b>{{ currentEvent.title }}</b>
-              <v-spacer />
-              <v-btn icon @click="handleMapDialog">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </v-card-title>
+          <v-dialog v-if="hasValidCoordinates" v-model="mapDialog" width="500">
+            <v-card>
+              <v-card-title>
+                <b>{{ currentEvent.title }}</b>
+                <v-spacer />
+                <v-btn icon @click="handleMapDialog">
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-card-title>
 
-            <v-card-text>
-              <iframe
-                :src="googleMapsEmbedUrl"
-                width="100%"
-                height="450"
-                frameborder="0"
-                style="border: 0"
-                allowfullscreen
-                loading="lazy">
-              </iframe>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
-      </div>
+              <v-card-text>
+                <iframe
+                  :src="googleMapsEmbedUrl"
+                  width="100%"
+                  height="450"
+                  frameborder="0"
+                  style="border: 0"
+                  allowfullscreen
+                  loading="lazy">
+                </iframe>
+              </v-card-text>
+            </v-card>
+          </v-dialog>
+        </div>
+      </template>
+      <template v-else-if="isOnlineEvent">
+        <div class="online-event d-flex align-center mb-2">
+          <v-icon class="mr-2 details-icon">mdi-video</v-icon>
+          <a :href="onlineLink" target="_blank" class="online-link">
+            {{ onlineLink }}
+          </a>
+          <v-icon size="16" class="ml-2 cursor-pointer" @click="copyOnlineLink">
+            mdi-content-copy
+          </v-icon>
+        </div>
+      </template>
+      <template v-else>
+        <div class="location d-flex align-center mb-2 cursor-pointer">
+          <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
+
+          <p @click="handleMapDialog">{{ currentEvent.location }}</p>
+
+          <v-dialog v-if="hasValidCoordinates" v-model="mapDialog" width="500">
+            <v-card>
+              <v-card-title>
+                <b>{{ currentEvent.title }}</b>
+                <v-spacer />
+                <v-btn icon @click="handleMapDialog">
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-card-title>
+
+              <v-card-text>
+                <iframe
+                  :src="googleMapsEmbedUrl"
+                  width="100%"
+                  height="450"
+                  frameborder="0"
+                  style="border: 0"
+                  allowfullscreen
+                  loading="lazy">
+                </iframe>
+              </v-card-text>
+            </v-card>
+          </v-dialog>
+        </div>
+      </template>
 
       <div class="date d-flex align-center">
         <v-icon class="mr-2 details-icon">mdi-calendar</v-icon>
@@ -79,16 +130,33 @@
       <div class="event-title-wrapper is-mobile mb-2">
         <div class="badge-list">
           <StatusBadge :text="currentEvent.statusText" class="mr-2" />
-
           <PromotersBadge :count="currentEvent.promoters" />
         </div>
         <div class="event-title is-mobile">{{ currentEvent.title }}</div>
 
-        <div class="location d-flex align-center mb-2">
-          <v-icon class="mr-2 details-icon is-mobile">mdi-map-marker</v-icon>
-
-          <p class="location is-mobile">{{ currentEvent.location }}</p>
-        </div>
+        <!-- Informações de Localização/Link Mobile -->
+        <template v-if="isOnlineOrHybridEvent">
+          <div class="online-event d-flex align-center mb-2">
+            <v-icon class="mr-2 details-icon is-mobile">mdi-video</v-icon>
+            <p class="online-link is-mobile">{{ onlineLink }}</p>
+          </div>
+          <div class="location d-flex align-center mb-2">
+            <v-icon class="mr-2 details-icon is-mobile">mdi-map-marker</v-icon>
+            <p class="location is-mobile">{{ currentEvent.location }}</p>
+          </div>
+        </template>
+        <template v-else-if="isOnlineEvent">
+          <div class="online-event d-flex align-center mb-2">
+            <v-icon class="mr-2 details-icon is-mobile">mdi-video</v-icon>
+            <p class="online-link is-mobile">{{ onlineLink }}</p>
+          </div>
+        </template>
+        <template v-else>
+          <div class="location d-flex align-center mb-2">
+            <v-icon class="mr-2 details-icon is-mobile">mdi-map-marker</v-icon>
+            <p class="location is-mobile">{{ currentEvent.location }}</p>
+          </div>
+        </template>
 
         <div class="date is-mobile d-flex align-center">
           <v-icon class="mr-2 details-icon is-mobile">mdi-calendar</v-icon>
@@ -139,8 +207,30 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
 
+    onlineLink() {
+      if (!this.isOnlineOrHybridEvent) return '';
+
+      const linkOnline = this.currentEvent?.attachments?.find(
+        (attachment) => attachment.name === 'link_online'
+      );
+
+      return linkOnline?.url;
+    },
+
+    currentEventType() {
+      return event.$event?.event_type;
+    },
+
     currentEvent() {
       return event.$event;
+    },
+
+    isOnlineOrHybridEvent() {
+      return this.currentEventType === 'Online' || this.currentEventType === 'Híbrido';
+    },
+
+    isOnlineEvent() {
+      return this.currentEventType === 'Online';
     },
 
     hasValidCoordinates() {
@@ -172,9 +262,17 @@ export default {
 
     copyAlias() {
       navigator.clipboard.writeText(this.aliasUrl);
+      this.showCopyToast('Link copiado com sucesso!');
+    },
 
+    copyOnlineLink() {
+      navigator.clipboard.writeText(this.onlineLink);
+      this.showCopyToast('Link do evento online copiado com sucesso!');
+    },
+
+    showCopyToast(message) {
       toast.setToast({
-        text: `Link copiado com sucesso!`,
+        text: message,
         type: 'success',
         time: 5000,
       });
@@ -247,5 +345,23 @@ export default {
 
 .alias {
   padding-top: 5px;
+}
+
+.online-event {
+  color: var(--black-text);
+}
+
+.online-link {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.online-link:hover {
+  text-decoration: underline;
+}
+
+.online-link.is-mobile {
+  font-size: 12px;
+  word-break: break-all;
 }
 </style>

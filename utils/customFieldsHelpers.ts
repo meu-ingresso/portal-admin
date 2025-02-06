@@ -1,75 +1,78 @@
-import { areArraysEqual } from './utils';
-import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation, CustomFieldTicket } from '~/models/event';
 
 export const defaultFields = ['Nome Completo', 'Email'];
 
-export const hasCustomFieldsChanged = (
-    existingFields: CustomFieldApiResponse[],
-    newFields: CustomField[]): boolean => {
-  // Mapear campos existentes para formato comparável
-  const existingFieldsMap = new Map<string, {
-    type: string;
-    person_types: string[];
-    required: boolean;
-    visible_on_ticket: boolean;
-    is_unique: boolean;
-  }>();
+interface TicketRelationChanges {
+  toCreate: CustomFieldTicket[];
+  toDelete: string[];
+}
 
-  existingFields.forEach(field => {
-    const key = field.name;
-    const existing = existingFieldsMap.get(key);
-    
-    if (existing) {
-      existing.person_types.push(field.person_type);
-    } else {
-      existingFieldsMap.set(key, {
-        type: field.type,
-        person_types: [field.person_type],
-        required: field.required,
-        visible_on_ticket: field.visible_on_ticket,
-        is_unique: field.is_unique,
-      });
+interface FieldOptionChanges {
+  toCreate: string[];
+  toUpdate: FieldSelectedOption[];
+  toDelete: string[];
+}
+
+export const getTicketRelationChanges = (
+  existingRelations: FieldTicketRelation[],
+  newTickets: CustomFieldTicket[]
+): TicketRelationChanges => {
+  const existingTicketIds = existingRelations.map(rel => rel.ticket_id);
+  
+  return {
+    toCreate: newTickets.filter(ticket => !existingTicketIds.includes(ticket.id)),
+    toDelete: existingRelations
+      .filter(rel => !newTickets.some(ticket => ticket.id === rel.ticket_id))
+      .map(rel => rel.id)
+  };
+};
+
+export const getFieldOptionChanges = (
+  existingOptions: FieldSelectedOption[],
+  newOptions: FieldSelectedOption[]
+): FieldOptionChanges => {
+  const existingOptionsMap = new Map(existingOptions.map(opt => [opt.name, opt]));
+  const newOptionsMap = new Map(newOptions.map(opt => [opt.name, opt]));
+
+  const toCreate: string[] = [];
+  const toUpdate: FieldSelectedOption[] = [];
+  const toDelete: string[] = [];
+
+  // Encontrar opções para criar ou atualizar
+  newOptions.forEach(newOpt => {
+    const existingOpt = existingOptionsMap.get(newOpt.name);
+    if (!existingOpt) {
+      toCreate.push(newOpt.name);
+    } else if (existingOpt.id && newOpt.name !== existingOpt.name) {
+      toUpdate.push({ id: existingOpt.id, name: newOpt.name });
     }
   });
 
-  // Comparar com novos campos
-  for (const newField of newFields) {
-    // Pular campos padrão
-    if (newField.is_default) continue;
-    
-    const existingField = existingFieldsMap.get(newField.name);
-    
-    if (!existingField) return true;
-
-    if (
-      existingField.type !== newField.type ||
-      !areArraysEqual(existingField.person_types.sort(), newField.person_types.sort()) ||
-      existingField.required !== newField.options.includes('required') ||
-      existingField.visible_on_ticket !== newField.options.includes('visible_on_ticket') ||
-      existingField.is_unique !== newField.options.includes('is_unique')
-    ) {
-      return true;
+  // Encontrar opções para deletar
+  existingOptions.forEach(existingOpt => {
+    if (!newOptionsMap.has(existingOpt.name) && existingOpt.id) {
+      toDelete.push(existingOpt.id);
     }
-  }
+  });
 
-  // Verificar se algum campo foi removido
-  return newFields.length !== existingFieldsMap.size;
-}
+  return { toCreate, toUpdate, toDelete };
+};
 
-export const hasFieldOptionsChanged = (existingOptions: FieldSelectedOption[], newOptions: string[]): boolean => {
-  if (existingOptions.length !== newOptions.length) return true;
-  
-  const existingNames = existingOptions.map(opt => opt.name).sort();
-  const newNames = [...newOptions].sort();
-  
-  return !areArraysEqual(existingNames, newNames);
-}
+export const shouldUpdateField = (
+  existingField: CustomFieldApiResponse,
+  newField: CustomField
+): boolean => {
+  return (
+    existingField.type !== newField.type ||
+    existingField.required !== newField.options.includes('required') ||
+    existingField.visible_on_ticket !== newField.options.includes('visible_on_ticket') ||
+    existingField.is_unique !== newField.options.includes('is_unique') ||
+    existingField.help_text !== newField.help_text ||
+    existingField.display_order !== newField.display_order ||
+    existingField.name !== newField.name
+  );
+};
 
-export const hasTicketRelationsChanged = (existingRelations: FieldTicketRelation[], newTickets: string[]): boolean => {
-  if (existingRelations.length !== newTickets.length) return true;
-
-  const existingTicketIds = existingRelations.map(rel => rel.ticket_id).sort();
-  const newTicketIds = [...newTickets].sort();
-
-  return !areArraysEqual(existingTicketIds, newTicketIds);
-}
+export const isMultiOptionField = (type: string): boolean => {
+  return type === 'MULTI_CHECKBOX' || type === 'MENU_DROPDOWN';
+};

@@ -240,7 +240,7 @@ export default class EventTickets extends VuexModule {
   }
 
   @Action
-  public async updateTickets() {
+  public async updateTickets(eventId: string) {
     try {
 
       let categoryMap = new Map<string, string>();
@@ -256,12 +256,12 @@ export default class EventTickets extends VuexModule {
         const endDate = new Date(endDateTime);
 
         // Se o ingresso não está deletado, atualiza
-        if (ticket.id && !ticket._deleted) {
+        if (ticket.id !== '-1' && !ticket._deleted) {
           
           let categoryId = null;
           
           if (ticket.category && ticket.category.id === -1) {
-            const createdCategory = await this.createCategory({ eventId: ticket.event_id, categoryName: ticket.category.text, categoryMap });
+            const createdCategory = await this.createCategory({ eventId, categoryName: ticket.category.text, categoryMap });
             categoryMap = createdCategory.categoryMap;
             categoryId = createdCategory.id;
           } else {
@@ -288,7 +288,7 @@ export default class EventTickets extends VuexModule {
           }
 
           // Se o ingresso está deletado, deleta
-        } else if (ticket.id && ticket._deleted) {
+        } else if (ticket.id !== '-1' && ticket._deleted) {
 
           const ticketResponse = await $axios.$delete(`ticket/${ticket.id}`);
 
@@ -304,7 +304,7 @@ export default class EventTickets extends VuexModule {
           let categoryId = null;
           
           if (ticket.category && ticket.category.id === -1) {
-            const createdCategory = await this.createCategory({ eventId: ticket.event_id, categoryName: ticket.category.text, categoryMap });
+            const createdCategory = await this.createCategory({ eventId, categoryName: ticket.category.text, categoryMap });
             categoryMap = createdCategory.categoryMap;
             categoryId = createdCategory.id;
           } else {
@@ -312,7 +312,7 @@ export default class EventTickets extends VuexModule {
           }
 
           const ticketResponse = await $axios.$post('ticket', {
-            event_id: ticket.event_id,
+            event_id: eventId,
             name: ticket.name,
             total_quantity: ticket.quantity,
             remaining_quantity: ticket.quantity,

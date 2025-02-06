@@ -169,7 +169,9 @@ export default {
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
 
-      return banner ? banner.url : require(`~/assets/images/default_banner.png`);
+      return banner && banner.url
+        ? banner.url
+        : require(`~/assets/images/default_banner.png`);
     },
 
     routerParams() {

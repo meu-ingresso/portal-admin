@@ -24,6 +24,11 @@ export interface FieldTicketRelation {
   ticket_id: string;
 }
 
+export interface CustomFieldTicket {
+  id: string;
+  name: string;
+}
+
 export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
 
 export type FieldType = 'CPF' | 'CNPJ' | 'TELEFONE' | 'DATA' | 'TEXTO' | 'PARAGRAPH' | 'EMAIL' | 'MENU_DROPDOWN' | 'MULTI_CHECKBOX' | 'TERMO';
@@ -41,10 +46,10 @@ export interface CustomField {
   description?: string;
   is_default?: boolean;
   options: FieldOption[];
-  selected_options: string[];
+  selected_options: FieldSelectedOption[];
   person_types: PersonType[];
-  tickets: string[];
-  order?: number;
+  tickets: CustomFieldTicket[];
+  display_order?: number;
   help_text?: string;
   terms_content?: string;
   field_ids?: Record<PersonType, string>;
@@ -98,6 +103,16 @@ export interface EventAddress {
   location_name?: string;
   latitude?: number;
   longitude?: number;
+  deleted_at?: string;
+}
+
+export interface EventAttachment {
+  id?: string;
+  event_id: string;
+  name: string;
+  type: string;
+  url: string;
+  deleted_at?: string;
 }
 
 export interface Event {
@@ -112,12 +127,13 @@ export interface Event {
   banner?: File | string;
   backup_banner?: File | string;
   banner_id?: string;
+  link_online?: string;
+  link_online_id?: string;
   start_date: string;
   start_time: string;
   end_date: string;
   end_time: string;
   address?: EventAddress;
-  link_online?: string;
   sale_type: string;
   availability: 'Publico' | 'Privado';
   is_featured: boolean;
@@ -126,6 +142,8 @@ export interface Event {
   tickets: Ticket[];
   custom_fields: CustomField[];
   coupons: Coupon[];
+  attachments: EventAttachment[];
+  deleted_at?: string;
 }
 
 export interface EventFormState {
@@ -164,7 +182,13 @@ export interface CustomFieldApiResponse {
   is_unique: boolean;
   visible_on_ticket: boolean;
   help_text: string | null;
-  order: number;
+  display_order: number;
+}
+
+export interface CustomFieldOptionApiResponse {
+  id: string;
+  event_checkout_field_id: string;
+  name: string;
 }
 
 export interface TicketApiResponse {

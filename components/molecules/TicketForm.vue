@@ -297,6 +297,7 @@ export default {
     return {
       isFormValid: false,
       localTicket: {
+        id: '-1',
         name: '',
         category: null,
         price: '',
