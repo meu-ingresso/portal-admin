@@ -317,6 +317,7 @@ export default {
       });
 
       const relatedFields = this.getRelatedCustomFields(removedTicket.name);
+
       const hasReletedFields = relatedFields.length > 0;
       if (hasReletedFields) {
         this.removeCustomFieldsLinkedToTicket(removedTicket.name);
@@ -419,7 +420,9 @@ export default {
     },
 
     getRelatedCustomFields(ticketName) {
-      return this.getCustomFields.filter((field) => field?.tickets.includes(ticketName));
+      return this.getCustomFields.filter((field) =>
+        field?.tickets.some((ticket) => ticket.name === ticketName)
+      );
     },
 
     getRelatedCoupons(ticketName) {
@@ -427,34 +430,24 @@ export default {
     },
 
     removeCustomFieldsLinkedToTicket(ticketName) {
-      this.getCustomFields.forEach((field) => {
-        const index = field.tickets.indexOf(ticketName);
-        if (index !== -1) {
-          const deletedTicket = field.tickets[index];
+      this.getCustomFields.forEach((field, indexField) => {
+        const ticketToDelete = field.tickets.find((ticket) => ticket.name === ticketName);
+
+        if (ticketToDelete) {
+          const updatedTickets = [
+            ...field.tickets.filter((ticket) => ticket.name !== ticketName),
+            { ...ticketToDelete, _deleted: true },
+          ];
 
           eventCustomFields.updateField({
-            index,
+            index: indexField,
             field: {
               ...field,
-              tickets: [
-                ...field.tickets.filter((ticket) => ticket !== deletedTicket),
-                {
-                  ...deletedTicket,
-                  _deleted: true,
-                },
-              ],
+              tickets: updatedTickets,
             },
           });
         }
       });
-
-      /*       const filteredFields = this.getCustomFields.filter(
-        (field) =>
-          field.tickets.filter((ticket) => !ticket._deleted).length > 0 ||
-          field.is_default
-      );
-
-      eventCustomFields.setFields(filteredFields); */
     },
 
     removeCouponsLinkedToTicket(ticketName) {

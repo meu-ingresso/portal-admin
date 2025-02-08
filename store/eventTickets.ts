@@ -382,6 +382,7 @@ export default class EventTickets extends VuexModule {
             start_time: startDateTime.time,
             end_date: endDateTime.date,
             end_time: endDateTime.time,
+            _deleted: ticket.deleted_at,
           };
         }
       ));

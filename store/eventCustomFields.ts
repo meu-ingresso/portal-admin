@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { CustomField, CustomFieldApiResponse, CustomFieldOptionApiResponse, CustomFieldTicket, CustomFieldTicketApiResponse, FieldOption, FieldSelectedOption, PersonType, ValidationResult } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, CustomFieldOptionApiResponse, CustomFieldTicket, CustomFieldTicketApiResponse, FieldOption, FieldSelectedOption, PersonType, TicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { defaultFields, getFieldOptionChanges, getTicketRelationChanges, isMultiOptionField, shouldUpdateField } from '~/utils/customFieldsHelpers';
 
@@ -241,6 +241,7 @@ export default class EventCustomFields extends VuexModule {
                 (customFieldTicket: CustomFieldTicketApiResponse) => ({
                   id: customFieldTicket.ticket.id,
                   name: customFieldTicket.ticket.name,
+                  _deleted: customFieldTicket.ticket.deleted_at
                 })
               )
             : [];
@@ -419,12 +420,13 @@ export default class EventCustomFields extends VuexModule {
       this.context.commit('SET_LOADING', true);
 
       // 1. Buscar campos existentes e suas opções/relações
-      const [fieldsResponse] = await Promise.all([
+      const [fieldsResponse, ticketsFromEventResponse] = await Promise.all([
         $axios.$get(`event-checkout-fields?where[event_id][v]=${payload.eventId}`),
+        $axios.$get(`tickets?where[event_id][v]=${payload.eventId}`)
       ]);
         
       const existingFields = fieldsResponse.body?.result?.data || [];
-
+      const ticketsFromEvent = ticketsFromEventResponse.body?.result?.data || [];
       // 2. Processar cada campo
       for (const field of this.fieldList) {
         if (field.is_default) continue;
@@ -497,7 +499,15 @@ export default class EventCustomFields extends VuexModule {
             const fieldTicketRelations = existingTicketRelations.filter(
               (rel: CustomFieldTicketApiResponse) => rel.event_checkout_field_id === fieldId
             );
-            const relationChanges = getTicketRelationChanges(fieldTicketRelations, field.tickets);
+
+            // Parâmetros para o getTicketRelationChanges :
+            // - existingRelations: array de relações existentes
+            // - newTickets: array de tickets do evento atualizado
+            const relationChanges = getTicketRelationChanges(fieldTicketRelations, ticketsFromEvent.map((ticket: TicketApiResponse) => ({
+              id: ticket.id,
+              name: ticket.name,
+              _deleted: ticket.deleted_at
+            })));
 
             console.log("relationChanges", relationChanges);
 

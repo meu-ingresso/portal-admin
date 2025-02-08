@@ -50,7 +50,10 @@
                   {{
                     field.is_default
                       ? 'Todos os ingressos'
-                      : getArrayObjectText(field.tickets, 'name')
+                      : getArrayObjectText(
+                          field.tickets.filter((ticket) => !ticket._deleted),
+                          'name'
+                        )
                   }}
                 </div>
                 <div v-if="!field.is_default" class="table-cell actions">
@@ -186,6 +189,7 @@ export default {
         return {
           id: ticket.id,
           name: ticket.name,
+          _deleted: ticket._deleted,
         };
       });
     },

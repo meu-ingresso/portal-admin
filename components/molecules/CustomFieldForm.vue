@@ -99,7 +99,7 @@
       <v-col cols="12" md="12">
         <v-select
           v-model="localField.tickets"
-          :items="tickets"
+          :items="nonDeletedTickets"
           :item-value="(item) => item.id"
           :item-text="(item) => item.name"
           label="Ingressos"
@@ -250,6 +250,11 @@ export default {
     selectedSomeTickets() {
       return this.localField.tickets.length > 0 && !this.selectedAllTickets;
     },
+
+    nonDeletedTickets() {
+      return this.tickets.filter((ticket) => !ticket._deleted);
+    },
+
     icon() {
       if (this.selectedAllTickets) return 'mdi-close-box';
       if (this.selectedSomeTickets) return 'mdi-minus-box';
@@ -263,7 +268,10 @@ export default {
   created() {
     if (this.isEditing) {
       const fieldToEdit = eventCustomFields.$customFields[this.editIndex];
-      this.localField = { ...fieldToEdit };
+      this.localField = {
+        ...fieldToEdit,
+        tickets: fieldToEdit.tickets.filter((ticket) => !ticket._deleted),
+      };
     }
   },
 

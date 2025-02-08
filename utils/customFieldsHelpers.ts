@@ -17,12 +17,26 @@ export const getTicketRelationChanges = (
   existingRelations: FieldTicketRelation[],
   newTickets: CustomFieldTicket[]
 ): TicketRelationChanges => {
-  const existingTicketIds = existingRelations.map(rel => rel.ticket_id);
+  // Separa tickets deletados e ativos
+  const deletedTicketIds = newTickets
+    .filter(ticket => ticket._deleted)
+    .map(ticket => ticket.id);
   
+  const activeTickets = newTickets.filter(ticket => !ticket._deleted);
+
   return {
-    toCreate: newTickets.filter(ticket => !existingTicketIds.includes(ticket.id)),
+    // Criar apenas para tickets ativos que não existem
+    toCreate: activeTickets
+      .filter(ticket => !existingRelations.some(rel => rel.ticket_id === ticket.id)),
+    
+    // Deletar relações se:
+    // 1. O ticket foi marcado como deletado OU
+    // 2. A relação não existe mais nos tickets ativos
     toDelete: existingRelations
-      .filter(rel => !newTickets.some(ticket => ticket.id === rel.ticket_id))
+      .filter(rel => 
+        deletedTicketIds.includes(rel.ticket_id) || 
+        !activeTickets.some(ticket => ticket.id === rel.ticket_id)
+      )
       .map(rel => rel.id)
   };
 };

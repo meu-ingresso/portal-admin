@@ -27,6 +27,7 @@ export interface FieldTicketRelation {
 export interface CustomFieldTicket {
   id: string;
   name: string;
+  _deleted?: boolean;
 }
 
 export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
@@ -207,6 +208,7 @@ export interface TicketApiResponse {
   display_order: number;
   min_quantity_per_user: number;
   max_quantity_per_user: number;
+  deleted_at?: string;
 }
 
 export interface CustomFieldTicketApiResponse {
