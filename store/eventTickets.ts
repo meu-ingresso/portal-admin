@@ -4,7 +4,7 @@ import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '~/utils/formatters';
 import { getUniqueCategories } from '~/utils/utils';
-
+import { getCategoryChanges, getNextDisplayOrder } from '~/utils/ticketCategoryHelpers';
 @Module({
   name: 'eventTickets',
   stateFactory: true,
@@ -105,13 +105,13 @@ export default class EventTickets extends VuexModule {
   private UPDATE_TICKET({ index, ticket }: { index: number; ticket: Ticket }) {
     const updatedList = [...this.ticketList];
     const oldTicket = this.ticketList[index];
-    
+
     // Se a categoria mudou, marca a antiga como deletada (se não estiver em uso)
     if (oldTicket.category && (!ticket.category || oldTicket.category.value !== ticket.category.value)) {
-      const categoryStillInUse = this.ticketList.some((t, i) => 
+      const categoryStillInUse = this.ticketList.some((t, i) =>
         i !== index && t.category?.value === oldTicket.category?.value
       );
-      
+
       if (!categoryStillInUse) {
         const categoryIndex = this.ticketCategories.findIndex(
           cat => cat.value === oldTicket.category?.value
@@ -129,7 +129,7 @@ export default class EventTickets extends VuexModule {
     this.ticketList = updatedList;
 
     console.log('updatedList: ', updatedList);
-    
+
     // Atualiza lista de categorias mantendo as marcadas como deletadas
     const activeCategories = getUniqueCategories(updatedList);
     this.ticketCategories = [
@@ -142,13 +142,13 @@ export default class EventTickets extends VuexModule {
   private REMOVE_TICKET(index: number) {
     const removedTicket = this.ticketList[index];
     this.ticketList.splice(index, 1);
-    
+
     // Se a categoria do ticket removido não está mais em uso, marca como deletada
     if (removedTicket.category) {
       const categoryStillInUse = this.ticketList.some(
         ticket => ticket.category?.value === removedTicket.category?.value
       );
-      
+
       if (!categoryStillInUse) {
         const categoryIndex = this.ticketCategories.findIndex(
           cat => cat.value === removedTicket.category?.value
@@ -245,8 +245,48 @@ export default class EventTickets extends VuexModule {
 
       let categoryMap = new Map<string, string>();
 
+      // Busca as categorias existentes
+      const categoriesResponse = await $axios.$get(
+        `ticket-event-categories?where[event_id][v]=${eventId}`
+      );
+
+      if (!categoriesResponse.body || categoriesResponse.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Falha ao buscar categorias existentes');
+      }
+
+      const existingCategories = categoriesResponse.body.result.data;
+
+      // Identifica mudanças necessárias nas categorias
+      const categoryChanges = getCategoryChanges(existingCategories, this.ticketList);
+
+      console.log('categoryChanges: ', categoryChanges);
+
+      // Atualiza as categorias que mudaram
+      for (const category of categoryChanges.toUpdate) {
+        const response = await $axios.$patch('ticket-event-category', {
+          id: category.id,
+          name: category.name
+        });
+
+        if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+          throw new Error(`Falha ao atualizar categoria: ${category.name}`);
+        }
+      }
+
+      // Remove categorias que não estão mais em uso
+      for (const categoryId of categoryChanges.toDelete) {
+        const response = await $axios.$delete(`ticket-event-category/${categoryId}`);
+
+        if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
+          throw new Error(`Falha ao deletar categoria: ${categoryId}`);
+        }
+      }
+
+      // Gera display_orders válidos para cada ticket
+      const displayOrders = getNextDisplayOrder(this.ticketList);
+
       for (const [index, ticket] of this.ticketList.entries()) {
-        
+
         // Combina data e hora em uma única string ISO
         const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
         const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
@@ -255,15 +295,19 @@ export default class EventTickets extends VuexModule {
         const startDate = new Date(startDateTime);
         const endDate = new Date(endDateTime);
 
+        const displayOrder = displayOrders[index];
+
         // Se o ingresso não está deletado, atualiza
         if (ticket.id !== '-1' && !ticket._deleted) {
-          
+
           let categoryId = null;
-          
-          if (ticket.category && ticket.category.id === -1) {
+
+          if (ticket.category && ticket.category.id === '-1') {
             const createdCategory = await this.createCategory({ eventId, categoryName: ticket.category.text, categoryMap });
             categoryMap = createdCategory.categoryMap;
             categoryId = createdCategory.id;
+          } else  if (categoryChanges.toDelete.includes(ticket.category?.id)) {
+            categoryId = null;
           } else {
             categoryId = ticket.category?.id;
           }
@@ -280,7 +324,7 @@ export default class EventTickets extends VuexModule {
             min_quantity_per_user: ticket.min_purchase,
             max_quantity_per_user: ticket.max_purchase,
             ticket_event_category_id: categoryId,
-            display_order: index + 1,
+            display_order: displayOrder,
           });
 
           if (!ticketResponse.body || ticketResponse.body.code !== 'UPDATE_SUCCESS') {
@@ -302,8 +346,8 @@ export default class EventTickets extends VuexModule {
           const statusResponse = await status.fetchStatusByModuleAndName({ module: 'ticket', name: 'Disponível' });
 
           let categoryId = null;
-          
-          if (ticket.category && ticket.category.id === -1) {
+
+          if (ticket.category && ticket.category.id === '-1') {
             const createdCategory = await this.createCategory({ eventId, categoryName: ticket.category.text, categoryMap });
             categoryMap = createdCategory.categoryMap;
             categoryId = createdCategory.id;
@@ -324,14 +368,14 @@ export default class EventTickets extends VuexModule {
             min_quantity_per_user: ticket.min_purchase,
             max_quantity_per_user: ticket.max_purchase,
             ticket_event_category_id: categoryId,
-            display_order: index + 1,
+            display_order: displayOrder,
           });
 
           if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
             throw new Error(`Falha ao criar ingresso: ${ticket.name}`);
           }
         }
-        
+
       }
     } catch (error) {
       console.error('Erro ao atualizar ingressos:', error);
@@ -361,6 +405,7 @@ export default class EventTickets extends VuexModule {
             id: ticket?.category?.id,
             value: ticket?.category?.name,
             text: ticket?.category?.name,
+            _deleted: ticket?.category?.deleted_at,
           }
 
 

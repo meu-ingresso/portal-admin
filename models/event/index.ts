@@ -3,7 +3,7 @@ export type EventType = 'Presencial' | 'Online' | 'Híbrido';
 export interface CategoryOption {
   text: string;
   value: string;
-  id?: string | null | -1;
+  id?: string | null;
   _deleted?: boolean;
 }
 
@@ -211,6 +211,12 @@ export interface TicketApiResponse {
   deleted_at?: string;
 }
 
+export interface CategoryApiResponse {
+  id: string;
+  name: string;
+  deleted_at: string | null;
+}
+
 export interface CustomFieldTicketApiResponse {
   id: string;
   event_checkout_field_id: string;
@@ -222,7 +228,7 @@ export interface CouponApiResponse {
   id: string;
   event_id: string;
   status_id: string;
-  code: string; 
+  code: string;
   discount_type: DiscountType;
   discount_value: string;
   max_uses: number;

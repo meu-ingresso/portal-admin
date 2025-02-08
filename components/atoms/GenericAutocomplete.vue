@@ -199,7 +199,7 @@ export default {
 
     createNewItemObject(name) {
       return {
-        id: -1, // Indica que é um novo item
+        id: '-1', // Indica que é um novo item
         text: `Criar e atribuir ${name}`,
         value: name,
         _isNew: true, // Flag para identificar itens novos
