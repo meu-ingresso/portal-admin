@@ -1,14 +1,17 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { Coupon, ValidationResult } from '~/models/event';
+import { Coupon, CouponApiResponse, CouponTicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
-
+import { splitDateTime } from '@/utils/formatters';
 @Module({
   name: 'eventCoupons',
   stateFactory: true,
   namespaced: true,
 })
 export default class EventCoupons extends VuexModule {
+
+  private isLoading: boolean = false;
+
   private couponList: Coupon[] = [];
 
   private mockCouponList: Coupon[] = [
@@ -34,6 +37,15 @@ export default class EventCoupons extends VuexModule {
     return this.couponList;
   }
 
+  public get $isLoading() {
+    return this.isLoading;
+  }
+
+  @Mutation
+  private SET_LOADING(loading: boolean) {
+    this.isLoading = loading;
+  }
+
   @Mutation
   private SET_COUPONS(coupons: Coupon[]) {
     this.couponList = coupons;
@@ -53,7 +65,9 @@ export default class EventCoupons extends VuexModule {
 
   @Mutation
   private REMOVE_COUPON(index: number) {
-    this.couponList.splice(index, 1);
+    const updatedList = [...this.couponList];
+    updatedList[index]._deleted = true;
+    this.couponList = updatedList;
   }
 
   @Action
@@ -176,21 +190,70 @@ export default class EventCoupons extends VuexModule {
   }
 
   @Action
+  public async fetchAndPopulateByEventId(payload: { eventId: string, tickets: string[] }) {
+
+    try {
+
+      this.context.commit('SET_LOADING', true); 
+
+      const response = await $axios.$get(`coupons?where[event_id][v]=${payload.eventId}`);
+
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Failed to event coupon.');
+      }
+
+      const couponsData = response.body.result.data;
+
+      const couponPromises = couponsData.map(async (coupon: CouponApiResponse) => {
+        
+
+        const responseCouponTicket = await $axios.$get(`coupons-tickets?where[coupon_id][v]=${coupon.id}&preloads[]=ticket`);
+        
+        if (!responseCouponTicket.body || responseCouponTicket.body.code !== 'SEARCH_SUCCESS') {
+          throw new Error('Failed to event coupon.');
+        }
+
+        const couponTickets = responseCouponTicket.body.result.data;
+        const tickets = couponTickets.map((couponTicket: CouponTicketApiResponse) => couponTicket.ticket.name);
+
+        // Separar data e hora
+        const startDateTime = splitDateTime(coupon.start_date);
+        const endDateTime = splitDateTime(coupon.end_date);
+        
+        return {
+          id: coupon.id,
+          code: coupon.code,
+          discount_type: coupon.discount_type,
+          discount_value: coupon.discount_value,
+          max_uses: coupon.max_uses,
+          start_date: startDateTime.date,
+          start_time: startDateTime.time,
+          end_date: endDateTime.date,
+          end_time: endDateTime.time,
+          tickets
+        }
+
+      });
+
+      const coupons = await Promise.all(couponPromises);
+
+      this.context.commit('SET_COUPONS', coupons);
+
+      return coupons;
+
+    } catch (error) {
+      console.error('Erro ao buscar cupons:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
+  @Action
   public reset() {
     this.context.commit('SET_COUPONS', []);
   }
 
-  private async getStatusByModuleName(module: string, name: string) {
-    const response = await $axios.$get(
-      `statuses?where[module][v]=${module}&where[name][v]=${name}`
-    );
-
-    if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-      throw new Error(`Falha ao buscar status do módulo: ${module}`);
-    }
-
-    return response.body.result.data[0];
-  }
 
   @Action
   private async createCouponsWithTickets(payload: { eventId: string, coupons: Coupon[], statusId: string }) {

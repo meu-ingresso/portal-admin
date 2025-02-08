@@ -3,13 +3,31 @@ export type EventType = 'Presencial' | 'Online' | 'Híbrido';
 export interface CategoryOption {
   text: string;
   value: string;
-  id?: string;
+  id?: string | null | -1;
+  _deleted?: boolean;
 }
 
 export interface RatingOption {
   text: string;
   value: string;
   img?: string;
+}
+
+export interface FieldSelectedOption {
+  id: string;
+  name: string;
+}
+
+export interface FieldTicketRelation {
+  id: string;
+  event_checkout_field_id: string;
+  ticket_id: string;
+}
+
+export interface CustomFieldTicket {
+  id: string;
+  name: string;
+  _deleted?: boolean;
 }
 
 export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
@@ -29,17 +47,19 @@ export interface CustomField {
   description?: string;
   is_default?: boolean;
   options: FieldOption[];
-  selected_options: string[];
+  selected_options: FieldSelectedOption[];
   person_types: PersonType[];
-  tickets: string[];
-  order?: number;
+  tickets: CustomFieldTicket[];
+  display_order?: number;
   help_text?: string;
   terms_content?: string;
   field_ids?: Record<PersonType, string>;
+  _deleted?: boolean;
 }
 
 export interface Ticket {
   id?: string;
+  event_id?: string;
   name: string;
   description?: string;
   price: string;
@@ -55,6 +75,7 @@ export interface Ticket {
   category?: CategoryOption;
   display_order?: number;
   availability: AvailabilityOption;
+  _deleted?: boolean;
 }
 
 export interface Coupon {
@@ -68,9 +89,11 @@ export interface Coupon {
   end_date: string;
   end_time: string;
   tickets: string[];
+  _deleted?: boolean;
 }
 
 export interface EventAddress {
+  id?: string;
   street: string;
   number: string;
   complement?: string;
@@ -81,6 +104,16 @@ export interface EventAddress {
   location_name?: string;
   latitude?: number;
   longitude?: number;
+  deleted_at?: string;
+}
+
+export interface EventAttachment {
+  id?: string;
+  event_id: string;
+  name: string;
+  type: string;
+  url: string;
+  deleted_at?: string;
 }
 
 export interface Event {
@@ -92,13 +125,16 @@ export interface Event {
   category: CategoryOption;
   event_type: EventType | null;
   rating: RatingOption | null;
-  banner?: File;
+  banner?: File | string;
+  backup_banner?: File | string;
+  banner_id?: string;
+  link_online?: string;
+  link_online_id?: string;
   start_date: string;
   start_time: string;
   end_date: string;
   end_time: string;
   address?: EventAddress;
-  link_online?: string;
   sale_type: string;
   availability: 'Publico' | 'Privado';
   is_featured: boolean;
@@ -107,6 +143,8 @@ export interface Event {
   tickets: Ticket[];
   custom_fields: CustomField[];
   coupons: Coupon[];
+  attachments: EventAttachment[];
+  deleted_at?: string;
 }
 
 export interface EventFormState {
@@ -145,7 +183,13 @@ export interface CustomFieldApiResponse {
   is_unique: boolean;
   visible_on_ticket: boolean;
   help_text: string | null;
-  order: number;
+  display_order: number;
+}
+
+export interface CustomFieldOptionApiResponse {
+  id: string;
+  event_checkout_field_id: string;
+  name: string;
 }
 
 export interface TicketApiResponse {
@@ -164,11 +208,32 @@ export interface TicketApiResponse {
   display_order: number;
   min_quantity_per_user: number;
   max_quantity_per_user: number;
+  deleted_at?: string;
 }
 
 export interface CustomFieldTicketApiResponse {
   id: string;
   event_checkout_field_id: string;
+  ticket_id: string;
+  ticket: TicketApiResponse;
+}
+
+export interface CouponApiResponse {
+  id: string;
+  event_id: string;
+  status_id: string;
+  code: string; 
+  discount_type: DiscountType;
+  discount_value: string;
+  max_uses: number;
+  uses: number;
+  start_date: string;
+  end_date: string;
+}
+
+export interface CouponTicketApiResponse {
+  id: string;
+  coupon_id: string;
   ticket_id: string;
   ticket: TicketApiResponse;
 }

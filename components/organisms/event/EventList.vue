@@ -14,8 +14,7 @@
         :tickets-today="event.totalizers.totalSalesToday"
         :status-text="event.status.name"
         :deleted-at="event.deleted_at"
-        :image="findBannerImage(event)"
-        />
+        :image="findBannerImage(event)" />
     </template>
     <template v-else>
       <EventCard
@@ -30,8 +29,7 @@
         :tickets="event.totalizers.totalSales"
         :tickets-today="event.totalizers.totalSalesToday"
         :status-text="event.status.name"
-        :deleted-at="event.deleted_at"
-        />
+        :deleted-at="event.deleted_at" />
     </template>
   </div>
 
@@ -64,7 +62,7 @@ export default {
       const banner = event.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
-      return banner ? banner.image_url : '/assets/images/default_banner.png';
+      return banner ? banner.url : '/assets/images/default_banner.png';
     },
   },
 };

@@ -124,7 +124,7 @@ export default {
     tickets: { type: Number, required: true },
     ticketsToday: { type: Number, required: true },
     statusText: { type: String, required: true },
-    image: { type: String, required: true },
+    image: { type: String, required: false, default: null },
     deletedAt: { type: String, required: false },
   },
 
@@ -147,6 +147,10 @@ export default {
     },
 
     getImage() {
+      if (!this.image) {
+        return require(`~/assets/images/default_banner.png`);
+      }
+
       if (this.image.startsWith('/assets')) {
         return require(`@/assets/${this.image.split('/assets/')[1]}`);
       }

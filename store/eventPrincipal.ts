@@ -255,23 +255,31 @@ export default class EventPrincipalModule extends VuexModule {
       // Processa banner, tickets e cupons em paralelo
       const [
         , // banner result se necessário
+        , // link online result se necessário
         ticketMap,
         fieldTicketMap,
         couponTicketMap] = await Promise.all([
           eventGeneralInfo.handleEventBanner(eventId),
-
+          eventGeneralInfo.handleLinkOnline(eventId),
           eventTickets.$tickets.length > 0
             ? eventTickets.createTickets(eventId)
             : {},
 
           eventCustomFields.$customFields.length > 0
-            ? eventCustomFields.createCustomFields(eventId)
+            ? eventCustomFields.createCustomFields({ eventId, tickets: eventTickets.$tickets.map(ticket => ({
+              ...ticket,
+              id: ticket.id || '-1'
+            })) })
             : {},
 
           eventCoupons.$coupons.length > 0
             ? eventCoupons.createCoupons(eventId)
             : {},
         ]);
+      
+
+      
+      
 
       // Cria relações em paralelo se necessário
       if (Object.keys(ticketMap).length > 0) {

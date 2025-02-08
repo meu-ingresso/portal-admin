@@ -297,6 +297,7 @@ export default {
     return {
       isFormValid: false,
       localTicket: {
+        id: '-1',
         name: '',
         category: null,
         price: '',
@@ -486,7 +487,7 @@ export default {
     },
 
     categories() {
-      return eventTickets.$ticketCategories;
+      return eventTickets.$ticketCategories.filter((category) => !category._deleted);
     },
   },
 
@@ -552,6 +553,7 @@ export default {
     onCategoryChange(value) {
       this.localTicket.category = value;
     },
+
     onPriceKeyPress(event) {
       const charCode = event.charCode || event.keyCode;
       const char = String.fromCharCode(charCode);
