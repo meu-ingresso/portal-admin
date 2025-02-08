@@ -249,7 +249,7 @@
     </template>
 
     <!-- Configurações do Evento/Ingressos -->
-    <v-row>
+    <v-row class="mt-4">
       <v-col cols="12">
         <v-card tile elevation="1" class="ticket-configuration">
           <v-card-title>
@@ -381,6 +381,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    isEditing: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -401,7 +405,8 @@ export default {
         name: [
           (value) => !!value || 'O nome do evento é obrigatório.',
           (value) =>
-            value.length <= 60 || 'O nome do evento deve ter no máximo 50 caracteres.',
+            (value && value.length <= 60) ||
+            'O nome do evento deve ter no máximo 60 caracteres.',
         ],
         category: [(value) => !!value || 'Selecione uma categoria.'],
         event_type: [(value) => !!value || 'Selecione o tipo do evento.'],
@@ -498,8 +503,10 @@ export default {
   created() {
     this.debouncerAlias = new Debounce(this.validateAlias, 300);
 
-    if (!this.formData?.id) {
+    if (!this.isEditing) {
       this.formData.promoter_id = this.userId;
+    } else {
+      this.imagePreview = this.formData.banner;
     }
   },
 
@@ -620,11 +627,11 @@ export default {
 
       // Atualiza a prévia da imagem
       this.imagePreview = objectUrl;
-      this.localForm.banner = file;
+      this.formData.banner = file;
     },
     onClearBanner() {
       this.imagePreview = null;
-      this.localForm.banner = null;
+      this.formData.banner = null;
     },
 
     validateForm() {
@@ -634,6 +641,10 @@ export default {
         Object.keys(this.generalInfoForm).forEach((f) => {
           if (!this.generalInfoForm[f]) {
             this.formHasErrors = true;
+          }
+
+          if (f === 'address' && this.formData.event_type === 'Online') {
+            this.formHasErrors = false;
           }
 
           if (f === 'link_online' && this.formData.event_type === 'Presencial') {

@@ -15,7 +15,7 @@
     </v-row>
 
     <!-- Tabela de Cupons -->
-    <template v-if="getCoupons.length">
+    <template v-if="getNonDeletedCoupons.length">
       <div class="table-container mt-4">
         <div class="table-header">
           <div class="table-cell">Código</div>
@@ -24,7 +24,10 @@
           <div class="table-cell">Ações</div>
         </div>
 
-        <div v-for="(coupon, index) in getCoupons" :key="index" class="table-row">
+        <div
+          v-for="(coupon, index) in getNonDeletedCoupons"
+          :key="index"
+          class="table-row">
           <div class="table-cell">{{ coupon.code }}</div>
           <div class="table-cell">
             {{
@@ -135,12 +138,20 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
-    getTickets() {
-      return eventTickets.$tickets.map((ticket) => ticket.name);
+
+    getNonDeletedTickets() {
+      return eventTickets.$tickets.filter((ticket) => !ticket._deleted);
     },
 
-    getCoupons() {
-      return eventCoupons.$coupons;
+    getTickets() {
+      if (this.getNonDeletedTickets.length) {
+        return this.getNonDeletedTickets.map((ticket) => ticket.name);
+      }
+      return [];
+    },
+
+    getNonDeletedCoupons() {
+      return eventCoupons.$coupons.filter((coupon) => !coupon._deleted);
     },
   },
 
@@ -151,7 +162,7 @@ export default {
 
     handleRemoveCoupon(index) {
       this.couponIdxToRemove = index;
-      const couponToRemove = this.getCoupons[index];
+      const couponToRemove = this.getNonDeletedCoupons[index];
       this.confirmMessage = `Tem certeza de que deseja excluir o cupom "${couponToRemove.code}"?`;
       this.confirmDialog = true;
     },

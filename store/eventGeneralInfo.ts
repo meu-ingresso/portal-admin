@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { Event, EventAddress, ValidationResult } from '~/models/event';
+import { Event, EventAddress, ValidationResult, EventAttachment } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
@@ -43,6 +43,7 @@ export default class EventGeneralInfo extends VuexModule {
       latitude: null,
       longitude: null,
     },
+    attachments: [],
   };
 
   private mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
@@ -84,6 +85,7 @@ export default class EventGeneralInfo extends VuexModule {
     },
     link_online: '',
     promoter_id: '1',
+    attachments: [],
   };
 
   constructor(module: VuexModule<ThisType<EventGeneralInfo>, EventGeneralInfo>) {
@@ -232,7 +234,13 @@ export default class EventGeneralInfo extends VuexModule {
       const startDateTime = splitDateTime(event.start_date);
       const endDateTime = splitDateTime(event.end_date);
 
-      const attachmentBanner = event.attachments.find((attachment) => attachment.name === 'banner')?.image_url;
+      const bannerAttachment = event.attachments.find((attachment: EventAttachment) => attachment.name === 'banner');
+      const bannerUrl = bannerAttachment ? bannerAttachment.url : null;
+      const bannerId = bannerAttachment ? bannerAttachment.id : null;
+
+      const linkOnlineAttachment = event.attachments.find((attachment: EventAttachment) => attachment.name === 'link_online');
+      const linkOnlineUrl = linkOnlineAttachment ? linkOnlineAttachment.url : null;
+      const linkOnlineId = linkOnlineAttachment ? linkOnlineAttachment.id : null;
 
       this.context.commit('UPDATE_INFO', {
         id: event.id,
@@ -254,12 +262,15 @@ export default class EventGeneralInfo extends VuexModule {
         start_time: startDateTime.time,
         end_date: endDateTime.date,
         end_time: endDateTime.time,
-        banner: attachmentBanner,
+        banner: bannerUrl,
+        backup_banner: bannerUrl,
+        banner_id: bannerId,
         sale_type: event.sale_type,
         availability: event.availability,
         is_featured: event.is_featured,
         absorb_service_fee: event.absorb_service_fee,
-        address: event.address ? {
+        address: event.address && event.address.deleted_at === null ? {
+          id: event.address.id,
           street: event.address.street,
           number: event.address.number,
           complement: event.address.complement || '',
@@ -270,9 +281,14 @@ export default class EventGeneralInfo extends VuexModule {
           location_name: event.location_name || '',
           latitude: event.address.latitude ? Number(event.address.latitude) : null,
           longitude: event.address.longitude ? Number(event.address.longitude) : null,
-        } : null,
-        link_online: event.link_online || '',
+        } : {
+            id: event.address.id,
+            deleted_at: event.address.deleted_at
+        },
+        link_online: linkOnlineUrl || '',
+        link_online_id: linkOnlineId || '',
         promoter_id: event.promoter_id,
+        attachments: event.attachments,
       });
 
       return event;
@@ -292,7 +308,7 @@ export default class EventGeneralInfo extends VuexModule {
       // Criar endereço se o evento for presencial
       const [addressId, draftStatus] = await Promise.all([
         this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
-        status.fetchStatusByModuleAndName({ module: 'event', name: 'Rascunho' }),
+        status.fetchStatusByModuleAndName({ module: 'event', name: 'Aguardando Aprovação' }),
       ]);
 
       // Criar evento base
@@ -338,8 +354,94 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
+  private async updateAddress() {
+    const addressResponse = await $axios.$patch('address', {
+      id: this.info.address?.id,
+      street: this.info.address?.street,
+      number: this.info.address?.number,
+      complement: this.info.address?.complement,
+      neighborhood: this.info.address?.neighborhood,
+      city: this.info.address?.city,
+      state: this.info.address?.state,
+      zipcode: this.info.address?.zipcode,
+      latitude: this.info.address?.latitude,
+      longitude: this.info.address?.longitude,
+    });
+
+    if (!addressResponse.body || addressResponse.body.code !== 'UPDATE_SUCCESS') {
+      throw new Error('Falha ao atualizar endereço');
+    }
+
+    return addressResponse.body.result;
+  }
+
+  @Action
+  private async deleteAddress() {
+    const addressResponse = await $axios.$delete(`address/${this.info.address?.id}`);
+
+    if (!addressResponse.body || addressResponse.body.code !== 'DELETE_SUCCESS') {
+      throw new Error('Falha ao deletar endereço');
+    }
+
+    return addressResponse.body.result;
+  }
+
+  @Action
+  public async updateEventBase(eventId: string) {
+    try {
+
+      // Atualiza ou deleta endereço
+      if (this.info.event_type !== 'Online' && this.info.address?.id) {
+        await this.updateAddress();
+      } else if(this.info.event_type === 'Online' && !this.info.address?.deleted_at) {
+        await this.deleteAddress();
+      }
+
+      const startDateTime = `${this.info.start_date}T${this.info.start_time}:00.000Z`;
+      const endDateTime = `${this.info.end_date}T${this.info.end_time}:00.000Z`;
+
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      const eventResponse = await $axios.$patch('event', {
+        id: eventId,
+        name: this.info.name,
+        address_id: this.info.address?.id,
+        description: this.info.description,
+        general_information: this.info.general_information,
+        category_id: this.info.category?.value,
+        rating_id: this.info.rating?.value,
+        event_type: this.info.event_type,
+        start_date: startDate.toISOString().replace('Z', '-0300'),
+        end_date: endDate.toISOString().replace('Z', '-0300'),
+        link_online: this.info.link_online,
+        location_name: this.info.address?.location_name,
+        sale_type: this.info.sale_type,
+        availability: this.info.availability,
+        is_featured: this.info.is_featured,
+        absorb_service_fee: this.info.absorb_service_fee || false,
+      });
+
+      if (!eventResponse.body || eventResponse.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error('Falha ao atualizar evento base');
+      }
+
+      // Atualiza ou deleta banner
+      await this.handleEventBanner(eventId);
+  
+
+      return eventResponse.body.result;
+
+    } catch (error) {
+      console.error('Erro ao atualizar evento base:', error);
+      throw error;
+    }
+  }
+
+  @Action
   public reset() {
     this.context.commit('UPDATE_INFO', {
+      id: '',
       name: '',
       alias: '',
       description: '',
@@ -357,6 +459,21 @@ export default class EventGeneralInfo extends VuexModule {
       absorb_service_fee: false,
       address: null,
       link_online: '',
+      banner: null,
+      backup_banner: null,
+    });
+    this.context.commit('UPDATE_INFO_ADDRESS', {
+      id: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zipcode: '',
+      location_name: '',
+      latitude: null,
+      longitude: null,
     });
   }
 
@@ -387,23 +504,47 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
+  public async handleLinkOnline(eventId: string) {
+
+    const attachment = this.$info.attachments.find((attachment: EventAttachment) => attachment.name === 'link_online');
+
+    if (this.$info.link_online_id) {
+      
+      if (attachment && attachment.url !== this.$info.link_online) {
+        await this.deleteEventAttachment(attachment.id as string);
+        await this.createEventAttachment({eventId, name: 'link_online', type: 'link', url: this.$info.link_online});
+      }
+
+    }else if (this.$info.link_online) {
+      await this.createEventAttachment({eventId, name: 'link_online', type: 'link', url: this.$info.link_online});
+    }
+  }
+
+  @Action
   public async handleEventBanner(eventId: string) {
     if (!this.$info.banner) return null;
 
-    const bannerId = await this.createEventBanner(eventId);
-    const bannerUrl = await this.uploadEventBanner(bannerId, this.$info.banner);
-    await this.updateEventBanner(bannerId, bannerUrl);
+    if (this.info.banner instanceof File && this.$info.banner_id) {
+      await this.deleteEventAttachment(this.$info.banner_id as string);
+    } else if (this.info.banner === this.info.backup_banner) {
+      // Se ambos forem iguais é porque não houve alteração
+      return;
+    }
+
+    const bannerId = await this.createEventAttachment({eventId, name: 'banner', type: 'image', url: this.$info.banner as string});
+    const bannerUrl = await this.uploadEventBanner({attachmentId: bannerId, banner: this.$info.banner as File});
+    await this.updateEventAttachment({attachmentId: bannerId, url: bannerUrl});
 
     return bannerId;
   }
 
   @Action
-  private async createEventBanner(eventId: string) {
+  private async createEventAttachment(payload: {eventId: string, name: string, type: string, url: string}) {
     const attachmentResponse = await $axios.$post('event-attachment', {
-      event_id: eventId,
-      name: 'banner',
-      type: 'image',
-      url: '',
+      event_id: payload.eventId,
+      name: payload.name,
+      type: payload.type,
+      url: payload.url,
     });
 
     if (!attachmentResponse.body || attachmentResponse.body.code !== 'CREATE_SUCCESS') {
@@ -414,10 +555,19 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  private async uploadEventBanner(attachmentId: string, banner: File) {
+  private async deleteEventAttachment(attachmentId: string) {
+    const attachmentResponse = await $axios.$delete(`event-attachment/${attachmentId}`);
+
+    if (!attachmentResponse.body || attachmentResponse.body.code !== 'DELETE_SUCCESS') {
+      throw new Error('Failed to delete attachment.');
+    }
+  }
+
+  @Action
+  private async uploadEventBanner(payload: {attachmentId: string, banner: File}) {
     const formData = new FormData();
-    formData.append('event_attachment_id', attachmentId);
-    formData.append('file', banner);
+    formData.append('event_attachment_id', payload.attachmentId);
+    formData.append('file', payload.banner);
 
     const uploadResponse = await $axios.$post('upload', formData, {
       headers: {
@@ -433,10 +583,10 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  private async updateEventBanner(attachmentId: string, bannerUrl: string) {
+  private async updateEventAttachment(payload: {attachmentId: string, url: string}) {
     const updateResponse = await $axios.$patch('event-attachment', {
-      id: attachmentId,
-      image_url: bannerUrl,
+      id: payload.attachmentId,
+      url: payload.url,
     });
 
     if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {

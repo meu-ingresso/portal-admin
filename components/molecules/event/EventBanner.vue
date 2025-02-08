@@ -20,7 +20,7 @@ export default {
     title: { type: String, required: true },
     date: { type: String, required: true },
     location: { type: String, required: true },
-    image: { type: String, required: true },
+    image: { type: String, required: false, default: null },
   },
 
   computed: {
@@ -28,6 +28,10 @@ export default {
       return `${formatDateToCustomString(this.date)} - ${formatHourToBr(this.date)}`;
     },
     getImage() {
+      if (!this.image) {
+        return require(`~/assets/images/default_banner.png`);
+      }
+
       if (this.image.startsWith('/assets')) {
         return require(`@/assets/${this.image.split('/assets/')[1]}`);
       }
