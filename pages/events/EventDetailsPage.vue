@@ -19,7 +19,6 @@
 
       <div v-else-if="currentEvent">
         <EventDetailsTemplate v-if="isPanel" />
-        <EventGeneralInfoTemplate v-if="isDetails" />
         <EventDetailsTicketsTemplate v-if="isTickets" />
       </div>
     </v-container>
@@ -58,10 +57,6 @@ export default {
 
     isPanel() {
       return this.$route.meta.template === 'panel';
-    },
-
-    isDetails() {
-      return this.$route.meta.template === 'details';
     },
 
     isTickets() {
