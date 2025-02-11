@@ -37,7 +37,10 @@
                 v-for="(field, index) in getNonDeletedCustomFields"
                 :key="index"
                 class="table-row"
-                :class="{ 'disabled-row': field.is_default }">
+                :class="{
+                  'disabled-row': field.is_default,
+                  'table-row-deleted': field._deleted,
+                }">
                 <div class="table-cell hover-icon">
                   <v-icon>mdi-drag-vertical</v-icon>
                 </div>
@@ -195,10 +198,6 @@ export default {
     },
 
     getNonDeletedCustomFields() {
-      return eventCustomFields.$customFields.filter((field) => !field._deleted);
-    },
-
-    getAllCustomFields() {
       return eventCustomFields.$customFields;
     },
   },
@@ -339,5 +338,9 @@ export default {
 
 .table-row:active {
   cursor: grabbing;
+}
+
+.table-row-deleted {
+  display: none !important;
 }
 </style>

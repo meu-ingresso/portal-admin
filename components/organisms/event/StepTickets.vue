@@ -38,7 +38,8 @@
               <Draggable
                 v-for="(ticket, index) in getNonDeletedTickets"
                 :key="index"
-                class="table-row">
+                class="table-row"
+                :class="{ 'table-row-deleted': ticket._deleted }">
                 <div class="table-cell hover-icon">
                   <v-icon>mdi-drag-vertical</v-icon>
                 </div>
@@ -79,7 +80,8 @@
               <Draggable
                 v-for="(ticket, index) in tickets"
                 :key="index"
-                class="table-row">
+                class="table-row"
+                :class="{ 'table-row-deleted': ticket._deleted }">
                 <div class="table-cell">{{ ticket.name ? ticket.name : '-' }}</div>
                 <div class="table-cell actions">
                   <ActionsMenu
@@ -243,11 +245,7 @@ export default {
     },
 
     getNonDeletedTickets() {
-      return eventTickets.$tickets.filter((ticket) => !ticket._deleted);
-    },
-
-    getDeletedTickets() {
-      return eventTickets.$tickets.filter((ticket) => ticket._deleted);
+      return eventTickets.$tickets;
     },
 
     getCustomFields() {
@@ -555,5 +553,9 @@ export default {
 
 .table-row:active {
   cursor: grabbing;
+}
+
+.table-row-deleted {
+  display: none !important;
 }
 </style>

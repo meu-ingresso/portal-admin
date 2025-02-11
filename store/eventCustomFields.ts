@@ -1,7 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { CustomField, CustomFieldApiResponse, CustomFieldOptionApiResponse, CustomFieldTicket, CustomFieldTicketApiResponse, FieldOption, FieldSelectedOption, PersonType, TicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
-import { defaultFields, getFieldOptionChanges, getTicketRelationChanges, isMultiOptionField, shouldUpdateField } from '~/utils/customFieldsHelpers';
+import { defaultFields, getFieldOptionChanges, getPersonTypeChanges, getTicketRelationChanges, isMultiOptionField, shouldUpdateField } from '~/utils/customFieldsHelpers';
 
 @Module({
   name: 'eventCustomFields',
@@ -146,7 +146,7 @@ export default class EventCustomFields extends VuexModule {
         throw new Error(`Campos personalizados não encontrados para o evento ${payload.eventId}`);
       }
 
-      const fieldsData = response.body.result.data;
+      const fieldsData = response.body.result.data.filter((field: CustomFieldApiResponse) => !field.deleted_at);
       const groupedFields = new Map<string, CustomField>();
       
       // Inicializa o objeto field_ids com todas as chaves necessárias
@@ -431,6 +431,51 @@ export default class EventCustomFields extends VuexModule {
       for (const field of this.fieldList) {
         if (field.is_default) continue;
 
+        // 1. Verifica se há tipos de pessoa para deletar
+        const personTypeChanges = getPersonTypeChanges(field);
+        
+        // 2. Deleta campos que não são mais usados e suas relações
+        await Promise.all(
+          personTypeChanges.toDelete.map(async (fieldId) => {
+            try {
+              // 2.1 Remove relações com tickets
+              const ticketRelationsResponse = await $axios.$get(
+                `event-checkout-fields-tickets?where[event_checkout_field_id][v]=${fieldId}`
+              );
+              
+              if (ticketRelationsResponse.body?.code === 'SEARCH_SUCCESS') {
+                await Promise.all(
+                  ticketRelationsResponse.body.result.data.map((relation: any) =>
+                    $axios.$delete(`event-checkout-field-ticket/${relation.id}`)
+                  )
+                );
+              }
+
+              // 2.2 Remove opções se for campo multi-opção
+              if (field.type === 'MULTI_CHECKBOX' || field.type === 'MENU_DROPDOWN') {
+                const optionsResponse = await $axios.$get(
+                  `event-checkout-field-options?where[event_checkout_field_id][v]=${fieldId}`
+                );
+
+                if (optionsResponse.body?.code === 'SEARCH_SUCCESS') {
+                  await Promise.all(
+                    optionsResponse.body.result.data.map((option: any) =>
+                      $axios.$delete(`event-checkout-field-option/${option.id}`)
+                    )
+                  );
+                }
+              }
+
+              // 2.3 Finalmente remove o campo
+              await $axios.$delete(`event-checkout-field/${fieldId}`);
+              
+            } catch (error) {
+              console.error(`Erro ao deletar campo ${fieldId} e suas relações:`, error);
+              throw error;
+            }
+          })
+        );
+
         // Processar cada tipo de pessoa do campo
         for (const personType of field.person_types) {
           const fieldId = field.field_ids?.[personType];
@@ -507,9 +552,7 @@ export default class EventCustomFields extends VuexModule {
               id: ticket.id,
               name: ticket.name,
               _deleted: ticket.deleted_at
-            })));
-
-            console.log("relationChanges", relationChanges);
+            })), field.tickets);
 
             // Criar novas relações
             const promiseCreationRelations = relationChanges.toCreate.map(async (ticket: CustomFieldTicket) => {
@@ -530,8 +573,7 @@ export default class EventCustomFields extends VuexModule {
               })
             });
 
-            await Promise.all(promiseCreationRelations);
-           
+            await Promise.all(promiseCreationRelations);           
 
             // Deletar relações removidas
             await Promise.all(

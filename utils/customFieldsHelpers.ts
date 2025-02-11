@@ -1,4 +1,4 @@
-import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation, CustomFieldTicket } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation, CustomFieldTicket, PersonType } from '~/models/event';
 
 export const defaultFields = ['Nome Completo', 'Email'];
 
@@ -13,16 +13,32 @@ interface FieldOptionChanges {
   toDelete: string[];
 }
 
+interface PersonTypeChanges {
+  toDelete: string[]; // IDs dos campos a serem deletados
+  toCreate: PersonType[];
+}
+
 export const getTicketRelationChanges = (
   existingRelations: FieldTicketRelation[],
-  newTickets: CustomFieldTicket[]
+  ticketsFromEvent: CustomFieldTicket[],
+  ticketsFromField: CustomFieldTicket[]
 ): TicketRelationChanges => {
+  // Filtra apenas os tickets que pertencem ao campo
+  const relevantTickets = ticketsFromEvent.filter(eventTicket =>
+    ticketsFromField.some(fieldTicket => fieldTicket.id === eventTicket.id || fieldTicket.name === eventTicket.name)
+  );
+  
   // Separa tickets deletados e ativos
-  const deletedTicketIds = newTickets
+  const deletedTicketIds = relevantTickets
     .filter(ticket => ticket._deleted)
     .map(ticket => ticket.id);
   
-  const activeTickets = newTickets.filter(ticket => !ticket._deleted);
+  const activeTickets = relevantTickets.filter(ticket => !ticket._deleted);
+
+  console.log('Tickets do campo:', ticketsFromField);
+  console.log('Tickets relevantes do evento:', relevantTickets);
+  console.log('IDs de tickets deletados:', deletedTicketIds);
+  console.log('Tickets ativos:', activeTickets);
 
   return {
     // Criar apenas para tickets ativos que não existem
@@ -89,4 +105,30 @@ export const shouldUpdateField = (
 
 export const isMultiOptionField = (type: string): boolean => {
   return type === 'MULTI_CHECKBOX' || type === 'MENU_DROPDOWN';
+};
+
+export const getPersonTypeChanges = (
+  field: CustomField
+): PersonTypeChanges => {
+  const { field_ids: fieldIds, person_types: personTypes } = field;
+  
+  // Se não tem field_ids, é um campo novo
+  if (!fieldIds) {
+    return { toDelete: [], toCreate: personTypes };
+  }
+
+  // Encontra tipos de pessoa que têm ID mas não estão mais na lista
+  const toDelete = Object.entries(fieldIds)
+    .filter(([personType, id]) => 
+      id && // tem ID
+      !personTypes.includes(personType as PersonType) // não está mais na lista
+    )
+    .map(([_, id]) => id);
+  
+    // Encontra tipos de pessoa que estão na lista mas não têm ID
+  const toCreate = personTypes.filter(personType => 
+    !fieldIds[personType] || fieldIds[personType] === ''
+  );
+
+  return { toDelete, toCreate };
 };

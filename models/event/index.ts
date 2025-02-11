@@ -184,6 +184,7 @@ export interface CustomFieldApiResponse {
   visible_on_ticket: boolean;
   help_text: string | null;
   display_order: number;
+  deleted_at: string | null;
 }
 
 export interface CustomFieldOptionApiResponse {
