@@ -5,6 +5,7 @@ import { status } from '@/utils/store-util';
 import { splitDateTime } from '~/utils/formatters';
 import { getUniqueCategories } from '~/utils/utils';
 import { getCategoryChanges, getNextDisplayOrder } from '~/utils/ticketCategoryHelpers';
+import { handleGetResponse } from '~/utils/responseHelpers';
 @Module({
   name: 'eventTickets',
   stateFactory: true,
@@ -128,8 +129,6 @@ export default class EventTickets extends VuexModule {
     updatedList[index] = { ...ticket };
     this.ticketList = updatedList;
 
-    console.log('updatedList: ', updatedList);
-
     // Atualiza lista de categorias mantendo as marcadas como deletadas
     const activeCategories = getUniqueCategories(updatedList);
     this.ticketCategories = [
@@ -250,16 +249,10 @@ export default class EventTickets extends VuexModule {
         `ticket-event-categories?where[event_id][v]=${eventId}`
       );
 
-      if (!categoriesResponse.body || categoriesResponse.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error('Falha ao buscar categorias existentes');
-      }
-
-      const existingCategories = categoriesResponse.body.result.data;
+      const existingCategories = handleGetResponse(categoriesResponse, 'Categorias não encontradas', eventId, true);
 
       // Identifica mudanças necessárias nas categorias
       const categoryChanges = getCategoryChanges(existingCategories, this.ticketList);
-
-      console.log('categoryChanges: ', categoryChanges);
 
       // Atualiza as categorias que mudaram
       for (const category of categoryChanges.toUpdate) {
@@ -295,7 +288,7 @@ export default class EventTickets extends VuexModule {
         const startDate = new Date(startDateTime);
         const endDate = new Date(endDateTime);
 
-        const displayOrder = displayOrders[index];
+        const displayOrder = ticket.display_order || displayOrders[index];
 
         // Se o ingresso não está deletado, atualiza
         if (ticket.id !== '-1' && !ticket._deleted) {
@@ -392,11 +385,7 @@ export default class EventTickets extends VuexModule {
         `tickets?where[event_id][v]=${eventId}&preloads[]=category`
       );
 
-      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error(`Tickets não encontrados para o evento ${eventId}`);
-      }
-
-      const tickets = response.body.result.data;
+      const tickets = handleGetResponse(response, 'Tickets não encontrados', eventId, true);
 
       this.context.commit('SET_TICKETS', tickets.map(
         (ticket: any) => {

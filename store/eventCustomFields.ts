@@ -2,6 +2,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { CustomField, CustomFieldApiResponse, CustomFieldOptionApiResponse, CustomFieldTicket, CustomFieldTicketApiResponse, FieldOption, FieldSelectedOption, PersonType, TicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { defaultFields, getFieldOptionChanges, getPersonTypeChanges, getTicketRelationChanges, isMultiOptionField, shouldUpdateField } from '~/utils/customFieldsHelpers';
+import { handleGetResponse } from '~/utils/responseHelpers';
 
 @Module({
   name: 'eventCustomFields',
@@ -141,12 +142,8 @@ export default class EventCustomFields extends VuexModule {
     try {
       this.context.commit('SET_LOADING', true); 
       const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${payload.eventId}`);
-
-      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error(`Campos personalizados não encontrados para o evento ${payload.eventId}`);
-      }
-
-      const fieldsData = response.body.result.data.filter((field: CustomFieldApiResponse) => !field.deleted_at);
+      const fieldsData = handleGetResponse(response, 'Campos personalizados não encontrados', payload.eventId, true);
+      
       const groupedFields = new Map<string, CustomField>();
       
       // Inicializa o objeto field_ids com todas as chaves necessárias
@@ -184,14 +181,15 @@ export default class EventCustomFields extends VuexModule {
             `event-checkout-fields-tickets?where[event_checkout_field_id][v]=${firstField.id}&preloads[]=ticket`
           );
 
-          const customFieldTickets = responseCheckoutFieldsTickets.body?.code === 'SEARCH_SUCCESS' 
-            ? responseCheckoutFieldsTickets.body.result.data.map(
-                (customFieldTicket: CustomFieldTicketApiResponse) => ({
-                  id: customFieldTicket.ticket.id,
-                  name: customFieldTicket.ticket.name,
-                })
-              )
-            : [];
+          // Trata o retorno e filtra por não deletados
+          const checkoutFieldsTicketsData = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
+
+          const customFieldTickets = checkoutFieldsTicketsData.map(
+            (customFieldTicket: CustomFieldTicketApiResponse) => ({
+              id: customFieldTicket.ticket.id,
+              name: customFieldTicket.ticket.name,
+            })
+          );
 
           groupedFields.set(defaultFieldName, {
             name: defaultFieldName,
@@ -236,15 +234,16 @@ export default class EventCustomFields extends VuexModule {
             `event-checkout-fields-tickets?where[event_checkout_field_id][v]=${field.id}&preloads[]=ticket`
           );
 
-          const customFieldTickets = responseCheckoutFieldsTickets.body?.code === 'SEARCH_SUCCESS'
-            ? responseCheckoutFieldsTickets.body.result.data.map(
-                (customFieldTicket: CustomFieldTicketApiResponse) => ({
-                  id: customFieldTicket.ticket.id,
-                  name: customFieldTicket.ticket.name,
-                  _deleted: customFieldTicket.ticket.deleted_at
-                })
-              )
-            : [];
+          // Trata o retorno e filtra por não deletados
+          const checkoutFieldsTicketsData = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
+
+          const customFieldTickets = checkoutFieldsTicketsData.map(
+            (customFieldTicket: CustomFieldTicketApiResponse) => ({
+              id: customFieldTicket.ticket.id,
+              name: customFieldTicket.ticket.name,
+              _deleted: customFieldTicket.ticket.deleted_at
+            })
+          )
           
           let selectedOptions: FieldSelectedOption[] = [];
           
@@ -253,7 +252,10 @@ export default class EventCustomFields extends VuexModule {
               `event-checkout-field-option?where[event_checkout_field_id][v]=${field.id}`
             );
 
-            selectedOptions = responseFieldOptions.body?.result?.data?.map(
+            // Trata o retorno e filtra por não deletados
+            const fieldOptionsData = handleGetResponse(responseFieldOptions, 'Opções não encontradas', null, true)
+
+            selectedOptions = fieldOptionsData.map(
               (option: FieldSelectedOption) => {
                 return {
                   id: option.id,
@@ -622,7 +624,7 @@ export default class EventCustomFields extends VuexModule {
       is_unique: isUnique,
       visible_on_ticket: visibleOnTicket,
       help_text: payload.customField.help_text || '',
-      display_order: payload.customField.display_order || payload
+      display_order: payload.customField.display_order || payload.index
     };  
 
     const fieldResponse = await $axios.$post('event-checkout-field', requestPayload);
