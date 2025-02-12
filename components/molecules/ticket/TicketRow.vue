@@ -42,26 +42,6 @@
         </v-menu>
       </div>
     </v-col>
-
-    <!-- Modal de confirmação -->
-    <v-dialog v-model="showConfirmDialog" max-width="500px" persistent>
-      <v-card>
-        <v-card-title class="d-flex justify-space-between align-center">
-          <h3>Confirmar Exclusão</h3>
-          <v-btn icon @click="showConfirmDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-text>
-          Tem certeza que deseja excluir o ingresso "{{ name }}"? Esta ação não pode ser
-          desfeita.
-        </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-5">
-          <DefaultButton outlined text="Cancelar" @click="showConfirmDialog = false" />
-          <DefaultButton text="Excluir" @click="confirmDelete" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-row>
   <v-card v-else tile elevation="0" color="ticket-row-card">
     <v-card-text>
@@ -100,33 +80,12 @@
         <div class="ticket-sold mb-2">{{ sold }} / {{ total }}</div>
       </div>
     </v-card-text>
-
-    <!-- Modal de confirmação -->
-    <v-dialog v-model="showConfirmDialog" fullscreen persistent>
-      <v-card>
-        <v-card-title class="d-flex justify-space-between align-center">
-          <h3>Confirmar Exclusão</h3>
-          <v-btn icon @click="showConfirmDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-text>
-          Tem certeza que deseja excluir o ingresso "{{ name }}"? Esta ação não pode ser
-          desfeita.
-        </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-5">
-          <DefaultButton outlined text="Cancelar" @click="showConfirmDialog = false" />
-          <DefaultButton text="Excluir" @click="confirmDelete" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-card>
 </template>
 
 <script>
 import { formatRealValue } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
-import { eventTickets, toast } from '@/store';
 
 export default {
   props: {
@@ -142,7 +101,6 @@ export default {
 
   data() {
     return {
-      showConfirmDialog: false,
       menuTickets: [
         { title: 'Editar', icon: 'mdi-pencil', action: 'edit' },
         { title: 'Excluir', icon: 'mdi-delete', action: 'delete' },
@@ -182,35 +140,16 @@ export default {
     },
 
     handleMenuAction(action) {
-      console.log('action', action);
       switch (action) {
         case 'edit':
           this.$emit('edit', this.id);
           break;
         case 'delete':
-          this.showConfirmDialog = true;
+          this.$emit('delete', {
+            id: this.id,
+            name: this.name,
+          });
           break;
-      }
-    },
-
-    async confirmDelete() {
-      try {
-        await eventTickets.fetchDeleteTicket(this.id);
-        this.$emit('deleted', this.id);
-        this.showConfirmDialog = false;
-
-        // Notifica o usuário
-        toast.setToast({
-          text: `Ingresso "${this.name}" removido com sucesso!`,
-          type: 'success',
-          time: 5000,
-        });
-      } catch (error) {
-        toast.setToast({
-          text: `Falha ao remover ingresso. Tente novamente.`,
-          type: 'danger',
-          time: 5000,
-        });
       }
     },
   },

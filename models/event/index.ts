@@ -71,6 +71,7 @@ export interface Ticket {
   price: string;
   service_fee?: number;
   quantity: number;
+  remaining_quantity: number;
   min_purchase: number;
   max_purchase: string;
   start_date: string;

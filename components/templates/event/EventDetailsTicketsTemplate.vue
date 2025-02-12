@@ -5,6 +5,7 @@
       <TicketStatistics :statistics="statistics" />
       <EventTickets
         :tickets="currentEvent.tickets"
+        :event-id="currentEvent.id"
         title="Tipos de ingressos"
         title-size="16px" />
     </div>

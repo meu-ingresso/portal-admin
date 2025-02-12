@@ -21,3 +21,12 @@ export const handleCreateResponse = (response: any, errorMessage: string, eventI
 
   return response.body.result;
 };
+
+
+export const handleDeleteResponse = (response: any, errorMessage: string, eventId?: string) => {
+  if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
+    throw new Error(`${errorMessage} para o evento ${eventId}`);
+  }
+
+  return response.body.result;
+};

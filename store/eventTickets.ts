@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { CategoryOption, Ticket, ValidationResult } from '~/models/event';
+import { CategoryOption, Ticket, TicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '~/utils/formatters';
@@ -23,6 +23,7 @@ export default class EventTickets extends VuexModule {
       name: 'Ingresso Normal',
       price: "100",
       quantity: 100,
+      remaining_quantity: 100,
       min_purchase: 1,
       max_purchase: '10',
       start_date: '2025-02-01',
@@ -41,6 +42,7 @@ export default class EventTickets extends VuexModule {
       name: 'Ingresso Vip',
       price: "200",
       quantity: 50,
+      remaining_quantity: 50,
       min_purchase: 1,
       max_purchase: '5',
       start_date: '2025-02-01',
@@ -418,6 +420,7 @@ export default class EventTickets extends VuexModule {
             name: ticket.name,
             price: ticket.price,
             quantity: ticket.total_quantity,
+            remaining_quantity: ticket.remaining_quantity,
             min_purchase: ticket.min_quantity_per_user,
             max_purchase: ticket.max_quantity_per_user,
             availability: ticket.availability,
@@ -573,14 +576,49 @@ export default class EventTickets extends VuexModule {
   public async fetchDeleteTicket(ticketId: string): Promise<void> {
     try {
       this.context.commit('SET_LOADING', true);
+
+      // 1. Buscar ticket com categoria
+      const ticketResponse = await $axios.$get(
+        `tickets?where[id][v]=${ticketId}&preloads[]=category`
+      );
+
+      const ticket = handleGetResponse(ticketResponse, 'Ticket não encontrado', ticketId, true);
+      const categoryId = ticket?.category?.id;
       
+      // 2. Deletar o ticket
       const response = await $axios.$delete(`ticket/${ticketId}`);
       
       if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
         throw new Error('Falha ao remover ingresso');
       }
 
-      // Marca o ticket como deletado no state
+      // 3. Se tinha categoria, verificar se ainda está em uso
+      if (categoryId) {
+        
+        // Buscar outros tickets que usam a mesma categoria
+        const otherTicketsResponse = await $axios.$get(
+          `tickets?where[ticket_event_category_id][v]=${categoryId}`
+        );
+
+        const otherTickets = handleGetResponse(otherTicketsResponse, 'Tickets não encontrados', ticketId, true);
+
+        // Filtrar tickets que não são o ticket a ser deletado
+        const filteredTickets = otherTickets.filter((ticket: TicketApiResponse) => ticket.id !== ticketId);
+
+        // Se não há outros tickets usando a categoria, deletá-la
+        if (filteredTickets.length === 0) {
+  
+          const deleteCategoryResponse = await $axios.$delete(
+            `ticket-event-category/${categoryId}`
+          );
+
+          if (!deleteCategoryResponse.body || deleteCategoryResponse.body.code !== 'DELETE_SUCCESS') {
+            throw new Error('Falha ao deletar categoria');
+          }
+        }
+      }
+
+      // 4. Atualizar o state
       const ticketIndex = this.ticketList.findIndex(t => t.id === ticketId);
       if (ticketIndex !== -1) {
         this.context.commit('UPDATE_TICKET', {
