@@ -9,13 +9,15 @@
     <v-col cols="12" md="12" sm="12">
       <TicketRow
         v-for="ticket in tickets"
+        :id="ticket.id"
         :key="ticket.id"
         :disable-menu="disableMenu"
         :name="ticket.name"
         :price="ticket.price"
         :status="ticket.status"
         :sold="ticket.sold"
-        :total="ticket.total" />
+        :total="ticket.total"
+        :event-promoter="ticket.eventPromoter" />
     </v-col>
   </v-row>
 </template>

@@ -1,4 +1,4 @@
-import { CategoryOption, Ticket, CategoryApiResponse } from '~/models/event';
+import { Ticket, CategoryApiResponse } from '~/models/event';
 
 interface CategoryChanges {
   toUpdate: {
@@ -87,7 +87,7 @@ export const getNextDisplayOrder = (tickets: Ticket[]): number[] => {
   );
 
   // Gera array de display_orders válidos
-  const displayOrders = tickets.map((ticket, index) => {
+  const displayOrders = tickets.map((ticket) => {
 
     // Se o ticket já tem uma ordem válida e não conflitante, mantém
     if (ticket.display_order &&

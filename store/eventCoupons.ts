@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { Coupon, CouponApiResponse, CouponTicket, CouponTicketApiResponse, CustomFieldTicket, ValidationResult } from '~/models/event';
+import { Coupon, CouponApiResponse, CouponTicketApiResponse, CustomFieldTicket, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
@@ -329,12 +329,13 @@ export default class EventCoupons extends VuexModule {
       this.context.commit('SET_LOADING', true);
 
       // 1. Buscar cupons existentes e suas relações
-      const [couponsResponse] = await Promise.all([
+      const [couponsResponse, ticketsResponse] = await Promise.all([
         $axios.$get(`coupons?where[event_id][v]=${eventId}`),
+        $axios.$get(`tickets?where[event_id][v]=${eventId}`)
       ]);
 
       const existingCoupons = couponsResponse.body?.result?.data || [];
-
+      const existingTickets = ticketsResponse.body?.result?.data || [];
       // 2. Processar cada cupom
       for (const coupon of this.couponList) {
         const existingCoupon = existingCoupons.find(
@@ -346,7 +347,7 @@ export default class EventCoupons extends VuexModule {
           const ticketRelationsResponse = await $axios.$get(
             `coupons-tickets?where[coupon_id][v]=${coupon.id}`
           );
-          const existingTicketRelations = ticketRelationsResponse.body?.result?.data || [];
+          const existingTicketRelations = handleGetResponse(ticketRelationsResponse, 'Relações de tickets não encontradas', null, true);
 
           // Se o cupom foi marcado como deletado
           if (coupon._deleted) {
@@ -384,11 +385,7 @@ export default class EventCoupons extends VuexModule {
           // Processar relações com tickets
           const relationChanges = getCouponTicketRelationChanges(
             existingTicketRelations,
-            coupon.tickets.map((ticket: CouponTicket) => ({
-              id: ticket.id,
-              name: ticket.name,
-              _deleted: ticket._deleted
-            })),
+            existingTickets,
             coupon.tickets
           );
 

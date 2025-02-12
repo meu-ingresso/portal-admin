@@ -35,11 +35,6 @@ export const getTicketRelationChanges = (
   
   const activeTickets = relevantTickets.filter(ticket => !ticket._deleted);
 
-  console.log('Tickets do campo:', ticketsFromField);
-  console.log('Tickets relevantes do evento:', relevantTickets);
-  console.log('IDs de tickets deletados:', deletedTicketIds);
-  console.log('Tickets ativos:', activeTickets);
-
   return {
     // Criar apenas para tickets ativos que não existem
     toCreate: activeTickets
@@ -92,6 +87,12 @@ export const shouldUpdateField = (
   existingField: CustomFieldApiResponse,
   newField: CustomField
 ): boolean => {
+
+  // Se o campo foi deletado, não atualiza
+  if (newField._deleted) {
+    return false;
+  }
+
   return (
     existingField.type !== newField.type ||
     existingField.required !== newField.options.includes('required') ||
@@ -131,4 +132,40 @@ export const getPersonTypeChanges = (
   );
 
   return { toDelete, toCreate };
+};
+
+export const getNextDisplayOrder = (fields: CustomField[]): number[] => {
+  // Ordena todos os fields (incluindo deletados) por display_order
+  const sortedFields = [...fields].sort((a, b) =>
+    (a.display_order || 0) - (b.display_order || 0)
+  );
+
+  // Cria um Set com todas as ordens em uso (incluindo de fields deletados)
+  const usedOrders = new Set(
+    sortedFields
+      .filter(field => field.display_order && !field._deleted)
+      .map(field => field.display_order)
+  );
+
+  // Gera array de display_orders válidos
+  const displayOrders = fields.map((field) => {
+
+    // Se o field já tem uma ordem válida e não conflitante, mantém
+    if (field.display_order &&
+        !usedOrders.has(field.display_order) &&
+        field.display_order > 0) {
+      usedOrders.add(field.display_order);
+      return field.display_order;
+    }
+
+    // Encontra próxima ordem disponível
+    let order = 1;
+    while (usedOrders.has(order)) {
+      order++;
+    }
+    usedOrders.add(order);
+    return order;
+  });
+
+  return displayOrders;
 };

@@ -681,6 +681,7 @@ export default class Event extends VuexModule {
         total: ticket.total_quantity,
         status: ticket.status.name,
         hasSales: ticket.total_quantity > ticket.remaining_quantity,
+        eventPromoter: data.promoter_id,
       })),
     };
 

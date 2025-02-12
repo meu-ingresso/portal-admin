@@ -568,4 +568,36 @@ export default class EventTickets extends VuexModule {
     this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
   }
 
+
+  @Action
+  public async fetchDeleteTicket(ticketId: string): Promise<void> {
+    try {
+      this.context.commit('SET_LOADING', true);
+      
+      const response = await $axios.$delete(`ticket/${ticketId}`);
+      
+      if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
+        throw new Error('Falha ao remover ingresso');
+      }
+
+      // Marca o ticket como deletado no state
+      const ticketIndex = this.ticketList.findIndex(t => t.id === ticketId);
+      if (ticketIndex !== -1) {
+        this.context.commit('UPDATE_TICKET', {
+          index: ticketIndex,
+          ticket: {
+            ...this.ticketList[ticketIndex],
+            _deleted: new Date().toISOString()
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error('Erro ao remover ingresso:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
 }

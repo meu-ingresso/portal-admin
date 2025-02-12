@@ -1,4 +1,4 @@
-import { Coupon, CouponApiResponse, CouponTicket, CouponTicketApiResponse } from "~/models/event";
+import { Coupon, CouponApiResponse, CouponTicket, CouponTicketApiResponse, TicketApiResponse } from "~/models/event";
 
 
 interface CouponRelationChanges {
@@ -20,7 +20,7 @@ export const shouldUpdateCoupon = (existing: CouponApiResponse, current: Coupon)
 
 export const getCouponTicketRelationChanges = (
   existingRelations: CouponTicketApiResponse[],
-  ticketsFromEvent: CouponTicket[],
+  ticketsFromEvent: TicketApiResponse[],
   ticketsFromCoupon: CouponTicket[]
 ): CouponRelationChanges => {
   // Filtra apenas os tickets que pertencem ao cupom
@@ -33,20 +33,15 @@ export const getCouponTicketRelationChanges = (
   
   // Separa tickets deletados e ativos
   const deletedTicketIds = relevantTickets
-    .filter(ticket => ticket._deleted)
+    .filter(ticket => ticket.deleted_at)
     .map(ticket => ticket.id);
   
-  const activeTickets = relevantTickets.filter(ticket => !ticket._deleted);
-
-  console.log('Tickets do cupom:', ticketsFromCoupon);
-  console.log('Tickets relevantes do evento:', relevantTickets);
-  console.log('IDs de tickets deletados:', deletedTicketIds);
-  console.log('Tickets ativos:', activeTickets);
+  const activeTickets = relevantTickets.filter(ticket => !ticket.deleted_at);
 
   return {
     // Criar apenas para tickets ativos que não existem
     toCreate: activeTickets.filter(ticket => 
-      !existingRelations.some(rel => rel.ticket_id === ticket.id)
+      !existingRelations.some(rel => rel.ticket_id === ticket.id && !rel.deleted_at)
     ),
     
     // Deletar relações se:
