@@ -36,7 +36,7 @@
                 : `${coupon.discount_value}%`
             }}
           </div>
-          <div class="table-cell">{{ getArrayObjectText(coupon.tickets) }}</div>
+          <div class="table-cell">{{ getArrayObjectText(coupon.tickets, 'name') }}</div>
           <div class="table-cell actions">
             <v-btn icon small class="mr-2" @click="openEditModal(index)">
               <v-icon>mdi-pencil</v-icon>
@@ -144,10 +144,13 @@ export default {
     },
 
     getTickets() {
-      if (this.getNonDeletedTickets.length) {
-        return this.getNonDeletedTickets.map((ticket) => ticket.name);
-      }
-      return [];
+      return eventTickets.$tickets.map((ticket) => {
+        return {
+          id: ticket.id,
+          name: ticket.name,
+          _deleted: ticket._deleted,
+        };
+      });
     },
 
     getNonDeletedCoupons() {
@@ -203,10 +206,10 @@ export default {
       }
     },
 
-    getArrayObjectText(array) {
+    getArrayObjectText(array, key = null) {
       if (!array) return '-';
 
-      return array?.join(', ') || '';
+      return array.map((item) => (key ? item[key] : item)).join(', ') || '-';
     },
   },
 };

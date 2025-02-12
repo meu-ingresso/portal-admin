@@ -1,5 +1,3 @@
-
-
 export const handleGetResponse = (response: any, errorMessage: string, eventId?: string, filterDeleted = false) => {
   
   if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
@@ -13,4 +11,13 @@ export const handleGetResponse = (response: any, errorMessage: string, eventId?:
   }
 
   return data;
+};
+
+
+export const handleCreateResponse = (response: any, errorMessage: string, eventId?: string) => {
+  if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+    throw new Error(`${errorMessage} para o evento ${eventId}`);
+  }
+
+  return response.body.result;
 };

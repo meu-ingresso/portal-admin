@@ -117,6 +117,17 @@ export default class EventCustomFields extends VuexModule {
     this.fieldList = updatedList;
   }
 
+  @Mutation
+  private SWAP_FIELDS(payload: { 
+    removedIndex: number; 
+    addedIndex: number; 
+  }) {
+    const fieldList = [...this.fieldList];
+    const [removedField] = fieldList.splice(payload.removedIndex, 1);
+    fieldList.splice(payload.addedIndex, 0, removedField);
+    this.fieldList = fieldList;
+  }
+
   @Action
   public setFields(fields: CustomField[]) {
     this.context.commit('SET_FIELDS', fields);
@@ -700,6 +711,50 @@ export default class EventCustomFields extends VuexModule {
     });
 
     await Promise.all(promises);
+  }
+
+  @Action
+  public swapFieldsOrder(payload: { 
+    removedIndex: number; 
+    addedIndex: number;
+  }) {
+    const { removedIndex, addedIndex } = payload;
+    
+    const movedField = this.fieldList[removedIndex];
+    const targetField = this.fieldList[addedIndex];
+    
+    // Encontra os índices reais
+    const movedRealIndex = this.fieldList.findIndex(f => 
+      f.id === movedField.id || 
+      (f.name === movedField.name && !f.id)
+    );
+    
+    const targetRealIndex = this.fieldList.findIndex(f => 
+      f.id === targetField.id || 
+      (f.name === targetField.name && !f.id)
+    );
+
+    // Troca os display_orders
+    const movedDisplayOrder = movedField.display_order;
+    const targetDisplayOrder = targetField.display_order;
+
+    this.context.commit('UPDATE_FIELD', { 
+      index: movedRealIndex, 
+      field: {
+        ...movedField,
+        display_order: targetDisplayOrder
+      }
+    });
+
+    this.context.commit('UPDATE_FIELD', { 
+      index: targetRealIndex, 
+      field: {
+        ...targetField,
+        display_order: movedDisplayOrder
+      }
+    });
+
+    this.context.commit('SWAP_FIELDS', { removedIndex, addedIndex });
   }
 
 } 

@@ -164,13 +164,16 @@
         <v-select
           v-model="localCoupon.tickets"
           :items="tickets"
+          :item-value="(item) => item.id"
+          :item-text="(item) => item.name"
           label="Ingressos aplicáveis"
           placeholder="Selecione o(s) ingresso(s)"
           no-data-text="Nenhum ingresso cadastrado"
           outlined
           dense
           multiple
-          hide-details="auto">
+          hide-details="auto"
+          return-object>
           <template v-if="tickets.length" #prepend-item>
             <v-list-item ripple @mousedown.prevent @click="toggleAllTickets">
               <v-list-item-action>

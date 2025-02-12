@@ -30,6 +30,12 @@ export interface CustomFieldTicket {
   _deleted?: boolean;
 }
 
+export interface CouponTicket {
+  id: string;
+  name: string;
+  _deleted?: boolean;
+}
+
 export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
 
 export type FieldType = 'CPF' | 'CNPJ' | 'TELEFONE' | 'DATA' | 'TEXTO' | 'PARAGRAPH' | 'EMAIL' | 'MENU_DROPDOWN' | 'MULTI_CHECKBOX' | 'TERMO';
@@ -88,7 +94,7 @@ export interface Coupon {
   start_time: string;
   end_date: string;
   end_time: string;
-  tickets: string[];
+  tickets: CouponTicket[];
   _deleted?: boolean;
 }
 
@@ -237,10 +243,10 @@ export interface CouponApiResponse {
   start_date: string;
   end_date: string;
 }
-
 export interface CouponTicketApiResponse {
   id: string;
   coupon_id: string;
   ticket_id: string;
   ticket: TicketApiResponse;
+  deleted_at?: string;
 }

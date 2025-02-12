@@ -162,6 +162,17 @@ export default class EventTickets extends VuexModule {
     }
   }
 
+  @Mutation
+  private SWAP_TICKETS(payload: { 
+    removedIndex: number; 
+    addedIndex: number; 
+  }) {
+    const ticketList = [...this.ticketList];
+    const [removedTicket] = ticketList.splice(payload.removedIndex, 1);
+    ticketList.splice(payload.addedIndex, 0, removedTicket);
+    this.ticketList = ticketList;
+  }
+
 
   @Action
   public setTickets(tickets: Ticket[]) {
@@ -510,6 +521,51 @@ export default class EventTickets extends VuexModule {
       id: categoryId,
       categoryMap: payload.categoryMap,
     };
+  }
+
+  @Action
+  public swapTicketsOrder(payload: { 
+    removedIndex: number; 
+    addedIndex: number;
+  }) {
+    const { removedIndex, addedIndex } = payload;
+    
+    // Encontra os tickets na lista completa
+    const movedTicket = this.ticketList[removedIndex];
+    const targetTicket = this.ticketList[addedIndex];
+    
+    // Encontra os índices reais
+    const movedRealIndex = this.ticketList.findIndex(t => 
+      t.id === movedTicket.id || 
+      (t.name === movedTicket.name && !t.id)
+    );
+    
+    const targetRealIndex = this.ticketList.findIndex(t => 
+      t.id === targetTicket.id || 
+      (t.name === targetTicket.name && !t.id)
+    );
+
+    // Troca os display_orders
+    const movedDisplayOrder = movedTicket.display_order;
+    const targetDisplayOrder = targetTicket.display_order;
+
+    this.context.commit('UPDATE_TICKET', { 
+      index: movedRealIndex, 
+      ticket: {
+        ...movedTicket,
+        display_order: targetDisplayOrder
+      }
+    });
+
+    this.context.commit('UPDATE_TICKET', { 
+      index: targetRealIndex, 
+      ticket: {
+        ...targetTicket,
+        display_order: movedDisplayOrder
+      }
+    });
+
+    this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
   }
 
 }

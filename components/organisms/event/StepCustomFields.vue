@@ -248,8 +248,10 @@ export default {
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
-        const movedField = this.getNonDeletedCustomFields.splice(removedIndex, 1)[0];
-        this.getNonDeletedCustomFields.splice(addedIndex, 0, movedField);
+        eventCustomFields.swapFieldsOrder({
+          removedIndex,
+          addedIndex,
+        });
       }
     },
 

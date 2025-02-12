@@ -478,8 +478,10 @@ export default {
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
-        const movedTicket = this.getNonDeletedTickets.splice(removedIndex, 1)[0];
-        this.getNonDeletedTickets.splice(addedIndex, 0, movedTicket);
+        eventTickets.swapTicketsOrder({
+          removedIndex,
+          addedIndex,
+        });
       }
     },
   },
