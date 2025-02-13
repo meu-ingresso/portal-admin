@@ -71,7 +71,7 @@ export interface Ticket {
   price: string;
   service_fee?: number;
   quantity: number;
-  remaining_quantity: number;
+  total_sold: number;
   min_purchase: number;
   max_purchase: string;
   start_date: string;
@@ -208,7 +208,7 @@ export interface TicketApiResponse {
   description: string;
   price: string;
   total_quantity: number;
-  remaining_quantity: number;
+  total_sold: number;
   status_id: number;
   start_date: string;
   end_date: string;

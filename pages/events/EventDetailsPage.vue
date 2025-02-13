@@ -22,7 +22,6 @@
         <EventDetailsTicketsTemplate v-if="isTickets" />
       </div>
     </v-container>
-
     <Toast />
   </div>
 </template>

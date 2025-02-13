@@ -203,24 +203,6 @@
           :rules="validationRules.availability"
           hide-details="auto" />
       </v-col>
-      <v-col md="3" sm="8">
-        <div class="mt-2">
-          <v-icon
-            v-if="localTicket.visible"
-            color="primary"
-            size="24"
-            @click="handleVisibility">
-            mdi-checkbox-marked
-          </v-icon>
-
-          <v-icon v-else size="24" @click="handleVisibility">
-            mdi-checkbox-blank-outline
-          </v-icon>
-
-          <span class="ml-1"> Visível </span>
-        </div>
-      </v-col>
-
       <template v-if="nomenclature != 'Doação' && isMobile">
         <v-col cols="12" md="12" sm="12" class="py-0 my-2">
           <div class="d-flex align-center" style="padding: 0px 4px 0px">
@@ -309,7 +291,6 @@ export default {
         end_date: '',
         end_time: '',
         availability: 'Publico',
-        visible: true,
       },
       availabilityList: [
         { text: 'Para todo o público', value: 'Publico' },
@@ -536,10 +517,6 @@ export default {
       } catch (error) {
         console.error('Erro ao salvar ingresso:', error);
       }
-    },
-
-    handleVisibility() {
-      this.localTicket.visible = !this.localTicket.visible;
     },
 
     validateForm() {

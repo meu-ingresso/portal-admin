@@ -10,6 +10,7 @@
       <EventTickets
         v-if="hasTickets"
         disable-menu
+        :event-id="currentEvent.id"
         :tickets="currentEvent.tickets.filter((ticket) => ticket.hasSales)" />
     </div>
   </div>
@@ -34,6 +35,8 @@ export default {
 <style scoped>
 .event-details {
   padding-top: 16px;
+  max-width: 72rem;
+  margin: 0 auto;
 }
 .event-details-wrapper {
   max-width: 1480px;

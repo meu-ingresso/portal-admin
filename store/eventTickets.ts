@@ -23,7 +23,7 @@ export default class EventTickets extends VuexModule {
       name: 'Ingresso Normal',
       price: "100",
       quantity: 100,
-      remaining_quantity: 100,
+      total_sold: 50,
       min_purchase: 1,
       max_purchase: '10',
       start_date: '2025-02-01',
@@ -42,7 +42,7 @@ export default class EventTickets extends VuexModule {
       name: 'Ingresso Vip',
       price: "200",
       quantity: 50,
-      remaining_quantity: 50,
+      total_sold: 20,
       min_purchase: 1,
       max_purchase: '5',
       start_date: '2025-02-01',
@@ -225,7 +225,7 @@ export default class EventTickets extends VuexModule {
           event_id: eventId,
           name: ticket.name,
           total_quantity: ticket.quantity,
-          remaining_quantity: ticket.quantity,
+          total_sold: 0,
           price: parseFloat(ticket.price),
           status_id: statusResponse.id,
           start_date: startDate.toISOString().replace('Z', '-0300'),
@@ -322,7 +322,6 @@ export default class EventTickets extends VuexModule {
             id: ticket.id,
             name: ticket.name,
             total_quantity: ticket.quantity,
-            remaining_quantity: ticket.quantity,
             price: parseFloat(ticket.price),
             start_date: startDate.toISOString().replace('Z', '-0300'),
             end_date: endDate.toISOString().replace('Z', '-0300'),
@@ -365,7 +364,7 @@ export default class EventTickets extends VuexModule {
             event_id: eventId,
             name: ticket.name,
             total_quantity: ticket.quantity,
-            remaining_quantity: ticket.quantity,
+            total_sold: 0,
             price: parseFloat(ticket.price),
             status_id: statusResponse.id,
             start_date: startDate.toISOString().replace('Z', '-0300'),
@@ -420,7 +419,7 @@ export default class EventTickets extends VuexModule {
             name: ticket.name,
             price: ticket.price,
             quantity: ticket.total_quantity,
-            remaining_quantity: ticket.remaining_quantity,
+            total_sold: ticket.total_sold,
             min_purchase: ticket.min_quantity_per_user,
             max_purchase: ticket.max_quantity_per_user,
             availability: ticket.availability,
@@ -575,7 +574,6 @@ export default class EventTickets extends VuexModule {
   @Action
   public async fetchDeleteTicket(ticketId: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
 
       // 1. Buscar ticket com categoria
       const ticketResponse = await $axios.$get(
@@ -583,16 +581,38 @@ export default class EventTickets extends VuexModule {
       );
 
       const ticket = handleGetResponse(ticketResponse, 'Ticket não encontrado', ticketId, true);
+
+      const hasSales = ticket.total_sold > 0;
+
+      if (hasSales) {
+        throw new Error('TICKET_HAS_SALES');
+      }
+
+      // 2. Buscar e atualizar para status "Indisponível" antes de deletar
+      const unavailableStatus = await status.fetchStatusByModuleAndName({ 
+        module: 'ticket', 
+        name: 'Indisponível' 
+      });
+
+      if (!unavailableStatus) {
+        throw new Error('Status "Indisponível" não encontrado');
+      }
+
+      await $axios.$patch('ticket', {
+        id: ticketId,
+        status_id: unavailableStatus.id
+      });
+
       const categoryId = ticket?.category?.id;
       
-      // 2. Deletar o ticket
+      // 3. Deletar o ticket
       const response = await $axios.$delete(`ticket/${ticketId}`);
       
       if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
         throw new Error('Falha ao remover ingresso');
       }
 
-      // 3. Se tinha categoria, verificar se ainda está em uso
+      // 4. Se tinha categoria, verificar se ainda está em uso
       if (categoryId) {
         
         // Buscar outros tickets que usam a mesma categoria
@@ -618,7 +638,7 @@ export default class EventTickets extends VuexModule {
         }
       }
 
-      // 4. Atualizar o state
+      // 5. Atualizar o state
       const ticketIndex = this.ticketList.findIndex(t => t.id === ticketId);
       if (ticketIndex !== -1) {
         this.context.commit('UPDATE_TICKET', {
@@ -633,9 +653,39 @@ export default class EventTickets extends VuexModule {
     } catch (error) {
       console.error('Erro ao remover ingresso:', error);
       throw error;
-    } finally {
-      this.context.commit('SET_LOADING', false);
     }
   }
+
+  @Action
+  public async inactivateTicket(ticketId: string): Promise<void> {
+    try {
+
+      // Busca o status "Indisponível"
+      const unavailableStatus = await status.fetchStatusByModuleAndName({ 
+        module: 'ticket', 
+        name: 'Indisponível' 
+      });
+
+      if (!unavailableStatus) {
+        throw new Error('Status "Indisponível" não encontrado');
+      }
+
+      // Atualiza o ticket com end_date atual e status
+      const response = await $axios.$patch('ticket', {
+        id: ticketId,
+        end_date: new Date().toISOString(),
+        status_id: unavailableStatus.id
+      });
+
+      if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error('Falha ao inativar ingresso');
+      }
+
+    } catch (error) {
+      console.error('Erro ao inativar ingresso:', error);
+      throw error;
+    }
+  }
+
 
 }

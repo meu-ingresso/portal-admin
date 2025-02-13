@@ -21,6 +21,7 @@
           <div class="table-cell">Código</div>
           <div class="table-cell">Valor</div>
           <div class="table-cell">Ingressos</div>
+          <div class="table-cell informations">Detalhes</div>
           <div class="table-cell">Ações</div>
         </div>
 
@@ -37,6 +38,37 @@
             }}
           </div>
           <div class="table-cell">{{ getArrayObjectText(coupon.tickets, 'name') }}</div>
+
+          <div class="table-cell informations">
+            <v-tooltip bottom>
+              <template #activator="{ on, attrs }">
+                <div class="info-icon-wrapper" v-bind="attrs" v-on="on">
+                  <v-icon class="mr-3">mdi-information</v-icon>
+                </div>
+              </template>
+              <div class="ticket-info-tooltip">
+                <div class="info-row">
+                  <span class="info-label">Utilizados:</span>
+                  <span class="info-value"
+                    >{{ coupon.uses }} / {{ coupon.max_uses }}</span
+                  >
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Início:</span>
+                  <span class="info-value">{{
+                    formatDateTime(coupon.start_date, coupon.start_time)
+                  }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Término:</span>
+                  <span class="info-value">{{
+                    formatDateTime(coupon.end_date, coupon.end_time)
+                  }}</span>
+                </div>
+              </div>
+            </v-tooltip>
+          </div>
+
           <div class="table-cell actions">
             <v-btn icon small class="mr-2" @click="openEditModal(index)">
               <v-icon>mdi-pencil</v-icon>
@@ -159,6 +191,17 @@ export default {
   },
 
   methods: {
+    formatDateTime(date, time) {
+      if (!date || !time) return '-';
+      try {
+        const formattedDate = formatDateToBr(date);
+        return `${formattedDate} às ${time}`;
+      } catch (error) {
+        console.error('Erro ao formatar data/hora:', error);
+        return '-';
+      }
+    },
+
     formattedExpirationDate(coupon) {
       return coupon.end_date ? formatDateToBr(coupon.end_date) : '';
     },
@@ -238,6 +281,8 @@ export default {
 
 .table-cell {
   flex: 1;
+  align-items: center;
+  display: flex;
   padding: 12px;
   border-bottom: 1px solid #ddd;
 }
@@ -262,6 +307,12 @@ export default {
 
 .table-cell:last-child {
   text-align: right;
+  justify-content: end;
+}
+
+.table-cell.informations {
+  text-align: right;
+  justify-content: end;
 }
 
 .table-row.disabled-row {
@@ -272,5 +323,33 @@ export default {
 
 .table-row.disabled-row .table-cell {
   font-style: italic;
+}
+
+.info-icon-wrapper {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: var(--grey-text);
+  margin-right: 12px;
+  font-weight: 500;
+}
+
+.info-value {
+  color: white;
+  text-align: right;
 }
 </style>

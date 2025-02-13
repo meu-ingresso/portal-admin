@@ -1,6 +1,11 @@
 export const handleGetResponse = (response: any, errorMessage: string, eventId?: string, filterDeleted = false) => {
   
   if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+
+    if (!eventId) {
+      throw new Error(`${errorMessage}`);
+    }
+
     throw new Error(`${errorMessage} para o evento ${eventId}`);
   }
 

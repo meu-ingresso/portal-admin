@@ -8,7 +8,7 @@
       v-for="stat in statistics"
       :key="stat.title"
       cols="12"
-      xl="3"
+      xl="4"
       lg="4"
       md="6"
       sm="12">

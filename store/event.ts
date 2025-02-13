@@ -168,7 +168,7 @@ export default class Event extends VuexModule {
     const ticketsTypes = nonDeletedTickets.map((ticket) => ticket.name);
 
     const ticketSales = nonDeletedTickets.filter(
-      (ticket) => ticket.total_quantity > ticket.remaining_quantity
+      (ticket) => ticket.total_sold > 0
     );
 
     this.event = {
@@ -205,10 +205,9 @@ export default class Event extends VuexModule {
         id: ticket.id,
         name: ticket.name,
         price: ticket.price,
-        sold: ticket.total_quantity - ticket.remaining_quantity,
         total: ticket.total_quantity,
         status: ticket.status.name,
-        hasSales: ticket.total_quantity > ticket.remaining_quantity,
+        hasSales: ticket.total_sold > 0,
         eventPromoter: data.promoter_id,
       })),
     };
@@ -228,10 +227,9 @@ export default class Event extends VuexModule {
           id: ticket.id,
           name: ticket.name,
           price: ticket.price,
-          sold: ticket.total_quantity - ticket.remaining_quantity,
           total: ticket.total_quantity,
           status: ticket.status.name,
-          hasSales: ticket.total_quantity > ticket.remaining_quantity,
+          hasSales: ticket.total_sold > 0,
           eventPromoter: this.event.promoter_id,
         })),
         statistics: this.event.statistics.map(stat => {
@@ -546,10 +544,9 @@ export default class Event extends VuexModule {
         id: ticket.id,
         name: ticket.name,
         price: ticket.price,
-        sold: ticket.total_quantity - ticket.remaining_quantity,
         total: ticket.total_quantity,
         status: ticket.status,
-        hasSales: ticket.total_quantity > ticket.remaining_quantity,
+        hasSales: ticket.total_sold > 0,
         eventPromoter: this.event.promoter_id,
       }));
 

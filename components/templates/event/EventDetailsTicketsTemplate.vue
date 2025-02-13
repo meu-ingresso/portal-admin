@@ -1,5 +1,5 @@
 <template>
-  <div v-if="currentEvent" class="event-details">
+  <div v-if="currentEvent" class="event-details-tickets">
     <EventDetailsHeader />
     <div class="event-details-wrapper">
       <TicketStatistics :statistics="statistics" />
@@ -25,7 +25,7 @@ export default {
       if (!this.currentEvent?.tickets) return [];
 
       const totalSales = this.currentEvent.tickets.reduce(
-        (acc, ticket) => acc + (ticket.total_quantity - ticket.remaining_quantity),
+        (acc, ticket) => acc + (ticket.total_quantity - ticket.total_sold),
         0
       );
 
@@ -54,8 +54,10 @@ export default {
 </script>
 
 <style scoped>
-.event-details {
+.event-details-tickets {
   padding-top: 16px;
+  max-width: 72rem;
+  margin: 0 auto;
 }
 .event-details-wrapper {
   max-width: 1480px;

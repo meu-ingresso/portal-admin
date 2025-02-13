@@ -222,7 +222,8 @@ export default class EventCoupons extends VuexModule {
           start_time: startDateTime.time,
           end_date: endDateTime.date,
           end_time: endDateTime.time,
-          tickets
+          tickets,
+          uses: coupon.uses,
         }
 
       });

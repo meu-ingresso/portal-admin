@@ -15,7 +15,7 @@
         :name="ticket.name"
         :price="ticket.price"
         :status="ticket.status"
-        :sold="ticket.sold"
+        :sold="ticket.total_sold"
         :total="ticket.total"
         :event-promoter="ticket.eventPromoter"
         @delete="handleDeleteTicket"
@@ -29,7 +29,7 @@
       persistent
       :fullscreen="isMobile">
       <v-card>
-        <v-card-title class="d-flex justify-space-between align-center">
+        <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
           <h3>Confirmar Exclusão</h3>
           <v-btn icon :disabled="isLoading" @click="handleCloseDialog">
             <v-icon>mdi-close</v-icon>
@@ -41,18 +41,21 @@
             ação não pode ser desfeita.
           </template>
           <template v-else>
-            <div class="d-flex align-center">
-              <v-progress-circular
-                indeterminate
-                color="primary"
-                size="24"
-                width="2"
-                class="mr-3"></v-progress-circular>
-              <span>Excluindo ingresso...</span>
+            <div class="text-center">
+              <div class="pt-10">
+                <h2 class="pt-10">Excluindo ingresso...</h2>
+              </div>
+              <Lottie
+                path="./animations/loading_default.json"
+                height="130"
+                width="200"
+                class="teste" />
             </div>
           </template>
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-5">
+        <v-card-actions
+          v-if="!isLoading"
+          class="d-flex align-center justify-space-between py-5">
           <DefaultButton
             outlined
             text="Cancelar"

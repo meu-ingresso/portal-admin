@@ -27,7 +27,8 @@
               <div class="table-cell">Nome</div>
               <div class="table-cell">Categoria</div>
               <div class="table-cell">Preço</div>
-              <div class="table-cell">Ações</div>
+              <div class="table-cell informations">Detalhes</div>
+              <div class="table-cell actions">Ações</div>
             </div>
 
             <!-- Linhas Reordenáveis -->
@@ -49,6 +50,37 @@
                 </div>
                 <div class="table-cell">
                   {{ ticket.price ? `R$ ${formattedPrice(ticket.price)}` : '-' }}
+                </div>
+                <div class="table-cell informations">
+                  <v-tooltip bottom>
+                    <template #activator="{ on, attrs }">
+                      <div class="info-icon-wrapper" v-bind="attrs" v-on="on">
+                        <v-icon class="mr-3">mdi-information</v-icon>
+                      </div>
+                    </template>
+                    <div class="ticket-info-tooltip">
+                      <div class="info-row">
+                        <span class="info-label">Disponibilidade:</span>
+                        <span class="info-value">{{ ticket.availability }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Início:</span>
+                        <span class="info-value">{{
+                          formatDateTime(ticket.start_date, ticket.start_time)
+                        }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Fim:</span>
+                        <span class="info-value">{{
+                          formatDateTime(ticket.end_date, ticket.end_time)
+                        }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Vendidos:</span>
+                        <span class="info-value">{{ ticket.total_sold }} ingressos</span>
+                      </div>
+                    </div>
+                  </v-tooltip>
                 </div>
                 <div class="table-cell actions">
                   <ActionsMenu
@@ -176,7 +208,7 @@
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
 import { toast, eventTickets, eventCustomFields, eventCoupons } from '@/store';
-import { formatPrice } from '@/utils/formatters';
+import { formatPrice, formatDateToBr } from '@/utils/formatters';
 
 export default {
   components: { Container, Draggable },
@@ -268,6 +300,17 @@ export default {
 
     canProceed(callback) {
       callback(null, true);
+    },
+
+    formatDateTime(date, time) {
+      if (!date || !time) return '-';
+      try {
+        const formattedDate = formatDateToBr(date);
+        return `${formattedDate} às ${time}`;
+      } catch (error) {
+        console.error('Erro ao formatar data/hora:', error);
+        return '-';
+      }
     },
 
     duplicateTicket(index) {
@@ -544,6 +587,11 @@ export default {
   background-color: #f9f9f9;
 }
 
+.table-cell.informations {
+  text-align: right;
+  justify-content: end;
+}
+
 .table-cell:last-child {
   text-align: right;
   justify-content: end;
@@ -559,5 +607,33 @@ export default {
 
 .table-row-deleted {
   display: none !important;
+}
+
+.info-icon-wrapper {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: var(--grey-text);
+  margin-right: 12px;
+  font-weight: 500;
+}
+
+.info-value {
+  color: white;
+  text-align: right;
 }
 </style>
