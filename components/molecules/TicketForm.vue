@@ -43,9 +43,9 @@
       </v-col>
       <v-col cols="12" md="6" sm="12">
         <v-text-field
-          ref="quantity"
-          v-model="localTicket.quantity"
-          :value="localTicket.quantity"
+          ref="total_quantity"
+          v-model="localTicket.total_quantity"
+          :value="localTicket.total_quantity"
           label="Quantidade"
           placeholder="Ex.: 400"
           type="number"
@@ -54,7 +54,7 @@
           outlined
           dense
           hide-details="auto"
-          :rules="validationRules.quantity"
+          :rules="validationRules.total_quantity"
           @keypress="onNumerFieldChange" />
       </v-col>
 
@@ -283,7 +283,7 @@ export default {
         name: '',
         category: null,
         price: '',
-        quantity: '',
+        total_quantity: '',
         min_purchase: 1,
         max_purchase: '',
         start_date: '',
@@ -311,7 +311,7 @@ export default {
             parseFloat(v.replace(',', '.')) >= 0 ||
             'O preço deve ser maior ou igual a zero.',
         ],
-        quantity: [
+        total_quantity: [
           (v) => !!v || 'A quantidade é obrigatória.',
           (v) => v > 0 || 'A quantidade deve ser maior que zero.',
         ],
@@ -328,7 +328,7 @@ export default {
             'A compra máxima deve ser maior ou igual à compra mínima.',
           (v) =>
             !v ||
-            Number(v) <= Number(this.localTicket.quantity) ||
+            Number(v) <= Number(this.localTicket.total_quantity) ||
             'A compra máxima por compra deve ser menor ou igual à quantidade total.',
         ],
         start_date: [

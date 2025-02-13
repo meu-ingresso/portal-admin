@@ -22,7 +22,7 @@ export default class EventTickets extends VuexModule {
     {
       name: 'Ingresso Normal',
       price: "100",
-      quantity: 100,
+      total_quantity: 100,
       total_sold: 50,
       min_purchase: 1,
       max_purchase: '10',
@@ -37,11 +37,17 @@ export default class EventTickets extends VuexModule {
         text: 'Ingresso Normal',
       },
       visible: true,
+      status: {
+        id: '1',
+        name: 'Aguardando Aprovação',
+        module: 'event',
+        description: 'Aguardando aprovação do ingresso',
+      },
     },
     {
       name: 'Ingresso Vip',
       price: "200",
-      quantity: 50,
+      total_quantity: 50,
       total_sold: 20,
       min_purchase: 1,
       max_purchase: '5',
@@ -56,6 +62,12 @@ export default class EventTickets extends VuexModule {
         text: 'Ingresso Vip',
       },
       visible: true,
+      status: {
+        id: '1',
+        name: 'Aguardando Aprovação',
+        module: 'event',
+        description: 'Aguardando aprovação do ingresso',
+      },
     },
   ];
 
@@ -224,7 +236,7 @@ export default class EventTickets extends VuexModule {
         const ticketResponse = await $axios.$post('ticket', {
           event_id: eventId,
           name: ticket.name,
-          total_quantity: ticket.quantity,
+          total_quantity: ticket.total_quantity,
           total_sold: 0,
           price: parseFloat(ticket.price),
           status_id: statusResponse.id,
@@ -321,7 +333,7 @@ export default class EventTickets extends VuexModule {
           const ticketResponse = await $axios.$patch('ticket', {
             id: ticket.id,
             name: ticket.name,
-            total_quantity: ticket.quantity,
+            total_quantity: ticket.total_quantity,
             price: parseFloat(ticket.price),
             start_date: startDate.toISOString().replace('Z', '-0300'),
             end_date: endDate.toISOString().replace('Z', '-0300'),
@@ -363,7 +375,7 @@ export default class EventTickets extends VuexModule {
           const ticketResponse = await $axios.$post('ticket', {
             event_id: eventId,
             name: ticket.name,
-            total_quantity: ticket.quantity,
+            total_quantity: ticket.total_quantity,
             total_sold: 0,
             price: parseFloat(ticket.price),
             status_id: statusResponse.id,
@@ -394,7 +406,7 @@ export default class EventTickets extends VuexModule {
       this.context.commit('SET_LOADING', true);
 
       const response = await $axios.$get(
-        `tickets?where[event_id][v]=${eventId}&preloads[]=category`
+        `tickets?where[event_id][v]=${eventId}&preloads[]=category&preloads[]=status`
       );
 
       const tickets = handleGetResponse(response, 'Tickets não encontrados', eventId, true);
@@ -418,7 +430,7 @@ export default class EventTickets extends VuexModule {
             id: ticket.id,
             name: ticket.name,
             price: ticket.price,
-            quantity: ticket.total_quantity,
+            total_quantity: ticket.total_quantity,
             total_sold: ticket.total_sold,
             min_purchase: ticket.min_quantity_per_user,
             max_purchase: ticket.max_quantity_per_user,
@@ -430,6 +442,7 @@ export default class EventTickets extends VuexModule {
             end_date: endDateTime.date,
             end_time: endDateTime.time,
             _deleted: ticket.deleted_at,
+            status: ticket.status,
           };
         }
       ));
@@ -465,7 +478,7 @@ export default class EventTickets extends VuexModule {
         errors.push(`Ticket ${index + 1}: Preço deve ser maior ou igual a zero`);
       }
 
-      if (!ticket.quantity || Number(ticket.quantity) <= 0) {
+      if (!ticket.total_quantity || Number(ticket.total_quantity) <= 0) {
         errors.push(`Ticket ${index + 1}: Quantidade máxima deve ser maior que zero`);
       }
 

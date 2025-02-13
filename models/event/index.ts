@@ -46,6 +46,14 @@ export type PersonType = 'PF' | 'PJ' | 'ESTRANGEIRO';
 
 export type DiscountType = 'FIXED' | 'PERCENTAGE';
 
+export interface Status {
+  id: string;
+  name: string;
+  module: string;
+  description: string;
+  deleted_at?: string;
+}
+
 export interface CustomField {
   id?: string;
   name: string;
@@ -70,7 +78,7 @@ export interface Ticket {
   description?: string;
   price: string;
   service_fee?: number;
-  quantity: number;
+  total_quantity: number;
   total_sold: number;
   min_purchase: number;
   max_purchase: string;
@@ -83,6 +91,7 @@ export interface Ticket {
   display_order?: number;
   availability: AvailabilityOption;
   _deleted?: boolean;
+  status: Status;
 }
 
 export interface Coupon {
@@ -123,6 +132,22 @@ export interface EventAttachment {
   deleted_at?: string;
 }
 
+export interface Collaborator {
+  id: string;
+  event_id: string;
+  user_id: string;
+  role_id: string;
+  deleted_at?: string;
+}
+
+export interface EventTotalizer {
+  totalSales: string;
+  totalSalesToday: string;
+  totalSalesAmount: string;
+  totalSalesAmountToday: string;
+  totalViews: string;
+}
+
 export interface Event {
   id?: string;
   name: string;
@@ -152,6 +177,9 @@ export interface Event {
   coupons: Coupon[];
   attachments: EventAttachment[];
   deleted_at?: string;
+  collaborators: Collaborator[];
+  totalizers: EventTotalizer;
+  status: Status;
 }
 
 export interface EventFormState {

@@ -44,6 +44,15 @@ export default class EventGeneralInfo extends VuexModule {
       longitude: null,
     },
     attachments: [],
+    collaborators: [],
+    totalizers: {
+      totalSales: '0',
+      totalSalesToday: '0',
+      totalSalesAmount: '0',
+      totalSalesAmountToday: '0',
+      totalViews: '0',
+    },
+    status: null,
   };
 
   private mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
@@ -86,6 +95,20 @@ export default class EventGeneralInfo extends VuexModule {
     link_online: '',
     promoter_id: '1',
     attachments: [],
+    collaborators: [],
+    totalizers: {
+      totalSales: '22',
+      totalSalesToday: '4',
+      totalSalesAmount: 'R$ 1.000,00',
+      totalSalesAmountToday: 'R$ 100,00',
+      totalViews: '100',
+    },
+    status: {
+      id: '1',
+      name: 'Aguardando Aprovação',
+      module: 'event',
+      description: 'Aguardando aprovação do evento',
+    },
   };
 
   constructor(module: VuexModule<ThisType<EventGeneralInfo>, EventGeneralInfo>) {
@@ -95,6 +118,10 @@ export default class EventGeneralInfo extends VuexModule {
 
   public get $info() {
     return this.info;
+  }
+
+  public get $formattedLocation() {
+    return `${this.info.address.street}, ${this.info.address.number} - ${this.info.address.neighborhood}, ${this.info.address.city} - ${this.info.address.state}`;
   }
 
   public get $isLoading() {
@@ -216,6 +243,7 @@ export default class EventGeneralInfo extends VuexModule {
         'category',
         'attachments',
         'collaborators',
+        'status',
       ];
 
       const response = await $axios.$get(
@@ -289,6 +317,9 @@ export default class EventGeneralInfo extends VuexModule {
         link_online_id: linkOnlineId || '',
         promoter_id: event.promoter_id,
         attachments: event.attachments,
+        collaborators: event.collaborators,
+        totalizers: event.totalizers,
+        status: event.status,
       });
 
       return event;
@@ -461,6 +492,8 @@ export default class EventGeneralInfo extends VuexModule {
       link_online: '',
       banner: null,
       backup_banner: null,
+      collaborators: [],
+      status: null,
     });
     this.context.commit('UPDATE_INFO_ADDRESS', {
       id: '',

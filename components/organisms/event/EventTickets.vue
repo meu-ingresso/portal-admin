@@ -8,19 +8,49 @@
 
     <v-col cols="12" md="12" sm="12">
       <TicketRow
-        v-for="ticket in nonDeletedTickets"
+        v-for="ticket in getTickets"
         :id="ticket.id"
         :key="ticket.id"
         :disable-menu="disableMenu"
         :name="ticket.name"
         :price="ticket.price"
-        :status="ticket.status"
+        :status="ticket.status.name"
         :sold="ticket.total_sold"
-        :total="ticket.total"
-        :event-promoter="ticket.eventPromoter"
+        :total="ticket.total_quantity"
+        :event-promoter="getEventPromoter"
         @delete="handleDeleteTicket"
         @edit="handleEditTicket" />
     </v-col>
+
+    <!-- Modal de edição -->
+    <v-dialog
+      v-model="showEditDialog"
+      max-width="900px"
+      persistent
+      :fullscreen="isMobile">
+      <v-card :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Editar Ingresso</h3>
+          <v-btn icon @click="handleCloseEditDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <TicketForm
+            ref="ticketForm"
+            :edit-index="selectedTicketIndex"
+            :nomenclature="'Ingresso'" />
+        </v-card-text>
+        <v-card-actions class="d-flex justify-end py-3 px-6">
+          <DefaultButton
+            outlined
+            text="Cancelar"
+            class="mr-4"
+            @click="handleCloseEditDialog" />
+          <DefaultButton text="Salvar" :loading="isLoading" @click="submitEdit" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Modal de confirmação -->
     <v-dialog
@@ -28,7 +58,7 @@
       max-width="500px"
       persistent
       :fullscreen="isMobile">
-      <v-card>
+      <v-card :tile="isMobile">
         <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
           <h3>Confirmar Exclusão</h3>
           <v-btn icon :disabled="isLoading" @click="handleCloseDialog">
@@ -74,10 +104,9 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { eventTickets, toast, event } from '@/store';
+import { eventTickets, toast, eventGeneralInfo } from '@/store';
 export default {
   props: {
-    tickets: { type: Array, required: true },
     title: { type: String, required: false, default: 'Ingressos Vendidos' },
     titleSize: { type: String, required: false, default: '40px' },
     disableMenu: { type: Boolean, required: false, default: false },
@@ -86,7 +115,9 @@ export default {
   data() {
     return {
       showConfirmDialog: false,
+      showEditDialog: false,
       isLoading: false,
+      selectedTicketIndex: null,
       selectedTicket: null,
     };
   },
@@ -95,8 +126,11 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
-    nonDeletedTickets() {
-      return this.tickets.filter((ticket) => !ticket.deleted_at);
+    getTickets() {
+      return eventTickets.$tickets;
+    },
+    getEventPromoter() {
+      return eventGeneralInfo.$info?.promoter_id;
     },
   },
   methods: {
@@ -107,13 +141,29 @@ export default {
       }
     },
 
+    handleCloseEditDialog() {
+      if (!this.isLoading) {
+        this.showEditDialog = false;
+        this.selectedTicketIndex = null;
+      }
+    },
+
     handleDeleteTicket(ticket) {
       this.selectedTicket = ticket;
       this.showConfirmDialog = true;
     },
 
     handleEditTicket(ticketId) {
-      this.$emit('edit', ticketId);
+      this.selectedTicketIndex = this.getTickets.findIndex(
+        (ticket) => ticket.id === ticketId
+      );
+      this.showEditDialog = true;
+    },
+
+    submitEdit() {
+      if (this.$refs.ticketForm && this.$refs.ticketForm.handleSubmit()) {
+        console.log('submitEdit');
+      }
     },
 
     async confirmDelete() {
@@ -133,7 +183,7 @@ export default {
           time: 5000,
         });
 
-        await event.fetchEventTickets(this.eventId);
+        await eventTickets.fetchAndPopulateByEventId(this.eventId);
       } catch (error) {
         console.error('Erro ao remover ingresso:', error);
         toast.setToast({

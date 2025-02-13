@@ -1,11 +1,10 @@
 <template>
-  <div v-if="currentEvent" class="event-details-tickets">
+  <div v-if="getEvent" class="event-details-tickets">
     <EventDetailsHeader />
     <div class="event-details-wrapper">
-      <TicketStatistics :statistics="statistics" />
+      <TicketStatistics :statistics="getStatistics" />
       <EventTickets
-        :tickets="currentEvent.tickets"
-        :event-id="currentEvent.id"
+        :event-id="getEvent.id"
         title="Tipos de ingressos"
         title-size="16px" />
     </div>
@@ -13,39 +12,43 @@
 </template>
 
 <script>
-import { event } from '@/store';
+import { eventGeneralInfo, eventTickets } from '@/store';
 
 export default {
   computed: {
-    currentEvent() {
-      return event.$event;
+    getEvent() {
+      return eventGeneralInfo.$info;
     },
 
-    statistics() {
-      if (!this.currentEvent?.tickets) return [];
+    getTickets() {
+      return eventTickets.$tickets;
+    },
 
-      const totalSales = this.currentEvent.tickets.reduce(
-        (acc, ticket) => acc + (ticket.total_quantity - ticket.total_sold),
+    getStatistics() {
+      if (!this.getEvent || !this.getTickets) return [];
+
+      const totalSales = this.getTickets.reduce(
+        (acc, ticket) => acc + ticket.total_sold,
         0
       );
 
-      const totalQuantity = this.currentEvent.tickets.reduce(
+      const totalQuantity = this.getTickets.reduce(
         (acc, ticket) => acc + ticket.total_quantity,
         0
       );
 
-      const totalHasSales = this.currentEvent.tickets.filter(
-        (ticket) => ticket.hasSales
+      const totalHasSales = this.getTickets.filter(
+        (ticket) => ticket.total_sold > 0
       ).length;
 
       return [
         {
           title: 'Limite de vendas',
-          value: `${totalSales === 0 ? totalQuantity : totalSales}`,
+          value: `${totalSales === 0 ? totalQuantity : totalQuantity - totalSales}`,
         },
         {
           title: 'Ingressos à venda',
-          value: `${totalHasSales} / ${this.currentEvent.tickets.length}`,
+          value: `${totalHasSales} / ${this.getTickets.length}`,
         },
       ];
     },
