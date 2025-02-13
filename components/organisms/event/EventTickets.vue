@@ -14,7 +14,7 @@
         :disable-menu="disableMenu"
         :name="ticket.name"
         :price="ticket.price"
-        :status="ticket.status.name"
+        :status="ticket?.status?.name"
         :sold="ticket.total_sold"
         :total="ticket.total_quantity"
         :event-promoter="getEventPromoter"

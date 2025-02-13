@@ -1,6 +1,11 @@
 <template>
   <div v-if="getEvent" class="event-details-tickets">
-    <EventDetailsHeader />
+    <div class="d-flex justify-space-between">
+      <EventDetailsHeader />
+      <div style="padding-top: 12px">
+        <DefaultButton text="Adicionar ingresso" @click="openAddTicketModal" />
+      </div>
+    </div>
     <div class="event-details-wrapper">
       <TicketStatistics :statistics="getStatistics" />
       <EventTickets
@@ -8,14 +13,48 @@
         title="Tipos de ingressos"
         title-size="16px" />
     </div>
+
+    <!-- Modal de adição -->
+    <v-dialog v-model="showAddDialog" max-width="900px" persistent :fullscreen="isMobile">
+      <v-card :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3>Adicionar ingresso</h3>
+          <v-btn icon @click="handleCloseAddDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <TicketForm ref="ticketForm" :nomenclature="'Ingresso'" />
+        </v-card-text>
+        <v-card-actions class="d-flex justify-end py-3 px-6">
+          <DefaultButton
+            outlined
+            text="Cancelar"
+            class="mr-4"
+            @click="handleCloseAddDialog" />
+          <DefaultButton text="Salvar" @click="submitAdd" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script>
-import { eventGeneralInfo, eventTickets } from '@/store';
+import { isMobileDevice } from '@/utils/utils';
+import { eventGeneralInfo, eventTickets, toast } from '@/store';
 
 export default {
+  data() {
+    return {
+      showAddDialog: false,
+    };
+  },
+
   computed: {
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
+
     getEvent() {
       return eventGeneralInfo.$info;
     },
@@ -51,6 +90,30 @@ export default {
           value: `${totalHasSales} / ${this.getTickets.length}`,
         },
       ];
+    },
+  },
+
+  methods: {
+    handleCloseAddDialog() {
+      this.showAddDialog = false;
+    },
+
+    openAddTicketModal() {
+      this.showAddDialog = true;
+    },
+
+    submitAdd() {
+      const ticketForm = this.$refs.ticketForm;
+      if (ticketForm.handleSubmit()) {
+        this.showAddDialog = false;
+        toast.setToast({
+          text: `Ingresso adicionado com sucesso!`,
+          type: 'success',
+          time: 5000,
+        });
+      } else {
+        console.log('[INSERÇÃO - TicketForm] Erro de validação');
+      }
     },
   },
 };

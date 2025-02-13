@@ -18,28 +18,15 @@
 
         <div class="ticket-sold">{{ sold }} / {{ total }}</div>
 
-        <v-menu v-if="!disableMenu && canManageTicket" offset-y left>
-          <template #activator="{ on, attrs }">
-            <v-btn dark color="primary" icon v-bind="attrs" v-on="on">
-              <v-icon class="row-icon-menu">mdi-dots-horizontal</v-icon>
-            </v-btn>
-          </template>
-
-          <v-list dense>
-            <v-list-item
-              v-for="(item, i) in menuTickets"
-              :key="i"
-              class="cursor-pointer"
-              @click="handleMenuAction(item.action)">
-              <v-list-item-icon>
-                <v-icon>{{ item.icon }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>{{ item.title }}</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+        <ActionsMenu
+          v-if="!disableMenu && canManageTicket"
+          :show-edit="canManageTicket"
+          :show-delete="canManageTicket"
+          :show-duplicate="canManageTicket"
+          icon="mdi-dots-horizontal"
+          @edit="handleMenuAction('edit')"
+          @delete="handleMenuAction('delete')"
+          @duplicate="handleMenuAction('duplicate')" />
       </div>
     </v-col>
   </v-row>
@@ -47,29 +34,15 @@
     <v-card-text>
       <div class="first-ticket-column is-mobile">
         <div class="ticket-name">{{ name }}</div>
-
-        <v-menu v-if="!disableMenu && canManageTicket" offset-y left>
-          <template #activator="{ on, attrs }">
-            <v-btn dark color="primary" icon v-bind="attrs" v-on="on">
-              <v-icon>mdi-dots-horizontal</v-icon>
-            </v-btn>
-          </template>
-
-          <v-list dense>
-            <v-list-item
-              v-for="(item, i) in menuTickets"
-              :key="i"
-              class="cursor-pointer"
-              @click="handleMenuAction(item.action)">
-              <v-list-item-icon>
-                <v-icon>{{ item.icon }}</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>{{ item.title }}</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+        <ActionsMenu
+          v-if="!disableMenu && canManageTicket"
+          :show-edit="canManageTicket"
+          :show-delete="canManageTicket"
+          :show-duplicate="canManageTicket"
+          icon="mdi-dots-horizontal"
+          @edit="handleMenuAction('edit')"
+          @delete="handleMenuAction('delete')"
+          @duplicate="handleMenuAction('duplicate')" />
       </div>
 
       <div class="second-ticket-column is-mobile">
@@ -149,6 +122,9 @@ export default {
             id: this.id,
             name: this.name,
           });
+          break;
+        case 'duplicate':
+          this.$emit('duplicate', this.id);
           break;
       }
     },

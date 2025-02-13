@@ -2,7 +2,7 @@
   <v-menu offset-y>
     <template #activator="{ on, attrs }">
       <v-btn icon v-bind="attrs" v-on="on">
-        <v-icon>mdi-dots-vertical</v-icon>
+        <v-icon>{{ icon }}</v-icon>
       </v-btn>
     </template>
     <v-list dense>
@@ -44,7 +44,8 @@ export default {
   props: {
     index: {
       type: Number,
-      required: true,
+      required: false,
+      default: null,
     },
     showEdit: {
       type: Boolean,
@@ -57,6 +58,10 @@ export default {
     showDelete: {
       type: Boolean,
       default: true,
+    },
+    icon: {
+      type: String,
+      default: 'mdi-dots-vertical',
     },
   },
   methods: {
