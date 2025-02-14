@@ -1,8 +1,8 @@
 <template>
   <v-row v-if="!isMobile" class="ticket-row mr-0 ml-0">
     <v-col cols="12" md="6" sm="12">
-      <div class="first-ticket-column">
-        <div class="ticket-hover-icon">
+      <div class="first-ticket-column" :class="{ 'without-hover': disableHover }">
+        <div v-if="!disableHover" class="ticket-hover-icon">
           <v-icon>mdi-drag-vertical</v-icon>
         </div>
 
@@ -15,7 +15,7 @@
     </v-col>
 
     <v-col cols="12" md="6" sm="12">
-      <div class="second-ticket-column gap-3">
+      <div class="second-ticket-column gap-3" :class="{ 'without-menu': disableMenu }">
         <StatusBadge :text="status" />
 
         <v-icon>mdi-circle-small</v-icon>
@@ -77,6 +77,7 @@ export default {
     sold: { type: Number, required: true },
     total: { type: Number, required: true },
     eventPromoter: { type: String, required: true },
+    disableHover: { type: Boolean, required: false, default: false },
   },
 
   data() {
@@ -163,6 +164,10 @@ export default {
   align-items: center;
 }
 
+.first-ticket-column.without-hover {
+  padding-left: 20px;
+}
+
 .first-ticket-column.is-mobile {
   justify-content: space-between;
 }
@@ -176,6 +181,10 @@ export default {
   justify-items: end;
   display: grid;
   grid-template-columns: 1fr 45px 90px 90px;
+}
+
+.second-ticket-column.without-menu {
+  grid-template-columns: 1fr 45px 90px 20px;
 }
 
 .second-ticket-column.is-mobile {

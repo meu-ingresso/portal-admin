@@ -505,7 +505,10 @@ export default {
 
     async handleSubmit(fetchApi = false) {
       if (!this.validateForm()) {
-        return;
+        return {
+          success: false,
+          error: 'error.validation',
+        };
       }
 
       try {
@@ -523,7 +526,10 @@ export default {
 
           await eventTickets.fetchAndPopulateByEventId(this.eventId);
 
-          return true;
+          return {
+            success: true,
+            error: null,
+          };
         } else if (fetchApi) {
           // Usa o novo método para criar um ticket individual
           const ticketId = await eventTickets.createSingleTicket({
@@ -532,8 +538,11 @@ export default {
           });
 
           await eventTickets.fetchAndPopulateByEventId(this.eventId);
-
-          return ticketId;
+          return {
+            success: true,
+            error: null,
+            id: ticketId,
+          };
         } else {
           eventTickets.addTicket(this.localTicket);
         }

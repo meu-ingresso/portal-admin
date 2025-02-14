@@ -29,8 +29,6 @@ export const getCategoryChanges = (
     }
   });
 
-  console.log('categoriesInUse: ', categoriesInUse);
-
   // Verifica categorias que precisam ser atualizadas ou deletadas
   existingCategories.forEach(existingCat => {
     const matchingTicket = tickets.find(
@@ -116,4 +114,17 @@ export const getNextDisplayOrder = (tickets: Ticket[], singleTicket: boolean = f
   });
 
   return displayOrders;
+};
+
+// Função auxiliar para gerar nome único
+export const generateUniqueName = (baseName: string, existingTickets: Ticket[]): string => {
+  let newName = `Cópia de ${baseName}`;
+  let counter = 2;
+
+  while (existingTickets.some(ticket => ticket.name === newName && !ticket._deleted)) {
+    newName = `Cópia de ${baseName} (${counter})`;
+    counter++;
+  }
+
+  return newName;
 };
