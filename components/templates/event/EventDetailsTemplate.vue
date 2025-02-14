@@ -7,7 +7,11 @@
 
       <EventSales :sales="getSales" />
 
-      <EventTickets v-if="hasTickets" disable-menu :event-id="getEvent.id" />
+      <EventTickets
+        v-if="hasTickets"
+        disable-menu
+        disable-hover
+        :event-id="getEvent.id" />
     </div>
   </div>
 </template>

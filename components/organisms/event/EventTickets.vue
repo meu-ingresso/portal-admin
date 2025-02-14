@@ -8,6 +8,7 @@
 
     <v-col cols="12" md="12" sm="12">
       <Container
+        v-if="!disableHover"
         :lock-axis="'y'"
         :non-drag-area-selector="'.ticket-actions-menu'"
         @drop="onDrop">
@@ -23,9 +24,34 @@
             :event-promoter="getEventPromoter"
             @delete="handleDeleteTicket"
             @edit="handleEditTicket"
+            @duplicate="handleDuplicateTicket"
             @stop-sales="handleStopSales" />
         </Draggable>
+
+        <v-skeleton-loader
+          v-if="isDuplicating"
+          class="mx-auto"
+          max-height="74"
+          type="card"></v-skeleton-loader>
       </Container>
+      <template v-else>
+        <TicketRow
+          v-for="ticket in getTickets"
+          :id="ticket.id"
+          :key="ticket.id"
+          :disable-menu="disableMenu"
+          :disable-hover="disableHover"
+          :name="ticket.name"
+          :price="ticket.price"
+          :status="ticket?.status?.name"
+          :sold="ticket.total_sold"
+          :total="ticket.total_quantity"
+          :event-promoter="getEventPromoter"
+          @delete="handleDeleteTicket"
+          @edit="handleEditTicket"
+          @duplicate="handleDuplicateTicket"
+          @stop-sales="handleStopSales" />
+      </template>
     </v-col>
 
     <!-- Modal de edição -->
@@ -35,7 +61,7 @@
       persistent
       :fullscreen="isMobile">
       <v-card :tile="isMobile">
-        <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
+        <v-card-title class="d-flex justify-space-between align-center">
           <h3>Editar Ingresso</h3>
           <v-btn icon :disabled="isLoading" @click="handleCloseEditDialog">
             <v-icon>mdi-close</v-icon>
@@ -43,7 +69,7 @@
         </v-card-title>
         <v-card-text>
           <TicketForm
-            ref="ticketForm"
+            ref="ticketEditForm"
             :edit-index="selectedTicketIndex"
             :event-id="eventId"
             :nomenclature="'Ingresso'" />
@@ -71,7 +97,7 @@
       persistent
       :fullscreen="isMobile">
       <v-card :tile="isMobile">
-        <v-card-title class="d-flex justify-space-between align-center">
+        <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
           <h3>Confirmar Exclusão</h3>
           <v-btn icon :disabled="isLoading" @click="handleCloseDialog">
             <v-icon>mdi-close</v-icon>
@@ -126,12 +152,14 @@ export default {
     titleSize: { type: String, required: false, default: '40px' },
     disableMenu: { type: Boolean, required: false, default: false },
     eventId: { type: String, required: true },
+    disableHover: { type: Boolean, required: false, default: false },
   },
   data() {
     return {
       showConfirmDialog: false,
       showEditDialog: false,
       isLoading: false,
+      isDuplicating: false,
       selectedTicketIndex: null,
       selectedTicket: null,
     };
@@ -175,6 +203,42 @@ export default {
       this.showEditDialog = true;
     },
 
+    async handleDuplicateTicket(ticketId) {
+      try {
+        this.isDuplicating = true;
+
+        const newTicketId = await eventTickets.duplicateTicket({
+          ticketId,
+          eventId: this.eventId,
+        });
+
+        if (newTicketId) {
+          toast.setToast({
+            text: `Ingresso duplicado com sucesso!`,
+            type: 'success',
+            time: 5000,
+          });
+
+          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+        } else {
+          toast.setToast({
+            text: `Falha ao duplicar ingresso. Tente novamente.`,
+            type: 'danger',
+            time: 5000,
+          });
+        }
+      } catch (error) {
+        toast.setToast({
+          text: `Falha ao duplicar ingresso. Tente novamente.`,
+          type: 'danger',
+          time: 5000,
+        });
+        console.error('Erro ao duplicar ingresso:', error);
+      } finally {
+        this.isDuplicating = false;
+      }
+    },
+
     async handleStopSales(ticketId) {
       try {
         await eventTickets.stopTicketSales(ticketId);
@@ -198,10 +262,12 @@ export default {
       try {
         this.isLoading = true;
 
-        const ticketForm = this.$refs.ticketForm;
-        const ticketId = await ticketForm.handleSubmit(true);
+        const ticketEditForm = this.$refs.ticketEditForm;
+        const { success } = await ticketEditForm.handleSubmit(true);
 
-        if (ticketId) {
+        if (success) {
+          this.isLoading = false;
+
           this.handleCloseEditDialog();
           toast.setToast({
             text: `Ingresso atualizado com sucesso!`,
@@ -212,10 +278,11 @@ export default {
           console.log('[ATUALIZAÇÃO - TicketForm] Erro de validação');
         }
       } catch (error) {
+        this.showEditDialog = false;
+        this.isLoading = false;
         console.error('Erro ao atualizar ingresso:', error);
       } finally {
         this.isLoading = false;
-        this.showEditDialog = false;
       }
     },
 
