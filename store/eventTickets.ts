@@ -4,7 +4,7 @@ import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '~/utils/formatters';
 import { getUniqueCategories } from '~/utils/utils';
-import { getCategoryChanges, getNextDisplayOrder } from '~/utils/ticketCategoryHelpers';
+import { generateUniqueName, getCategoryChanges, getNextDisplayOrder } from '~/utils/ticketCategoryHelpers';
 import { handleGetResponse } from '~/utils/responseHelpers';
 @Module({
   name: 'eventTickets',
@@ -981,6 +981,70 @@ export default class EventTickets extends VuexModule {
 
     } catch (error) {
       console.error('Erro ao interromper vendas:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
+  @Action
+  public async duplicateTicket(payload: { 
+    ticketId: string,
+    eventId: string 
+  }): Promise<string> {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // 1. Encontra o ticket original
+      const originalTicket = this.ticketList.find(t => t.id === payload.ticketId);
+      if (!originalTicket) {
+        throw new Error('Ticket original não encontrado');
+      }
+
+      // 2. Gera nome único para o novo ticket
+      const newName = generateUniqueName(originalTicket.name, this.ticketList);
+
+      // 3. Busca próximo display_order disponível
+      const nextOrder = getNextDisplayOrder(this.ticketList, true) as number;
+
+      // 4. Busca o status "Disponível"
+      const availableStatus = await status.fetchStatusByModuleAndName({ 
+        module: 'ticket', 
+        name: 'Disponível' 
+      });
+
+      if (!availableStatus) {
+        throw new Error('Status "Disponível" não encontrado');
+      }
+
+      // 5. Prepara o novo ticket
+      const newTicket = {
+        event_id: payload.eventId,
+        name: newName,
+        total_quantity: originalTicket.total_quantity,
+        total_sold: 0,
+        price: originalTicket.price,
+        status_id: availableStatus.id,
+        start_date: originalTicket.start_date,
+        end_date: originalTicket.end_date,
+        availability: originalTicket.availability,
+        min_purchase: originalTicket.min_purchase,
+        max_purchase: originalTicket.max_purchase,
+        ticket_event_category_id: originalTicket.category?.id,
+        display_order: nextOrder
+      };
+
+      // 6. Cria o novo ticket na API
+      const response = await $axios.$post('ticket', newTicket);
+
+      if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+        throw new Error(`Falha ao duplicar ingresso: ${newName}`);
+      }
+
+      return response.body.result.id;
+
+    } catch (error) {
+      console.error('Erro ao duplicar ingresso:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);
