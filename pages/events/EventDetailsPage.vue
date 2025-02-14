@@ -1,10 +1,10 @@
 <template>
   <div>
     <v-container>
-      <EventDrawer :drawer="drawer" :event-data="currentEvent" />
+      <EventDrawer :drawer="drawer" :event-data="getEvent" />
 
       <Lottie
-        v-if="(isLoading || isLoadingEvent) && !currentEvent"
+        v-if="isLoading || isLoadingEvent"
         path="./animations/loading_default.json"
         height="300"
         width="300" />
@@ -13,22 +13,27 @@
         <ValueNoExists text="Evento não encontrado" />
       </div>
 
-      <div v-else-if="currentEvent && !userHasPermission">
+      <div v-else-if="getEvent && !userHasPermission">
         <ValueNoExists text="Você não possui acesso à esse evento" />
       </div>
 
-      <div v-else-if="currentEvent">
+      <div v-else-if="getEvent">
         <EventDetailsTemplate v-if="isPanel" />
         <EventDetailsTicketsTemplate v-if="isTickets" />
       </div>
     </v-container>
-
     <Toast />
   </div>
 </template>
 
 <script>
-import { event, loading } from '@/store';
+import {
+  eventGeneralInfo,
+  eventTickets,
+  eventCoupons,
+  eventCustomFields,
+  loading,
+} from '@/store';
 
 export default {
   data() {
@@ -44,11 +49,23 @@ export default {
     },
 
     isLoadingEvent() {
-      return event.$isLoading;
+      return eventGeneralInfo.$isLoading;
     },
 
-    currentEvent() {
-      return event.$event;
+    getEvent() {
+      return eventGeneralInfo.$info;
+    },
+
+    getTickets() {
+      return eventTickets.$tickets;
+    },
+
+    getCustomFields() {
+      return eventCustomFields.$customFields;
+    },
+
+    getCoupons() {
+      return eventCoupons.$coupons;
     },
 
     currentRouter() {
@@ -61,6 +78,10 @@ export default {
 
     isTickets() {
       return this.$route.meta.template === 'tickets';
+    },
+
+    isTicketEdit() {
+      return this.$route.meta.template === 'ticketEdit';
     },
 
     userRole() {
@@ -77,13 +98,13 @@ export default {
     },
 
     userHasPermission() {
-      if (!this.currentEvent) return true;
+      if (!this.getEvent) return true;
 
       return (
-        this.currentEvent.collaborators?.some(
+        this.getEvent.collaborators?.some(
           (collaborator) => collaborator.id === this.userId
         ) ||
-        this.currentEvent.promoter_id === this.userId ||
+        this.getEvent.promoter_id === this.userId ||
         this.isAdmin
       );
     },
@@ -101,7 +122,7 @@ export default {
 
     '$route.meta.template': {
       handler() {
-        if (this.$route.params.id && !this.currentEvent) {
+        if (this.$route.params.id && !this.getEvent) {
           this.fetchEventData();
         }
       },
@@ -112,22 +133,31 @@ export default {
     async fetchEventData() {
       try {
         this.eventInvalid = false;
-        if (!this.$route.params.id || this.currentEvent?.id === this.$route.params.id) {
+        if (!this.$route.params.id || this.getEvent?.id === this.$route.params.id) {
           return;
         }
 
-        const response = await event.getById(this.$route.params.id);
+        loading.setIsLoading(true);
 
-        if (!response?.body || response.body.code !== 'SEARCH_SUCCESS') {
-          this.eventInvalid = true;
-          return;
-        }
+        await eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id);
+        await eventTickets.fetchAndPopulateByEventId(this.$route.params.id);
 
-        if (!event.$event) {
-          this.eventInvalid = true;
-        }
+        const promises = [
+          eventCustomFields.fetchAndPopulateByEventId({
+            eventId: this.$route.params.id,
+            tickets: this.getTickets,
+          }),
+          eventCoupons.fetchAndPopulateByEventId({
+            eventId: this.$route.params.id,
+            tickets: this.getTickets,
+          }),
+        ];
+
+        await Promise.all(promises);
       } catch (error) {
         this.eventInvalid = true;
+      } finally {
+        loading.setIsLoading(false);
       }
     },
   },

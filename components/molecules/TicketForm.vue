@@ -43,9 +43,9 @@
       </v-col>
       <v-col cols="12" md="6" sm="12">
         <v-text-field
-          ref="quantity"
-          v-model="localTicket.quantity"
-          :value="localTicket.quantity"
+          ref="total_quantity"
+          v-model="localTicket.total_quantity"
+          :value="localTicket.total_quantity"
           label="Quantidade"
           placeholder="Ex.: 400"
           type="number"
@@ -54,7 +54,7 @@
           outlined
           dense
           hide-details="auto"
-          :rules="validationRules.quantity"
+          :rules="validationRules.total_quantity"
           @keypress="onNumerFieldChange" />
       </v-col>
 
@@ -203,24 +203,6 @@
           :rules="validationRules.availability"
           hide-details="auto" />
       </v-col>
-      <v-col md="3" sm="8">
-        <div class="mt-2">
-          <v-icon
-            v-if="localTicket.visible"
-            color="primary"
-            size="24"
-            @click="handleVisibility">
-            mdi-checkbox-marked
-          </v-icon>
-
-          <v-icon v-else size="24" @click="handleVisibility">
-            mdi-checkbox-blank-outline
-          </v-icon>
-
-          <span class="ml-1"> Visível </span>
-        </div>
-      </v-col>
-
       <template v-if="nomenclature != 'Doação' && isMobile">
         <v-col cols="12" md="12" sm="12" class="py-0 my-2">
           <div class="d-flex align-center" style="padding: 0px 4px 0px">
@@ -289,6 +271,11 @@ export default {
       type: String,
       required: true,
     },
+    eventId: {
+      type: String,
+      required: false,
+      default: null,
+    },
   },
   data() {
     const today = new Date();
@@ -301,7 +288,7 @@ export default {
         name: '',
         category: null,
         price: '',
-        quantity: '',
+        total_quantity: '',
         min_purchase: 1,
         max_purchase: '',
         start_date: '',
@@ -309,7 +296,6 @@ export default {
         end_date: '',
         end_time: '',
         availability: 'Publico',
-        visible: true,
       },
       availabilityList: [
         { text: 'Para todo o público', value: 'Publico' },
@@ -330,7 +316,7 @@ export default {
             parseFloat(v.replace(',', '.')) >= 0 ||
             'O preço deve ser maior ou igual a zero.',
         ],
-        quantity: [
+        total_quantity: [
           (v) => !!v || 'A quantidade é obrigatória.',
           (v) => v > 0 || 'A quantidade deve ser maior que zero.',
         ],
@@ -347,7 +333,7 @@ export default {
             'A compra máxima deve ser maior ou igual à compra mínima.',
           (v) =>
             !v ||
-            Number(v) <= Number(this.localTicket.quantity) ||
+            Number(v) <= Number(this.localTicket.total_quantity) ||
             'A compra máxima por compra deve ser menor ou igual à quantidade total.',
         ],
         start_date: [
@@ -517,17 +503,37 @@ export default {
       }
     },
 
-    handleSubmit() {
+    async handleSubmit(fetchApi = false) {
       if (!this.validateForm()) {
         return;
       }
 
       try {
-        if (this.isEditing) {
+        if (this.isEditing && !fetchApi) {
           eventTickets.updateTicket({
             index: this.editIndex,
             ticket: this.localTicket,
           });
+        } else if (this.isEditing && fetchApi) {
+          await eventTickets.updateSingleTicket({
+            ticketId: this.localTicket.id,
+            ticket: this.localTicket,
+            eventId: this.eventId,
+          });
+
+          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+
+          return true;
+        } else if (fetchApi) {
+          // Usa o novo método para criar um ticket individual
+          const ticketId = await eventTickets.createSingleTicket({
+            eventId: this.eventId,
+            ticket: this.localTicket,
+          });
+
+          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+
+          return ticketId;
         } else {
           eventTickets.addTicket(this.localTicket);
         }
@@ -536,10 +542,6 @@ export default {
       } catch (error) {
         console.error('Erro ao salvar ingresso:', error);
       }
-    },
-
-    handleVisibility() {
-      this.localTicket.visible = !this.localTicket.visible;
     },
 
     validateForm() {

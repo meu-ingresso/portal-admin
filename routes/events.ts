@@ -70,6 +70,16 @@ export default [
           name: 'eventsDetails',
           template: 'tickets',
         },
+        children: [
+          {
+            path: 'tickets/edit/:id',
+            name: 'eventsDetailsTicketsEdit',
+            meta: {
+              name: 'eventsDetails',
+              template: 'ticketEdit',
+            },
+          },
+        ],
       },
     ],
   },

@@ -1,11 +1,11 @@
 <template>
-  <div v-if="currentEvent" class="event-details-header">
+  <div v-if="getEvent" class="event-details-header">
     <template v-if="!isMobile">
       <div class="event-title-wrapper mb-2">
-        <div class="event-title">{{ currentEvent.title }}</div>
+        <div class="event-title">{{ getEvent.name }}</div>
         <v-icon class="details-icon">mdi-circle-small</v-icon>
-        <StatusBadge :text="currentEvent.statusText" />
-        <PromotersBadge :count="currentEvent.promoters" />
+        <StatusBadge v-if="getEventStatus" :text="getEventStatus" />
+        <PromotersBadge :count="getEvent.collaborators.length" />
       </div>
 
       <!-- Informações de Localização/Link -->
@@ -22,12 +22,12 @@
         <div class="location d-flex align-center mb-2 cursor-pointer">
           <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
-          <p @click="handleMapDialog">{{ currentEvent.location }}</p>
+          <p @click="handleMapDialog">{{ getEventLocation }}</p>
 
           <v-dialog v-if="hasValidCoordinates" v-model="mapDialog" width="500">
             <v-card>
               <v-card-title>
-                <b>{{ currentEvent.title }}</b>
+                <b>{{ getEvent.name }}</b>
                 <v-spacer />
                 <v-btn icon @click="handleMapDialog">
                   <v-icon>mdi-close</v-icon>
@@ -64,12 +64,12 @@
         <div class="location d-flex align-center mb-2 cursor-pointer">
           <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
-          <p @click="handleMapDialog">{{ currentEvent.location }}</p>
+          <p @click="handleMapDialog">{{ getEventLocation }}</p>
 
           <v-dialog v-if="hasValidCoordinates" v-model="mapDialog" width="500">
             <v-card>
               <v-card-title>
-                <b>{{ currentEvent.title }}</b>
+                <b>{{ getEvent.name }}</b>
                 <v-spacer />
                 <v-btn icon @click="handleMapDialog">
                   <v-icon>mdi-close</v-icon>
@@ -96,10 +96,10 @@
         <v-icon class="mr-2 details-icon">mdi-calendar</v-icon>
 
         <div class="d-flex align-center">
-          <p>{{ formatDateToCustomString(currentEvent.start_date) }}</p>
+          <p>{{ formatDateToCustomString(getEvent.start_date) }}</p>
           <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-          <p>{{ formatHourToBr(currentEvent.start_date) }}</p>
+          <p>{{ getEvent.start_time }}</p>
         </div>
 
         <div class="mr-2 ml-2">
@@ -107,11 +107,11 @@
         </div>
 
         <div class="d-flex align-center">
-          <p>{{ formatDateToCustomString(currentEvent.end_date) }}</p>
+          <p>{{ formatDateToCustomString(getEvent.end_date) }}</p>
 
           <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-          <p>{{ formatHourToBr(currentEvent.end_date) }}</p>
+          <p>{{ getEvent.end_time }}</p>
         </div>
       </div>
 
@@ -129,10 +129,10 @@
     <template v-else>
       <div class="event-title-wrapper is-mobile mb-2">
         <div class="badge-list">
-          <StatusBadge :text="currentEvent.statusText" class="mr-2" />
-          <PromotersBadge :count="currentEvent.promoters" />
+          <StatusBadge v-if="getEventStatus" :text="getEventStatus" class="mr-2" />
+          <PromotersBadge :count="getEvent.collaborators.length" />
         </div>
-        <div class="event-title is-mobile">{{ currentEvent.title }}</div>
+        <div class="event-title is-mobile">{{ getEvent.name }}</div>
 
         <!-- Informações de Localização/Link Mobile -->
         <template v-if="isOnlineOrHybridEvent">
@@ -142,7 +142,7 @@
           </div>
           <div class="location d-flex align-center mb-2">
             <v-icon class="mr-2 details-icon is-mobile">mdi-map-marker</v-icon>
-            <p class="location is-mobile">{{ currentEvent.location }}</p>
+            <p class="location is-mobile">{{ getEventLocation }}</p>
           </div>
         </template>
         <template v-else-if="isOnlineEvent">
@@ -154,7 +154,7 @@
         <template v-else>
           <div class="location d-flex align-center mb-2">
             <v-icon class="mr-2 details-icon is-mobile">mdi-map-marker</v-icon>
-            <p class="location is-mobile">{{ currentEvent.location }}</p>
+            <p class="location is-mobile">{{ getEventLocation }}</p>
           </div>
         </template>
 
@@ -162,11 +162,11 @@
           <v-icon class="mr-2 details-icon is-mobile">mdi-calendar</v-icon>
 
           <div class="d-flex align-center">
-            <p>{{ formatDateToCustomString(currentEvent.start_date) }}</p>
+            <p>{{ formatDateToCustomString(getEvent.start_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ formatHourToBr(currentEvent.start_date) }}</p>
+            <p>{{ getEvent.start_time }}</p>
           </div>
 
           <div class="mr-2 ml-2">
@@ -174,11 +174,11 @@
           </div>
 
           <div class="d-flex align-center">
-            <p>{{ formatDateToCustomString(currentEvent.end_date) }}</p>
+            <p>{{ formatDateToCustomString(getEvent.end_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ formatHourToBr(currentEvent.end_date) }}</p>
+            <p>{{ getEvent.end_time }}</p>
           </div>
         </div>
       </div>
@@ -193,7 +193,7 @@ import {
   formatDateTimeToBr,
 } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
-import { toast, event } from '@/store';
+import { toast, eventGeneralInfo } from '@/store';
 
 export default {
   data() {
@@ -210,7 +210,7 @@ export default {
     onlineLink() {
       if (!this.isOnlineOrHybridEvent) return '';
 
-      const linkOnline = this.currentEvent?.attachments?.find(
+      const linkOnline = this.getEvent?.attachments?.find(
         (attachment) => attachment.name === 'link_online'
       );
 
@@ -218,11 +218,19 @@ export default {
     },
 
     currentEventType() {
-      return event.$event?.event_type;
+      return eventGeneralInfo.$info?.event_type;
     },
 
-    currentEvent() {
-      return event.$event;
+    getEvent() {
+      return eventGeneralInfo.$info;
+    },
+
+    getEventLocation() {
+      return eventGeneralInfo.$formattedLocation;
+    },
+
+    getEventStatus() {
+      return this.getEvent?.status?.name;
     },
 
     isOnlineOrHybridEvent() {
@@ -234,18 +242,18 @@ export default {
     },
 
     hasValidCoordinates() {
-      const { latitude, longitude } = this.currentEvent?.address || {};
+      const { latitude, longitude } = this.getEvent?.address || {};
       return latitude && longitude && latitude !== '' && longitude !== '';
     },
 
     googleMapsEmbedUrl() {
       if (!this.hasValidCoordinates) return '';
-      const { latitude, longitude } = this.currentEvent.address;
+      const { latitude, longitude } = this.getEvent?.address || {};
       return `https://www.google.com/maps/embed/v1/place?key=AIzaSyAnkqplDONBqIfUvJCGfFWpLXAhPPx8ig0&q=${latitude},${longitude}`;
     },
 
     aliasUrl() {
-      return `https://meuingresso.com.br/evento/${this.currentEvent.alias}`;
+      return `https://meuingresso.com.br/evento/${this.getEvent?.alias}`;
     },
   },
 
