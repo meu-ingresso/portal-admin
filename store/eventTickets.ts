@@ -583,7 +583,6 @@ export default class EventTickets extends VuexModule {
     this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
   }
 
-
   @Action
   public async fetchDeleteTicket(ticketId: string): Promise<void> {
     try {
@@ -700,5 +699,89 @@ export default class EventTickets extends VuexModule {
     }
   }
 
+  @Action
+  public async createSingleTicket(payload: { 
+    eventId: string, 
+    ticket: Ticket 
+  }): Promise<string> {
+    try {
+      this.context.commit('SET_LOADING', true);
+      let categoryId = null;
+
+      // Se tem categoria e ela é nova (id === '-1'), cria primeiro
+      if (payload.ticket.category && payload.ticket.category.id === '-1') {
+        const categoryMap = new Map<string, string>();
+        const createdCategory = await this.createCategory({ 
+          eventId: payload.eventId, 
+          categoryName: payload.ticket.category.text, 
+          categoryMap 
+        });
+        categoryId = createdCategory.id;
+      } else {
+        categoryId = payload.ticket.category?.id;
+      }
+
+      // Busca o status "Disponível"
+      const statusResponse = await status.fetchStatusByModuleAndName({ 
+        module: 'ticket', 
+        name: 'Disponível' 
+      });
+
+      if (!statusResponse) {
+        throw new Error('Status "Disponível" não encontrado');
+      }
+
+      // Obtém o próximo display_order usando o método existente
+      const nextOrder = getNextDisplayOrder(this.ticketList, true) as number;
+
+      // Combina data e hora em uma única string ISO
+      const startDateTime = `${payload.ticket.start_date}T${payload.ticket.start_time}:00.000Z`;
+      const endDateTime = `${payload.ticket.end_date}T${payload.ticket.end_time}:00.000Z`;
+
+      // Converte para Date para manipulação
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      const ticketResponse = await $axios.$post('ticket', {
+        event_id: payload.eventId,
+        name: payload.ticket.name,
+        total_quantity: payload.ticket.total_quantity,
+        total_sold: 0,
+        price: parseFloat(payload.ticket.price),
+        status_id: statusResponse.id,
+        start_date: startDate.toISOString().replace('Z', '-0300'),
+        end_date: endDate.toISOString().replace('Z', '-0300'),
+        availability: payload.ticket.availability,
+        min_quantity_per_user: payload.ticket.min_purchase,
+        max_quantity_per_user: payload.ticket.max_purchase,
+        ticket_event_category_id: categoryId,
+        display_order: nextOrder,
+      });
+
+      if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
+        throw new Error(`Falha ao criar ingresso: ${payload.ticket.name}`);
+      }
+
+      // Adiciona o novo ticket ao state
+/*       const newTicket = {
+        ...payload.ticket,
+        id: ticketResponse.body.result.id,
+        category: categoryId ? {
+          id: categoryId,
+          value: payload.ticket.category.text,
+          text: payload.ticket.category.text
+        } : null
+      };
+
+      this.context.commit('ADD_TICKET', newTicket); */
+
+      return ticketResponse.body.result.id;
+    } catch (error) {
+      console.error('Erro ao criar ingresso:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
 
 }

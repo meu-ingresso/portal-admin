@@ -73,7 +73,7 @@ export const getCategoryChanges = (
   return { toUpdate, toDelete, ticketsToUpdateCategory };
 };
 
-export const getNextDisplayOrder = (tickets: Ticket[]): number[] => {
+export const getNextDisplayOrder = (tickets: Ticket[], singleTicket: boolean = false): number | number[] => {
   // Ordena todos os tickets (incluindo deletados) por display_order
   const sortedTickets = [...tickets].sort((a, b) =>
     (a.display_order || 0) - (b.display_order || 0)
@@ -85,6 +85,15 @@ export const getNextDisplayOrder = (tickets: Ticket[]): number[] => {
       .filter(ticket => ticket.display_order && !ticket._deleted)
       .map(ticket => ticket.display_order)
   );
+
+    // Se estiver buscando ordem para um único ticket
+  if (singleTicket) {
+    let order = 1;
+    while (usedOrders.has(order)) {
+      order++;
+    }
+    return order;
+  }
 
   // Gera array de display_orders válidos
   const displayOrders = tickets.map((ticket) => {

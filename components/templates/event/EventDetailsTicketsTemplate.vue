@@ -24,7 +24,10 @@
           </v-btn>
         </v-card-title>
         <v-card-text>
-          <TicketForm ref="ticketForm" :nomenclature="'Ingresso'" />
+          <TicketForm
+            ref="ticketForm"
+            :nomenclature="'Ingresso'"
+            :event-id="getEvent.id" />
         </v-card-text>
         <v-card-actions class="d-flex justify-end py-3 px-6">
           <DefaultButton
@@ -102,9 +105,10 @@ export default {
       this.showAddDialog = true;
     },
 
-    submitAdd() {
+    async submitAdd() {
       const ticketForm = this.$refs.ticketForm;
-      if (ticketForm.handleSubmit()) {
+      const ticketId = await ticketForm.handleSubmit(true);
+      if (ticketId) {
         this.showAddDialog = false;
         toast.setToast({
           text: `Ingresso adicionado com sucesso!`,

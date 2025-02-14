@@ -271,6 +271,11 @@ export default {
       type: String,
       required: true,
     },
+    eventId: {
+      type: String,
+      required: false,
+      default: null,
+    },
   },
   data() {
     const today = new Date();
@@ -498,7 +503,7 @@ export default {
       }
     },
 
-    handleSubmit() {
+    async handleSubmit(fetchApi = false) {
       if (!this.validateForm()) {
         return;
       }
@@ -509,6 +514,16 @@ export default {
             index: this.editIndex,
             ticket: this.localTicket,
           });
+        } else if (fetchApi) {
+          // Usa o novo método para criar um ticket individual
+          const ticketId = await eventTickets.createSingleTicket({
+            eventId: this.eventId,
+            ticket: this.localTicket,
+          });
+
+          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+
+          return ticketId;
         } else {
           eventTickets.addTicket(this.localTicket);
         }
