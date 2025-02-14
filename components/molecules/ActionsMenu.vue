@@ -26,6 +26,16 @@
         </v-list-item>
       </template>
 
+      <!-- Opção de Interromper Vendas -->
+      <template v-if="showStopSales">
+        <v-list-item @click="onStopSales">
+          <v-list-item-icon class="mr-2">
+            <v-icon>mdi-pause-circle</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Interromper as vendas</v-list-item-title>
+        </v-list-item>
+      </template>
+
       <!-- Opção de Excluir -->
       <template v-if="showDelete">
         <v-list-item @click="onDelete">
@@ -59,6 +69,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    showStopSales: {
+      type: Boolean,
+      default: false,
+    },
     icon: {
       type: String,
       default: 'mdi-dots-vertical',
@@ -73,6 +87,9 @@ export default {
     },
     onDelete() {
       this.$emit('delete', this.index);
+    },
+    onStopSales() {
+      this.$emit('stop-sales', this.index);
     },
   },
 };

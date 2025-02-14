@@ -22,7 +22,8 @@
             :total="ticket.total_quantity"
             :event-promoter="getEventPromoter"
             @delete="handleDeleteTicket"
-            @edit="handleEditTicket" />
+            @edit="handleEditTicket"
+            @stop-sales="handleStopSales" />
         </Draggable>
       </Container>
     </v-col>
@@ -172,6 +173,25 @@ export default {
         (ticket) => ticket.id === ticketId
       );
       this.showEditDialog = true;
+    },
+
+    async handleStopSales(ticketId) {
+      try {
+        await eventTickets.stopTicketSales(ticketId);
+
+        toast.setToast({
+          text: `Vendas interrompidas com sucesso!`,
+          type: 'success',
+          time: 5000,
+        });
+      } catch (error) {
+        toast.setToast({
+          text: `Falha ao interromper vendas do ingresso. Tente novamente.`,
+          type: 'danger',
+          time: 5000,
+        });
+        console.error('Erro ao interromper vendas do ingresso:', error);
+      }
     },
 
     async submitEdit() {

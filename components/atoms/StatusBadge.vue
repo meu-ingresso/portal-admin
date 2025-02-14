@@ -17,6 +17,7 @@ export default {
         case 'À Venda':
           return '#0DBB73';
         case 'Rascunho':
+        case 'Interrompido':
           return '#E0700D';
         case 'Aguardando Aprovação':
           return 'warning';

@@ -837,7 +837,6 @@ export default class EventTickets extends VuexModule {
     }
   }
 
-
   @Action
   public async updateSingleTicket(payload: { 
     ticketId: string,
@@ -930,6 +929,58 @@ export default class EventTickets extends VuexModule {
 
     } catch (error) {
       console.error('Erro ao atualizar ingresso:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
+  @Action
+  public async stopTicketSales(ticketId: string): Promise<void> {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // 1. Busca o status "Interrompido"
+      const unavailableStatus = await status.fetchStatusByModuleAndName({ 
+        module: 'ticket', 
+        name: 'Interrompido' 
+      });
+
+      if (!unavailableStatus) {
+        throw new Error('Status "Interrompido" não encontrado');
+      }
+
+      // 2. Atualiza o ticket com end_date atual e status Interrompido
+      const response = await $axios.$patch('ticket', {
+        id: ticketId,
+        end_date: new Date().toISOString().replace('Z', '-0300'),
+        status_id: unavailableStatus.id
+      });
+
+      if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error('Falha ao interromper vendas do ingresso');
+      }
+
+      // 3. Atualiza o ticket no state
+      const ticketIndex = this.ticketList.findIndex(t => t.id === ticketId);
+      if (ticketIndex !== -1) {
+        const updatedTicket = {
+          ...this.ticketList[ticketIndex],
+          end_date: new Date().toISOString(),
+          status: {
+            id: unavailableStatus.id,
+            name: 'Indisponível'
+          }
+        };
+
+        this.context.commit('UPDATE_TICKET', {
+          index: ticketIndex,
+          ticket: updatedTicket
+        });
+      }
+
+    } catch (error) {
+      console.error('Erro ao interromper vendas:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);

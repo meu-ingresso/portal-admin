@@ -28,10 +28,12 @@
           :show-edit="canManageTicket"
           :show-delete="canManageTicket"
           :show-duplicate="canManageTicket"
+          :show-stop-sales="canManageTicket"
           icon="mdi-dots-horizontal"
           @edit="handleMenuAction('edit')"
           @delete="handleMenuAction('delete')"
-          @duplicate="handleMenuAction('duplicate')" />
+          @duplicate="handleMenuAction('duplicate')"
+          @stop-sales="handleMenuAction('stop-sales')" />
       </div>
     </v-col>
   </v-row>
@@ -130,6 +132,9 @@ export default {
           break;
         case 'duplicate':
           this.$emit('duplicate', this.id);
+          break;
+        case 'stop-sales':
+          this.$emit('stop-sales', this.id);
           break;
       }
     },
