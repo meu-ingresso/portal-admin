@@ -3,7 +3,7 @@ export type EventType = 'Presencial' | 'Online' | 'Híbrido';
 export interface CategoryOption {
   text: string;
   value: string;
-  id?: string | null | -1;
+  id?: string | null;
   _deleted?: boolean;
 }
 
@@ -30,6 +30,12 @@ export interface CustomFieldTicket {
   _deleted?: boolean;
 }
 
+export interface CouponTicket {
+  id: string;
+  name: string;
+  _deleted?: boolean;
+}
+
 export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
 
 export type FieldType = 'CPF' | 'CNPJ' | 'TELEFONE' | 'DATA' | 'TEXTO' | 'PARAGRAPH' | 'EMAIL' | 'MENU_DROPDOWN' | 'MULTI_CHECKBOX' | 'TERMO';
@@ -39,6 +45,14 @@ export type FieldOption = 'required' | 'is_unique' | 'visible_on_ticket';
 export type PersonType = 'PF' | 'PJ' | 'ESTRANGEIRO';
 
 export type DiscountType = 'FIXED' | 'PERCENTAGE';
+
+export interface Status {
+  id: string;
+  name: string;
+  module: string;
+  description: string;
+  deleted_at?: string;
+}
 
 export interface CustomField {
   id?: string;
@@ -64,7 +78,8 @@ export interface Ticket {
   description?: string;
   price: string;
   service_fee?: number;
-  quantity: number;
+  total_quantity: number;
+  total_sold: number;
   min_purchase: number;
   max_purchase: string;
   start_date: string;
@@ -76,6 +91,7 @@ export interface Ticket {
   display_order?: number;
   availability: AvailabilityOption;
   _deleted?: boolean;
+  status: Status;
 }
 
 export interface Coupon {
@@ -88,7 +104,7 @@ export interface Coupon {
   start_time: string;
   end_date: string;
   end_time: string;
-  tickets: string[];
+  tickets: CouponTicket[];
   _deleted?: boolean;
 }
 
@@ -114,6 +130,22 @@ export interface EventAttachment {
   type: string;
   url: string;
   deleted_at?: string;
+}
+
+export interface Collaborator {
+  id: string;
+  event_id: string;
+  user_id: string;
+  role_id: string;
+  deleted_at?: string;
+}
+
+export interface EventTotalizer {
+  totalSales: string;
+  totalSalesToday: string;
+  totalSalesAmount: string;
+  totalSalesAmountToday: string;
+  totalViews: string;
 }
 
 export interface Event {
@@ -145,6 +177,9 @@ export interface Event {
   coupons: Coupon[];
   attachments: EventAttachment[];
   deleted_at?: string;
+  collaborators: Collaborator[];
+  totalizers: EventTotalizer;
+  status: Status;
 }
 
 export interface EventFormState {
@@ -184,6 +219,7 @@ export interface CustomFieldApiResponse {
   visible_on_ticket: boolean;
   help_text: string | null;
   display_order: number;
+  deleted_at: string | null;
 }
 
 export interface CustomFieldOptionApiResponse {
@@ -200,7 +236,7 @@ export interface TicketApiResponse {
   description: string;
   price: string;
   total_quantity: number;
-  remaining_quantity: number;
+  total_sold: number;
   status_id: number;
   start_date: string;
   end_date: string;
@@ -209,6 +245,12 @@ export interface TicketApiResponse {
   min_quantity_per_user: number;
   max_quantity_per_user: number;
   deleted_at?: string;
+}
+
+export interface CategoryApiResponse {
+  id: string;
+  name: string;
+  deleted_at: string | null;
 }
 
 export interface CustomFieldTicketApiResponse {
@@ -222,7 +264,7 @@ export interface CouponApiResponse {
   id: string;
   event_id: string;
   status_id: string;
-  code: string; 
+  code: string;
   discount_type: DiscountType;
   discount_value: string;
   max_uses: number;
@@ -230,10 +272,10 @@ export interface CouponApiResponse {
   start_date: string;
   end_date: string;
 }
-
 export interface CouponTicketApiResponse {
   id: string;
   coupon_id: string;
   ticket_id: string;
   ticket: TicketApiResponse;
+  deleted_at?: string;
 }

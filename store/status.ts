@@ -1,5 +1,6 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
+import { handleGetResponse } from '~/utils/responseHelpers';
 
 @Module({
   name: 'status',
@@ -71,11 +72,9 @@ export default class Status extends VuexModule {
         `statuses?where[module][v]=${payload.module}&where[name][v]=${payload.name}`
       );
 
-      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error(`Falha ao buscar status do módulo: ${payload.module}.`);
-      }
+      const responseData = handleGetResponse(response, 'Status não encontrado', null);
 
-      return response.body.result.data[0];
+      return responseData[0];
     } catch (error) {
       console.error(`[STATUS] Error fetching status for module "${payload.module}" and name "${payload.name}":`, error);
       throw error;

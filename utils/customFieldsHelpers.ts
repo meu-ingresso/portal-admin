@@ -1,4 +1,4 @@
-import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation, CustomFieldTicket } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation, CustomFieldTicket, PersonType } from '~/models/event';
 
 export const defaultFields = ['Nome Completo', 'Email'];
 
@@ -13,16 +13,27 @@ interface FieldOptionChanges {
   toDelete: string[];
 }
 
+interface PersonTypeChanges {
+  toDelete: string[]; // IDs dos campos a serem deletados
+  toCreate: PersonType[];
+}
+
 export const getTicketRelationChanges = (
   existingRelations: FieldTicketRelation[],
-  newTickets: CustomFieldTicket[]
+  ticketsFromEvent: CustomFieldTicket[],
+  ticketsFromField: CustomFieldTicket[]
 ): TicketRelationChanges => {
+  // Filtra apenas os tickets que pertencem ao campo
+  const relevantTickets = ticketsFromEvent.filter(eventTicket =>
+    ticketsFromField.some(fieldTicket => fieldTicket.id === eventTicket.id || fieldTicket.name === eventTicket.name)
+  );
+  
   // Separa tickets deletados e ativos
-  const deletedTicketIds = newTickets
+  const deletedTicketIds = relevantTickets
     .filter(ticket => ticket._deleted)
     .map(ticket => ticket.id);
   
-  const activeTickets = newTickets.filter(ticket => !ticket._deleted);
+  const activeTickets = relevantTickets.filter(ticket => !ticket._deleted);
 
   return {
     // Criar apenas para tickets ativos que não existem
@@ -76,6 +87,12 @@ export const shouldUpdateField = (
   existingField: CustomFieldApiResponse,
   newField: CustomField
 ): boolean => {
+
+  // Se o campo foi deletado, não atualiza
+  if (newField._deleted) {
+    return false;
+  }
+
   return (
     existingField.type !== newField.type ||
     existingField.required !== newField.options.includes('required') ||
@@ -89,4 +106,66 @@ export const shouldUpdateField = (
 
 export const isMultiOptionField = (type: string): boolean => {
   return type === 'MULTI_CHECKBOX' || type === 'MENU_DROPDOWN';
+};
+
+export const getPersonTypeChanges = (
+  field: CustomField
+): PersonTypeChanges => {
+  const { field_ids: fieldIds, person_types: personTypes } = field;
+  
+  // Se não tem field_ids, é um campo novo
+  if (!fieldIds) {
+    return { toDelete: [], toCreate: personTypes };
+  }
+
+  // Encontra tipos de pessoa que têm ID mas não estão mais na lista
+  const toDelete = Object.entries(fieldIds)
+    .filter(([personType, id]) => 
+      id && // tem ID
+      !personTypes.includes(personType as PersonType) // não está mais na lista
+    )
+    .map(([_, id]) => id);
+  
+    // Encontra tipos de pessoa que estão na lista mas não têm ID
+  const toCreate = personTypes.filter(personType => 
+    !fieldIds[personType] || fieldIds[personType] === ''
+  );
+
+  return { toDelete, toCreate };
+};
+
+export const getNextDisplayOrder = (fields: CustomField[]): number[] => {
+  // Ordena todos os fields (incluindo deletados) por display_order
+  const sortedFields = [...fields].sort((a, b) =>
+    (a.display_order || 0) - (b.display_order || 0)
+  );
+
+  // Cria um Set com todas as ordens em uso (incluindo de fields deletados)
+  const usedOrders = new Set(
+    sortedFields
+      .filter(field => field.display_order && !field._deleted)
+      .map(field => field.display_order)
+  );
+
+  // Gera array de display_orders válidos
+  const displayOrders = fields.map((field) => {
+
+    // Se o field já tem uma ordem válida e não conflitante, mantém
+    if (field.display_order &&
+        !usedOrders.has(field.display_order) &&
+        field.display_order > 0) {
+      usedOrders.add(field.display_order);
+      return field.display_order;
+    }
+
+    // Encontra próxima ordem disponível
+    let order = 1;
+    while (usedOrders.has(order)) {
+      order++;
+    }
+    usedOrders.add(order);
+    return order;
+  });
+
+  return displayOrders;
 };

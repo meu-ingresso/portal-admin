@@ -17,7 +17,7 @@ export default {
 
 <style scoped>
 .statistic-card {
-  padding: 24px !important;
+  padding: 18px !important;
   border-radius: 8px !important;
   background-color: var(--tertiary);
   border: 0px !important;
@@ -93,7 +93,7 @@ export default {
 
 @media (min-width: 1025px) and (max-width: 1440px) {
   .statistic-card-title {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .statistic-card-subtitle {
@@ -101,13 +101,13 @@ export default {
   }
 
   .statistic-card {
-    padding: 32px !important;
+    padding: 24px !important;
   }
 }
 
 @media (min-width: 1441px) {
   .statistic-card-title {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .statistic-card-subtitle {
@@ -115,7 +115,7 @@ export default {
   }
 
   .statistic-card {
-    padding: 36px !important;
+    padding: 28px !important;
   }
 }
 </style>

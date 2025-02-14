@@ -352,6 +352,8 @@ export default {
             });
           }
 
+          await eventCoupons.updateEventCoupons(this.eventId);
+
           toast.setToast({
             text: 'Evento atualizado com sucesso!',
             type: 'success',
