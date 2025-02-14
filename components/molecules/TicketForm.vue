@@ -509,11 +509,21 @@ export default {
       }
 
       try {
-        if (this.isEditing) {
+        if (this.isEditing && !fetchApi) {
           eventTickets.updateTicket({
             index: this.editIndex,
             ticket: this.localTicket,
           });
+        } else if (this.isEditing && fetchApi) {
+          await eventTickets.updateSingleTicket({
+            ticketId: this.localTicket.id,
+            ticket: this.localTicket,
+            eventId: this.eventId,
+          });
+
+          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+
+          return true;
         } else if (fetchApi) {
           // Usa o novo método para criar um ticket individual
           const ticketId = await eventTickets.createSingleTicket({

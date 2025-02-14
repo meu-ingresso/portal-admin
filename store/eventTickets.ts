@@ -762,22 +762,108 @@ export default class EventTickets extends VuexModule {
         throw new Error(`Falha ao criar ingresso: ${payload.ticket.name}`);
       }
 
-      // Adiciona o novo ticket ao state
-/*       const newTicket = {
-        ...payload.ticket,
-        id: ticketResponse.body.result.id,
-        category: categoryId ? {
-          id: categoryId,
-          value: payload.ticket.category.text,
-          text: payload.ticket.category.text
-        } : null
-      };
-
-      this.context.commit('ADD_TICKET', newTicket); */
-
       return ticketResponse.body.result.id;
     } catch (error) {
       console.error('Erro ao criar ingresso:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
+
+  @Action
+  public async updateSingleTicket(payload: { 
+    ticketId: string,
+    ticket: Ticket,
+    eventId: string 
+  }): Promise<boolean> {
+    try {
+      this.context.commit('SET_LOADING', true);
+      let categoryId = null;
+
+      // 1. Tratamento da categoria
+      if (payload.ticket.category) {
+        if (payload.ticket.category.id === '-1') {
+          // Categoria nova, precisa criar
+          const categoryMap = new Map<string, string>();
+          const createdCategory = await this.createCategory({ 
+            eventId: payload.eventId, 
+            categoryName: payload.ticket.category.text, 
+            categoryMap 
+          });
+          categoryId = createdCategory.id;
+        } else {
+          // Usa categoria existente
+          categoryId = payload.ticket.category.id;
+        }
+      }
+
+      // 2. Combina data e hora em uma única string ISO
+      const startDateTime = `${payload.ticket.start_date}T${payload.ticket.start_time}:00.000Z`;
+      const endDateTime = `${payload.ticket.end_date}T${payload.ticket.end_time}:00.000Z`;
+
+      // Converte para Date para manipulação
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      // 3. Monta o payload da atualização
+      const updatePayload = {
+        id: payload.ticketId,
+        name: payload.ticket.name,
+        total_quantity: payload.ticket.total_quantity,
+        price: parseFloat(payload.ticket.price),
+        start_date: startDate.toISOString().replace('Z', '-0300'),
+        end_date: endDate.toISOString().replace('Z', '-0300'),
+        availability: payload.ticket.availability,
+        min_quantity_per_user: payload.ticket.min_purchase,
+        max_quantity_per_user: payload.ticket.max_purchase,
+        ticket_event_category_id: categoryId,
+        display_order: payload.ticket.display_order,
+      };
+
+      // 4. Faz a chamada de atualização
+      const response = await $axios.$patch('ticket', updatePayload);
+
+      if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error(`Falha ao atualizar ingresso: ${payload.ticket.name}`);
+      }
+
+      const oldTicket = this.ticketList.find(t => t.id === payload.ticketId);
+
+      // 5. Se a categoria antiga não está mais em uso, pode deletá-la
+      if (oldTicket.category?.id !== '-1' && 
+          oldTicket.category?.id !== categoryId) {
+        
+        // Busca outros tickets que usam a categoria antiga
+        const oldCategoryId = oldTicket.category.id;
+        const ticketsWithOldCategory = this.ticketList.filter(t => 
+          t.category?.id === oldCategoryId && 
+          t.id !== payload.ticketId &&
+          !t._deleted
+        );
+
+        // Se não há outros tickets usando a categoria antiga, deleta
+        if (ticketsWithOldCategory.length === 0) {
+          try {
+            const deleteCategoryResponse = await $axios.$delete(
+              `ticket-event-category/${oldCategoryId}`
+            );
+
+            if (!deleteCategoryResponse.body || 
+                deleteCategoryResponse.body.code !== 'DELETE_SUCCESS') {
+              console.warn('Falha ao deletar categoria antiga');
+            }
+          } catch (error) {
+            console.warn('Erro ao tentar deletar categoria antiga:', error);
+          }
+        }
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error('Erro ao atualizar ingresso:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);

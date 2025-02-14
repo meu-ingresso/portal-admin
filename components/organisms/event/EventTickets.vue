@@ -29,9 +29,9 @@
       persistent
       :fullscreen="isMobile">
       <v-card :tile="isMobile">
-        <v-card-title class="d-flex justify-space-between align-center">
+        <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
           <h3>Editar Ingresso</h3>
-          <v-btn icon @click="handleCloseEditDialog">
+          <v-btn icon :disabled="isLoading" @click="handleCloseEditDialog">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
@@ -39,6 +39,7 @@
           <TicketForm
             ref="ticketForm"
             :edit-index="selectedTicketIndex"
+            :event-id="eventId"
             :nomenclature="'Ingresso'" />
         </v-card-text>
         <v-card-actions class="d-flex justify-end py-3 px-6">
@@ -46,8 +47,13 @@
             outlined
             text="Cancelar"
             class="mr-4"
+            :disabled="isLoading"
             @click="handleCloseEditDialog" />
-          <DefaultButton text="Salvar" :loading="isLoading" @click="submitEdit" />
+          <DefaultButton
+            text="Salvar"
+            :is-loading="isLoading"
+            :disabled="isLoading"
+            @click="submitEdit" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -59,7 +65,7 @@
       persistent
       :fullscreen="isMobile">
       <v-card :tile="isMobile">
-        <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
+        <v-card-title class="d-flex justify-space-between align-center">
           <h3>Confirmar Exclusão</h3>
           <v-btn icon :disabled="isLoading" @click="handleCloseDialog">
             <v-icon>mdi-close</v-icon>
@@ -93,7 +99,7 @@
             @click="handleCloseDialog" />
           <DefaultButton
             text="Excluir"
-            :loading="isLoading"
+            :is-loading="isLoading"
             :disabled="isLoading"
             @click="confirmDelete" />
         </v-card-actions>
@@ -160,9 +166,28 @@ export default {
       this.showEditDialog = true;
     },
 
-    submitEdit() {
-      if (this.$refs.ticketForm && this.$refs.ticketForm.handleSubmit()) {
-        console.log('submitEdit');
+    async submitEdit() {
+      try {
+        this.isLoading = true;
+
+        const ticketForm = this.$refs.ticketForm;
+        const ticketId = await ticketForm.handleSubmit(true);
+
+        if (ticketId) {
+          this.handleCloseEditDialog();
+          toast.setToast({
+            text: `Ingresso atualizado com sucesso!`,
+            type: 'success',
+            time: 5000,
+          });
+        } else {
+          console.log('[ATUALIZAÇÃO - TicketForm] Erro de validação');
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar ingresso:', error);
+      } finally {
+        this.isLoading = false;
+        this.showEditDialog = false;
       }
     },
 
