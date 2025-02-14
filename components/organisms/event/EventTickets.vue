@@ -7,19 +7,24 @@
     </v-col>
 
     <v-col cols="12" md="12" sm="12">
-      <TicketRow
-        v-for="ticket in getTickets"
-        :id="ticket.id"
-        :key="ticket.id"
-        :disable-menu="disableMenu"
-        :name="ticket.name"
-        :price="ticket.price"
-        :status="ticket?.status?.name"
-        :sold="ticket.total_sold"
-        :total="ticket.total_quantity"
-        :event-promoter="getEventPromoter"
-        @delete="handleDeleteTicket"
-        @edit="handleEditTicket" />
+      <Container
+        :lock-axis="'y'"
+        :non-drag-area-selector="'.ticket-actions-menu'"
+        @drop="onDrop">
+        <Draggable v-for="ticket in getTickets" :key="ticket.id" class="pt-4">
+          <TicketRow
+            :id="ticket.id"
+            :disable-menu="disableMenu"
+            :name="ticket.name"
+            :price="ticket.price"
+            :status="ticket?.status?.name"
+            :sold="ticket.total_sold"
+            :total="ticket.total_quantity"
+            :event-promoter="getEventPromoter"
+            @delete="handleDeleteTicket"
+            @edit="handleEditTicket" />
+        </Draggable>
+      </Container>
     </v-col>
 
     <!-- Modal de edição -->
@@ -109,9 +114,12 @@
 </template>
 
 <script>
+import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
 import { eventTickets, toast, eventGeneralInfo } from '@/store';
 export default {
+  components: { Container, Draggable },
+
   props: {
     title: { type: String, required: false, default: 'Ingressos Vendidos' },
     titleSize: { type: String, required: false, default: '40px' },
@@ -219,6 +227,31 @@ export default {
       } finally {
         this.isLoading = false;
         this.showConfirmDialog = false;
+      }
+    },
+
+    async onDrop({ removedIndex, addedIndex }) {
+      if (removedIndex !== null && addedIndex !== null) {
+        try {
+          await eventTickets.swapTicketsOrder({
+            removedIndex,
+            addedIndex,
+            persist: true,
+          });
+
+          toast.setToast({
+            text: `Ingressos reordenados com sucesso!`,
+            type: 'success',
+            time: 5000,
+          });
+        } catch (error) {
+          console.error('Erro ao trocar ordem de exibição dos ingressos:', error);
+          toast.setToast({
+            text: `Falha ao reordenar ingressos. Tente novamente.`,
+            type: 'danger',
+            time: 5000,
+          });
+        }
       }
     },
   },

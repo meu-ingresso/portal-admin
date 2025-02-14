@@ -2,6 +2,10 @@
   <v-row v-if="!isMobile" class="ticket-row mr-0 ml-0">
     <v-col cols="12" md="6" sm="12">
       <div class="first-ticket-column">
+        <div class="ticket-hover-icon">
+          <v-icon>mdi-drag-vertical</v-icon>
+        </div>
+
         <div class="ticket-name">{{ name }}</div>
 
         <v-icon>mdi-circle-small</v-icon>
@@ -20,6 +24,7 @@
 
         <ActionsMenu
           v-if="!disableMenu && canManageTicket"
+          class="ticket-actions-menu"
           :show-edit="canManageTicket"
           :show-delete="canManageTicket"
           :show-duplicate="canManageTicket"
@@ -139,8 +144,6 @@ export default {
   border-radius: 8px;
   padding-top: 8px;
   padding-bottom: 8px;
-  padding-right: 14px;
-  padding-left: 14px;
   align-items: center;
 }
 
@@ -179,6 +182,12 @@ export default {
   font-size: 16px;
   font-weight: 700;
   font-family: var(--font-family-poppins-bold);
+}
+
+.ticket-hover-icon {
+  padding-right: 8px;
+  padding-left: 8px;
+  cursor: pointer;
 }
 
 .ticket-price {

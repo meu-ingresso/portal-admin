@@ -411,7 +411,9 @@ export default class EventTickets extends VuexModule {
 
       const tickets = handleGetResponse(response, 'Tickets não encontrados', eventId, true);
 
-      this.context.commit('SET_TICKETS', tickets.map(
+      const orderedTickets = tickets.sort((a: TicketApiResponse, b: TicketApiResponse) => a.display_order - b.display_order);
+
+      this.context.commit('SET_TICKETS', orderedTickets.map(
         (ticket: any) => {
 
           const category = {
@@ -539,11 +541,12 @@ export default class EventTickets extends VuexModule {
   }
 
   @Action
-  public swapTicketsOrder(payload: { 
+  public async swapTicketsOrder(payload: { 
     removedIndex: number; 
     addedIndex: number;
+    persist: boolean;
   }) {
-    const { removedIndex, addedIndex } = payload;
+    const { removedIndex, addedIndex, persist } = payload;
     
     // Encontra os tickets na lista completa
     const movedTicket = this.ticketList[removedIndex];
@@ -564,23 +567,86 @@ export default class EventTickets extends VuexModule {
     const movedDisplayOrder = movedTicket.display_order;
     const targetDisplayOrder = targetTicket.display_order;
 
-    this.context.commit('UPDATE_TICKET', { 
-      index: movedRealIndex, 
-      ticket: {
-        ...movedTicket,
-        display_order: targetDisplayOrder
-      }
-    });
+    // Valor temporário alto para evitar conflitos
+    const tempDisplayOrder = 99;
 
-    this.context.commit('UPDATE_TICKET', { 
-      index: targetRealIndex, 
-      ticket: {
-        ...targetTicket,
-        display_order: movedDisplayOrder
-      }
-    });
+    if (persist) {
+      try {
 
-    this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
+        // Atualiza o estado local antes de fazer as requisições
+        this.context.commit('UPDATE_TICKET', {
+          index: movedRealIndex,
+          ticket: {
+            ...movedTicket,
+            display_order: targetDisplayOrder
+          }
+        });
+
+        this.context.commit('UPDATE_TICKET', {
+          index: targetRealIndex,
+          ticket: {
+            ...targetTicket,
+            display_order: movedDisplayOrder
+          }
+        });
+
+        this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
+
+        // 1. Move o primeiro ticket para uma posição temporária
+        await $axios.$patch('ticket', {
+          id: movedTicket.id,
+          display_order: tempDisplayOrder
+        });
+
+        // 2. Move o segundo ticket para a posição do primeiro
+        await $axios.$patch('ticket', {
+          id: targetTicket.id,
+          display_order: movedDisplayOrder
+        });
+
+        // 3. Move o primeiro ticket para a posição final
+        await $axios.$patch('ticket', {
+          id: movedTicket.id,
+          display_order: targetDisplayOrder
+        });
+      } catch (error) {
+        // Em caso de erro, tenta reverter para os valores originais
+        try {
+          await $axios.$patch('ticket', {
+            id: movedTicket.id,
+            display_order: movedDisplayOrder
+          });
+
+          await $axios.$patch('ticket', {
+            id: targetTicket.id,
+            display_order: targetDisplayOrder
+          });
+        } catch (rollbackError) {
+          console.error('Erro ao tentar reverter alterações:', rollbackError);
+        }
+        throw new Error('Falha ao reordenar tickets');
+      }
+    } else {
+
+      // Atualiza o estado local apenas 
+      this.context.commit('UPDATE_TICKET', {
+        index: movedRealIndex,
+        ticket: {
+          ...movedTicket,
+          display_order: targetDisplayOrder
+        }
+      });
+
+      this.context.commit('UPDATE_TICKET', {
+        index: targetRealIndex,
+        ticket: {
+          ...targetTicket,
+          display_order: movedDisplayOrder
+        }
+      });
+
+      this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
+    }
   }
 
   @Action
