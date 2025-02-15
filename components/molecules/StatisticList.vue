@@ -1,7 +1,7 @@
 <template>
   <v-row class="mb-4">
     <v-col cols="12">
-      <div class="event-statistics-title">Painel</div>
+      <div class="statistics-title">{{ title }}</div>
     </v-col>
 
     <v-col
@@ -21,12 +21,12 @@
 export default {
   props: {
     statistics: { type: Array, required: true },
+    title: { type: String, required: true },
   },
 };
 </script>
-
 <style scoped>
-.event-statistics-title {
+.statistics-title {
   font-size: 40px;
   font-weight: 700;
   color: var(--black-text);
@@ -34,13 +34,13 @@ export default {
 }
 
 @media (max-width: 360px) {
-  .event-statistics-title {
+  .statistics-title {
     font-size: 16px;
   }
 }
 
 @media (min-width: 361px) and (max-width: 480px) {
-  .event-statistics-title {
+  .statistics-title {
     font-size: 18px;
   }
 }

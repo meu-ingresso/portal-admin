@@ -210,6 +210,11 @@ export default {
       type: Array,
       required: true,
     },
+    eventId: {
+      type: String,
+      required: false,
+      default: null,
+    },
   },
   data() {
     const today = new Date();
@@ -390,23 +395,62 @@ export default {
       }
     },
 
-    handleSubmit() {
-      try {
-        if (!this.$refs.form.validate()) return false;
+    validateForm() {
+      return this.$refs.form.validate();
+    },
 
-        if (this.isEditing) {
+    async handleSubmit(fetchApi = false) {
+      try {
+        if (!this.validateForm()) {
+          return {
+            success: false,
+            error: 'error.validation',
+          };
+        }
+
+        if (this.isEditing && !fetchApi) {
           eventCoupons.updateCoupon({
             index: this.editIndex,
             coupon: this.localCoupon,
           });
+        } else if (this.isEditing && fetchApi) {
+          await eventCoupons.updateSingleCoupon({
+            couponId: this.localCoupon.id,
+            coupon: this.localCoupon,
+            eventId: this.eventId,
+          });
+
+          return {
+            success: true,
+            error: null,
+          };
+        } else if (fetchApi) {
+          const couponId = await eventCoupons.createSingleCoupon({
+            eventId: this.eventId,
+            coupon: this.localCoupon,
+          });
+
+          await eventCoupons.fetchAndPopulateByEventId(this.eventId);
+
+          return {
+            success: true,
+            error: null,
+            id: couponId,
+          };
         } else {
           eventCoupons.addCoupon(this.localCoupon);
         }
 
-        return true;
+        return {
+          success: true,
+          error: null,
+        };
       } catch (error) {
         console.error('Erro ao salvar cupom:', error);
-        return false;
+        return {
+          success: false,
+          error: 'error.exception',
+        };
       }
     },
 
