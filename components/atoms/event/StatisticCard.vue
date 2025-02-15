@@ -41,7 +41,7 @@ export default {
   }
 
   .statistic-card-subtitle {
-    font-size: 10px;
+    font-size: 14px;
   }
 
   .statistic-card {
@@ -55,7 +55,7 @@ export default {
   }
 
   .statistic-card-subtitle {
-    font-size: 10px;
+    font-size: 14px;
   }
 
   .statistic-card {
@@ -69,7 +69,7 @@ export default {
   }
 
   .statistic-card-subtitle {
-    font-size: 10px;
+    font-size: 14px;
   }
 
   .statistic-card {
@@ -83,7 +83,7 @@ export default {
   }
 
   .statistic-card-subtitle {
-    font-size: 12px;
+    font-size: 16px;
   }
 
   .statistic-card {
@@ -93,11 +93,11 @@ export default {
 
 @media (min-width: 1025px) and (max-width: 1440px) {
   .statistic-card-title {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .statistic-card-subtitle {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .statistic-card {
@@ -107,11 +107,11 @@ export default {
 
 @media (min-width: 1441px) {
   .statistic-card-title {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .statistic-card-subtitle {
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .statistic-card {

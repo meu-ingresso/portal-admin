@@ -3,9 +3,9 @@
     <EventDetailsHeader />
 
     <div class="event-details-wrapper">
-      <StatisticList :statistics="getStatistics" title="Painel" />
+      <StatisticList :statistics="getStatistics" title="Visão Geral" />
 
-      <EventSales :sales="getSales" />
+      <!-- <EventSales :sales="getSales" /> -->
 
       <EventTickets
         v-if="hasTickets"
@@ -31,24 +31,33 @@ export default {
 
       return [
         {
-          title: 'Visualizações',
+          title: 'Vendas',
+          value: `${
+            this.getEvent.totalizers.totalSales === 0
+              ? 'Nenhuma'
+              : `${this.getEvent.totalizers.totalSales}`
+          }`,
+        },
+        {
+          title: 'Receita Total',
+          value: `${
+            this.getEvent.totalizers.totalSalesAmount === 0
+              ? 'Nenhum'
+              : `${formatRealValue(this.getEvent.totalizers.totalSalesAmount)}`
+          }`,
+        },
+        {
+          title: 'Taxa de conversão',
           value: `${
             this.getEvent.totalizers.totalViews === 0
-              ? 'Nenhuma'
-              : `${this.getEvent.totalizers.totalViews}`
-          }`,
-        },
-        { title: 'Visibilidade', value: this.getEvent.availability },
-        {
-          title: 'Tipos de ingressos',
-          value: `${
-            this.getTickets.length === 0 ? 'Nenhum' : `${this.getTickets.length}`
-          }`,
-        },
-        {
-          title: 'Cupons de Desconto',
-          value: `${
-            this.getCoupons.length === 0 ? 'Nenhum' : `${this.getCoupons.length}`
+              ? '0% (0 visitas)'
+              : `${(
+                  (this.getEvent.totalizers.totalSales /
+                    this.getEvent.totalizers.totalViews) *
+                  100
+                ).toFixed(0)}% (${this.getEvent.totalizers.totalViews} ${
+                  this.getEvent.totalizers.totalViews === 1 ? 'visita' : 'visitas'
+                })`
           }`,
         },
       ];
@@ -79,6 +88,10 @@ export default {
     hasTickets() {
       return this.getTickets.length > 0;
     },
+  },
+
+  mounted() {
+    console.log('this.getEvent.totalizers', JSON.stringify(this.getEvent));
   },
 };
 </script>
