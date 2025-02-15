@@ -46,6 +46,21 @@ export type PersonType = 'PF' | 'PJ' | 'ESTRANGEIRO';
 
 export type DiscountType = 'FIXED' | 'PERCENTAGE';
 
+export interface EventGuest {
+  id: string;
+  event_id: string;
+  first_name: string;
+  last_name: string;
+  quantity: number;
+  guest_by: string;
+  validated: boolean;
+  validated_by: string;
+  validated_at: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string;
+}
+
 export interface Status {
   id: string;
   name: string;

@@ -88,8 +88,8 @@ export default {
 
       return [
         {
-          title: 'Limite de uso',
-          value: `${totalUsed === 0 ? totalQuantity : totalQuantity - totalUsed}`,
+          title: 'Usos / Limite',
+          value: `${totalUsed} / ${totalQuantity}`,
         },
         {
           title: 'Códigos promocionais',

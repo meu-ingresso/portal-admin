@@ -318,7 +318,7 @@ export default {
     },
 
     async onDrop({ removedIndex, addedIndex }) {
-      if (removedIndex !== null && addedIndex !== null) {
+      if (removedIndex !== null && addedIndex !== null && removedIndex !== addedIndex) {
         try {
           await eventTickets.swapTicketsOrder({
             removedIndex,
