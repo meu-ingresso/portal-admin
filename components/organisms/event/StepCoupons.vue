@@ -227,9 +227,11 @@ export default {
       this.newCouponModal = true;
     },
 
-    saveNewCoupon() {
+    async saveNewCoupon() {
       const couponForm = this.$refs.newCouponForm;
-      if (couponForm.handleSubmit()) {
+      const result = await couponForm.handleSubmit();
+
+      if (result && result.success) {
         this.newCouponModal = false;
       }
     },
@@ -239,10 +241,13 @@ export default {
       this.editModal = true;
     },
 
-    saveEditedCoupon() {
+    async saveEditedCoupon() {
       if (this.selectedCouponIndex !== null) {
         const couponForm = this.$refs.editCouponForm;
-        if (couponForm.handleSubmit()) {
+
+        const result = await couponForm.handleSubmit();
+
+        if (result && result.success) {
           this.editModal = false;
           this.selectedCouponIndex = null;
         }

@@ -13,6 +13,13 @@ export const eventsSideBar = [
     to: '/events/:id/tickets',
     needPermissions: false,
   },
+    {
+    icon: 'mdi-ticket-outline',
+    iconActive: 'mdi-ticket',
+    title: 'Cupons',
+    to: '/events/:id/coupons',
+    needPermissions: false,
+  },
   {
     icon: 'mdi-account-check-outline',
     iconActive: 'mdi-account-check',

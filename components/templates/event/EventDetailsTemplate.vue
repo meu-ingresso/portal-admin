@@ -3,7 +3,7 @@
     <EventDetailsHeader />
 
     <div class="event-details-wrapper">
-      <EventStatistics :statistics="getStatistics" />
+      <StatisticList :statistics="getStatistics" title="Painel" />
 
       <EventSales :sales="getSales" />
 

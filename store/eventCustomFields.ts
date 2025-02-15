@@ -149,11 +149,11 @@ export default class EventCustomFields extends VuexModule {
   }
 
   @Action
-  public async fetchAndPopulateByEventId(payload: {eventId: string, tickets: string[]}) {
+  public async fetchAndPopulateByEventId(eventId: string) {
     try {
       this.context.commit('SET_LOADING', true); 
-      const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${payload.eventId}`);
-      const fieldsData = handleGetResponse(response, 'Campos personalizados não encontrados', payload.eventId, true);
+      const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${eventId}`);
+      const fieldsData = handleGetResponse(response, 'Campos personalizados não encontrados', eventId, true);
       
       const groupedFields = new Map<string, CustomField>();
       

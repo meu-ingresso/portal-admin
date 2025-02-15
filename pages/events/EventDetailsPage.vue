@@ -20,6 +20,7 @@
       <div v-else-if="getEvent">
         <EventDetailsTemplate v-if="isPanel" />
         <EventDetailsTicketsTemplate v-if="isTickets" />
+        <EventDetailsCouponsTemplate v-if="isCoupons" />
       </div>
     </v-container>
     <Toast />
@@ -80,8 +81,8 @@ export default {
       return this.$route.meta.template === 'tickets';
     },
 
-    isTicketEdit() {
-      return this.$route.meta.template === 'ticketEdit';
+    isCoupons() {
+      return this.$route.meta.template === 'coupons';
     },
 
     userRole() {
@@ -139,18 +140,11 @@ export default {
 
         loading.setIsLoading(true);
 
-        await eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id);
-        await eventTickets.fetchAndPopulateByEventId(this.$route.params.id);
-
         const promises = [
-          eventCustomFields.fetchAndPopulateByEventId({
-            eventId: this.$route.params.id,
-            tickets: this.getTickets,
-          }),
-          eventCoupons.fetchAndPopulateByEventId({
-            eventId: this.$route.params.id,
-            tickets: this.getTickets,
-          }),
+          eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id),
+          eventTickets.fetchAndPopulateByEventId(this.$route.params.id),
+          eventCustomFields.fetchAndPopulateByEventId(this.$route.params.id),
+          eventCoupons.fetchAndPopulateByEventId(this.$route.params.id),
         ];
 
         await Promise.all(promises);

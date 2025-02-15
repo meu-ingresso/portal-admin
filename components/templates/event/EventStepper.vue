@@ -272,18 +272,11 @@ export default {
     },
 
     async loadEventData() {
-      await eventGeneralInfo.fetchAndPopulateByEventId(this.eventId);
-      await eventTickets.fetchAndPopulateByEventId(this.eventId);
-
       const promises = [
-        eventCustomFields.fetchAndPopulateByEventId({
-          eventId: this.eventId,
-          tickets: this.getTickets,
-        }),
-        eventCoupons.fetchAndPopulateByEventId({
-          eventId: this.eventId,
-          tickets: this.getTickets,
-        }),
+        eventGeneralInfo.fetchAndPopulateByEventId(this.eventId),
+        eventTickets.fetchAndPopulateByEventId(this.eventId),
+        eventCoupons.fetchAndPopulateByEventId(this.eventId),
+        eventCustomFields.fetchAndPopulateByEventId(this.eventId),
       ];
 
       await Promise.all(promises);
