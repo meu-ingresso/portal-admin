@@ -403,9 +403,12 @@ export default {
       this.newTicket = updatedTicket;
     },
 
-    saveNewTicket() {
+    async saveNewTicket() {
       const ticketForm = this.$refs.newTicketForm;
-      if (ticketForm.handleSubmit()) {
+
+      const result = await ticketForm.handleSubmit();
+
+      if (result && result.success) {
         this.newTicketModal = false;
       } else {
         console.log('[INSERÇÃO - TicketForm] Erro de validação');
@@ -416,7 +419,7 @@ export default {
       this.selectedTicketIndex = index;
       this.editModal = true;
     },
-    saveEditedTicket() {
+    async saveEditedTicket() {
       if (this.selectedTicketIndex !== null) {
         const ticketForm = this.$refs.editTicketForm;
 
@@ -426,7 +429,9 @@ export default {
         const hasReletedFields = relatedFields.length > 0;
         const hasReletedCoupons = relatedCoupons.length > 0;
 
-        if (ticketForm.handleSubmit()) {
+        const result = await ticketForm.handleSubmit();
+
+        if (result && result.success) {
           // Mesmo index porém atualizado
           const updatedTicket = this.getNonDeletedTickets[this.selectedTicketIndex];
 

@@ -3,43 +3,37 @@
     <div class="d-flex justify-space-between">
       <EventDetailsHeader />
       <div style="padding-top: 12px">
-        <DefaultButton text="Adicionar ingresso" @click="openAddTicketModal" />
+        <DefaultButton text="Adicionar Cupom" @click="openAddCouponModal" />
       </div>
     </div>
     <div class="event-details-wrapper">
-      <StatisticList :statistics="getStatistics" title="Ingressos" />
-      <EventTickets
-        :event-id="getEvent.id"
-        title="Tipos de ingressos"
-        title-size="16px" />
+      <StatisticList :statistics="getStatistics" title="Códigos promocionais" />
+      <EventCoupons :event-id="getEvent.id" />
     </div>
 
     <!-- Modal de adição -->
     <v-dialog v-model="showAddDialog" max-width="900px" persistent :fullscreen="isMobile">
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
-          <h3>Adicionar ingresso</h3>
-          <v-btn icon :disabled="isAddingTicket" @click="handleCloseAddDialog">
+          <h3>Adicionar Cupom</h3>
+          <v-btn icon :disabled="isAddingCoupon" @click="handleCloseAddDialog">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
         <v-card-text>
-          <TicketForm
-            ref="ticketForm"
-            :nomenclature="'Ingresso'"
-            :event-id="getEvent.id" />
+          <CouponForm ref="couponForm" :event-id="getEvent.id" :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex justify-end py-3 px-6">
           <DefaultButton
             outlined
             text="Cancelar"
             class="mr-4"
-            :disabled="isAddingTicket"
+            :disabled="isAddingCoupon"
             @click="handleCloseAddDialog" />
           <DefaultButton
             text="Salvar"
-            :is-loading="isAddingTicket"
-            :disabled="isAddingTicket"
+            :is-loading="isAddingCoupon"
+            :disabled="isAddingCoupon"
             @click="submitAdd" />
         </v-card-actions>
       </v-card>
@@ -49,13 +43,13 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { eventGeneralInfo, eventTickets, toast } from '@/store';
+import { eventGeneralInfo, eventCoupons, eventTickets, toast } from '@/store';
 
 export default {
   data() {
     return {
       showAddDialog: false,
-      isAddingTicket: false,
+      isAddingCoupon: false,
     };
   },
 
@@ -64,39 +58,42 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
 
+    getTickets() {
+      return eventTickets.$tickets.map((ticket) => {
+        return {
+          id: ticket.id,
+          name: ticket.name,
+          _deleted: ticket._deleted,
+        };
+      });
+    },
+
     getEvent() {
       return eventGeneralInfo.$info;
     },
 
-    getTickets() {
-      return eventTickets.$tickets;
+    getCoupons() {
+      return eventCoupons.$coupons;
     },
 
     getStatistics() {
-      if (!this.getEvent || !this.getTickets) return [];
+      if (!this.getEvent || !this.getCoupons) return [];
 
-      const totalSales = this.getTickets.reduce(
-        (acc, ticket) => acc + ticket.total_sold,
+      const totalUsed = this.getCoupons.reduce((acc, coupon) => acc + coupon.uses, 0);
+
+      const totalQuantity = this.getCoupons.reduce(
+        (acc, coupon) => acc + coupon.max_uses,
         0
       );
-
-      const totalQuantity = this.getTickets.reduce(
-        (acc, ticket) => acc + ticket.total_quantity,
-        0
-      );
-
-      const totalHasSales = this.getTickets.filter(
-        (ticket) => ticket.total_sold > 0
-      ).length;
 
       return [
         {
-          title: 'Limite de vendas',
-          value: `${totalSales === 0 ? totalQuantity : totalQuantity - totalSales}`,
+          title: 'Limite de uso',
+          value: `${totalUsed === 0 ? totalQuantity : totalQuantity - totalUsed}`,
         },
         {
-          title: 'Ingressos à venda',
-          value: `${totalHasSales} / ${this.getTickets.length}`,
+          title: 'Códigos promocionais',
+          value: `${this.getCoupons.length}`,
         },
       ];
     },
@@ -107,29 +104,29 @@ export default {
       this.showAddDialog = false;
     },
 
-    openAddTicketModal() {
+    openAddCouponModal() {
       this.showAddDialog = true;
     },
 
     async submitAdd() {
       try {
-        this.isAddingTicket = true;
-        const ticketForm = this.$refs.ticketForm;
-        const ticketId = await ticketForm.handleSubmit(true);
-        if (ticketId) {
+        this.isAddingCoupon = true;
+        const couponForm = this.$refs.couponForm;
+        const couponId = await couponForm.handleSubmit(true);
+        if (couponId) {
           this.showAddDialog = false;
           toast.setToast({
-            text: `Ingresso adicionado com sucesso!`,
+            text: `Cupom adicionado com sucesso!`,
             type: 'success',
             time: 5000,
           });
         } else {
-          console.log('[INSERÇÃO - TicketForm] Erro de validação');
+          console.log('[INSERÇÃO - CouponForm] Erro de validação');
         }
       } catch (error) {
-        console.log('[INSERÇÃO - TicketForm] Erro de validação');
+        console.log('[INSERÇÃO - CouponForm] Erro de validação');
       } finally {
-        this.isAddingTicket = false;
+        this.isAddingCoupon = false;
       }
     },
   },

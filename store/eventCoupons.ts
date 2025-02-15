@@ -192,19 +192,19 @@ export default class EventCoupons extends VuexModule {
   }
 
   @Action
-  public async fetchAndPopulateByEventId(payload: { eventId: string, tickets: string[] }) {
+  public async fetchAndPopulateByEventId(eventId: string) {
 
     try {
 
       this.context.commit('SET_LOADING', true); 
 
-      const response = await $axios.$get(`coupons?where[event_id][v]=${payload.eventId}`);
-      const couponsData = handleGetResponse(response, 'Cupons não encontrados', payload.eventId, true);
+      const response = await $axios.$get(`coupons?where[event_id][v]=${eventId}`);
+      const couponsData = handleGetResponse(response, 'Cupons não encontrados', eventId, true);
 
       const couponPromises = couponsData.map(async (coupon: CouponApiResponse) => {
         
         const responseCouponTicket = await $axios.$get(`coupons-tickets?where[coupon_id][v]=${coupon.id}&preloads[]=ticket`);
-        const couponTickets = handleGetResponse(responseCouponTicket, 'Relações de cupons com ingressos não encontradas', payload.eventId, true);
+        const couponTickets = handleGetResponse(responseCouponTicket, 'Relações de cupons com ingressos não encontradas', eventId, true);
         
         const tickets = couponTickets.map((couponTicket: CouponTicketApiResponse) => ({ name: couponTicket.ticket.name, id: couponTicket.ticket.id }));
 
@@ -443,6 +443,225 @@ export default class EventCoupons extends VuexModule {
       name: 'Disponível' 
     });
     return statusResponse.id;
+  }
+
+  @Action
+  public async updateSingleCoupon(payload: { 
+    couponId: string,
+    coupon: Coupon,
+    eventId: string 
+  }): Promise<void> {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // 1. Buscar relações existentes com tickets
+      const ticketRelationsResponse = await $axios.$get(
+        `coupons-tickets?where[coupon_id][v]=${payload.couponId}&preloads[]=ticket`
+      );
+      const existingTicketRelations = handleGetResponse(
+        ticketRelationsResponse, 
+        'Relações de tickets não encontradas', 
+        null, 
+        true
+      );
+
+      // 2. Preparar dados do cupom para atualização
+      const startDateTime = `${payload.coupon.start_date}T${payload.coupon.start_time}:00.000Z`;
+      const endDateTime = `${payload.coupon.end_date}T${payload.coupon.end_time}:00.000Z`;
+
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      // 3. Atualizar o cupom
+      const couponResponse = await $axios.$patch('coupon', {
+        id: payload.couponId,
+        code: payload.coupon.code,
+        discount_type: payload.coupon.discount_type,
+        discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
+        max_uses: payload.coupon.max_uses,
+        start_date: startDate.toISOString().replace('Z', '-0300'),
+        end_date: endDate.toISOString().replace('Z', '-0300'),
+      });
+
+      if (!couponResponse.body || couponResponse.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error('Falha ao atualizar cupom');
+      }
+
+      // 4. Gerenciar relações com tickets
+      const currentTicketIds = new Set(payload.coupon.tickets.map(t => t.id));
+      const existingTicketIds = new Set(existingTicketRelations.map((r: CouponTicketApiResponse) => r.ticket.id));
+
+      // Relações a serem removidas
+      const relationsToDelete = existingTicketRelations.filter(
+        (relation: CouponTicketApiResponse) => !currentTicketIds.has(relation.ticket.id)
+      );
+
+      // Tickets a serem adicionados
+      const ticketsToAdd = payload.coupon.tickets.filter(
+        ticket => !existingTicketIds.has(ticket.id)
+      );
+
+      // 5. Remover relações antigas
+      await Promise.all(
+        relationsToDelete.map((relation: CouponTicketApiResponse) =>
+          $axios.$delete(`coupon-ticket/${relation.id}`)
+        )
+      );
+
+      // 6. Criar novas relações
+      await Promise.all(
+        ticketsToAdd.map(ticket =>
+          $axios.$post('coupon-ticket', {
+            coupon_id: payload.couponId,
+            ticket_id: ticket.id
+          })
+        )
+      );
+
+      // 7. Atualizar o state
+      const updatedCoupon = {
+        ...payload.coupon,
+        id: payload.couponId
+      };
+
+      const couponIndex = this.couponList.findIndex(c => c.id === payload.couponId);
+      if (couponIndex !== -1) {
+        this.context.commit('UPDATE_COUPON', {
+          index: couponIndex,
+          coupon: updatedCoupon
+        });
+      }
+
+    } catch (error) {
+      console.error('Erro ao atualizar cupom:', error);
+      throw new Error(`Falha ao atualizar cupom: ${error.message}`);
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
+  @Action
+  public async createSingleCoupon(payload: { 
+    eventId: string, 
+    coupon: Coupon 
+  }): Promise<string> {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // 1. Buscar o status "Disponível"
+      const availableStatus = await status.fetchStatusByModuleAndName({ 
+        module: 'coupon', 
+        name: 'Disponível' 
+      });
+
+      if (!availableStatus) {
+        throw new Error('Status "Disponível" não encontrado');
+      }
+
+      // 2. Preparar dados do cupom
+      const startDateTime = `${payload.coupon.start_date}T${payload.coupon.start_time}:00.000Z`;
+      const endDateTime = `${payload.coupon.end_date}T${payload.coupon.end_time}:00.000Z`;
+
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      // 3. Criar o cupom
+      const couponResponse = await $axios.$post('coupon', {
+        event_id: payload.eventId,
+        status_id: availableStatus.id,
+        code: payload.coupon.code,
+        discount_type: payload.coupon.discount_type,
+        discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
+        max_uses: payload.coupon.max_uses,
+        start_date: startDate.toISOString().replace('Z', '-0300'),
+        end_date: endDate.toISOString().replace('Z', '-0300'),
+      });
+
+      if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
+        throw new Error('Falha ao criar cupom');
+      }
+
+      const couponId = couponResponse.body.result.id;
+
+      // 4. Criar relações com tickets se existirem
+      if (payload.coupon.tickets && payload.coupon.tickets.length > 0) {
+        await Promise.all(
+          payload.coupon.tickets.map(ticket =>
+            $axios.$post('coupon-ticket', {
+              coupon_id: couponId,
+              ticket_id: ticket.id
+            })
+          )
+        );
+      }
+
+      // 5. Atualizar o state
+      const createdCoupon = {
+        ...payload.coupon,
+        id: couponId,
+        uses: 0,
+        status: {
+          id: availableStatus.id,
+          name: 'Disponível'
+        }
+      };
+
+      this.context.commit('ADD_COUPON', createdCoupon);
+
+      return couponId;
+
+    } catch (error) {
+      console.error('Erro ao criar cupom:', error);
+      throw new Error(`Falha ao criar cupom: ${error.message}`);
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
+  @Action
+  public async fetchDeleteCoupon(couponId: string): Promise<void> {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // 1. Buscar relações existentes com tickets
+      const ticketRelationsResponse = await $axios.$get(
+        `coupons-tickets?where[coupon_id][v]=${couponId}`
+      );
+      const existingTicketRelations = handleGetResponse(
+        ticketRelationsResponse, 
+        'Relações de tickets não encontradas', 
+        null, 
+        true
+      );
+
+      // 2. Deletar todas as relações existentes
+      if (existingTicketRelations.length > 0) {
+        await Promise.all(
+          existingTicketRelations.map((relation: CouponTicketApiResponse) =>
+            $axios.$delete(`coupon-ticket/${relation.id}`)
+          )
+        );
+      }
+
+      // 3. Deletar o cupom
+      const deleteResponse = await $axios.$delete(`coupon/${couponId}`);
+      
+      if (!deleteResponse.body || deleteResponse.body.code !== 'DELETE_SUCCESS') {
+        throw new Error('Falha ao deletar cupom');
+      }
+
+      // 4. Remover do state
+      const couponIndex = this.couponList.findIndex(c => c.id === couponId);
+      if (couponIndex !== -1) {
+        this.context.commit('REMOVE_COUPON', couponIndex);
+      }
+
+    } catch (error) {
+      console.error('Erro ao deletar cupom:', error);
+      throw new Error(`Falha ao deletar cupom: ${error.message}`);
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
   }
 
 } 

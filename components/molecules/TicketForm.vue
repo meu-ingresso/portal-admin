@@ -478,7 +478,6 @@ export default {
   },
 
   created() {
-    // Se estiver editando, carrega o ticket
     if (this.isEditing) {
       const ticketToEdit = eventTickets.$tickets[this.editIndex];
       this.localTicket = { ...ticketToEdit };
@@ -513,6 +512,7 @@ export default {
 
       try {
         if (this.isEditing && !fetchApi) {
+          console.log('[TICKET FORM] - isEditing && !fetchApi');
           eventTickets.updateTicket({
             index: this.editIndex,
             ticket: this.localTicket,
@@ -547,9 +547,15 @@ export default {
           eventTickets.addTicket(this.localTicket);
         }
 
-        return true;
+        return {
+          success: true,
+          error: null,
+        };
       } catch (error) {
-        console.error('Erro ao salvar ingresso:', error);
+        return {
+          success: false,
+          error: 'error.exception',
+        };
       }
     },
 
