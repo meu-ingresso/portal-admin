@@ -72,7 +72,6 @@ export default {
     },
 
     filteredEvents() {
-
       if (this.selectedDeleted) {
         return this.events.filter((event) => event.deleted_at !== null);
       }
@@ -113,7 +112,7 @@ export default {
   max-width: 1280px;
 }
 .events-template-title {
-  font-size: 40px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--black-text);
   font-family: var(--font-family-poppins-bold);

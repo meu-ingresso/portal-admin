@@ -54,7 +54,7 @@ export default {
 
 <style scoped>
 .home-template-title {
-  font-size: 40px;
+  font-size: 26px;
   font-weight: 700;
   margin-bottom: 20px;
   color: var(--black-text);

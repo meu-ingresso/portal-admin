@@ -242,7 +242,7 @@ export default {
   text-align: left;
   color: var(--black-text);
   font-family: var(--font-family-poppins-bold);
-  font-size: 40px;
+  font-size: 26px;
 }
 
 @media (max-width: 360px) {
