@@ -42,7 +42,7 @@ export default {
           title: 'Receita Total',
           value: `${
             this.getEvent.totalizers.totalSalesAmount === 0
-              ? 'Nenhum'
+              ? 'Nenhuma'
               : `${formatRealValue(this.getEvent.totalizers.totalSalesAmount)}`
           }`,
         },
