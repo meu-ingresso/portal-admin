@@ -21,6 +21,7 @@
         <EventDetailsTemplate v-if="isPanel" />
         <EventDetailsTicketsTemplate v-if="isTickets" />
         <EventDetailsCouponsTemplate v-if="isCoupons" />
+        <EventDetailsGuestlistsTemplate v-if="isGuestlists" />
       </div>
     </v-container>
     <Toast />
@@ -83,6 +84,10 @@ export default {
 
     isCoupons() {
       return this.$route.meta.template === 'coupons';
+    },
+
+    isGuestlists() {
+      return this.$route.meta.template === 'guestlists';
     },
 
     userRole() {

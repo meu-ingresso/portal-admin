@@ -25,6 +25,8 @@ export default {
         case 'Cancelado':
         case 'Reprovado':
           return 'error';
+        case 'Esgotado':
+          return '#B71C1C';
         default:
           return 'warning';
       }

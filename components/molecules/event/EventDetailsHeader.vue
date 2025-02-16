@@ -308,7 +308,7 @@ export default {
 }
 
 .event-title {
-  font-size: 40px;
+  font-size: 26px;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
 }
