@@ -76,23 +76,23 @@ export default {
       if (!this.getEvent || !this.getTickets) return [];
 
       const totalSales = this.getTickets.reduce(
-        (acc, ticket) => acc + ticket.total_sold,
+        (acc, ticket) => acc + Number(ticket.total_sold),
         0
       );
 
       const totalQuantity = this.getTickets.reduce(
-        (acc, ticket) => acc + ticket.total_quantity,
+        (acc, ticket) => acc + Number(ticket.total_quantity),
         0
       );
 
       const totalHasSales = this.getTickets.filter(
-        (ticket) => ticket.total_sold > 0
+        (ticket) => Number(ticket.total_sold) > 0
       ).length;
 
       return [
         {
-          title: 'Limite de vendas',
-          value: `${totalSales === 0 ? totalQuantity : totalQuantity - totalSales}`,
+          title: 'Vendas / Limite',
+          value: `${totalSales} / ${totalQuantity}`,
         },
         {
           title: 'Ingressos à venda',

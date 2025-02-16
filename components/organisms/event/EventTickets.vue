@@ -148,8 +148,8 @@ export default {
   components: { Container, Draggable },
 
   props: {
-    title: { type: String, required: false, default: 'Ingressos Vendidos' },
-    titleSize: { type: String, required: false, default: '40px' },
+    title: { type: String, required: false, default: 'Detalhamento das vendas' },
+    titleSize: { type: String, required: false, default: '26px' },
     disableMenu: { type: Boolean, required: false, default: false },
     eventId: { type: String, required: true },
     disableHover: { type: Boolean, required: false, default: false },
@@ -318,7 +318,7 @@ export default {
     },
 
     async onDrop({ removedIndex, addedIndex }) {
-      if (removedIndex !== null && addedIndex !== null) {
+      if (removedIndex !== null && addedIndex !== null && removedIndex !== addedIndex) {
         try {
           await eventTickets.swapTicketsOrder({
             removedIndex,
@@ -347,7 +347,7 @@ export default {
 
 <style scoped>
 .event-tickets-title {
-  font-weight: 700;
+  font-weight: 600;
   text-align: left;
   color: var(--black-text);
   font-family: var(--font-family-poppins-bold);

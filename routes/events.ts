@@ -79,6 +79,22 @@ export default [
           template: 'coupons',
         },
       },
+      {
+        path: 'checkin',
+        name: 'eventsDetailsCheckin',
+        meta: {
+          name: 'eventsDetails',
+          template: 'checkin',
+        },
+      },
+      {
+        path: 'guestlists',
+        name: 'eventsDetailsGuestlists',
+        meta: {
+          name: 'eventsDetails',
+          template: 'guestlists',
+        },
+      },
     ],
   },
   {
