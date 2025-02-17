@@ -7,13 +7,6 @@ export const TopBar = [
         needPermissions: false,
     },
     {
-        icon: 'mdi-cart-outline',
-        iconActive: 'mdi-cart',
-        title: 'Vendas',
-        to: '/sales',
-        needPermissions: true,
-    },
-    {
         icon: 'mdi-account-outline',
         iconActive: 'mdi-account',
         title: 'Relatórios',
@@ -25,13 +18,6 @@ export const TopBar = [
         iconActive: 'mdi-cog',
         title: 'Configurações',
         to: '/settings',
-        needPermissions: true,
-    },
-    {
-        icon: 'mdi-card-account-phone-outline',
-        iconActive: 'mdi-card-account-phone',
-        title: 'Suporte',
-        to: '/support',
         needPermissions: true,
     },
     {

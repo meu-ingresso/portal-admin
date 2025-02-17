@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { EventGuest } from '~/models/event';
+import { EventGuest, ResultMeta } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleGetResponse } from '~/utils/responseHelpers';
 @Module({
@@ -11,7 +11,17 @@ export default class EventGuests extends VuexModule {
 
   private isLoading: boolean = false;
 
+  private isDeleting: boolean = false;
+
   private guestList: EventGuest[] = [];
+
+  private meta: ResultMeta = {
+    total: 0,
+    perPage: 50,
+    currentPage: 1,
+    lastPage: 1,
+    firstPage: 1
+  };
 
   private mockGuestList: EventGuest[] = [
     {
@@ -39,13 +49,31 @@ export default class EventGuests extends VuexModule {
     return this.guestList;
   }
 
+  public get $meta() {
+    return this.meta;
+  }
+
   public get $isLoading() {
     return this.isLoading;
+  }
+
+  public get $isDeleting() {
+    return this.isDeleting;
   }
 
   @Mutation
   private SET_LOADING(loading: boolean) {
     this.isLoading = loading;
+  }
+
+  @Mutation
+  private SET_META(meta: ResultMeta) {
+    this.meta = meta;
+  }
+
+  @Mutation
+  private SET_DELETING(deleting: boolean) {
+    this.isDeleting = deleting;
   }
 
   @Mutation
@@ -93,14 +121,18 @@ export default class EventGuests extends VuexModule {
   }
 
   @Action
-  public async fetchAndPopulateByEventId(eventId: string): Promise<void> {
+  public async fetchAndPopulateByQuery(query: string): Promise<void> {
     try {
       this.context.commit('SET_LOADING', true);
       
-      const response = await $axios.$get(`event-guests?where[event_id][v]=${eventId}`);
-      const guests = handleGetResponse(response, 'Convidados não encontrados');
+      const response = await $axios.$get(`event-guests?${query}`);
+      const result = handleGetResponse(response, 'Convidados não encontrados', null, true);
+
+      if (result.meta) {
+        this.context.commit('SET_META', result.meta);
+      }
       
-      this.context.commit('SET_GUESTS', guests);
+      this.context.commit('SET_GUESTS', result.data || []);
     } catch (error) {
       console.error('Erro ao buscar convidados:', error);
       throw error;
@@ -138,7 +170,7 @@ export default class EventGuests extends VuexModule {
   @Action
   public async fetchDeleteGuest(guestId: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      this.context.commit('SET_DELETING', true);
 
       const response = await $axios.$delete(`event-guest/${guestId}`);
       
@@ -154,7 +186,7 @@ export default class EventGuests extends VuexModule {
       console.error('Erro ao remover convidado:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      this.context.commit('SET_DELETING', false);
     }
   }
 

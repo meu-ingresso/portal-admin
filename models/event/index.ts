@@ -1,3 +1,11 @@
+export interface ResultMeta {
+  total: number;
+  perPage: number;
+  currentPage: number;
+  lastPage: number;
+  firstPage: number;
+}
+
 export type EventType = 'Presencial' | 'Online' | 'Híbrido';
 
 export interface CategoryOption {

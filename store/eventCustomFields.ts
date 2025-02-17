@@ -153,7 +153,7 @@ export default class EventCustomFields extends VuexModule {
     try {
       this.context.commit('SET_LOADING', true); 
       const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${eventId}`);
-      const fieldsData = handleGetResponse(response, 'Campos personalizados não encontrados', eventId, true);
+      const fieldsResult = handleGetResponse(response, 'Campos personalizados não encontrados', eventId, true);
       
       const groupedFields = new Map<string, CustomField>();
       
@@ -165,8 +165,8 @@ export default class EventCustomFields extends VuexModule {
       });
 
       // Primeiro, vamos processar os campos padrão
-      const defaultFieldsData = fieldsData.filter((field: CustomFieldApiResponse) => defaultFields.includes(field.name));
-      const customFieldsData = fieldsData.filter((field: CustomFieldApiResponse) => !defaultFields.includes(field.name));
+      const defaultFieldsData = fieldsResult.data.filter((field: CustomFieldApiResponse) => defaultFields.includes(field.name));
+      const customFieldsData = fieldsResult.data.filter((field: CustomFieldApiResponse) => !defaultFields.includes(field.name));
 
       // Processa campos padrão primeiro
       for (const defaultFieldName of defaultFields) {
@@ -193,9 +193,9 @@ export default class EventCustomFields extends VuexModule {
           );
 
           // Trata o retorno e filtra por não deletados
-          const checkoutFieldsTicketsData = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
+          const checkoutFieldsTicketsResult = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
 
-          const customFieldTickets = checkoutFieldsTicketsData.map(
+          const customFieldTickets = checkoutFieldsTicketsResult.data.map(
             (customFieldTicket: CustomFieldTicketApiResponse) => ({
               id: customFieldTicket.ticket.id,
               name: customFieldTicket.ticket.name,
@@ -246,9 +246,9 @@ export default class EventCustomFields extends VuexModule {
           );
 
           // Trata o retorno e filtra por não deletados
-          const checkoutFieldsTicketsData = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
+          const checkoutFieldsTicketsResult = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
 
-          const customFieldTickets = checkoutFieldsTicketsData.map(
+          const customFieldTickets = checkoutFieldsTicketsResult.data.map(
             (customFieldTicket: CustomFieldTicketApiResponse) => ({
               id: customFieldTicket.ticket.id,
               name: customFieldTicket.ticket.name,
@@ -264,9 +264,9 @@ export default class EventCustomFields extends VuexModule {
             );
 
             // Trata o retorno e filtra por não deletados
-            const fieldOptionsData = handleGetResponse(responseFieldOptions, 'Opções não encontradas', null, true)
+            const fieldOptionsResult = handleGetResponse(responseFieldOptions, 'Opções não encontradas', null, true)
 
-            selectedOptions = fieldOptionsData.map(
+            selectedOptions = fieldOptionsResult.data.map(
               (option: FieldSelectedOption) => {
                 return {
                   id: option.id,
@@ -505,8 +505,8 @@ export default class EventCustomFields extends VuexModule {
             ]);
 
             // Trata o retorno e filtra por não deletados
-            const existingOptions = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true);
-            const existingTicketRelations = handleGetResponse(ticketRelationsResponse, 'Relações de tickets não encontradas', null, true);
+            const existingOptionsResult = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true);
+            const existingTicketRelationsResult = handleGetResponse(ticketRelationsResponse, 'Relações de tickets não encontradas', null, true);
 
             // Atualizar campo existente
             if (shouldUpdateField(existingField, field)) {
@@ -528,7 +528,7 @@ export default class EventCustomFields extends VuexModule {
 
             // Processar opções se for campo multi-opção
             if (isMultiOptionField(field.type)) {
-              const fieldOptions = existingOptions.filter(
+              const fieldOptions = existingOptionsResult.data.filter(
                 (opt: CustomFieldOptionApiResponse) => opt.event_checkout_field_id === fieldId
               );
               const optionChanges = getFieldOptionChanges(fieldOptions, field.selected_options);
@@ -572,7 +572,7 @@ export default class EventCustomFields extends VuexModule {
             }
 
             // Processar relações com tickets
-            const fieldTicketRelations = existingTicketRelations.filter(
+            const fieldTicketRelations = existingTicketRelationsResult.data.filter(
               (rel: CustomFieldTicketApiResponse) => rel.event_checkout_field_id === fieldId
             );
 

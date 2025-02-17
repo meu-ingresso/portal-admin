@@ -6,7 +6,7 @@
     persistent
     @input="$emit('input', $event)">
     <v-card :tile="isMobile">
-      <v-card-title class="d-flex justify-space-between align-center">
+      <v-card-title v-if="!loading" class="d-flex justify-space-between align-center">
         <span class="headline">{{ title }}</span>
         <v-btn icon :disabled="loading" @click="handleClose">
           <v-icon>mdi-close</v-icon>
@@ -19,7 +19,7 @@
         </template>
         <template v-else>
           <div class="text-center">
-            <div class="pt-10">
+            <div v-if="loadingText" class="pt-10">
               <h2 class="pt-10">{{ loadingText }}</h2>
             </div>
             <Lottie
@@ -40,6 +40,7 @@
         <DefaultButton
           :text="confirmText"
           :loading="loading"
+          :disabled="loading"
           :color="confirmColor"
           @click="handleConfirm" />
       </v-card-actions>
@@ -76,7 +77,7 @@ export default {
     },
     loadingText: {
       type: String,
-      default: 'Processando...',
+      default: '',
     },
     loading: {
       type: Boolean,

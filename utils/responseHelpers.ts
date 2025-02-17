@@ -9,13 +9,21 @@ export const handleGetResponse = (response: any, errorMessage: string, eventId?:
     throw new Error(`${errorMessage} para o evento ${eventId}`);
   }
 
-  const data = response.body.result.data;
-
+  let data = response.body.result.data;
+  let meta = response.body.result.meta;
+  
   if (filterDeleted) {
-    return data.filter((item: any) => !item.deleted_at);
+    data = data.filter((item: any) => !item.deleted_at);
+    // Recalcula meta baseado nos itens filtrados
+    meta = {
+      ...meta,
+      total: data.length,
+      lastPage: Math.ceil(data.length / meta.perPage) || 1,
+      currentPage: Math.min(meta.currentPage, Math.ceil(data.length / meta.perPage) || 1)
+    };
   }
 
-  return data;
+  return { data, meta };
 };
 
 
