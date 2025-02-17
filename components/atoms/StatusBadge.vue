@@ -39,7 +39,7 @@ export default {
 .status-badge {
   border-radius: 48px;
   gap: 10px;
-  width: 96px;
+  min-width: 96px;
   height: 32px;
   font-size: 18px;
   font-weight: 400;
