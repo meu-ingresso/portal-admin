@@ -58,7 +58,7 @@ export default {
   font-weight: 700;
   margin-bottom: 20px;
   color: var(--black-text);
-  font-family: var(--font-family-poppins-bold);
+  font-family: var(--font-family-inter-bold);
 }
 
 @media (max-width: 360px) {

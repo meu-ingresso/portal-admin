@@ -195,7 +195,7 @@ export default {
   color: var(--primary);
   font-size: 16px;
   font-weight: 700;
-  font-family: var(--font-family-poppins-bold);
+  font-family: var(--font-family-inter-bold);
 }
 
 .ticket-hover-icon {

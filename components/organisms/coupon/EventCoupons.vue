@@ -241,7 +241,7 @@ export default {
   font-weight: 700;
   text-align: left;
   color: var(--black-text);
-  font-family: var(--font-family-poppins-bold);
+  font-family: var(--font-family-inter-bold);
   font-size: 26px;
 }
 
