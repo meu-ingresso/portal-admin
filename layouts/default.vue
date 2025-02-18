@@ -150,7 +150,7 @@ export default {
   color: var(--black-text) !important;
   font-weight: 400 !important;
   font-size: 16px !important;
-  font-family: var(--font-family-poppins-bold) !important;
+  font-family: var(--font-family-inter-bold) !important;
 }
 
 .active-item::before {
@@ -163,9 +163,6 @@ export default {
   border-bottom-right-radius: 38px;
   color: white;
   font-size: 16px !important;
-  font-display: var(--font-family-poppins-bold) !important;
-}
-
-.drawer-logo {
+  font-display: var(--font-family-inter-bold) !important;
 }
 </style>

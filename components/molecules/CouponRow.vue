@@ -252,7 +252,7 @@ export default {
   color: var(--primary);
   font-size: 16px;
   font-weight: 700;
-  font-family: var(--font-family-poppins-bold);
+  font-family: var(--font-family-inter-bold);
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -347,7 +347,7 @@ export default {
   color: var(--primary);
   font-size: 16px;
   font-weight: 700;
-  font-family: var(--font-family-poppins-bold);
+  font-family: var(--font-family-inter-bold);
   text-transform: uppercase;
 }
 

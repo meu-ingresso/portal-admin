@@ -274,10 +274,10 @@ export default class EventTickets extends VuexModule {
         `ticket-event-categories?where[event_id][v]=${eventId}`
       );
 
-      const existingCategories = handleGetResponse(categoriesResponse, 'Categorias não encontradas', eventId, true);
+      const existingCategoriesResult = handleGetResponse(categoriesResponse, 'Categorias não encontradas', eventId, true);
 
       // Identifica mudanças necessárias nas categorias
-      const categoryChanges = getCategoryChanges(existingCategories, this.ticketList);
+      const categoryChanges = getCategoryChanges(existingCategoriesResult.data, this.ticketList);
 
       // Atualiza as categorias que mudaram
       for (const category of categoryChanges.toUpdate) {
@@ -409,9 +409,9 @@ export default class EventTickets extends VuexModule {
         `tickets?where[event_id][v]=${eventId}&preloads[]=category&preloads[]=status`
       );
 
-      const tickets = handleGetResponse(response, 'Tickets não encontrados', eventId, true);
+      const ticketsResult = handleGetResponse(response, 'Tickets não encontrados', eventId, true);
 
-      const orderedTickets = tickets.sort((a: TicketApiResponse, b: TicketApiResponse) => a.display_order - b.display_order);
+      const orderedTickets = ticketsResult.data.sort((a: TicketApiResponse, b: TicketApiResponse) => a.display_order - b.display_order);
 
       this.context.commit('SET_TICKETS', orderedTickets.map(
         (ticket: any) => {
@@ -658,9 +658,9 @@ export default class EventTickets extends VuexModule {
         `tickets?where[id][v]=${ticketId}&preloads[]=category`
       );
 
-      const ticket = handleGetResponse(ticketResponse, 'Ticket não encontrado', ticketId, true);
+      const ticketResult = handleGetResponse(ticketResponse, 'Ticket não encontrado', ticketId, true);
 
-      const hasSales = ticket.total_sold > 0;
+      const hasSales = ticketResult.data.total_sold > 0;
 
       if (hasSales) {
         throw new Error('TICKET_HAS_SALES');
@@ -681,7 +681,7 @@ export default class EventTickets extends VuexModule {
         status_id: unavailableStatus.id
       });
 
-      const categoryId = ticket?.category?.id;
+      const categoryId = ticketResult.data?.category?.id;
       
       // 3. Deletar o ticket
       const response = await $axios.$delete(`ticket/${ticketId}`);
@@ -698,10 +698,10 @@ export default class EventTickets extends VuexModule {
           `tickets?where[ticket_event_category_id][v]=${categoryId}`
         );
 
-        const otherTickets = handleGetResponse(otherTicketsResponse, 'Tickets não encontrados', ticketId, true);
+        const otherTicketsResult = handleGetResponse(otherTicketsResponse, 'Tickets não encontrados', ticketId, true);
 
         // Filtrar tickets que não são o ticket a ser deletado
-        const filteredTickets = otherTickets.filter((ticket: TicketApiResponse) => ticket.id !== ticketId);
+        const filteredTickets = otherTicketsResult.data.filter((ticket: TicketApiResponse) => ticket.id !== ticketId);
 
         // Se não há outros tickets usando a categoria, deletá-la
         if (filteredTickets.length === 0) {
