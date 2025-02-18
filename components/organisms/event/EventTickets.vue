@@ -1,8 +1,14 @@
 <template>
   <v-row class="mb-4">
     <v-col cols="12">
-      <div class="event-tickets-title" :style="{ 'font-size': titleSize }">
-        {{ title }}
+      <div class="d-flex justify-space-between">
+        <div class="event-tickets-title">
+          {{ title }}
+        </div>
+        <DefaultButton
+          v-if="!disableMenu"
+          text="Adicionar ingresso"
+          @click="handleAddTicket" />
       </div>
     </v-col>
 
@@ -39,6 +45,7 @@
           v-for="ticket in getTickets"
           :id="ticket.id"
           :key="ticket.id"
+          class="mt-1"
           :disable-menu="disableMenu"
           :disable-hover="disableHover"
           :name="ticket.name"
@@ -149,7 +156,6 @@ export default {
 
   props: {
     title: { type: String, required: false, default: 'Detalhamento das vendas' },
-    titleSize: { type: String, required: false, default: '26px' },
     disableMenu: { type: Boolean, required: false, default: false },
     eventId: { type: String, required: true },
     disableHover: { type: Boolean, required: false, default: false },
@@ -177,6 +183,10 @@ export default {
     },
   },
   methods: {
+    handleAddTicket() {
+      this.$emit('add-ticket');
+    },
+
     handleCloseDialog() {
       if (!this.isLoading) {
         this.showConfirmDialog = false;
@@ -348,6 +358,7 @@ export default {
 <style scoped>
 .event-tickets-title {
   font-weight: 600;
+  font-size: 26px;
   text-align: left;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);

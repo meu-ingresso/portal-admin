@@ -1,14 +1,26 @@
 <template>
   <div v-if="getEvent" class="event-details-tickets">
-    <div class="d-flex justify-space-between">
-      <EventDetailsHeader />
-      <div style="padding-top: 12px">
-        <DefaultButton text="Adicionar Cupom" @click="openAddCouponModal" />
-      </div>
-    </div>
+    <EventDetailsHeader />
     <div class="event-details-wrapper">
-      <StatisticList :statistics="getStatistics" title="Códigos promocionais" />
-      <EventCoupons :event-id="getEvent.id" />
+      <!-- Estado vazio -->
+      <template v-if="getCoupons?.length === 0">
+        <EmptyState
+          title="Ainda não há cupons"
+          subtitle="Uma vez criados, seus cupons aparecerão aqui"
+          icon="mdi-ticket">
+          <template #action>
+            <DefaultButton
+              text="Adicionar Cupom"
+              icon="mdi-plus"
+              class="mt-6"
+              @click="openAddCouponModal" />
+          </template>
+        </EmptyState>
+      </template>
+      <template v-else>
+        <StatisticList :statistics="getStatistics" title="Códigos promocionais" />
+        <EventCoupons :event-id="getEvent.id" @add-coupon="openAddCouponModal" />
+      </template>
     </div>
 
     <!-- Modal de adição -->

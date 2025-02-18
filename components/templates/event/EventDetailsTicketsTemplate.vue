@@ -1,17 +1,31 @@
 <template>
   <div v-if="getEvent" class="event-details-tickets">
-    <div class="d-flex justify-space-between">
-      <EventDetailsHeader />
-      <div style="padding-top: 12px">
-        <DefaultButton text="Adicionar ingresso" @click="openAddTicketModal" />
-      </div>
-    </div>
+    <EventDetailsHeader />
     <div class="event-details-wrapper">
-      <StatisticList :statistics="getStatistics" title="Ingressos" />
-      <EventTickets
-        :event-id="getEvent.id"
-        title="Tipos de ingressos"
-        title-size="16px" />
+      <!-- Estado vazio -->
+      <template v-if="getTickets?.length === 0">
+        <EmptyState
+          title="Ainda não há ingressos"
+          subtitle="Uma vez criados, seus ingressos aparecerão aqui"
+          icon="mdi-ticket">
+          <template #action>
+            <DefaultButton
+              text="Adicionar ingresso"
+              icon="mdi-plus"
+              class="mt-6"
+              @click="openAddTicketModal" />
+          </template>
+        </EmptyState>
+      </template>
+
+      <!-- Tabela de ingressos -->
+      <template v-else>
+        <StatisticList :statistics="getStatistics" title="Ingressos" />
+        <EventTickets
+          :event-id="getEvent.id"
+          title="Tipos de ingressos"
+          @add-ticket="openAddTicketModal" />
+      </template>
     </div>
 
     <!-- Modal de adição -->

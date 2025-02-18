@@ -4,6 +4,7 @@
       <div class="d-flex justify-space-between">
         <div class="event-guests-title">Lista de Convidados</div>
         <DefaultButton
+          v-if="guests.length > 0"
           text="Adicionar Convidado"
           :loading="isLoading"
           icon="mdi-plus"
@@ -11,27 +12,45 @@
       </div>
     </v-col>
     <v-col cols="12" md="12" sm="12">
-      <!-- Tabela de convidados -->
-      <v-data-table
-        :headers="headers"
-        :items="guests"
-        :loading="isLoading"
-        :server-items-length="meta.total"
-        :options.sync="options"
-        :footer-props="{
-          itemsPerPageOptions: [50, 100, 200],
-          itemsPerPageText: 'Convidados por página',
-        }"
-        class="elevation-1"
-        @update:options="handleTableUpdate">
-        <template #[`item.full_name`]="{ item }">
-          {{ item.first_name }} {{ item.last_name }}
-        </template>
+      <!-- Estado vazio -->
+      <template v-if="guests.length === 0">
+        <EmptyState
+          title="Ainda não há convidados"
+          subtitle="Uma vez criados, seus convidados aparecerão aqui"
+          icon="mdi-account-group-outline">
+          <template #action>
+            <DefaultButton
+              text="Adicionar Convidado"
+              icon="mdi-plus"
+              class="mt-6"
+              @click="openGuestForm" />
+          </template>
+        </EmptyState>
+      </template>
 
-        <template #[`item.actions`]="{ item }">
-          <v-icon small class="mr-2" @click="removeGuest(item)"> mdi-delete </v-icon>
-        </template>
-      </v-data-table>
+      <!-- Tabela de convidados -->
+      <template v-else>
+        <v-data-table
+          :headers="headers"
+          :items="guests"
+          :loading="isLoading"
+          :server-items-length="meta.total"
+          :options.sync="options"
+          :footer-props="{
+            itemsPerPageOptions: [50, 100, 200],
+            itemsPerPageText: 'Convidados por página',
+          }"
+          class="elevation-1"
+          @update:options="handleTableUpdate">
+          <template #[`item.full_name`]="{ item }">
+            {{ item.first_name }} {{ item.last_name }}
+          </template>
+
+          <template #[`item.actions`]="{ item }">
+            <v-icon small class="mr-2" @click="removeGuest(item)"> mdi-delete </v-icon>
+          </template>
+        </v-data-table>
+      </template>
 
       <!-- Dialog do formulário -->
       <v-dialog
@@ -43,7 +62,7 @@
           <v-card-title
             class="d-flex justify-space-between align-center guest-form-modal-title">
             <h3>{{ modalTitle }}</h3>
-            <v-btn icon @click="closeGuestForm">
+            <v-btn icon :disabled="isAddingGuests" @click="closeGuestForm">
               <v-icon>mdi-close</v-icon>
             </v-btn>
           </v-card-title>
@@ -98,7 +117,7 @@
               <!-- Botão para adicionar mais uma linha -->
               <div class="d-flex justify-center">
                 <v-btn
-                  :disabled="isLoading"
+                  :disabled="isAddingGuests"
                   text
                   color="primary"
                   class="mt-4"
@@ -114,12 +133,12 @@
             <DefaultButton
               text="Cancelar"
               outlined
-              :disabled="isLoading"
+              :disabled="isAddingGuests"
               @click="closeGuestForm" />
             <DefaultButton
               :text="saveGuestButtonText"
-              :loading="isLoading"
-              :disabled="newGuests.length === 0"
+              :is-loading="isAddingGuests"
+              :disabled="newGuests.length === 0 || isLoading"
               @click="saveGuests" />
           </v-card-actions>
         </v-card>
@@ -140,6 +159,7 @@
 <script>
 import { isMobileDevice } from '@/utils/utils';
 import { eventGuests, toast } from '@/store';
+
 export default {
   data() {
     return {
@@ -159,6 +179,7 @@ export default {
       selectedGuest: null,
       newGuests: [],
       isFormValid: true,
+      isAddingGuests: false,
       validationRules: {
         firstName: [
           (v) => !!v || 'Primeiro nome é obrigatório',
@@ -213,6 +234,10 @@ export default {
     },
   },
 
+  mounted() {
+    this.fetchGuests();
+  },
+
   methods: {
     removeGuestRow(index) {
       this.newGuests.splice(index, 1);
@@ -247,6 +272,8 @@ export default {
       if (!this.$refs.form.validate()) return;
 
       try {
+        this.isAddingGuests = true;
+
         for (const guest of this.newGuests) {
           await eventGuests.createGuest({
             event_id: this.$route.params.id,
@@ -269,6 +296,8 @@ export default {
           text: 'Erro ao adicionar convidados',
           type: 'error',
         });
+      } finally {
+        this.isAddingGuests = false;
       }
     },
 
@@ -282,8 +311,6 @@ export default {
 
       try {
         await eventGuests.fetchDeleteGuest(this.selectedGuest.id);
-        await this.fetchGuests();
-
         toast.setToast({
           text: 'Convidado removido com sucesso!',
           type: 'success',
@@ -294,6 +321,7 @@ export default {
           type: 'error',
         });
       } finally {
+        this.fetchGuests();
         this.showDeleteDialog = false;
         this.selectedGuest = null;
       }
@@ -312,7 +340,7 @@ export default {
     buildQueryParams() {
       const { sortBy, sortDesc, page, itemsPerPage } = this.options;
 
-      let query = `?where[event_id][v]=${this.$route.params.id}`;
+      let query = `where[event_id][v]=${this.$route.params.id}`;
 
       // Adiciona ordenação
       if (sortBy.length > 0) {
@@ -349,5 +377,10 @@ export default {
   .event-guests-title {
     font-size: 18px !important;
   }
+}
+
+/* Adicione se precisar de ajustes específicos para o empty state */
+:deep(.empty-state) {
+  border: 1px solid var(--grey-lighter);
 }
 </style>

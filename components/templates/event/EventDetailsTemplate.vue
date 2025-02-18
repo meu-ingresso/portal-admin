@@ -11,6 +11,7 @@
         v-if="hasTickets"
         disable-menu
         disable-hover
+        title="Detalhamento das vendas"
         :event-id="getEvent.id" />
     </div>
   </div>
@@ -88,10 +89,6 @@ export default {
     hasTickets() {
       return this.getTickets.length > 0;
     },
-  },
-
-  mounted() {
-    console.log('this.getEvent.totalizers', JSON.stringify(this.getEvent));
   },
 };
 </script>

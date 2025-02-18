@@ -31,18 +31,11 @@
         </template>
       </v-card-text>
 
-      <v-card-actions class="d-flex justify-space-between align-center py-3 px-6">
-        <DefaultButton
-          outlined
-          :text="cancelText"
-          :disabled="loading"
-          @click="handleClose" />
-        <DefaultButton
-          :text="confirmText"
-          :loading="loading"
-          :disabled="loading"
-          :color="confirmColor"
-          @click="handleConfirm" />
+      <v-card-actions
+        v-if="!loading"
+        class="d-flex justify-space-between align-center py-3 px-6">
+        <DefaultButton outlined :text="cancelText" @click="handleClose" />
+        <DefaultButton :text="confirmText" :color="confirmColor" @click="handleConfirm" />
       </v-card-actions>
     </v-card>
   </v-dialog>
