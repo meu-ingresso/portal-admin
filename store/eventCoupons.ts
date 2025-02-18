@@ -199,14 +199,14 @@ export default class EventCoupons extends VuexModule {
       this.context.commit('SET_LOADING', true); 
 
       const response = await $axios.$get(`coupons?where[event_id][v]=${eventId}`);
-      const couponsData = handleGetResponse(response, 'Cupons não encontrados', eventId, true);
+      const resultCoupons = handleGetResponse(response, 'Cupons não encontrados', eventId, true);
 
-      const couponPromises = couponsData.map(async (coupon: CouponApiResponse) => {
+      const couponPromises = resultCoupons.data.map(async (coupon: CouponApiResponse) => {
         
         const responseCouponTicket = await $axios.$get(`coupons-tickets?where[coupon_id][v]=${coupon.id}&preloads[]=ticket`);
-        const couponTickets = handleGetResponse(responseCouponTicket, 'Relações de cupons com ingressos não encontradas', eventId, true);
+        const resultTickets = handleGetResponse(responseCouponTicket, 'Relações de cupons com ingressos não encontradas', eventId, true);
         
-        const tickets = couponTickets.map((couponTicket: CouponTicketApiResponse) => ({ name: couponTicket.ticket.name, id: couponTicket.ticket.id }));
+        const tickets = resultTickets.data.map((couponTicket: CouponTicketApiResponse) => ({ name: couponTicket.ticket.name, id: couponTicket.ticket.id }));
 
         // Separar data e hora
         const startDateTime = splitDateTime(coupon.start_date);
@@ -354,7 +354,7 @@ export default class EventCoupons extends VuexModule {
           if (coupon._deleted) {
             // 1. Remover relações com tickets
             await Promise.all(
-              existingTicketRelations.map((relation: CouponTicketApiResponse) =>
+              existingTicketRelations.data.map((relation: CouponTicketApiResponse) =>
                 $axios.$delete(`coupon-ticket/${relation.id}`)
               )
             );
@@ -385,7 +385,7 @@ export default class EventCoupons extends VuexModule {
 
           // Processar relações com tickets
           const relationChanges = getCouponTicketRelationChanges(
-            existingTicketRelations,
+            existingTicketRelations.data,
             existingTickets,
             coupon.tickets
           );
@@ -458,7 +458,7 @@ export default class EventCoupons extends VuexModule {
       const ticketRelationsResponse = await $axios.$get(
         `coupons-tickets?where[coupon_id][v]=${payload.couponId}&preloads[]=ticket`
       );
-      const existingTicketRelations = handleGetResponse(
+      const resultTicketRelations = handleGetResponse(
         ticketRelationsResponse, 
         'Relações de tickets não encontradas', 
         null, 
@@ -489,10 +489,10 @@ export default class EventCoupons extends VuexModule {
 
       // 4. Gerenciar relações com tickets
       const currentTicketIds = new Set(payload.coupon.tickets.map(t => t.id));
-      const existingTicketIds = new Set(existingTicketRelations.map((r: CouponTicketApiResponse) => r.ticket.id));
+      const existingTicketIds = new Set(resultTicketRelations.data.map((r: CouponTicketApiResponse) => r.ticket.id));
 
       // Relações a serem removidas
-      const relationsToDelete = existingTicketRelations.filter(
+      const relationsToDelete = resultTicketRelations.data.filter(
         (relation: CouponTicketApiResponse) => !currentTicketIds.has(relation.ticket.id)
       );
 
@@ -627,7 +627,7 @@ export default class EventCoupons extends VuexModule {
       const ticketRelationsResponse = await $axios.$get(
         `coupons-tickets?where[coupon_id][v]=${couponId}`
       );
-      const existingTicketRelations = handleGetResponse(
+      const resultTicketRelations = handleGetResponse(
         ticketRelationsResponse, 
         'Relações de tickets não encontradas', 
         null, 
@@ -635,9 +635,9 @@ export default class EventCoupons extends VuexModule {
       );
 
       // 2. Deletar todas as relações existentes
-      if (existingTicketRelations.length > 0) {
+      if (resultTicketRelations.data.length > 0) {
         await Promise.all(
-          existingTicketRelations.map((relation: CouponTicketApiResponse) =>
+          resultTicketRelations.data.map((relation: CouponTicketApiResponse) =>
             $axios.$delete(`coupon-ticket/${relation.id}`)
           )
         );

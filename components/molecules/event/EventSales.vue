@@ -19,10 +19,10 @@ export default {
 </script>
 <style scoped>
 .event-sales-title {
-  font-size: 40px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--black-text);
-  font-family: var(--font-family-poppins-bold);
+  font-family: var(--font-family-inter-bold);
 }
 
 @media (max-width: 360px) {

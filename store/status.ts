@@ -72,9 +72,9 @@ export default class Status extends VuexModule {
         `statuses?where[module][v]=${payload.module}&where[name][v]=${payload.name}`
       );
 
-      const responseData = handleGetResponse(response, 'Status não encontrado', null);
+      const responseResult = handleGetResponse(response, 'Status não encontrado', null);
 
-      return responseData[0];
+      return responseResult.data[0];
     } catch (error) {
       console.error(`[STATUS] Error fetching status for module "${payload.module}" and name "${payload.name}":`, error);
       throw error;

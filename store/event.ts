@@ -537,9 +537,9 @@ export default class Event extends VuexModule {
 
       const response = await $axios.$get(`tickets?where[event_id][v]=${eventId}&preloads[]=status`);
 
-      const ticketsResponse = handleGetResponse(response, 'Falha ao buscar ingressos do evento.', eventId, true);
+      const result = handleGetResponse(response, 'Falha ao buscar ingressos do evento.', eventId, true);
 
-      const tickets = ticketsResponse.map((ticket: any) => ({
+      const tickets = result.data.map((ticket: any) => ({
         ...ticket,
         id: ticket.id,
         name: ticket.name,

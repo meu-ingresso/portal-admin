@@ -125,7 +125,7 @@ export default {
     ticketsToday: { type: Number, required: true },
     statusText: { type: String, required: true },
     image: { type: String, required: false, default: null },
-    deletedAt: { type: String, required: false },
+    deletedAt: { type: String, required: false, default: null },
   },
 
   data() {

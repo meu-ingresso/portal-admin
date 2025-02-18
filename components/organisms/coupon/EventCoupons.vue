@@ -1,7 +1,10 @@
 <template>
   <v-row class="mb-4">
     <v-col cols="12">
-      <div class="event-coupons-title">Tipos de Cupons</div>
+      <div class="d-flex justify-space-between">
+        <div class="event-coupons-title">Tipos de Cupons</div>
+        <DefaultButton text="Adicionar Cupom" @click="handleAddCoupon" />
+      </div>
     </v-col>
 
     <v-col cols="12" md="12" sm="12">
@@ -58,53 +61,14 @@
       </v-card>
     </v-dialog>
 
-    <!-- Modal de confirmação -->
-    <v-dialog
+    <!-- Dialog de confirmação de remoção -->
+    <ConfirmDialog
       v-model="showConfirmDialog"
-      max-width="500px"
-      persistent
-      :fullscreen="isMobile">
-      <v-card :tile="isMobile">
-        <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
-          <h3>Confirmar Exclusão</h3>
-          <v-btn icon :disabled="isLoading" @click="handleCloseDialog">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-text>
-          <template v-if="!isLoading">
-            Tem certeza que deseja excluir o cupom "{{ selectedCoupon?.code }}"? Esta ação
-            não pode ser desfeita.
-          </template>
-          <template v-else>
-            <div class="text-center">
-              <div class="pt-10">
-                <h2 class="pt-10">Excluindo cupom...</h2>
-              </div>
-              <Lottie
-                path="./animations/loading_default.json"
-                height="130"
-                width="200"
-                class="teste" />
-            </div>
-          </template>
-        </v-card-text>
-        <v-card-actions
-          v-if="!isLoading"
-          class="d-flex align-center justify-space-between py-5">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            :disabled="isLoading"
-            @click="handleCloseDialog" />
-          <DefaultButton
-            text="Excluir"
-            :is-loading="isLoading"
-            :disabled="isLoading"
-            @click="confirmDelete" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      title="Remover Cupom"
+      :message="`Deseja remover o cupom ${selectedCoupon?.code}?`"
+      confirm-text="Excluir"
+      :loading="isLoading"
+      @confirm="confirmDelete" />
   </v-row>
 </template>
 
@@ -146,6 +110,10 @@ export default {
     },
   },
   methods: {
+    handleAddCoupon() {
+      this.$emit('add-coupon');
+    },
+
     handleCloseDialog() {
       if (!this.isLoading) {
         this.showConfirmDialog = false;
@@ -241,8 +209,8 @@ export default {
   font-weight: 700;
   text-align: left;
   color: var(--black-text);
-  font-family: var(--font-family-poppins-bold);
-  font-size: 40px;
+  font-family: var(--font-family-inter-bold);
+  font-size: 26px;
 }
 
 @media (max-width: 360px) {
