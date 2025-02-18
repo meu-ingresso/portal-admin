@@ -13,7 +13,7 @@
     </v-col>
     <v-col cols="12" md="12" sm="12">
       <!-- Estado vazio -->
-      <template v-if="guests.length === 0">
+      <template v-if="guests.length === 0 && !isLoading">
         <EmptyState
           title="Ainda não há convidados"
           subtitle="Uma vez criados, seus convidados aparecerão aqui"
@@ -232,10 +232,6 @@ export default {
     totalGuests() {
       return this.guests.length;
     },
-  },
-
-  mounted() {
-    this.fetchGuests();
   },
 
   methods: {
