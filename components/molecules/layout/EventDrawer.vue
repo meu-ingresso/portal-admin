@@ -344,15 +344,9 @@ export default {
 }
 
 .event-detail-image {
-  margin: 8px;
+  margin: 0px;
+  margin-bottom: 8px;
   padding: 0;
-  height: 200px;
   overflow: hidden;
-
-  .v-image {
-    height: 100%;
-    width: 100%;
-    object-fit: cover;
-  }
 }
 </style>

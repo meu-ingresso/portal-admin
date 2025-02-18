@@ -34,6 +34,7 @@ import {
   eventTickets,
   eventCoupons,
   eventCustomFields,
+  eventGuests,
   loading,
 } from '@/store';
 
@@ -68,6 +69,10 @@ export default {
 
     getCoupons() {
       return eventCoupons.$coupons;
+    },
+
+    getGuests() {
+      return eventGuests.$guests;
     },
 
     currentRouter() {
@@ -150,6 +155,9 @@ export default {
           eventTickets.fetchAndPopulateByEventId(this.$route.params.id),
           eventCustomFields.fetchAndPopulateByEventId(this.$route.params.id),
           eventCoupons.fetchAndPopulateByEventId(this.$route.params.id),
+          eventGuests.fetchAndPopulateByQuery(
+            `where[event_id][v]=${this.$route.params.id}`
+          ),
         ];
 
         await Promise.all(promises);
