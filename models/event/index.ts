@@ -220,7 +220,6 @@ export interface CreateEventPayload extends Omit<Event, 'id'> { }
 export interface UpdateEventPayload extends Partial<Event> {
   id: string;
 }
-
 export interface EventResponse {
   success: boolean;
   data?: Event;
@@ -251,6 +250,14 @@ export interface CustomFieldOptionApiResponse {
   name: string;
 }
 
+export interface EventApiResponse {
+  id: string;
+  name: string;
+  alias: string;
+  description: string;
+  general_information: string;  
+}
+
 export interface TicketApiResponse {
   id: string;
   event_id: string;
@@ -268,7 +275,26 @@ export interface TicketApiResponse {
   min_quantity_per_user: number;
   max_quantity_per_user: number;
   deleted_at?: string;
+  event?: EventApiResponse;
 }
+
+export interface CustomerTicketApiResponse {
+  id: string;
+  ticket_id: string;
+  current_owner_id: string;
+  previous_owner_id: string;
+  status_id: string;
+  payment_id: string;
+  ticket_identifier: string;
+  validated: boolean;
+  validated_by: string;
+  validated_at: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string;
+  ticket?: TicketApiResponse;
+}
+
 
 export interface CategoryApiResponse {
   id: string;
