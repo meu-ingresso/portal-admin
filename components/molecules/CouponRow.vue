@@ -322,6 +322,7 @@ export default {
 
 .first-coupon-column.is-mobile {
   justify-content: space-between;
+  padding-left: 0px;
 }
 
 .gap-3 {
