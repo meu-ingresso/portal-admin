@@ -22,6 +22,7 @@
         <EventDetailsTicketsTemplate v-if="isTickets" />
         <EventDetailsCouponsTemplate v-if="isCoupons" />
         <EventDetailsGuestlistsTemplate v-if="isGuestlists" />
+        <EventDetailsCheckinTemplate v-if="isCheckin" />
       </div>
     </v-container>
     <Toast />
@@ -95,6 +96,10 @@ export default {
       return this.$route.meta.template === 'guestlists';
     },
 
+    isCheckin() {
+      return this.$route.meta.template === 'checkin';
+    },
+
     userRole() {
       return this.$cookies.get('user_role');
     },
@@ -155,8 +160,8 @@ export default {
           eventTickets.fetchAndPopulateByEventId(this.$route.params.id),
           eventCustomFields.fetchAndPopulateByEventId(this.$route.params.id),
           eventCoupons.fetchAndPopulateByEventId(this.$route.params.id),
-          eventGuests.fetchAndPopulateByQuery(
-            `where[event_id][v]=${this.$route.params.id}`
+          eventGuests.fetchGuestListAndPopulateByQuery(
+            `where[event_id][v]=${this.$route.params.id}&preloads[]=members`
           ),
         ];
 

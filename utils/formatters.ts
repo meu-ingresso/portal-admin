@@ -3,7 +3,7 @@ import 'moment/locale/pt-br';
 
 export const formatDateTimeToBr = (date: string): String => {
   if (!date) return '';
-  return moment(date, 'YYYY-MM-DDTHH:mm:ss').format('DD/MM/YYYY - HH:mm:ss');
+  return moment(date, 'YYYY-MM-DDTHH:mm:ss').format('DD/MM/YYYY - HH:mm:ss')
 };
 export const formatDateToBr = (date: string): String => {
   if (!date) return '';
@@ -148,4 +148,13 @@ export const splitDateTime = (isoDateTime: string) => {
 export const joinDateTime = (date: string, time: string) => {
   if (!date || !time) return null;
   return moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DDTHH:mm:00.000Z');
+};
+
+export const formatDateTimeWithTimezone = (date: string): String => {
+  if (!date) return '';
+  
+  // Converte para timezone local e formata
+  return moment.utc(date)
+    .local()
+    .format('DD [de] MMM [de] YYYY [às] HH:mm');
 };
