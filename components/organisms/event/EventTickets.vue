@@ -1,6 +1,6 @@
 <template>
   <v-row class="mb-4">
-    <v-col cols="12">
+    <v-col v-if="!isMobile" cols="12">
       <div class="d-flex justify-space-between">
         <div class="event-tickets-title">
           {{ title }}
@@ -9,6 +9,12 @@
           v-if="!disableMenu"
           text="Adicionar ingresso"
           @click="handleAddTicket" />
+      </div>
+    </v-col>
+
+    <v-col v-if="isMobile" cols="12">
+      <div class="d-flex justify-center">
+        <DefaultButton text="Adicionar ingresso" @click="handleAddTicket" />
       </div>
     </v-col>
 
@@ -74,18 +80,17 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4">
           <TicketForm
             ref="ticketEditForm"
             :edit-index="selectedTicketIndex"
             :event-id="eventId"
             :nomenclature="'Ingresso'" />
         </v-card-text>
-        <v-card-actions class="d-flex justify-end py-3 px-6">
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
           <DefaultButton
             outlined
             text="Cancelar"
-            class="mr-4"
             :disabled="isLoading"
             @click="handleCloseEditDialog" />
           <DefaultButton

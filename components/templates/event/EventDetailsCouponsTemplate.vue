@@ -32,14 +32,13 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4">
           <CouponForm ref="couponForm" :event-id="getEvent.id" :tickets="getTickets" />
         </v-card-text>
-        <v-card-actions class="d-flex justify-end py-3 px-6">
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
           <DefaultButton
             outlined
             text="Cancelar"
-            class="mr-4"
             :disabled="isAddingCoupon"
             @click="handleCloseAddDialog" />
           <DefaultButton

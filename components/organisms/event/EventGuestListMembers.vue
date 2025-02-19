@@ -4,9 +4,17 @@
       <Lottie path="./animations/loading_default.json" height="300" width="300" />
     </template>
     <template v-else>
-      <v-col v-if="members.length > 0" cols="12">
+      <v-col v-if="members.length > 0 && !isMobile" cols="12">
         <div class="d-flex justify-space-between">
           <div class="members-title">Convidados</div>
+          <DefaultButton
+            text="Adicionar Convidado"
+            icon="mdi-plus"
+            @click="openMemberForm" />
+        </div>
+      </v-col>
+      <v-col v-if="members.length > 0 && isMobile" cols="12">
+        <div class="d-flex justify-center">
           <DefaultButton
             text="Adicionar Convidado"
             icon="mdi-plus"
@@ -61,21 +69,25 @@
 
         <!-- Dialog do formulário -->
         <v-dialog v-model="showForm" max-width="720px" persistent :fullscreen="isMobile">
-          <v-card :tile="isMobile">
-            <v-card-title class="d-flex justify-space-between align-center">
+          <v-card :tile="isMobile" class="form-card">
+            <!-- Header -->
+            <v-card-title class="d-flex justify-space-between align-center form-header">
               <h3>{{ modalTitle }}</h3>
               <v-btn icon :disabled="isSaving" @click="closeForm">
                 <v-icon>mdi-close</v-icon>
               </v-btn>
             </v-card-title>
 
-            <v-card-text class="px-4 py-2">
+            <!-- Conteúdo scrollável -->
+            <v-card-text class="form-content">
               <v-form v-if="showForm" ref="form" v-model="isFormValid">
                 <div
                   v-for="(guest, index) in newGuests"
                   :key="index"
-                  class="guest-form-row">
+                  class="guest-form-row"
+                  :class="{ 'guest-form-row--even': index % 2 === 0 }">
                   <v-row>
+                    <!-- Nome -->
                     <v-col cols="12" md="5" sm="12">
                       <v-text-field
                         v-model="guest.first_name"
@@ -86,6 +98,8 @@
                         dense
                         outlined />
                     </v-col>
+
+                    <!-- Sobrenome -->
                     <v-col cols="12" md="4" sm="12">
                       <v-text-field
                         v-model="guest.last_name"
@@ -96,7 +110,9 @@
                         dense
                         outlined />
                     </v-col>
-                    <v-col cols="12" md="2" sm="12">
+
+                    <!-- Quantidade -->
+                    <v-col cols="9" md="2" sm="9">
                       <v-text-field
                         v-model="guest.quantity"
                         label="Quantidade"
@@ -107,41 +123,41 @@
                         dense
                         outlined />
                     </v-col>
-                    <v-col cols="12" md="1" sm="12" class="d-flex align-center">
+
+                    <!-- Botão de remover -->
+                    <v-col cols="3" md="1" sm="3" class="d-flex align-center">
                       <v-btn icon small color="error" @click="removeGuestRow(index)">
                         <v-icon>mdi-delete</v-icon>
                       </v-btn>
                     </v-col>
                   </v-row>
                 </div>
-
-                <!-- Botão para adicionar mais uma linha -->
-                <div class="d-flex justify-center">
-                  <v-btn
-                    :disabled="isSaving"
-                    text
-                    color="primary"
-                    class="mt-4"
-                    @click="addNewGuestRow">
-                    <v-icon left>mdi-plus</v-icon>
-                    Novo convidado
-                  </v-btn>
-                </div>
               </v-form>
+
+              <!-- Botão para adicionar mais uma linha -->
+              <div class="d-flex justify-center mt-4 mb-6">
+                <v-btn text color="primary" :disabled="isSaving" @click="addNewGuestRow">
+                  <v-icon left>mdi-plus</v-icon>
+                  Novo convidado
+                </v-btn>
+              </div>
             </v-card-text>
 
-            <v-card-actions class="d-flex align-center justify-space-between py-5">
-              <DefaultButton
-                text="Cancelar"
-                outlined
-                :disabled="isSaving"
-                @click="closeForm" />
-              <DefaultButton
-                :text="saveGuestButtonText"
-                :is-loading="isSaving"
-                :disabled="isSaving || !isFormValid"
-                @click="saveMembers" />
-            </v-card-actions>
+            <!-- Footer -->
+            <div :class="['form-actions', { 'form-actions--mobile': isMobile }]">
+              <div class="d-flex align-center justify-space-between py-4 px-4 w-100">
+                <DefaultButton
+                  text="Cancelar"
+                  outlined
+                  :disabled="isSaving"
+                  @click="closeForm" />
+                <DefaultButton
+                  :text="saveGuestButtonText"
+                  :is-loading="isSaving"
+                  :disabled="isSaving || !isFormValid"
+                  @click="saveMembers" />
+              </div>
+            </div>
           </v-card>
         </v-dialog>
 
@@ -241,6 +257,10 @@ export default {
     },
 
     saveGuestButtonText() {
+      if (this.isMobile) {
+        return 'Adicionar';
+      }
+
       return this.newGuests.length === 1
         ? 'Adicionar convidado'
         : `Adicionar ${this.newGuests.length} convidados`;
@@ -436,6 +456,65 @@ export default {
 @media (max-width: 600px) {
   .members-title {
     font-size: 20px;
+  }
+}
+
+.form-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--grey-lighter);
+}
+
+.form-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.guest-form-row {
+  padding: 16px;
+  margin: 8px 0;
+  border-radius: 8px;
+}
+
+.guest-form-row--even {
+  background-color: var(--tertiary);
+}
+
+.form-actions {
+  border-top: 1px solid var(--grey-lighter);
+  background: white;
+}
+
+/* Estilos específicos para mobile */
+.form-actions--mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+}
+
+@media (max-width: 600px) {
+  .form-card {
+    height: 100vh;
+  }
+
+  .form-content {
+    padding-bottom: 100px !important;
+  }
+
+  .guest-form-row {
+    padding: 12px;
+    margin: 4px 0;
+  }
+
+  .form-actions--mobile {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 </style>
