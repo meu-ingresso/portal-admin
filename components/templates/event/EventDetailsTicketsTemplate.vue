@@ -37,17 +37,16 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-4">
           <TicketForm
             ref="ticketForm"
             :nomenclature="'Ingresso'"
             :event-id="getEvent.id" />
         </v-card-text>
-        <v-card-actions class="d-flex justify-end py-3 px-6">
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
           <DefaultButton
             outlined
             text="Cancelar"
-            class="mr-4"
             :disabled="isAddingTicket"
             @click="handleCloseAddDialog" />
           <DefaultButton

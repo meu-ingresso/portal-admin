@@ -4,9 +4,17 @@
       <Lottie path="./animations/loading_default.json" height="300" width="300" />
     </template>
     <template v-else>
-      <v-col v-if="guestLists.length > 0" cols="12">
+      <v-col v-if="guestLists.length > 0 && !isMobile" cols="12">
         <div class="d-flex justify-space-between">
           <div class="guest-lists-title">Lista de Convidados</div>
+          <DefaultButton
+            text="Nova lista de convidados"
+            icon="mdi-plus"
+            @click="openGuestListForm" />
+        </div>
+      </v-col>
+      <v-col v-if="guestLists.length > 0 && isMobile" cols="12">
+        <div class="d-flex justify-center">
           <DefaultButton
             text="Nova lista de convidados"
             icon="mdi-plus"
@@ -337,6 +345,10 @@ export default {
   margin: 0;
 }
 
+.guest-list-main {
+  flex: 1 1 0% !important;
+}
+
 .guest-list-actions {
   display: flex;
   align-items: center;
@@ -372,6 +384,10 @@ export default {
 
   .guest-list-meta {
     font-size: 12px;
+  }
+
+  .guest-list-actions {
+    margin-left: 10px;
   }
 }
 </style>
