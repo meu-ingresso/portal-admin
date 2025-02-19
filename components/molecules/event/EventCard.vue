@@ -31,7 +31,7 @@ export default {
     tickets: { type: Number, required: true },
     ticketsToday: { type: Number, required: true },
     statusText: { type: String, required: true },
-    deletedAt: { type: String, required: false },
+    deletedAt: { type: String, required: false, default: null },
   },
 
   computed: {
