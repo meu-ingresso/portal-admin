@@ -13,7 +13,7 @@
       @update:options="handleTableUpdate">
       <!-- Nome do Comprador -->
       <template #[`item.owner`]="{ item }">
-        {{ item.current_owner_name }}
+        {{ item.currentOwner.first_name }} {{ item.currentOwner.last_name }}
       </template>
 
       <!-- Tipo do Ingresso -->
@@ -68,6 +68,8 @@ export default {
 
   computed: {
     customerTickets() {
+      if (!this.eventId) return [];
+
       return eventCustomerTickets.$customerTickets;
     },
     meta() {
@@ -78,6 +80,9 @@ export default {
     },
     userId() {
       return this.$cookies.get('user_id');
+    },
+    eventId() {
+      return this.$route.params.id;
     },
   },
 
@@ -90,7 +95,7 @@ export default {
     async fetchCustomerTickets() {
       const query = this.buildQueryParams();
       await eventCustomerTickets.fetchAndPopulateByQuery(
-        `${query}&preloads[]=ticket:event`
+        `${query}&preloads[]=ticket:event&preloads[]=currentOwner&whereHas[ticket][event_id][v]=${this.eventId}`
       );
     },
 
@@ -105,7 +110,8 @@ export default {
         query += `&orderBy[]=${sortField}:${sortOrder}`;
       }
 
-      query += `&limit=${itemsPerPage}&page=${page - 1}`;
+      // TODO: Remover o limit e page pois ainda o filtro de evento é meio errado
+      // query += `&limit=${itemsPerPage}&page=${page - 1}`;
       return query;
     },
 

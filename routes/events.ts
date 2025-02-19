@@ -93,8 +93,18 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'guestlists',
+          view: 'lists',
         },
       },
+       {
+        path: 'guestlists/:listId',
+        name: 'eventsDetailsGuestlistsMembers',
+        meta: {
+          name: 'eventsDetails',
+          template: 'guestlists',
+          view: 'members',
+        },
+      }
     ],
   },
   {

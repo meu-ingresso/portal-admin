@@ -136,7 +136,7 @@ export default class EventCustomerTickets extends VuexModule {
         this.context.commit('SET_META', result.meta);
       }
       
-      this.context.commit('SET_GUESTS', result.data || []);
+      this.context.commit('SET_CUSTOMER_TICKETS', result.data || []);
     } catch (error) {
       console.error('Erro ao buscar ingressos:', error);
       throw error;

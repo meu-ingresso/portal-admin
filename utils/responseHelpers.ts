@@ -13,8 +13,38 @@ export const handleGetResponse = (response: any, errorMessage: string, eventId?:
   let meta = response.body.result.meta;
   
   if (filterDeleted) {
-    data = data.filter((item: any) => !item.deleted_at);
-    // Recalcula meta baseado nos itens filtrados
+    // Função recursiva para filtrar objetos deletados
+    const filterDeletedRecursively = (items: any[]): any[] => {
+      if (!Array.isArray(items)) return items;
+      
+      return items.filter((item: any) => {
+        // Primeiro verifica se o próprio item não está deletado
+        if (item.deleted_at) return false;
+        
+        // Para cada propriedade do objeto
+        Object.keys(item).forEach(key => {
+          const value = item[key];
+          
+          // Se for um array, filtra recursivamente
+          if (Array.isArray(value)) {
+            item[key] = filterDeletedRecursively(value);
+          }
+          // Se for um objeto com deleted_at, verifica se está deletado
+          else if (value && typeof value === 'object' && 'deleted_at' in value) {
+            if (value.deleted_at) {
+              item[key] = null;
+            }
+          }
+        });
+        
+        return true;
+      });
+    };
+
+    // Aplica o filtro recursivo nos dados
+    data = filterDeletedRecursively(data);
+
+    // Recalcula meta baseado nos itens filtrados no primeiro nível
     meta = {
       ...meta,
       total: data.length,
