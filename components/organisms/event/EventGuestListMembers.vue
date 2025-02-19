@@ -173,6 +173,8 @@ export default {
 
   data() {
     return {
+      currentQuery: '',
+      forceUpdate: false,
       headers: [
         {
           text: 'Nome Completo',
@@ -336,7 +338,7 @@ export default {
           page: 1,
         };
 
-        await this.fetchMembers();
+        await this.fetchMembers(true);
       } catch (error) {
         toast.setToast({
           text: 'Erro ao adicionar convidados',
@@ -361,7 +363,7 @@ export default {
           text: 'Convidado removido com sucesso!',
           type: 'success',
         });
-        this.fetchMembers();
+        this.fetchMembers(true);
       } catch (error) {
         toast.setToast({
           text: 'Erro ao remover convidado',
@@ -391,15 +393,32 @@ export default {
       return query;
     },
 
-    async fetchMembers() {
+    isQueryDifferent(newQuery, force = false) {
+      // Se forceUpdate está ativo, permite a atualização
+      if (force || !this.currentQuery) {
+        this.currentQuery = newQuery;
+        return true;
+      }
+
+      if (this.currentQuery !== newQuery) {
+        this.currentQuery = newQuery;
+        return true;
+      }
+
+      return false;
+    },
+
+    async fetchMembers(force = false) {
       const query = this.buildQueryParams();
-      await eventGuests.fetchGuestListMemberAndPopulateByQuery(query);
+      if (this.isQueryDifferent(query, force)) {
+        await eventGuests.fetchGuestListMemberAndPopulateByQuery(query);
+      }
     },
 
     handleTableUpdate(newOptions) {
-      if (this.options !== newOptions) {
+      if (JSON.stringify(this.options) !== JSON.stringify(newOptions)) {
         this.options = newOptions;
-        this.fetchMembers();
+        this.fetchMembers(false);
       }
     },
   },

@@ -171,6 +171,10 @@ export default {
     },
   },
 
+  mounted() {
+    this.fetchGuestLists();
+  },
+
   methods: {
     formatDateTimeWithTimezone,
 
