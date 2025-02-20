@@ -9,7 +9,7 @@
 
     <v-col v-if="isMobile" cols="12">
       <div class="d-flex justify-center">
-        <DefaultButton text="Adicionar Cupom" @click="handleAddCoupon" />
+        <DefaultButton text="Adicionar Cupom" block @click="handleAddCoupon" />
       </div>
     </v-col>
 
