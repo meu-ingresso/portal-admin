@@ -14,12 +14,11 @@
         </div>
       </v-col>
       <v-col v-if="guestLists.length > 0 && isMobile" cols="12">
-        <div class="d-flex justify-center">
-          <DefaultButton
-            text="Nova lista de convidados"
-            icon="mdi-plus"
-            @click="openGuestListForm" />
-        </div>
+        <DefaultButton
+          text="Nova lista de convidados"
+          icon="mdi-plus"
+          block
+          @click="openGuestListForm" />
       </v-col>
       <v-col cols="12" md="12" sm="12">
         <!-- Estado vazio -->
@@ -50,8 +49,7 @@
                 <div class="guest-list-main">
                   <h3 class="guest-list-name">{{ list.name }}</h3>
                   <p class="guest-list-meta">
-                    Última alteração feita no dia
-                    {{ formatDateTimeWithTimezone(list.updated_at) }}
+                    Última alteração: {{ formatDateTimeWithTimezone(list.updated_at) }}
                   </p>
                 </div>
 
