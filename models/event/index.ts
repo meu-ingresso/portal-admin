@@ -290,6 +290,28 @@ export interface TicketApiResponse {
   event?: EventApiResponse;
 }
 
+export interface StatusApiResponse {
+  id: string;
+  name: string;
+  module: string;
+  description: string;
+  deleted_at?: string;
+}
+
+export interface PaymentApiResponse {
+  id: string;
+  status_id: string;
+  user_id: string;
+  net_value: string;
+  gross_value: string;
+  coupon_id: string;
+  created_at: string;
+  updated_at: string;
+  paid_at: string;
+  payment_method: string;
+  status?: StatusApiResponse;
+}
+
 export interface CustomerTicketApiResponse {
   id: string;
   ticket_id: string;
@@ -305,6 +327,7 @@ export interface CustomerTicketApiResponse {
   updated_at: string;
   deleted_at: string;
   ticket?: TicketApiResponse;
+  payment?: PaymentApiResponse;
 }
 
 

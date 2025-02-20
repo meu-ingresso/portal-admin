@@ -18,6 +18,15 @@ export const formatDateToCustomString = (date: string): String => {
   return moment(date).format('DD MMM YYYY').toUpperCase();
 };
 
+export const formatDateTimeWithTimezone = (date: string): String => {
+  if (!date) return '';
+  
+  // Converte para timezone local e formata
+  return moment.utc(date)
+    .local()
+    .format('DD/MM/YYYY [às] HH:mm');
+};
+
 export const formatHourToBr = (hour: string): String => {
   if (!hour) return '';
   return moment(hour).format('HH:mm');
@@ -148,13 +157,4 @@ export const splitDateTime = (isoDateTime: string) => {
 export const joinDateTime = (date: string, time: string) => {
   if (!date || !time) return null;
   return moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DDTHH:mm:00.000Z');
-};
-
-export const formatDateTimeWithTimezone = (date: string): String => {
-  if (!date) return '';
-  
-  // Converte para timezone local e formata
-  return moment.utc(date)
-    .local()
-    .format('DD [de] MMM [de] YYYY [às] HH:mm');
 };

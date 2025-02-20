@@ -14,12 +14,11 @@
         </div>
       </v-col>
       <v-col v-if="members.length > 0 && isMobile" cols="12">
-        <div class="d-flex justify-center">
-          <DefaultButton
-            text="Adicionar Convidado"
-            icon="mdi-plus"
-            @click="openMemberForm" />
-        </div>
+        <DefaultButton
+          text="Adicionar Convidado"
+          icon="mdi-plus"
+          block
+          @click="openMemberForm" />
       </v-col>
       <v-col cols="12" md="12" sm="12">
         <!-- Estado vazio -->
@@ -48,7 +47,13 @@
             :footer-props="{
               itemsPerPageOptions: [50, 100, 200],
               itemsPerPageText: 'Convidados por página',
+              pageText: '{0}-{1} de {2}',
+              itemsPerPageAllText: 'Todos',
             }"
+            :no-data-text="'Nenhum registro encontrado'"
+            :no-results-text="'Nenhum registro encontrado'"
+            :loading-text="'Carregando...'"
+            class="guest-table"
             @update:options="handleTableUpdate">
             <!-- Data de criação -->
             <template #[`item.created_at`]="{ item }">
@@ -62,7 +67,9 @@
 
             <!-- Ações -->
             <template #[`item.actions`]="{ item }">
-              <v-icon small class="mr-2" @click="deleteMember(item)"> mdi-delete </v-icon>
+              <v-btn icon small color="error" @click="deleteMember(item)">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
             </template>
           </v-data-table>
         </template>
@@ -445,7 +452,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .members-title {
   font-weight: 600;
   font-size: 26px;
@@ -515,6 +522,36 @@ export default {
 
   .form-actions--mobile {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Estilos da tabela */
+::v-deep .guest-table {
+  /* Estilo do cabeçalho */
+  .v-data-table-header {
+    th {
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      font-family: var(--font-family-inter-bold) !important;
+      color: var(--black-text) !important;
+      white-space: nowrap;
+    }
+  }
+
+  /* Estilo das células */
+  .v-data-table__wrapper {
+    tbody {
+      td {
+        font-size: 14px;
+        color: var(--black-text);
+      }
+    }
+  }
+
+  /* Ajuste do padding das células para comportar fonte maior */
+  td,
+  th {
+    padding: 12px 16px !important;
   }
 }
 </style>

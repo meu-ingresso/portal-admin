@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-4">
+  <v-card flat class="mt-4">
     <v-data-table
       :headers="headers"
       :items="customerTickets"
@@ -8,8 +8,14 @@
       :options.sync="options"
       :footer-props="{
         itemsPerPageOptions: [50, 100, 200],
-        itemsPerPageText: 'Itens por página',
+        itemsPerPageText: 'Participantes por página',
+        pageText: '{0}-{1} de {2}',
+        itemsPerPageAllText: 'Todos',
       }"
+      :no-data-text="'Nenhum registro encontrado'"
+      :no-results-text="'Nenhum registro encontrado'"
+      :loading-text="'Carregando...'"
+      class="checkin-table"
       @update:options="handleTableUpdate">
       <!-- Nome do Comprador -->
       <template #[`item.owner`]="{ item }">
@@ -19,6 +25,22 @@
       <!-- Tipo do Ingresso -->
       <template #[`item.ticket_type`]="{ item }">
         {{ item.ticket?.name }}
+      </template>
+
+      <!-- Identificador do Ingresso -->
+      <template #[`item.ticket_identifier`]="{ item }">
+        {{ item.ticket_identifier }}
+      </template>
+
+      <!-- Pedido -->
+      <template #[`item.payment_id`]="{ item }">
+        <span
+          v-if="item.payment?.id"
+          class="payment-link"
+          @click="openPaymentDetails(item.payment.id)">
+          {{ item.payment.id }}
+        </span>
+        <span v-else>-</span>
       </template>
 
       <!-- Status e Ação -->
@@ -40,7 +62,12 @@
         </template>
       </template>
     </v-data-table>
-  </div>
+
+    <!-- Modal de Detalhes do Pagamento -->
+    <PaymentDetailsModal
+      :show.sync="showPaymentDetails"
+      :payment-id="selectedPaymentId" />
+  </v-card>
 </template>
 
 <script>
@@ -53,6 +80,7 @@ export default {
         { text: 'Comprador', value: 'owner', sortable: true },
         { text: 'Tipo', value: 'ticket_type', sortable: true },
         { text: 'Identificador', value: 'ticket_identifier', sortable: false },
+        { text: 'Pedido', value: 'payment_id', sortable: false },
         { text: 'Ações', value: 'actions', sortable: false, align: 'center' },
       ],
       options: {
@@ -63,6 +91,8 @@ export default {
       },
       selectedTicketId: '',
       validatingId: null,
+      showPaymentDetails: false,
+      selectedPaymentId: '',
     };
   },
 
@@ -95,7 +125,7 @@ export default {
     async fetchCustomerTickets() {
       const query = this.buildQueryParams();
       await eventCustomerTickets.fetchAndPopulateByQuery(
-        `${query}&preloads[]=ticket:event&preloads[]=currentOwner&whereHas[ticket][event_id][v]=${this.eventId}`
+        `${query}&preloads[]=ticket:event&preloads[]=currentOwner&whereHas[ticket][event_id][v]=${this.eventId}&preloads[]=payment:status`
       );
     },
 
@@ -110,8 +140,7 @@ export default {
         query += `&orderBy[]=${sortField}:${sortOrder}`;
       }
 
-      // TODO: Remover o limit e page pois ainda o filtro de evento é meio errado
-      // query += `&limit=${itemsPerPage}&page=${page - 1}`;
+      query += `&limit=${itemsPerPage}&page=${page - 1}`;
       return query;
     },
 
@@ -137,6 +166,53 @@ export default {
         this.validatingId = null;
       }
     },
+
+    openPaymentDetails(paymentId) {
+      this.selectedPaymentId = paymentId;
+      this.showPaymentDetails = true;
+    },
   },
 };
-</script> 
+</script>
+
+<style lang="scss" scoped>
+.payment-link {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.payment-link:hover {
+  opacity: 0.8;
+}
+
+/* Estilos da tabela */
+::v-deep .checkin-table {
+  /* Estilo do cabeçalho */
+  .v-data-table-header {
+    th {
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      font-family: var(--font-family-inter-bold) !important;
+      color: var(--black-text) !important;
+      white-space: nowrap;
+    }
+  }
+
+  /* Estilo das células */
+  .v-data-table__wrapper {
+    tbody {
+      td {
+        font-size: 14px;
+        color: var(--black-text);
+      }
+    }
+  }
+
+  /* Ajuste do padding das células para comportar fonte maior */
+  td,
+  th {
+    padding: 12px 16px !important;
+  }
+}
+</style> 

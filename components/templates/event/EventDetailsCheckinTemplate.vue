@@ -6,22 +6,22 @@
         <div class="event-details-checkin-title">Check-in</div>
       </v-col>
       <v-col cols="12" md="12" sm="12">
-        <v-tabs v-model="activeTab" background-color="white" grow>
-          <v-tab value="tickets">
+        <v-tabs v-model="activeTab" background-color="white" grow class="custom-tabs">
+          <v-tab>
             <v-icon left>mdi-ticket</v-icon>
-            Ingressos
+            Participantes
           </v-tab>
-          <v-tab value="guests">
+          <v-tab>
             <v-icon left>mdi-account-group</v-icon>
             Convidados
           </v-tab>
         </v-tabs>
 
         <v-tabs-items v-model="activeTab">
-          <v-tab-item value="tickets">
+          <v-tab-item>
             <CheckinTicketsTable />
           </v-tab-item>
-          <v-tab-item value="guests">
+          <v-tab-item>
             <CheckinGuestsTable />
           </v-tab-item>
         </v-tabs-items>
@@ -33,10 +33,10 @@
 <script>
 export default {
   data: () => ({
-    activeTab: 'tickets',
+    activeTab: 0,
   }),
 };
-</script> 
+</script>
 
 <style scoped>
 .event-details-checkin {
@@ -51,5 +51,9 @@ export default {
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
   font-size: 26px;
+}
+
+.custom-tabs {
+  margin-bottom: 16px;
 }
 </style>

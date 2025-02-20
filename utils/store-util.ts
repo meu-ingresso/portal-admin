@@ -21,6 +21,7 @@ import EventCoupons from '@/store/eventCoupons';
 import EventPrincipal from '@/store/eventPrincipal';
 import EventGuests from '@/store/eventGuests';
 import EventCustomerTickets from '@/store/eventCustomerTickets';
+import Payment from '@/store/payment';
 
 let auth: Auth;
 let toast: Toast;
@@ -41,6 +42,7 @@ let eventCoupons: EventCoupons;
 let eventPrincipal: EventPrincipal;
 let eventGuests: EventGuests;
 let eventCustomerTickets: EventCustomerTickets;
+let payment: Payment;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -62,6 +64,7 @@ const initializeStores = (store: Store<any>) => {
   eventPrincipal = getModule(EventPrincipal, store);
   eventGuests = getModule(EventGuests, store);
   eventCustomerTickets = getModule(EventCustomerTickets, store);
+  payment = getModule(Payment, store);
 };
 
 export {
@@ -85,4 +88,5 @@ export {
   eventPrincipal,
   eventGuests,
   eventCustomerTickets,
+  payment,
 };
