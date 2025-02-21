@@ -41,4 +41,11 @@ export const eventsSideBar = [
     to: '/events/:id/promoters',
     needPermissions: false,
   },
+  {
+    icon: 'mdi-cart-outline',
+    iconActive: 'mdi-cart',
+    title: 'Pedidos',
+    to: '/events/:id/orders',
+    needPermissions: false,
+  },
 ];

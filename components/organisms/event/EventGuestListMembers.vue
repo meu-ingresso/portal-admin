@@ -122,7 +122,7 @@
                     <v-col cols="9" md="2" sm="9">
                       <v-text-field
                         v-model="guest.quantity"
-                        label="Quantidade"
+                        label="Qtd."
                         type="number"
                         required
                         hide-details="auto"
@@ -159,7 +159,7 @@
                   :disabled="isSaving"
                   @click="closeForm" />
                 <DefaultButton
-                  :text="saveGuestButtonText"
+                  text="Adicionar"
                   :is-loading="isSaving"
                   :disabled="isSaving || !isFormValid"
                   @click="saveMembers" />
@@ -261,16 +261,6 @@ export default {
 
     modalTitle() {
       return `Novos convidados: ${this.newGuests.length}`;
-    },
-
-    saveGuestButtonText() {
-      if (this.isMobile) {
-        return 'Adicionar';
-      }
-
-      return this.newGuests.length === 1
-        ? 'Adicionar convidado'
-        : `Adicionar ${this.newGuests.length} convidados`;
     },
 
     members() {

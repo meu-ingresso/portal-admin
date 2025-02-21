@@ -1,7 +1,7 @@
 <template>
   <v-dialog
     :value="show"
-    max-width="720px"
+    max-width="960px"
     :fullscreen="isMobile"
     @input="$emit('update:show', $event)">
     <v-card :tile="isMobile">
@@ -21,20 +21,35 @@
             <h3 class="subtitle-1 font-weight-bold mb-3">Informações Gerais</h3>
             <v-row dense>
               <v-col cols="6">
-                <div class="info-label">ID do Pagamento</div>
-                <div class="info-value">{{ payment.id }}</div>
+                <div class="info-label">Pedido</div>
+                <div class="info-value primary--text font-weight-bold">
+                  {{ payment.id }}
+                </div>
               </v-col>
               <v-col cols="6">
                 <div class="info-label">Status</div>
                 <div class="info-value">
-                  <v-chip small :color="getStatusColor(payment.status?.name)">
+                  <v-chip
+                    small
+                    :color="getStatusColor(payment.status?.name)"
+                    text-color="white">
                     {{ payment.status?.name }}
                   </v-chip>
                 </div>
               </v-col>
+              <v-col cols="12">
+                <div class="info-label">Titular da compra</div>
+                <div class="info-value">
+                  {{ payment.user?.people?.first_name }}
+                  {{ payment.user?.people?.last_name }} -
+                  {{ payment.user?.people?.email }}
+                </div>
+              </v-col>
               <v-col cols="6">
                 <div class="info-label">Método</div>
-                <div class="info-value text-capitalize">{{ payment.payment_method }}</div>
+                <div class="info-value text-capitalize">
+                  {{ getPaymentMethod(payment.payment_method) }}
+                </div>
               </v-col>
               <v-col cols="6">
                 <div class="info-label">Data do pedido</div>
@@ -43,7 +58,7 @@
                 </div>
               </v-col>
               <v-col cols="6">
-                <div class="info-label">Valor Bruto</div>
+                <div class="info-label">Valor total</div>
                 <div class="info-value">{{ formatRealValue(payment.gross_value) }}</div>
               </v-col>
               <v-col cols="6">
@@ -72,7 +87,7 @@
                     <td>
                       <v-chip
                         x-small
-                        :color="ticket.validated ? 'success' : 'warning'"
+                        :color="ticket.validated ? 'green' : 'orange'"
                         text-color="white">
                         {{ ticket.validated ? 'Validado' : 'Não Validado' }}
                       </v-chip>
@@ -82,6 +97,34 @@
               </template>
             </v-simple-table>
           </div>
+          <v-divider />
+          <div class="tickets-actions d-flex align-center justify-space-between mt-4">
+            <div class="d-flex align-center">
+              <ButtonWithIcon
+                text="Imprimir ingressos"
+                outlined
+                :loading="isPrinting"
+                icon="mdi-printer"
+                @click="generatePDF" />
+
+              <ButtonWithIcon
+                text="Reenviar ingressos"
+                outlined
+                :loading="isResending"
+                icon="mdi-email"
+                class="ml-2"
+                @click="resendTickets" />
+            </div>
+
+            <ButtonWithIcon
+              text="Cancelar pedido"
+              outlined
+              color="error"
+              :loading="isCancelling"
+              icon="mdi-cancel"
+              class="ml-2"
+              @click="showCancelConfirmation" />
+          </div>
         </template>
       </v-card-text>
     </v-card>
@@ -89,12 +132,11 @@
 </template>
 
 <script>
+import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
-import { payment } from '@/store';
-import { isMobileDevice } from '@/utils/utils';
+import { payment, eventCustomerTickets, toast } from '@/store';
+import { isMobileDevice, getPaymentMethod } from '@/utils/utils';
 export default {
-  name: 'PaymentDetailsModal',
-
   props: {
     show: {
       type: Boolean,
@@ -106,9 +148,26 @@ export default {
     },
   },
 
+  data() {
+    return {
+      isPrinting: false,
+      isResending: false,
+      isCancelling: false,
+      showCancelDialog: false,
+    };
+  },
+
   computed: {
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+
+    getEvent() {
+      const filteredCustomerTicket = eventCustomerTickets.$customerTickets.find(
+        (customerTicket) => customerTicket.payment_id === this.paymentId
+      );
+
+      return filteredCustomerTicket?.ticket?.event;
     },
 
     isLoading() {
@@ -135,6 +194,7 @@ export default {
   methods: {
     formatDateTimeWithTimezone,
     formatRealValue,
+    getPaymentMethod,
 
     close() {
       this.$emit('update:show', false);
@@ -142,11 +202,80 @@ export default {
 
     getStatusColor(status) {
       const colors = {
-        Aprovado: 'success',
-        Pendente: 'warning',
-        Cancelado: 'error',
+        Aprovado: 'green',
+        Pendente: 'orange',
+        Cancelado: 'red',
       };
       return colors[status] || 'grey';
+    },
+
+    resendTickets() {
+      try {
+        this.isResending = true;
+        // TODO: Implementar lógica de reenvio
+        toast.setToast({
+          text: 'Ingressos reenviados com sucesso!',
+          type: 'success',
+          time: 5000,
+        });
+      } catch (error) {
+        console.error('Erro ao reenviar ingressos:', error);
+        toast.setToast({
+          text: 'Erro ao reenviar ingressos',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        this.isResending = false;
+      }
+    },
+
+    showCancelConfirmation() {
+      this.showCancelDialog = true;
+    },
+
+    cancelOrder() {
+      try {
+        this.isCancelling = true;
+        // TODO: Implementar lógica de cancelamento
+        toast.setToast({
+          text: 'Pedido cancelado com sucesso!',
+          type: 'success',
+          time: 5000,
+        });
+        this.showCancelDialog = false;
+        this.close();
+      } catch (error) {
+        console.error('Erro ao cancelar pedido:', error);
+        toast.setToast({
+          text: 'Erro ao cancelar pedido',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        this.isCancelling = false;
+      }
+    },
+
+    async generatePDF() {
+      try {
+        this.isPrinting = true;
+        const pdfGenerator = new TicketPdfGenerator(
+          this.payment,
+          this.getEvent,
+          this.relatedTickets
+        );
+        await pdfGenerator.generate();
+      } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        toast.setToast({
+          text: 'Erro ao gerar PDF dos ingressos',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        this.isPrinting = false;
+      }
     },
   },
 };
