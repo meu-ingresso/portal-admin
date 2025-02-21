@@ -94,9 +94,11 @@ export default class EventCustomerTickets extends VuexModule {
     validatedBy: string 
   }): Promise<void> {
     try {
-      const response = await $axios.$put(`customer-ticket/${payload.customerTicketId}`, {
+      const response = await $axios.$patch(`customer-ticket`, {
+        id: payload.customerTicketId,
         validated: true,
-        validated_by: payload.validatedBy
+        validated_by: payload.validatedBy,
+        validated_at: new Date().toISOString()
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -121,6 +123,40 @@ export default class EventCustomerTickets extends VuexModule {
     } catch (error) {
       console.error('Erro ao validar customer ticket:', error);
       throw error;
+    }
+  }
+
+  @Action
+  async invalidateCustomerTicket(payload: { customerTicketId: string, invalidatedBy: string }) {
+    try {
+      const response = await $axios.$patch(`customer-ticket`, {
+        id: payload.customerTicketId,
+        validated: false,
+        validated_by: null,
+        validated_at: null
+      });
+
+      if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error('Falha ao desfazer validação do ingresso');
+      }
+    
+      // Atualiza o ticket na lista local
+      const ticketIndex = this.customerTicketList.findIndex(t => t.id === payload.customerTicketId);
+      if (ticketIndex !== -1) {
+        const updatedTicket = {
+          ...this.customerTicketList[ticketIndex],
+          validated: false,
+          validated_by: null,
+          validated_at: null
+        };
+        
+        this.context.commit('UPDATE_CUSTOMER_TICKET', { 
+          index: ticketIndex, 
+          customerTicket: updatedTicket 
+        });
+      }
+    }  catch (error) {
+      throw new Error('Erro ao desfazer validação do ingresso');
     }
   }
 
