@@ -298,6 +298,32 @@ export interface StatusApiResponse {
   deleted_at?: string;
 }
 
+export interface PeopleApiResponse {
+  id: string;
+  first_name: string;
+  last_name: string;
+  person_type: PersonType;
+  tax: string;
+  phone: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+export interface UserApiResponse {
+  id: string;
+  people_id: string;
+  email: string;
+  alias: string;
+  role_id: string;
+  account_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+  people?: PeopleApiResponse;
+}
+
 export interface PaymentApiResponse {
   id: string;
   status_id: string;
@@ -310,7 +336,10 @@ export interface PaymentApiResponse {
   paid_at: string;
   payment_method: string;
   status?: StatusApiResponse;
+  user?: UserApiResponse;
 }
+
+
 
 export interface CustomerTicketApiResponse {
   id: string;

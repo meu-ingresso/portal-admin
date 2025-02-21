@@ -88,6 +88,14 @@ export default [
         },
       },
       {
+        path: 'orders',
+        name: 'eventsDetailsOrders',
+        meta: {
+          name: 'eventsDetails',
+          template: 'orders',
+        },
+      },
+      {
         path: 'guestlists',
         name: 'eventsDetailsGuestlists',
         meta: {
@@ -96,7 +104,7 @@ export default [
           view: 'lists',
         },
       },
-       {
+      {
         path: 'guestlists/:listId',
         name: 'eventsDetailsGuestlistsMembers',
         meta: {

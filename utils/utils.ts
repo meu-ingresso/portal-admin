@@ -124,3 +124,18 @@ export const areArraysEqual = (arr1: string[], arr2: string[]): boolean => {
 export const isArrayEmpty = (array: any[]): boolean => {
   return array.length === 0;
 }
+
+export const getPaymentMethod = (payment: string): string => {
+  switch (payment) {
+    case 'pix':
+      return 'Pix';
+    case 'billet':
+      return 'Boleto';
+    case 'credit':
+      return 'Cartão de Crédito';
+    case 'debit':
+      return 'Cartão de Débito';
+    default:
+      return payment;
+  }
+}
