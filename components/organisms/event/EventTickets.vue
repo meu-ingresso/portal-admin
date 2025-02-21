@@ -7,14 +7,14 @@
         </div>
         <DefaultButton
           v-if="!disableMenu"
-          text="Adicionar ingresso"
+          text="Adicionar"
           @click="handleAddTicket" />
       </div>
     </v-col>
 
     <v-col v-if="isMobile" cols="12">
       <div class="d-flex justify-center">
-        <DefaultButton text="Adicionar ingresso" block @click="handleAddTicket" />
+        <DefaultButton text="Adicionar" block @click="handleAddTicket" />
       </div>
     </v-col>
 

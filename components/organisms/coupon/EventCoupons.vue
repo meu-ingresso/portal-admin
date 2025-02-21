@@ -3,13 +3,13 @@
     <v-col v-if="!isMobile" cols="12">
       <div class="d-flex justify-space-between">
         <div class="event-coupons-title">Tipos de Cupons</div>
-        <DefaultButton text="Adicionar Cupom" @click="handleAddCoupon" />
+        <DefaultButton text="Adicionar" @click="handleAddCoupon" />
       </div>
     </v-col>
 
     <v-col v-if="isMobile" cols="12">
       <div class="d-flex justify-center">
-        <DefaultButton text="Adicionar Cupom" block @click="handleAddCoupon" />
+        <DefaultButton text="Adicionar" block @click="handleAddCoupon" />
       </div>
     </v-col>
 
