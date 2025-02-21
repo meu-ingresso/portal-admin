@@ -35,17 +35,17 @@ export const eventsSideBar = [
     needPermissions: false,
   },
   {
-    icon: 'mdi-account-group-outline',
-    iconActive: 'mdi-account-group',
-    title: 'Promoters',
-    to: '/events/:id/promoters',
-    needPermissions: false,
-  },
-  {
     icon: 'mdi-cart-outline',
     iconActive: 'mdi-cart',
     title: 'Pedidos',
     to: '/events/:id/orders',
+    needPermissions: false,
+  },
+  {
+    icon: 'mdi-account-group-outline',
+    iconActive: 'mdi-account-group',
+    title: 'Promoters',
+    to: '/events/:id/promoters',
     needPermissions: false,
   },
 ];

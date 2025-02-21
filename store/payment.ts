@@ -2,6 +2,18 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleGetResponse } from '~/utils/responseHelpers';
 import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
+
+interface OrderFilters {
+  eventId: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+}
+
 @Module({
   name: 'payment',
   stateFactory: true,
@@ -79,7 +91,7 @@ export default class Payment extends VuexModule {
       this.context.commit('SET_LOADING', true);
       const response = await $axios.$get(`/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people`);
       const {data} = handleGetResponse(response, 'Pagamento não encontrado');
-      
+
       this.context.commit('SET_PAYMENT', data[0]);
       await this.context.dispatch('fetchRelatedTickets', paymentId);
     } catch (error) {
@@ -100,7 +112,7 @@ export default class Payment extends VuexModule {
         },
       });
       const {data} = handleGetResponse(response, 'Ingressos não encontrados');
-      
+
       this.context.commit('SET_RELATED_TICKETS', data || []);
     } catch (error) {
       console.error('Erro ao buscar ingressos relacionados:', error);
@@ -109,30 +121,45 @@ export default class Payment extends VuexModule {
   }
 
   @Action
-  public async fetchEventOrders(params: {
-    eventId: string;
-    page?: number;
-    limit?: number;
-    sort?: string;
-  }): Promise<void> {
+  public async fetchEventOrders(params: OrderFilters): Promise<void> {
     try {
       this.context.commit('SET_LOADING_ORDERS', true);
-      const response = await $axios.$get('/customer-tickets', {
-        params: {
-          'preloads[]': [
-            'ticket:event',
-            'payment:user:people',
-            'payment:status'
-          ],
-          'filters[ticket.event_id]': params.eventId,
-          sort: params.sort || '-created_at',
-          page: params.page || 1,
-          limit: params.limit || 10,
-        },
-      });
-      
+
+      const queryParams: any = {
+        'preloads': [
+          'ticket:event',
+          'payment:user:people',
+          'payment:status'
+        ],
+        'whereHas[ticket][event_id][v]': params.eventId,
+        sort: params.sort || '-created_at',
+        page: params.page || 1,
+        limit: params.limit || 10,
+      };
+
+      // Adiciona busca por nome/email do comprador
+      if (params.search) {
+        queryParams['whereHas[payment][user][people][or][first_name][ilike]'] = `%${params.search}%`;
+        queryParams['whereHas[payment][user][people][or][last_name][ilike]'] = `%${params.search}%`;
+        queryParams['whereHas[payment][user][or][email][ilike]'] = `%${params.search}%`;
+      }
+
+      // Adiciona filtro por data
+      if (params.startDate) {
+        queryParams['whereHas[payment][created_at][gte]'] = params.startDate;
+      }
+      if (params.endDate) {
+        queryParams['whereHas[payment][created_at][lte]'] = params.endDate;
+      }
+
+      // Adiciona filtro por status
+      if (params.status) {
+        queryParams['whereHas[payment][status_id][v]'] = params.status;
+      }
+
+      const response = await $axios.$get('/customer-tickets', { params: queryParams });
       const { data, meta } = handleGetResponse(response, 'Pedidos não encontrados');
-      
+
       // Agrupa os tickets por payment_id
       const groupedOrders = data.reduce((acc: any, ticket: any) => {
         if (!acc[ticket.payment_id]) {

@@ -11,9 +11,6 @@
           <v-icon color="primary" size="20">mdi-arrow-left</v-icon>
           <span class="primary--text ml-2">Voltar para listas</span>
         </div>
-        <div class="current-list-name">
-          {{ currentList?.name }}
-        </div>
       </div>
 
       <!-- Versão Desktop -->
@@ -24,8 +21,6 @@
           <v-icon color="primary" class="mr-2">mdi-arrow-left</v-icon>
           <span class="primary--text">Todas as listas de convidados</span>
         </div>
-        <v-divider vertical class="mx-4" />
-        <span class="grey--text text-truncate">{{ currentList?.name }}</span>
       </div>
     </div>
 
