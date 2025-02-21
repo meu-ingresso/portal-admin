@@ -7,12 +7,12 @@
       <v-col v-if="guestLists.length > 0 && !isMobile" cols="12">
         <div class="d-flex justify-space-between">
           <div class="guest-lists-title">Lista de Convidados</div>
-          <DefaultButton text="Criar Lista" icon="mdi-plus" @click="openGuestListForm" />
+          <DefaultButton text="Adicionar" icon="mdi-plus" @click="openGuestListForm" />
         </div>
       </v-col>
       <v-col v-if="guestLists.length > 0 && isMobile" cols="12">
         <DefaultButton
-          text="Criar Lista"
+          text="Adicionar"
           icon="mdi-plus"
           block
           @click="openGuestListForm" />
@@ -26,7 +26,7 @@
             icon="mdi-account-group-outline">
             <template #action>
               <DefaultButton
-                text="Criar Lista"
+                text="Adicionar"
                 icon="mdi-plus"
                 class="mt-6"
                 @click="openGuestListForm" />

@@ -10,7 +10,7 @@
           icon="mdi-ticket">
           <template #action>
             <DefaultButton
-              text="Adicionar Cupom"
+              text="Adicionar"
               icon="mdi-plus"
               class="mt-6"
               @click="openAddCouponModal" />

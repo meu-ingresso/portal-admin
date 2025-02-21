@@ -6,16 +6,16 @@
     <template v-else>
       <v-col v-if="members.length > 0 && !isMobile" cols="12">
         <div class="d-flex justify-space-between">
-          <div class="members-title">Convidados</div>
+          <div class="members-title">Convidados - {{ currentGuestList.name }}</div>
           <DefaultButton
-            text="Adicionar Convidado"
+            text="Adicionar"
             icon="mdi-plus"
             @click="openMemberForm" />
         </div>
       </v-col>
       <v-col v-if="members.length > 0 && isMobile" cols="12">
         <DefaultButton
-          text="Adicionar Convidado"
+          text="Adicionar"
           icon="mdi-plus"
           block
           @click="openMemberForm" />
@@ -55,10 +55,6 @@
             :loading-text="'Carregando...'"
             class="guest-table"
             @update:options="handleTableUpdate">
-            <!-- Data de criação -->
-            <template #[`item.created_at`]="{ item }">
-              {{ formatDateTimeWithTimezone(item.created_at) }}
-            </template>
 
             <!-- Nome completo -->
             <template #[`item.full_name`]="{ item }">
@@ -212,12 +208,6 @@ export default {
           sortable: true,
         },
         {
-          text: 'Data de Adição',
-          align: 'center',
-          value: 'created_at',
-          sortable: true,
-        },
-        {
           text: 'Ações',
           align: 'center',
           value: 'actions',
@@ -261,6 +251,10 @@ export default {
 
     modalTitle() {
       return `Novos convidados: ${this.newGuests.length}`;
+    },
+
+    currentGuestList() {
+      return eventGuests.$guestLists.find((list) => list.id === this.listId);
     },
 
     members() {
