@@ -43,23 +43,30 @@
         <span v-else>-</span>
       </template>
 
+      <!-- Data de Validação -->
+      <template #[`item.validated_at`]="{ item }">
+        <v-tooltip v-if="item.validated" bottom>
+          <template #activator="{ on, attrs }">
+            <span v-bind="attrs" v-on="on">
+              {{ formatDateTimeWithTimezone(item.validated_at) }}
+            </span>
+          </template>
+          <span>Validado por: {{ item.validated_by_name || 'Sistema' }}</span>
+        </v-tooltip>
+        <span v-else>-</span>
+      </template>
+
       <!-- Status e Ação -->
       <template #[`item.actions`]="{ item }">
-        <template v-if="item.validated">
-          <v-chip small color="success">
-            <v-icon left small>mdi-check</v-icon>
-            Validado
-          </v-chip>
-        </template>
-        <template v-else>
+        <div class="d-flex flex-column align-center">
           <v-btn
             small
-            color="primary"
+            :color="item.validated ? 'error' : 'primary'"
             :loading="validatingId === item.id"
-            @click="validateTicket(item)">
-            Fazer Check-in
+            @click="toggleValidation(item)">
+            {{ item.validated ? 'Desfazer Check-in' : 'Fazer Check-in' }}
           </v-btn>
-        </template>
+        </div>
       </template>
     </v-data-table>
 
@@ -71,7 +78,8 @@
 </template>
 
 <script>
-import { eventCustomerTickets } from '@/store';
+import { eventCustomerTickets, toast } from '@/store';
+import { formatDateTimeWithTimezone } from '@/utils/formatters';
 
 export default {
   data() {
@@ -81,6 +89,12 @@ export default {
         { text: 'Tipo', value: 'ticket_type', sortable: true },
         { text: 'Identificador', value: 'ticket_identifier', sortable: false },
         { text: 'Pedido', value: 'payment_id', sortable: false },
+        {
+          text: 'Data Validação',
+          value: 'validated_at',
+          sortable: true,
+          align: 'center',
+        },
         { text: 'Ações', value: 'actions', sortable: false, align: 'center' },
       ],
       options: {
@@ -117,6 +131,8 @@ export default {
   },
 
   methods: {
+    formatDateTimeWithTimezone,
+
     async handleTableUpdate(newOptions) {
       this.options = newOptions;
       await this.fetchCustomerTickets();
@@ -144,22 +160,41 @@ export default {
       return query;
     },
 
-    async validateTicket(ticket) {
+    async toggleValidation(ticket) {
       try {
         this.validatingId = ticket.id;
 
-        await eventCustomerTickets.validateCustomerTicket({
-          customerTicketId: ticket.id,
-          validatedBy: this.userId,
-        });
+        if (ticket.validated) {
+          // Desfazer validação
+          await eventCustomerTickets.invalidateCustomerTicket({
+            customerTicketId: ticket.id,
+            invalidatedBy: this.userId,
+          });
 
-        toast.setToast({
-          text: 'Check-in realizado com sucesso!',
-          type: 'success',
-        });
+          toast.setToast({
+            text: 'Check-in desfeito com sucesso!',
+            type: 'success',
+          });
+        } else {
+          // Fazer validação
+          await eventCustomerTickets.validateCustomerTicket({
+            customerTicketId: ticket.id,
+            validatedBy: this.userId,
+          });
+
+          toast.setToast({
+            text: 'Check-in realizado com sucesso!',
+            type: 'success',
+          });
+        }
+
+        // Atualiza a tabela após a ação
+        await this.fetchCustomerTickets();
       } catch (error) {
         toast.setToast({
-          text: 'Erro ao realizar check-in',
+          text: ticket.validated
+            ? 'Erro ao desfazer check-in'
+            : 'Erro ao realizar check-in',
           type: 'error',
         });
       } finally {
@@ -180,10 +215,15 @@ export default {
   color: var(--primary);
   text-decoration: underline;
   cursor: pointer;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
-.payment-link:hover {
-  opacity: 0.8;
+.validation-info {
+  font-size: 12px;
+  text-align: center;
 }
 
 /* Estilos da tabela */
