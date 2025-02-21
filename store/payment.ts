@@ -12,6 +12,7 @@ interface OrderFilters {
   startDate?: string;
   endDate?: string;
   status?: string;
+  paymentMethod?: string;
 }
 
 @Module({
@@ -127,14 +128,14 @@ export default class Payment extends VuexModule {
 
       const queryParams: any = {
         'preloads': [
-          'ticket:event',
           'payment:user:people',
-          'payment:status'
+          'payment:status',
+          'ticket:event'
         ],
         'whereHas[ticket][event_id][v]': params.eventId,
-        sort: params.sort || '-created_at',
         page: params.page || 1,
         limit: params.limit || 10,
+        sort: params.sort || '-created_at',
       };
 
       // Adiciona busca por nome/email do comprador
@@ -154,7 +155,12 @@ export default class Payment extends VuexModule {
 
       // Adiciona filtro por status
       if (params.status) {
-        queryParams['whereHas[payment][status_id][v]'] = params.status;
+        queryParams['whereHas[payment][status][name][v]'] = params.status;
+      }
+
+      // Adiciona filtro por método de pagamento
+      if (params.paymentMethod) {
+        queryParams['whereHas[payment][payment_method][v]'] = params.paymentMethod;
       }
 
       const response = await $axios.$get('/customer-tickets', { params: queryParams });
