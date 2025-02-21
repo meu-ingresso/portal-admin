@@ -9,11 +9,22 @@ import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
 })
 export default class Payment extends VuexModule {
   private isLoading: boolean = false;
+  private isLoadingOrders: boolean = false;
   private payment: PaymentApiResponse | null = null;
   private relatedTickets: CustomerTicketApiResponse[] = [];
+  private orders: PaymentApiResponse[] = [];
+  private ordersMeta = {
+    total: 0,
+    page: 1,
+    limit: 10,
+  };
 
   public get $isLoading() {
     return this.isLoading;
+  }
+
+  public get $isLoadingOrders() {
+    return this.isLoadingOrders;
   }
 
   public get $payment() {
@@ -24,9 +35,22 @@ export default class Payment extends VuexModule {
     return this.relatedTickets;
   }
 
+  public get $orders() {
+    return this.orders;
+  }
+
+  public get $ordersMeta() {
+    return this.ordersMeta;
+  }
+
   @Mutation
   private SET_LOADING(loading: boolean) {
     this.isLoading = loading;
+  }
+
+  @Mutation
+  private SET_LOADING_ORDERS(loading: boolean) {
+    this.isLoadingOrders = loading;
   }
 
   @Mutation
@@ -39,16 +63,21 @@ export default class Payment extends VuexModule {
     this.relatedTickets = tickets;
   }
 
+  @Mutation
+  private SET_ORDERS(orders: PaymentApiResponse[]) {
+    this.orders = orders;
+  }
+
+  @Mutation
+  private SET_ORDERS_META(meta: any) {
+    this.ordersMeta = meta;
+  }
+
   @Action
   public async fetchPaymentDetails(paymentId: string): Promise<void> {
     try {
       this.context.commit('SET_LOADING', true);
-      const response = await $axios.$get(`/payments`, {
-        params: {
-          'where[id][v]': paymentId,
-          'preloads[]': 'status',
-        },
-      });
+      const response = await $axios.$get(`/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people`);
       const {data} = handleGetResponse(response, 'Pagamento não encontrado');
       
       this.context.commit('SET_PAYMENT', data[0]);
@@ -76,6 +105,53 @@ export default class Payment extends VuexModule {
     } catch (error) {
       console.error('Erro ao buscar ingressos relacionados:', error);
       throw error;
+    }
+  }
+
+  @Action
+  public async fetchEventOrders(params: {
+    eventId: string;
+    page?: number;
+    limit?: number;
+    sort?: string;
+  }): Promise<void> {
+    try {
+      this.context.commit('SET_LOADING_ORDERS', true);
+      const response = await $axios.$get('/customer-tickets', {
+        params: {
+          'preloads[]': [
+            'ticket:event',
+            'payment:user:people',
+            'payment:status'
+          ],
+          'filters[ticket.event_id]': params.eventId,
+          sort: params.sort || '-created_at',
+          page: params.page || 1,
+          limit: params.limit || 10,
+        },
+      });
+      
+      const { data, meta } = handleGetResponse(response, 'Pedidos não encontrados');
+      
+      // Agrupa os tickets por payment_id
+      const groupedOrders = data.reduce((acc: any, ticket: any) => {
+        if (!acc[ticket.payment_id]) {
+          acc[ticket.payment_id] = {
+            ...ticket.payment,
+            tickets: [],
+          };
+        }
+        acc[ticket.payment_id].tickets.push(ticket);
+        return acc;
+      }, {});
+
+      this.context.commit('SET_ORDERS', Object.values(groupedOrders));
+      this.context.commit('SET_ORDERS_META', meta);
+    } catch (error) {
+      console.error('Erro ao buscar pedidos do evento:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING_ORDERS', false);
     }
   }
 

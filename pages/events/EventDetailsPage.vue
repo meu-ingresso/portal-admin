@@ -23,6 +23,7 @@
         <EventDetailsCouponsTemplate v-if="isCoupons" />
         <EventDetailsGuestlistsTemplate v-if="isGuestlists" />
         <EventDetailsCheckinTemplate v-if="isCheckin" />
+        <EventDetailsOrdersTemplate v-if="isOrders" />
       </div>
     </v-container>
     <Toast />
@@ -98,6 +99,10 @@ export default {
 
     isCheckin() {
       return this.$route.meta.template === 'checkin';
+    },
+
+    isOrders() {
+      return this.$route.meta.template === 'orders';
     },
 
     userRole() {

@@ -3,7 +3,7 @@
     <EventDetailsHeader />
 
     <div class="event-details-wrapper">
-      <StatisticList :statistics="getStatistics" title="Visão Geral" />
+      <StatisticList :statistics="getStatistics" title="Visão geral" />
 
       <!-- <EventSales :sales="getSales" /> -->
 
@@ -40,7 +40,7 @@ export default {
           }`,
         },
         {
-          title: 'Receita Total',
+          title: 'Receita total',
           value: `${
             this.getEvent.totalizers.totalSalesAmount === 0
               ? 'Nenhuma'

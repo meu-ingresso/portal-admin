@@ -61,10 +61,16 @@
         <div class="d-flex flex-column align-center">
           <v-btn
             small
-            :color="item.validated ? 'error' : 'primary'"
+            :color="item.validated ? 'green' : 'grey'"
             :loading="validatingId === item.id"
+            class="validation-button"
             @click="toggleValidation(item)">
-            {{ item.validated ? 'Desfazer Check-in' : 'Fazer Check-in' }}
+            <template v-if="item.validated">
+              <v-icon small color="white">mdi-check</v-icon>
+            </template>
+            <template v-else>
+              <span class="black--text">Fazer Check-in</span>
+            </template>
           </v-btn>
         </div>
       </template>
@@ -174,6 +180,7 @@ export default {
           toast.setToast({
             text: 'Check-in desfeito com sucesso!',
             type: 'success',
+            time: 5000,
           });
         } else {
           // Fazer validação
@@ -185,6 +192,7 @@ export default {
           toast.setToast({
             text: 'Check-in realizado com sucesso!',
             type: 'success',
+            time: 5000,
           });
         }
 
@@ -196,6 +204,7 @@ export default {
             ? 'Erro ao desfazer check-in'
             : 'Erro ao realizar check-in',
           type: 'error',
+          time: 5000,
         });
       } finally {
         this.validatingId = null;
@@ -249,10 +258,16 @@ export default {
     }
   }
 
+  /* Ajuste para o botão de check */
+  .validation-button {
+    height: 34px !important;
+    min-width: 120px !important;
+  }
+
   /* Ajuste do padding das células para comportar fonte maior */
   td,
   th {
-    padding: 12px 16px !important;
+    padding: 8px 16px !important;
   }
 }
 </style> 
