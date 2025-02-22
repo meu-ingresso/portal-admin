@@ -1,0 +1,54 @@
+.v-data-table {
+  /* Estilo do cabeçalho */
+
+  background-color: var(--tertiary) !important;
+
+  .v-data-table-header {
+    th {
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      font-family: var(--font-family-inter-bold) !important;
+      color: var(--black-text) !important;
+      white-space: nowrap;
+    }
+  }
+
+  /* Estilo das células */
+  .v-data-table__wrapper {
+    tbody {
+      td {
+        font-size: 14px;
+        color: var(--black-text);
+      }
+    }
+
+    tr:hover {
+      background-color: var(--tertiary) !important;
+    }
+  }
+
+  .validation-button,
+  .validation-button-validated {
+    height: 34px !important;
+    min-width: 120px !important;
+    background-color: var(--gray3);
+    color: var(--black-text) !important;
+  }
+
+  .validation-button-validated {
+    background-color: var(--success) !important;
+    color: var(--white) !important;
+  }
+
+  header {
+    height: auto !important;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+    background-color: transparent !important;
+  }
+
+  /* Ajuste do padding das células */
+  td, th {
+    padding: 12px 16px !important;
+  }
+} 
