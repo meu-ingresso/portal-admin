@@ -38,18 +38,29 @@
                 v-model="showFilters"
                 :close-on-content-click="false"
                 offset-y
-                max-width="500">
-                <template #activator="{ on, attrs }">
-                  <v-btn icon v-bind="attrs" color="primary" class="ml-2" v-on="on">
-                    <v-icon size="24">mdi-filter</v-icon>
-                    <v-badge
-                      v-if="activeFiltersCount"
-                      :content="activeFiltersCount.toString()"
-                      color="error"
-                      offset-x="12"
-                      offset-y="-8"
-                      dot />
-                  </v-btn>
+                max-width="550">
+                <template #activator="{ attrs: menuAttrs, on: menuOn }">
+                  <v-tooltip bottom>
+                    <template #activator="{ on: tooltipOn }">
+                      <v-btn
+                        icon
+                        color="primary"
+                        class="ml-2"
+                        v-bind="menuAttrs"
+                        v-on="{ ...menuOn, ...tooltipOn }">
+                        <v-icon size="24">mdi-filter</v-icon>
+
+                        <v-badge
+                          v-if="activeFiltersCount"
+                          :content="activeFiltersCount.toString()"
+                          color="error"
+                          offset-x="12"
+                          offset-y="-8"
+                          dot />
+                      </v-btn>
+                    </template>
+                    <span>Filtros</span>
+                  </v-tooltip>
                 </template>
 
                 <v-card>
