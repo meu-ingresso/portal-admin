@@ -1,20 +1,11 @@
 <template>
   <v-row class="mb-4">
-    <v-col v-if="!isMobile" cols="12">
+    <v-col cols="12">
       <div class="d-flex justify-space-between">
         <div class="event-tickets-title">
           {{ title }}
         </div>
-        <DefaultButton
-          v-if="!disableMenu"
-          text="Adicionar"
-          @click="handleAddTicket" />
-      </div>
-    </v-col>
-
-    <v-col v-if="isMobile" cols="12">
-      <div class="d-flex justify-center">
-        <DefaultButton text="Adicionar" block @click="handleAddTicket" />
+        <DefaultButton v-if="!disableMenu" text="Adicionar" @click="handleAddTicket" />
       </div>
     </v-col>
 
