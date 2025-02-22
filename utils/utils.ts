@@ -96,7 +96,6 @@ export const userHasPermissions = (
   return allowedPrefixes.includes(routePrefix);
 };
 
-
 export const getArrayObjectText = (arrayValue: any[], key = 'text'): string => {
   if (!key) {
     return arrayValue.map((item) => item).join(', ');
@@ -106,7 +105,7 @@ export const getArrayObjectText = (arrayValue: any[], key = 'text'): string => {
 
 export const getUniqueCategories = (tickets: Ticket[]): CategoryOption[] => {
   const categoryMap = new Map<string, CategoryOption>();
-    
+
   tickets.forEach((ticket) => {
     if (ticket.category) {
       categoryMap.set(ticket.category.value, ticket.category);
@@ -119,11 +118,11 @@ export const getUniqueCategories = (tickets: Ticket[]): CategoryOption[] => {
 export const areArraysEqual = (arr1: string[], arr2: string[]): boolean => {
   if (arr1.length !== arr2.length) return false;
   return arr1.every((value, index) => value === arr2[index]);
-} 
+};
 
 export const isArrayEmpty = (array: any[]): boolean => {
   return array.length === 0;
-}
+};
 
 export const getPaymentMethod = (payment: string): string => {
   switch (payment) {
@@ -138,4 +137,14 @@ export const getPaymentMethod = (payment: string): string => {
     default:
       return payment;
   }
-}
+};
+
+export const getUserRole = (cookies: any): any => {
+  return cookies.get('user_role');
+};
+
+export const isUserAdmin = (cookies: any): boolean => {
+  const role = getUserRole(cookies);
+
+  return role && role.name === 'Admin';
+};
