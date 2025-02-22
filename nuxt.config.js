@@ -23,7 +23,7 @@ export default {
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
   },
 
-  css: ['~/assets/css/vuetify.css', '~/assets/css/main.css'],
+  css: ['~/assets/css/vuetify.css', '~/assets/css/main.css', '~/assets/scss/components/data-table.scss'],
 
   plugins: ['~/plugins/accessor', '~/plugins/axios'],
 

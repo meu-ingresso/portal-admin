@@ -55,6 +55,8 @@
                   <ActionsMenu
                     :show-duplicate="false"
                     :show-stop-sales="false"
+                    :show-edit="true"
+                    :show-delete="true"
                     @edit="() => editGuestList(list)"
                     @delete="() => deleteGuestList(list)" />
                 </div>
