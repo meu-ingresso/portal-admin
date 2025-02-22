@@ -89,16 +89,11 @@ export default class EventCustomerTickets extends VuexModule {
   }
 
   @Action
-  public async validateCustomerTicket(payload: { 
-    customerTicketId: string, 
-    validatedBy: string 
-  }): Promise<void> {
+  public async validateCustomerTicket(customerTicketId: string): Promise<void> {
     try {
       const response = await $axios.$patch(`customer-ticket`, {
-        id: payload.customerTicketId,
+        id: customerTicketId,
         validated: true,
-        validated_by: payload.validatedBy,
-        validated_at: new Date().toISOString()
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -106,13 +101,11 @@ export default class EventCustomerTickets extends VuexModule {
       }
 
       // Atualiza o ticket na lista local
-      const ticketIndex = this.customerTicketList.findIndex(t => t.id === payload.customerTicketId);
+      const ticketIndex = this.customerTicketList.findIndex(t => t.id === customerTicketId);
       if (ticketIndex !== -1) {
         const updatedTicket = {
           ...this.customerTicketList[ticketIndex],
           validated: true,
-          validated_by: payload.validatedBy,
-          validated_at: new Date().toISOString()
         };
         
         this.context.commit('UPDATE_CUSTOMER_TICKET', { 
@@ -127,13 +120,11 @@ export default class EventCustomerTickets extends VuexModule {
   }
 
   @Action
-  async invalidateCustomerTicket(payload: { customerTicketId: string, invalidatedBy: string }) {
+  async invalidateCustomerTicket(customerTicketId: string) {
     try {
       const response = await $axios.$patch(`customer-ticket`, {
-        id: payload.customerTicketId,
+        id: customerTicketId,
         validated: false,
-        validated_by: null,
-        validated_at: null
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -141,13 +132,11 @@ export default class EventCustomerTickets extends VuexModule {
       }
     
       // Atualiza o ticket na lista local
-      const ticketIndex = this.customerTicketList.findIndex(t => t.id === payload.customerTicketId);
+      const ticketIndex = this.customerTicketList.findIndex(t => t.id === customerTicketId);
       if (ticketIndex !== -1) {
         const updatedTicket = {
           ...this.customerTicketList[ticketIndex],
           validated: false,
-          validated_by: null,
-          validated_at: null
         };
         
         this.context.commit('UPDATE_CUSTOMER_TICKET', { 

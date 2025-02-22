@@ -399,10 +399,7 @@ export default {
 
         if (ticket.validated) {
           // Desfazer validação
-          await eventCustomerTickets.invalidateCustomerTicket({
-            customerTicketId: ticket.id,
-            invalidatedBy: this.userId,
-          });
+          await eventCustomerTickets.invalidateCustomerTicket(ticket.id);
 
           toast.setToast({
             text: 'Check-in desfeito com sucesso!',
@@ -411,10 +408,7 @@ export default {
           });
         } else {
           // Fazer validação
-          await eventCustomerTickets.validateCustomerTicket({
-            customerTicketId: ticket.id,
-            validatedBy: this.userId,
-          });
+          await eventCustomerTickets.validateCustomerTicket(ticket.id);
 
           toast.setToast({
             text: 'Check-in realizado com sucesso!',
@@ -510,64 +504,5 @@ export default {
 .validation-info {
   font-size: 12px;
   text-align: center;
-}
-
-.checkin-table {
-  background-color: var(--tertiary) !important;
-}
-
-.chip-filters {
-  background-color: transparent !important;
-}
-
-::v-deep .checkin-table {
-  .v-data-table-header {
-    th {
-      font-size: 16px !important;
-      font-weight: 700 !important;
-      font-family: var(--font-family-inter-bold) !important;
-      color: var(--black-text) !important;
-      white-space: nowrap;
-    }
-  }
-
-  .v-data-table__wrapper {
-    tbody {
-      td {
-        font-size: 14px !important;
-        color: var(--black-text) !important;
-        font-family: var(--font-family) !important;
-        cursor: pointer !important;
-      }
-      tr:hover {
-        background-color: var(--tertiary) !important;
-      }
-    }
-  }
-
-  .validation-button,
-  .validation-button-validated {
-    height: 34px !important;
-    min-width: 120px !important;
-    background-color: var(--gray3);
-    color: var(--black-text) !important;
-  }
-
-  .validation-button-validated {
-    background-color: var(--success) !important;
-    color: var(--white) !important;
-  }
-
-  td,
-  th {
-    padding: 8px 16px !important;
-  }
-
-  header {
-    height: auto !important;
-    padding-top: 14px !important;
-    padding-bottom: 14px !important;
-    background-color: transparent !important;
-  }
 }
 </style>

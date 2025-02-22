@@ -7,18 +7,11 @@
       <v-col v-if="members.length > 0 && !isMobile" cols="12">
         <div class="d-flex justify-space-between">
           <div class="members-title">Convidados - {{ currentGuestList.name }}</div>
-          <DefaultButton
-            text="Adicionar"
-            icon="mdi-plus"
-            @click="openMemberForm" />
+          <DefaultButton text="Adicionar" icon="mdi-plus" @click="openMemberForm" />
         </div>
       </v-col>
       <v-col v-if="members.length > 0 && isMobile" cols="12">
-        <DefaultButton
-          text="Adicionar"
-          icon="mdi-plus"
-          block
-          @click="openMemberForm" />
+        <DefaultButton text="Adicionar" icon="mdi-plus" block @click="openMemberForm" />
       </v-col>
       <v-col cols="12" md="12" sm="12">
         <!-- Estado vazio -->
@@ -55,7 +48,6 @@
             :loading-text="'Carregando...'"
             class="guest-table"
             @update:options="handleTableUpdate">
-
             <!-- Nome completo -->
             <template #[`item.full_name`]="{ item }">
               {{ item.first_name }} {{ item.last_name }}
@@ -506,36 +498,6 @@ export default {
 
   .form-actions--mobile {
     padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-/* Estilos da tabela */
-::v-deep .guest-table {
-  /* Estilo do cabeçalho */
-  .v-data-table-header {
-    th {
-      font-size: 16px !important;
-      font-weight: 700 !important;
-      font-family: var(--font-family-inter-bold) !important;
-      color: var(--black-text) !important;
-      white-space: nowrap;
-    }
-  }
-
-  /* Estilo das células */
-  .v-data-table__wrapper {
-    tbody {
-      td {
-        font-size: 14px;
-        color: var(--black-text);
-      }
-    }
-  }
-
-  /* Ajuste do padding das células para comportar fonte maior */
-  td,
-  th {
-    padding: 12px 16px !important;
   }
 }
 </style>
