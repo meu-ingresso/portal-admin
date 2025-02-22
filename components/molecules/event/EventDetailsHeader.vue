@@ -75,27 +75,6 @@
 
       <!-- Informações de Localização/Link -->
       <template v-if="isOnlineOrHybridEvent">
-        <div class="online-event d-flex align-center mb-2">
-          <v-icon class="mr-2 details-icon">mdi-web</v-icon>
-
-          <a :href="onlineLink" target="_blank" class="online-link">
-            {{ onlineLink }}
-          </a>
-
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-icon
-                v-bind="attrs"
-                size="16"
-                class="ml-2 cursor-pointer"
-                v-on="on"
-                @click="copyOnlineLink">
-                mdi-content-copy
-              </v-icon>
-            </template>
-            <span>Copiar link do evento online</span>
-          </v-tooltip>
-        </div>
         <div class="location d-flex align-center mb-2 cursor-pointer">
           <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
@@ -124,6 +103,28 @@
               </v-card-text>
             </v-card>
           </v-dialog>
+        </div>
+
+        <div class="online-event d-flex align-center mb-2">
+          <v-icon class="mr-2 details-icon">mdi-web</v-icon>
+
+          <a :href="onlineLink" target="_blank" class="online-link">
+            {{ onlineLink }}
+          </a>
+
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-icon
+                v-bind="attrs"
+                size="16"
+                class="ml-2 cursor-pointer"
+                v-on="on"
+                @click="copyOnlineLink">
+                mdi-content-copy
+              </v-icon>
+            </template>
+            <span>Copiar link do evento online</span>
+          </v-tooltip>
         </div>
       </template>
 
