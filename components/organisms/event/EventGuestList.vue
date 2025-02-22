@@ -3,20 +3,15 @@
     <template v-if="isLoading">
       <Lottie path="./animations/loading_default.json" height="300" width="300" />
     </template>
+
     <template v-else>
-      <v-col v-if="guestLists.length > 0 && !isMobile" cols="12">
+      <v-col v-if="guestLists.length > 0" cols="12">
         <div class="d-flex justify-space-between">
           <div class="guest-lists-title">Lista de Convidados</div>
           <DefaultButton text="Adicionar" icon="mdi-plus" @click="openGuestListForm" />
         </div>
       </v-col>
-      <v-col v-if="guestLists.length > 0 && isMobile" cols="12">
-        <DefaultButton
-          text="Adicionar"
-          icon="mdi-plus"
-          block
-          @click="openGuestListForm" />
-      </v-col>
+
       <v-col cols="12" md="12" sm="12">
         <!-- Estado vazio -->
         <template v-if="guestLists.length === 0">

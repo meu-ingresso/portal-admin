@@ -1,15 +1,9 @@
 <template>
   <v-row class="mb-4">
-    <v-col v-if="!isMobile" cols="12">
+    <v-col cols="12">
       <div class="d-flex justify-space-between">
-        <div class="event-coupons-title">Tipos de Cupons</div>
+        <div class="event-coupons-title">Lista de cupons</div>
         <DefaultButton text="Adicionar" @click="handleAddCoupon" />
-      </div>
-    </v-col>
-
-    <v-col v-if="isMobile" cols="12">
-      <div class="d-flex justify-center">
-        <DefaultButton text="Adicionar" block @click="handleAddCoupon" />
       </div>
     </v-col>
 
