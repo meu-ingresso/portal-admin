@@ -1,9 +1,11 @@
 <template>
-  <v-row v-if="!isMobile" class="ticket-row mr-0 ml-0">
+  <v-row v-if="!isMobile" class="ticket-row mr-0 ml-0" @click="$emit('click')">
     <v-col cols="12" md="6" sm="12">
       <div class="first-ticket-column" :class="{ 'without-hover': disableHover }">
         <div v-if="!disableHover" class="ticket-hover-icon">
-          <v-icon>mdi-drag-vertical</v-icon>
+          <v-icon v-if="!isSwapping">mdi-drag-vertical</v-icon>
+
+          <v-progress-circular v-else indeterminate color="primary" />
         </div>
 
         <div class="ticket-name">{{ name }}</div>
@@ -25,29 +27,25 @@
         <ActionsMenu
           v-if="!disableMenu && canManageTicket"
           class="ticket-actions-menu"
-          :show-edit="canManageTicket"
           :show-delete="canManageTicket"
           :show-duplicate="canManageTicket"
           :show-stop-sales="canManageTicket"
           icon="mdi-dots-horizontal"
-          @edit="handleMenuAction('edit')"
           @delete="handleMenuAction('delete')"
           @duplicate="handleMenuAction('duplicate')"
           @stop-sales="handleMenuAction('stop-sales')" />
       </div>
     </v-col>
   </v-row>
-  <v-card v-else tile elevation="0" color="ticket-row-card">
+  <v-card v-else tile elevation="0" color="ticket-row-card" @click="$emit('click')">
     <v-card-text>
       <div class="first-ticket-column is-mobile">
         <div class="ticket-name">{{ name }}</div>
         <ActionsMenu
           v-if="!disableMenu && canManageTicket"
-          :show-edit="canManageTicket"
           :show-delete="canManageTicket"
           :show-duplicate="canManageTicket"
           icon="mdi-dots-horizontal"
-          @edit="handleMenuAction('edit')"
           @delete="handleMenuAction('delete')"
           @duplicate="handleMenuAction('duplicate')" />
       </div>
@@ -71,6 +69,7 @@ export default {
   props: {
     id: { type: String, required: true },
     disableMenu: { type: Boolean, required: false, default: false },
+    isSwapping: { type: Boolean, required: false, default: false },
     name: { type: String, required: true },
     price: { type: String, required: true },
     status: { type: String, required: true },
@@ -151,6 +150,7 @@ export default {
   padding-top: 8px;
   padding-bottom: 8px;
   align-items: center;
+  cursor: pointer;
 }
 
 .ticket-row-card {
@@ -209,5 +209,17 @@ export default {
   font-size: 16px;
   font-weight: 400;
   font-family: var(--font-family);
+}
+
+.ticket-row {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--tertiary);
+  border-radius: 8px;
+}
+
+.ticket-row:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

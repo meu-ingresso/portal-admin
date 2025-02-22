@@ -46,14 +46,23 @@ export interface CouponTicket {
 
 export type AvailabilityOption = 'Publico' | 'Privado' | 'Página';
 
-export type FieldType = 'CPF' | 'CNPJ' | 'TELEFONE' | 'DATA' | 'TEXTO' | 'PARAGRAPH' | 'EMAIL' | 'MENU_DROPDOWN' | 'MULTI_CHECKBOX' | 'TERMO';
+export type FieldType =
+  | 'CPF'
+  | 'CNPJ'
+  | 'TELEFONE'
+  | 'DATA'
+  | 'TEXTO'
+  | 'PARAGRAPH'
+  | 'EMAIL'
+  | 'MENU_DROPDOWN'
+  | 'MULTI_CHECKBOX'
+  | 'TERMO';
 
 export type FieldOption = 'required' | 'is_unique' | 'visible_on_ticket';
 
 export type PersonType = 'PF' | 'PJ' | 'ESTRANGEIRO';
 
 export type DiscountType = 'FIXED' | 'PERCENTAGE';
-
 
 export interface EventGuestListMember {
   id: string;
@@ -215,6 +224,10 @@ export interface Event {
   collaborators: Collaborator[];
   totalizers: EventTotalizer;
   status: Status;
+  fees: {
+    id: string;
+    platform_fee: number;
+  };
 }
 
 export interface EventFormState {
@@ -227,7 +240,7 @@ export interface EventFormState {
   errors: Record<string, string[]>;
 }
 
-export interface CreateEventPayload extends Omit<Event, 'id'> { }
+export interface CreateEventPayload extends Omit<Event, 'id'> {}
 
 export interface UpdateEventPayload extends Partial<Event> {
   id: string;
@@ -267,7 +280,7 @@ export interface EventApiResponse {
   name: string;
   alias: string;
   description: string;
-  general_information: string;  
+  general_information: string;
 }
 
 export interface TicketApiResponse {
@@ -339,8 +352,6 @@ export interface PaymentApiResponse {
   user?: UserApiResponse;
 }
 
-
-
 export interface CustomerTicketApiResponse {
   id: string;
   ticket_id: string;
@@ -357,8 +368,8 @@ export interface CustomerTicketApiResponse {
   deleted_at: string;
   ticket?: TicketApiResponse;
   payment?: PaymentApiResponse;
+  validatedBy?: UserApiResponse;
 }
-
 
 export interface CategoryApiResponse {
   id: string;

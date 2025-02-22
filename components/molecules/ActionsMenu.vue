@@ -59,15 +59,15 @@ export default {
     },
     showEdit: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     showDuplicate: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     showDelete: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     showStopSales: {
       type: Boolean,

@@ -1,6 +1,14 @@
 <template>
-  <img v-if="isDark" src="~/assets/images/logo_menu1.png" class="logoMenu dark"  @click="handleClick" />
-  <img v-else src="~/assets/images/logo_menu.png" class="logoMenu"  @click="handleClick" />
+  <img
+    v-if="isDark"
+    src="~/assets/images/logo_web.png"
+    class="logoMenu"
+    @click="handleClick" />
+  <img
+    v-else
+    src="~/assets/images/logo_footer.png"
+    class="logoMenu"
+    @click="handleClick" />
 </template>
 
 <script>
@@ -10,7 +18,7 @@ export default {
       type: Boolean,
       default: false,
     },
-        clickToHome: {
+    clickToHome: {
       type: Boolean,
       default: false,
     },
@@ -28,12 +36,7 @@ export default {
 
 <style scoped>
 .logoMenu {
-  width: 35px;
-  height: 30px;
-}
-.logoMenu.dark {
-  width: 100px;
-  height: auto;
-  margin: 0 auto;
+  width: 100%;
+  height: 100%;
 }
 </style>

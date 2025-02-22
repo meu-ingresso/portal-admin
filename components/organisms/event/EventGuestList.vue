@@ -3,20 +3,15 @@
     <template v-if="isLoading">
       <Lottie path="./animations/loading_default.json" height="300" width="300" />
     </template>
+
     <template v-else>
-      <v-col v-if="guestLists.length > 0 && !isMobile" cols="12">
+      <v-col v-if="guestLists.length > 0" cols="12">
         <div class="d-flex justify-space-between">
           <div class="guest-lists-title">Lista de Convidados</div>
           <DefaultButton text="Adicionar" icon="mdi-plus" @click="openGuestListForm" />
         </div>
       </v-col>
-      <v-col v-if="guestLists.length > 0 && isMobile" cols="12">
-        <DefaultButton
-          text="Adicionar"
-          icon="mdi-plus"
-          block
-          @click="openGuestListForm" />
-      </v-col>
+
       <v-col cols="12" md="12" sm="12">
         <!-- Estado vazio -->
         <template v-if="guestLists.length === 0">
@@ -79,7 +74,9 @@
         <v-dialog v-model="showForm" max-width="720px" persistent :fullscreen="isMobile">
           <v-card :tile="isMobile">
             <v-card-title class="d-flex justify-space-between align-center">
-              <h3>{{ isEditing ? 'Atualizar uma' : 'Criar' }} lista de convidados</h3>
+              <h3 class="modalTitle">
+                {{ isEditing ? 'Atualizar uma' : 'Criar' }} lista de convidados
+              </h3>
               <v-btn icon :disabled="isSaving" @click="closeForm">
                 <v-icon>mdi-close</v-icon>
               </v-btn>

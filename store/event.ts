@@ -160,16 +160,11 @@ export default class Event extends VuexModule {
 
   @Mutation
   private SET_EVENT(data: any) {
-
-    const nonDeletedTickets = data.tickets.filter(
-      (ticket) => !ticket.deleted_at
-    );
+    const nonDeletedTickets = data.tickets.filter((ticket) => !ticket.deleted_at);
 
     const ticketsTypes = nonDeletedTickets.map((ticket) => ticket.name);
 
-    const ticketSales = nonDeletedTickets.filter(
-      (ticket) => ticket.total_sold > 0
-    );
+    const ticketSales = nonDeletedTickets.filter((ticket) => ticket.total_sold > 0);
 
     this.event = {
       ...data,
@@ -179,12 +174,13 @@ export default class Event extends VuexModule {
       statistics: [
         {
           title: 'Visualizações',
-          value: `${data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
-            }`,
+          value: `${
+            data.totalizers.totalViews === 0 ? 'Nenhuma' : `${data.totalizers.totalViews}`
+          }`,
         },
         { title: 'Visibilidade', value: data.availability },
         {
-          title: 'Tipos de ingressos',
+          title: 'Lista de ingressos',
           value: `${ticketsTypes.length === 0 ? 'Nenhum' : `${ticketsTypes.length}`}`,
         },
         {
@@ -232,24 +228,24 @@ export default class Event extends VuexModule {
           hasSales: ticket.total_sold > 0,
           eventPromoter: this.event.promoter_id,
         })),
-        statistics: this.event.statistics.map(stat => {
-          if (stat.title === 'Tipos de ingressos') {
+        statistics: this.event.statistics.map((stat) => {
+          if (stat.title === 'Lista de ingressos') {
             return {
               ...stat,
-              value: `${tickets.length === 0 ? 'Nenhum' : `${tickets.length}`}`
+              value: `${tickets.length === 0 ? 'Nenhum' : `${tickets.length}`}`,
             };
           }
           return stat;
         }),
-        sales: this.event.sales.map(sale => {
+        sales: this.event.sales.map((sale) => {
           if (sale.title === 'Ingressos Vendidos') {
             return {
               ...sale,
-              value: tickets.filter(t => t.hasSales).length
+              value: tickets.filter((t) => t.hasSales).length,
             };
           }
           return sale;
-        })
+        }),
       };
     }
   }
@@ -534,10 +530,16 @@ export default class Event extends VuexModule {
   @Action
   public async fetchEventTickets(eventId: string) {
     try {
+      const response = await $axios.$get(
+        `tickets?where[event_id][v]=${eventId}&preloads[]=status`
+      );
 
-      const response = await $axios.$get(`tickets?where[event_id][v]=${eventId}&preloads[]=status`);
-
-      const result = handleGetResponse(response, 'Falha ao buscar ingressos do evento.', eventId, true);
+      const result = handleGetResponse(
+        response,
+        'Falha ao buscar ingressos do evento.',
+        eventId,
+        true
+      );
 
       const tickets = result.data.map((ticket: any) => ({
         ...ticket,

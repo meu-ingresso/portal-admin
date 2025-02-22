@@ -109,6 +109,7 @@
     v-else-if="getSelectItems && isMobile"
     v-model="selectedItem"
     outlined
+    dense
     return-object
     hide-details
     :items="getSelectItems" />
@@ -248,6 +249,17 @@ export default {
         if (this.currentPath !== this.selectedItem.value) {
           this.$router.push(this.selectedItem.value);
         }
+      },
+    },
+
+    getSelectItems: {
+      immediate: true,
+      handler() {
+        if (!this.getSelectItems) return;
+        const foundItem = this.getSelectItems.find(
+          (item) => item.value === this.currentPath
+        );
+        if (foundItem) this.selectedItem = foundItem;
       },
     },
 

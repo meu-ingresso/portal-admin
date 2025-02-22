@@ -23,7 +23,7 @@
         <StatisticList :statistics="getStatistics" title="Ingressos" />
         <EventTickets
           :event-id="getEvent.id"
-          title="Tipos de ingressos"
+          title="Lista de ingressos"
           @add-ticket="openAddTicketModal" />
       </template>
     </div>
