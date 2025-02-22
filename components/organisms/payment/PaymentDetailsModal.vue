@@ -4,6 +4,7 @@
     max-width="960px"
     :fullscreen="isMobile"
     persistent
+    content-class="secondary-dialog"
     @input="$emit('update:show', $event)">
     <v-card :tile="isMobile">
       <v-card-title class="d-flex justify-space-between align-center">
