@@ -204,7 +204,9 @@
 
         <v-tooltip v-if="item.coupon_id" bottom>
           <template #activator="{ on, attrs }">
-            <v-icon v-bind="attrs" small color="primary" v-on="on">mdi-tag</v-icon>
+            <v-icon v-bind="attrs" small size="22" class="tagIcon" v-on="on"
+              >mdi-tag</v-icon
+            >
           </template>
           Cupom aplicado: {{ item.coupon?.code }}
         </v-tooltip>
@@ -541,5 +543,9 @@ export default {
   th {
     padding: 12px 16px !important;
   }
+}
+
+.tagIcon {
+  margin-bottom: 2px !important;
 }
 </style>
