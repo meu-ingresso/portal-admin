@@ -474,4 +474,12 @@ export default {
 .chip-filters {
   background-color: transparent !important;
 }
+
+::v-deep(.orders-table .v-data-table__wrapper) {
+  tbody {
+    td {
+      cursor: pointer !important;
+    }
+  }
+}
 </style>

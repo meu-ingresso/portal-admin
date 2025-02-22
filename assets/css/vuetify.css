@@ -28414,9 +28414,3 @@ html.overflow-y-hidden {
   color: var(--primary) !important;
   caret-color: var(--primary) !important;
 }
-
-.v-data-table > .v-data-table__wrapper > table > tbody > tr > td,
-.v-data-table > .v-data-table__wrapper > table > tfoot > tr > td,
-.v-data-table > .v-data-table__wrapper > table > thead > tr > td {
-  font-size: 12px !important;
-}
