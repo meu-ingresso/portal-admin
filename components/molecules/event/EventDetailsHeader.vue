@@ -16,12 +16,12 @@
           <template #activator="{ on, attrs }">
             <v-icon
               v-bind="attrs"
-              color="primary"
               size="30"
+              color="primary"
               class="ml-3 cursor-pointer"
               v-on="on"
               @click="openFeeModal">
-              mdi-percent-circle-outline
+              mdi-percent-outline
             </v-icon>
           </template>
           <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
@@ -204,7 +204,7 @@
                 class="ml-4 cursor-pointer"
                 v-on="on"
                 @click="openFeeModal">
-                mdi-percent-circle-outline
+                mdi-percent-outline
               </v-icon>
             </template>
             <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
@@ -261,6 +261,24 @@
 
             <p>{{ getEvent.end_time }}</p>
           </div>
+        </div>
+
+        <div class="d-flex align-center">
+          <a :href="aliasUrl" target="_blank">{{ aliasUrl }}</a>
+
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-icon
+                v-bind="attrs"
+                size="16"
+                class="ml-2 cursor-pointer"
+                v-on="on"
+                @click="copyAlias">
+                mdi-content-copy
+              </v-icon>
+            </template>
+            <span>Copiar link do evento</span>
+          </v-tooltip>
         </div>
       </div>
     </template>

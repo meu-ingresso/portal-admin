@@ -13,20 +13,25 @@
       <Container
         v-if="!disableHover"
         :lock-axis="'y'"
-        :non-drag-area-selector="'.ticket-actions-menu'"
+        :non-drag-area-selector="'.is-swapping'"
         @drop="onDrop">
-        <Draggable v-for="ticket in getTickets" :key="ticket.id" class="pt-4">
+        <Draggable
+          v-for="ticket in getTickets"
+          :key="ticket.id"
+          class="pt-4 draggable-ticket"
+          :class="{ 'is-swapping': isSwapping }">
           <TicketRow
             :id="ticket.id"
             :disable-menu="disableMenu"
+            :is-swapping="isSwapping"
             :name="ticket.name"
             :price="ticket.price"
             :status="ticket?.status?.name"
             :sold="ticket.total_sold"
             :total="ticket.total_quantity"
             :event-promoter="getEventPromoter"
+            @click="handleEditTicket(ticket.id)"
             @delete="handleDeleteTicket"
-            @edit="handleEditTicket"
             @duplicate="handleDuplicateTicket"
             @stop-sales="handleStopSales" />
         </Draggable>
@@ -52,7 +57,7 @@
           :total="ticket.total_quantity"
           :event-promoter="getEventPromoter"
           @delete="handleDeleteTicket"
-          @edit="handleEditTicket"
+          @click="handleEditTicket(ticket.id)"
           @duplicate="handleDuplicateTicket"
           @stop-sales="handleStopSales" />
       </template>
@@ -164,6 +169,7 @@ export default {
       isDuplicating: false,
       selectedTicketIndex: null,
       selectedTicket: null,
+      isSwapping: false,
     };
   },
 
@@ -326,6 +332,8 @@ export default {
     async onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null && removedIndex !== addedIndex) {
         try {
+          this.isSwapping = true;
+
           await eventTickets.swapTicketsOrder({
             removedIndex,
             addedIndex,
@@ -344,6 +352,8 @@ export default {
             type: 'danger',
             time: 5000,
           });
+        } finally {
+          this.isSwapping = false;
         }
       }
     },
