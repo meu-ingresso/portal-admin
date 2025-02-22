@@ -352,7 +352,7 @@ export default {
       return this.localCoupon.tickets.length > 0 && !this.selectedAllTickets;
     },
     icon() {
-      if (this.selectedAllTickets) return 'mdi-close-box';
+      if (this.selectedAllTickets) return 'mdi-checkbox-marked';
       if (this.selectedSomeTickets) return 'mdi-minus-box';
       return 'mdi-checkbox-blank-outline';
     },
