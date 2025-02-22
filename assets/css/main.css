@@ -363,10 +363,18 @@ header {
 }
 
 .theme--light.v-dialog--active.v-card {
-  background-color: var(--beige) !important;
+  background-color: var(--white);
 }
 
 /* Estilo global para modais */
 .v-dialog .v-card {
+  background-color: var(--white);
+}
+
+.theme--light.v-dialog--active.secondary-dialog.v-card {
+  background-color: var(--beige) !important;
+}
+
+.v-dialog.secondary-dialog .v-card {
   background-color: var(--beige) !important;
 }
