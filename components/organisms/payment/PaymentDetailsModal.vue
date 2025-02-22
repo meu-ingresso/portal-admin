@@ -116,7 +116,7 @@
                 outlined
                 :loading="isResending"
                 icon="mdi-email"
-                class="ml-2"
+                class="mr-2"
                 @click="resendTickets" />
 
               <ButtonWithIcon
