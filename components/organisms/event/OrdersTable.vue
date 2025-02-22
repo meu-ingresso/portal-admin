@@ -523,6 +523,10 @@ export default {
         font-family: var(--font-family) !important;
         cursor: pointer !important;
       }
+
+      tr:hover {
+        background-color: var(--tertiary) !important;
+      }
     }
   }
 

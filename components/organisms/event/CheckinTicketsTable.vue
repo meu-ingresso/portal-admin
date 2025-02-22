@@ -1,5 +1,5 @@
 <template>
-  <v-card flat class="mt-4">
+  <div class="mt-4">
     <v-data-table
       :headers="headers"
       :items="customerTickets"
@@ -79,7 +79,7 @@
     <PaymentDetailsModal
       :show.sync="showPaymentDetails"
       :payment-id="selectedPaymentId" />
-  </v-card>
+  </div>
 </template>
 
 <script>
@@ -268,6 +268,9 @@ export default {
         color: var(--black-text) !important;
         font-family: var(--font-family) !important;
         cursor: pointer !important;
+      }
+      tr:hover {
+        background-color: var(--tertiary) !important;
       }
     }
   }
