@@ -505,4 +505,12 @@ export default {
   font-size: 12px;
   text-align: center;
 }
+
+::v-deep(.checkin-table .v-data-table__wrapper) {
+  tbody {
+    td {
+      cursor: pointer !important;
+    }
+  }
+}
 </style>

@@ -112,7 +112,15 @@ export default [
           template: 'guestlists',
           view: 'members',
         },
-      }
+      },
+      {
+        path: 'promoters',
+        name: 'eventsDetailsPromoters',
+        meta: {
+          name: 'eventsDetails',
+          template: 'promoters',
+        },
+      },
     ],
   },
   {

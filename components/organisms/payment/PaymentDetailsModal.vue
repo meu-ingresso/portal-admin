@@ -3,6 +3,7 @@
     :value="show"
     max-width="960px"
     :fullscreen="isMobile"
+    persistent
     @input="$emit('update:show', $event)">
     <v-card :tile="isMobile">
       <v-card-title class="d-flex justify-space-between align-center">
@@ -13,7 +14,11 @@
       </v-card-title>
 
       <v-card-text class="pt-4">
-        <v-skeleton-loader v-if="isLoading" type="article" />
+        <Lottie
+          v-if="isLoading"
+          path="./animations/loading_default.json"
+          height="300"
+          width="300" />
 
         <template v-else>
           <!-- Informações do Pagamento -->
@@ -37,11 +42,16 @@
                   </v-chip>
                 </div>
               </v-col>
-              <v-col cols="12">
+              <v-col cols="6">
                 <div class="info-label">Titular da compra</div>
                 <div class="info-value">
                   {{ payment.user?.people?.first_name }}
-                  {{ payment.user?.people?.last_name }} -
+                  {{ payment.user?.people?.last_name }}
+                </div>
+              </v-col>
+              <v-col cols="6">
+                <div class="info-label">Email</div>
+                <div class="info-value">
                   {{ payment.user?.people?.email }}
                 </div>
               </v-col>
@@ -58,11 +68,51 @@
                 </div>
               </v-col>
               <v-col cols="6">
-                <div class="info-label">Valor total</div>
+                <div class="info-label">Valor bruto</div>
                 <div class="info-value">{{ formatRealValue(payment.gross_value) }}</div>
               </v-col>
               <v-col cols="6">
-                <div class="info-label">Valor Líquido</div>
+                <div class="info-label">Desconto</div>
+                <div class="info-value">
+                  {{ formatRealValue(payment.discount_value) }}
+                </div>
+              </v-col>
+              <v-col cols="6">
+                <div class="info-label">
+                  Valor total
+
+                  <v-tooltip bottom>
+                    <template #activator="{ on, attrs }">
+                      <v-icon v-bind="attrs" small class="mb-1" v-on="on">
+                        mdi-information-outline
+                      </v-icon>
+                    </template>
+                    <!-- @TODO: Adicionar Calculo -->
+                    <span>Valor bruto - Desconto</span>
+                  </v-tooltip>
+                </div>
+                <div class="info-value">
+                  {{ formatRealValue(payment.gross_value) }}
+                </div>
+              </v-col>
+              <v-col cols="6">
+                <div class="info-label">Taxa</div>
+                <div class="info-value">{{ formatRealValue(payment.fee_value) }}</div>
+              </v-col>
+              <v-col cols="6">
+                <div class="info-label">
+                  Valor líquido
+
+                  <v-tooltip bottom>
+                    <template #activator="{ on, attrs }">
+                      <v-icon v-bind="attrs" small class="mb-1" v-on="on">
+                        mdi-information-outline
+                      </v-icon>
+                    </template>
+                    <!-- @TODO: Adicionar Calculo -->
+                    <span>Valor Total - Taxa</span>
+                  </v-tooltip>
+                </div>
                 <div class="info-value">{{ formatRealValue(payment.net_value) }}</div>
               </v-col>
             </v-row>
@@ -116,7 +166,7 @@
                 outlined
                 :loading="isResending"
                 icon="mdi-email"
-                class="ml-2"
+                class="mr-2"
                 @click="resendTickets" />
 
               <ButtonWithIcon
@@ -214,7 +264,7 @@ export default {
     resendTickets() {
       try {
         this.isResending = true;
-        // TODO: Implementar lógica de reenvio
+        // @TODO: Implementar lógica de reenvio
         toast.setToast({
           text: 'Ingressos reenviados com sucesso!',
           type: 'success',
@@ -239,7 +289,7 @@ export default {
     cancelOrder() {
       try {
         this.isCancelling = true;
-        // TODO: Implementar lógica de cancelamento
+        // @TODO: Implementar lógica de cancelamento
         toast.setToast({
           text: 'Pedido cancelado com sucesso!',
           type: 'success',
