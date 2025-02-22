@@ -33,130 +33,103 @@
                 @input="handleFiltersChange" />
             </v-col>
             <v-col cols="6" class="text-right">
-              <!-- Menu de filtros -->
-              <v-menu
-                v-model="showFilters"
-                :close-on-content-click="false"
-                offset-y
-                max-width="500">
-                <template #activator="{ on, attrs }">
-                  <v-btn icon v-bind="attrs" color="primary" class="ml-2" v-on="on">
-                    <v-icon size="24">mdi-filter</v-icon>
-                    <v-badge
-                      v-if="activeFiltersCount"
-                      :content="activeFiltersCount.toString()"
-                      color="error"
-                      offset-x="12"
-                      offset-y="-8"
-                      dot />
-                  </v-btn>
-                </template>
-
-                <v-card>
-                  <v-card-text class="pt-4">
-                    <v-row>
-                      <!-- Filtro de período -->
-                      <v-col cols="12">
-                        <v-row>
-                          <v-col cols="6">
-                            <v-menu
-                              v-model="startDateMenu"
-                              :close-on-content-click="false"
-                              transition="scale-transition"
-                              offset-y
-                              max-width="290px"
-                              min-width="290px">
-                              <template #activator="{ on, attrs }">
-                                <v-text-field
-                                  v-model="filters.startDate"
-                                  label="Data inicial"
-                                  readonly
-                                  outlined
-                                  dense
-                                  v-bind="attrs"
-                                  clearable
-                                  hide-details="auto"
-                                  v-on="on"
-                                  @click:clear="clearStartDate" />
-                              </template>
-                              <v-date-picker
+              <TableFilter
+                :active-filters-count="activeFiltersCount"
+                @clear-filters="clearFilters">
+                <template #filter-content>
+                  <v-row>
+                    <!-- Filtro de período -->
+                    <v-col cols="12">
+                      <v-row>
+                        <v-col cols="6">
+                          <v-menu
+                            v-model="startDateMenu"
+                            :close-on-content-click="false"
+                            transition="scale-transition"
+                            offset-y
+                            max-width="290px"
+                            min-width="290px">
+                            <template #activator="{ on, attrs }">
+                              <v-text-field
                                 v-model="filters.startDate"
-                                no-title
-                                locale="pt-br"
-                                @input="handleDateSelect('start')" />
-                            </v-menu>
-                          </v-col>
-                          <v-col cols="6">
-                            <v-menu
-                              v-model="endDateMenu"
-                              :close-on-content-click="false"
-                              transition="scale-transition"
-                              offset-y
-                              max-width="290px"
-                              min-width="290px">
-                              <template #activator="{ on, attrs }">
-                                <v-text-field
-                                  v-model="filters.endDate"
-                                  label="Data final"
-                                  readonly
-                                  outlined
-                                  dense
-                                  v-bind="attrs"
-                                  clearable
-                                  hide-details="auto"
-                                  v-on="on"
-                                  @click:clear="clearEndDate" />
-                              </template>
-                              <v-date-picker
+                                label="Data inicial"
+                                readonly
+                                outlined
+                                dense
+                                v-bind="attrs"
+                                clearable
+                                hide-details="auto"
+                                v-on="on"
+                                @click:clear="clearStartDate" />
+                            </template>
+                            <v-date-picker
+                              v-model="filters.startDate"
+                              no-title
+                              locale="pt-br"
+                              @input="handleDateSelect('start')" />
+                          </v-menu>
+                        </v-col>
+                        <v-col cols="6">
+                          <v-menu
+                            v-model="endDateMenu"
+                            :close-on-content-click="false"
+                            transition="scale-transition"
+                            offset-y
+                            max-width="290px"
+                            min-width="290px">
+                            <template #activator="{ on, attrs }">
+                              <v-text-field
                                 v-model="filters.endDate"
-                                no-title
-                                locale="pt-br"
-                                @input="handleDateSelect('end')" />
-                            </v-menu>
-                          </v-col>
-                        </v-row>
-                      </v-col>
+                                label="Data final"
+                                readonly
+                                outlined
+                                dense
+                                v-bind="attrs"
+                                clearable
+                                hide-details="auto"
+                                v-on="on"
+                                @click:clear="clearEndDate" />
+                            </template>
+                            <v-date-picker
+                              v-model="filters.endDate"
+                              no-title
+                              locale="pt-br"
+                              @input="handleDateSelect('end')" />
+                          </v-menu>
+                        </v-col>
+                      </v-row>
+                    </v-col>
 
-                      <!-- Filtros de status e método de pagamento -->
-                      <v-col cols="12">
-                        <v-row>
-                          <v-col cols="6">
-                            <v-select
-                              v-model="filters.status"
-                              :items="statusOptions"
-                              label="Status"
-                              outlined
-                              dense
-                              clearable
-                              hide-details="auto"
-                              @change="handleFiltersChange" />
-                          </v-col>
-                          <v-col cols="6">
-                            <v-select
-                              v-model="filters.paymentMethod"
-                              :items="paymentMethodOptions"
-                              label="Forma de pagamento"
-                              outlined
-                              dense
-                              clearable
-                              hide-details="auto"
-                              @change="handleFiltersChange" />
-                          </v-col>
-                        </v-row>
-                      </v-col>
-                    </v-row>
-
-                    <!-- Botão de limpar filtros -->
-                    <v-row class="mt-4">
-                      <v-col class="text-right">
-                        <v-btn text color="primary" @click="clearFilters">
-                          Limpar filtros
-                        </v-btn>
-                      </v-col>
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </v-menu>
+                    <!-- Filtros de status e método de pagamento -->
+                    <v-col cols="12">
+                      <v-row>
+                        <v-col cols="6">
+                          <v-select
+                            v-model="filters.status"
+                            :items="statusOptions"
+                            label="Status"
+                            outlined
+                            dense
+                            clearable
+                            hide-details="auto"
+                            @change="handleFiltersChange" />
+                        </v-col>
+                        <v-col cols="6">
+                          <v-select
+                            v-model="filters.paymentMethod"
+                            :items="paymentMethodOptions"
+                            label="Forma de pagamento"
+                            outlined
+                            dense
+                            clearable
+                            hide-details="auto"
+                            @change="handleFiltersChange" />
+                        </v-col>
+                      </v-row>
+                    </v-col>
+                  </v-row>
+                </template>
+              </TableFilter>
             </v-col>
           </v-row>
         </v-toolbar>
@@ -204,7 +177,9 @@
 
         <v-tooltip v-if="item.coupon_id" bottom>
           <template #activator="{ on, attrs }">
-            <v-icon v-bind="attrs" small color="primary" v-on="on">mdi-tag</v-icon>
+            <v-icon v-bind="attrs" small size="22" class="tagIcon" v-on="on"
+              >mdi-tag</v-icon
+            >
           </template>
           Cupom aplicado: {{ item.coupon?.code }}
         </v-tooltip>
@@ -496,46 +471,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.orders-table {
-  background-color: var(--tertiary) !important;
-}
-
 .chip-filters {
   background-color: transparent !important;
-}
-
-::v-deep .orders-table {
-  .v-data-table-header {
-    th {
-      font-size: 16px !important;
-      font-weight: 700 !important;
-      font-family: var(--font-family-inter-bold) !important;
-      color: var(--black-text) !important;
-      white-space: nowrap;
-    }
-  }
-
-  .v-data-table__wrapper {
-    tbody {
-      td {
-        font-size: 14px !important;
-        color: var(--black-text) !important;
-        font-family: var(--font-family) !important;
-        cursor: pointer !important;
-      }
-    }
-  }
-
-  header {
-    height: auto !important;
-    padding-top: 14px !important;
-    padding-bottom: 14px !important;
-    background-color: transparent !important;
-  }
-
-  td,
-  th {
-    padding: 12px 16px !important;
-  }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-card flat class="mt-4">
+  <div class="mt-4">
     <v-data-table
       :headers="headers"
       :items="customerTickets"
@@ -18,9 +18,155 @@
       class="checkin-table"
       @update:options="handleTableUpdate"
       @click:row="(item) => openPaymentDetails(item.payment.id)">
+      <!-- Slot para filtros -->
+      <template #top>
+        <v-toolbar flat>
+          <v-row>
+            <v-col cols="6">
+              <!-- Campo de busca -->
+              <v-text-field
+                v-model="filters.search"
+                label="Buscar por nome ou identificador"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                hide-details="auto"
+                class="mr-4"
+                @input="handleFiltersChange" />
+            </v-col>
+            <v-col cols="6" class="text-right">
+              <TableFilter
+                :active-filters-count="activeFiltersCount"
+                @clear-filters="clearFilters">
+                <template #filter-content>
+                  <v-row>
+                    <!-- Filtro de período -->
+                    <v-col cols="12">
+                      <v-row>
+                        <v-col cols="6">
+                          <v-menu
+                            v-model="startDateMenu"
+                            :close-on-content-click="false"
+                            transition="scale-transition"
+                            offset-y
+                            max-width="290px"
+                            min-width="290px">
+                            <template #activator="{ on, attrs }">
+                              <v-text-field
+                                v-model="filters.startDate"
+                                label="Data inicial do check-in"
+                                readonly
+                                outlined
+                                dense
+                                v-bind="attrs"
+                                clearable
+                                hide-details="auto"
+                                v-on="on"
+                                @click:clear="clearStartDate" />
+                            </template>
+                            <v-date-picker
+                              v-model="filters.startDate"
+                              no-title
+                              locale="pt-br"
+                              @input="handleDateSelect('start')" />
+                          </v-menu>
+                        </v-col>
+                        <v-col cols="6">
+                          <v-menu
+                            v-model="endDateMenu"
+                            :close-on-content-click="false"
+                            transition="scale-transition"
+                            offset-y
+                            max-width="290px"
+                            min-width="290px">
+                            <template #activator="{ on, attrs }">
+                              <v-text-field
+                                v-model="filters.endDate"
+                                label="Data final do check-in"
+                                readonly
+                                outlined
+                                dense
+                                v-bind="attrs"
+                                clearable
+                                hide-details="auto"
+                                v-on="on"
+                                @click:clear="clearEndDate" />
+                            </template>
+                            <v-date-picker
+                              v-model="filters.endDate"
+                              no-title
+                              locale="pt-br"
+                              @input="handleDateSelect('end')" />
+                          </v-menu>
+                        </v-col>
+                      </v-row>
+                    </v-col>
+
+                    <!-- Filtro de tipo de ingresso -->
+                    <v-col cols="6">
+                      <v-select
+                        v-model="filters.ticketType"
+                        :items="ticketTypeOptions"
+                        label="Tipo de Ingresso"
+                        outlined
+                        dense
+                        clearable
+                        hide-details="auto"
+                        @change="handleFiltersChange" />
+                    </v-col>
+
+                    <!-- Filtro de status de check-in -->
+                    <v-col cols="6">
+                      <v-select
+                        v-model="filters.checkinStatus"
+                        :items="checkinStatusOptions"
+                        label="Status do Check-in"
+                        outlined
+                        dense
+                        clearable
+                        hide-details="auto"
+                        @change="handleFiltersChange" />
+                    </v-col>
+                  </v-row>
+                </template>
+              </TableFilter>
+            </v-col>
+          </v-row>
+        </v-toolbar>
+
+        <!-- Chips de filtros ativos -->
+        <v-sheet v-if="activeFiltersCount" class="px-4 py-2 chip-filters">
+          <v-chip
+            v-if="filters.startDate || filters.endDate"
+            class="mr-2"
+            close
+            @click:close="clearDates">
+            <v-icon left small>mdi-calendar-range</v-icon>
+            Período do check-in: {{ formatDateRange }}
+          </v-chip>
+
+          <v-chip
+            v-if="filters.ticketType"
+            class="mr-2"
+            close
+            @click:close="clearTicketType">
+            <v-icon left small>mdi-ticket</v-icon>
+            Tipo: {{ filters.ticketType }}
+          </v-chip>
+
+          <v-chip
+            v-if="filters.checkinStatus"
+            class="mr-2"
+            close
+            @click:close="clearCheckinStatus">
+            <v-icon left small>mdi-flag</v-icon>
+            Status: {{ getCheckinStatusText(filters.checkinStatus) }}
+          </v-chip>
+        </v-sheet>
+      </template>
+
       <!-- Nome do Comprador -->
       <template #[`item.owner`]="{ item }">
-        {{ item.currentOwner.first_name }} {{ item.currentOwner.last_name }}
+        {{ getTicketUserName(item) }}
       </template>
 
       <!-- Tipo do Ingresso -->
@@ -79,7 +225,7 @@
     <PaymentDetailsModal
       :show.sync="showPaymentDetails"
       :payment-id="selectedPaymentId" />
-  </v-card>
+  </div>
 </template>
 
 <script>
@@ -123,6 +269,15 @@ export default {
       validatingId: null,
       showPaymentDetails: false,
       selectedPaymentId: '',
+      filters: {
+        search: '',
+        startDate: '',
+        endDate: '',
+        ticketType: '',
+        checkinStatus: '',
+      },
+      startDateMenu: false,
+      endDateMenu: false,
     };
   },
 
@@ -144,9 +299,46 @@ export default {
     eventId() {
       return this.$route.params.id;
     },
+    activeFiltersCount() {
+      return Object.keys(this.filters).filter((key) => this.filters[key]).length;
+    },
+
+    formatDateRange() {
+      const { startDate, endDate } = this.filters;
+      if (startDate && endDate) {
+        return `${this.formatDate(startDate)} - ${this.formatDate(endDate)}`;
+      }
+      return '';
+    },
+    ticketTypeOptions() {
+      return this.customerTickets
+        .map((ticket) => ticket.ticket?.name)
+        .filter((name, index, self) => name && self.indexOf(name) === index)
+        .map((name) => ({ text: name, value: name }));
+    },
+    checkinStatusOptions() {
+      return [
+        { text: 'Check-in realizado', value: 'validated' },
+        { text: 'Check-in não realizado', value: 'not_validated' },
+      ];
+    },
   },
 
   methods: {
+    getTicketUserName(ticket) {
+      if (ticket?.ticketFields?.length) {
+        const nameField = ticket.ticketFields.find(
+          (field) => field.checkoutField.name === 'NOME'
+        );
+
+        if (nameField) {
+          return nameField.value;
+        }
+      }
+
+      return ` ${ticket.currentOwner.first_name} ${ticket.currentOwner.last_name}`;
+    },
+
     formatDateTimeWithTimezone,
 
     async handleTableUpdate(newOptions) {
@@ -156,10 +348,34 @@ export default {
 
     async fetchCustomerTickets() {
       const query = this.buildQueryParams();
+      const searchQuery = this.filters.search
+        ? `&whereOr[currentOwner][first_name][like]=%${this.filters.search}%&whereOr[currentOwner][last_name][like]=%${this.filters.search}%&whereOr[ticket_identifier][like]=%${this.filters.search}%`
+        : '';
+      const ticketTypeQuery = this.filters.ticketType
+        ? `&where[ticket][name][v]=${this.filters.ticketType}`
+        : '';
+      const dateQuery = this.buildDateQuery();
+      const checkinStatusQuery = this.filters.checkinStatus
+        ? `&where[validated][v]=${this.filters.checkinStatus === 'validated'}`
+        : '';
 
       await eventCustomerTickets.fetchAndPopulateByQuery(
-        `${query}&preloads[]=ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=payment:status&whereHas[ticket][event_id][v]=${this.eventId}`
+        `${query}${searchQuery}${ticketTypeQuery}${dateQuery}${checkinStatusQuery}&preloads[]=ticketFields:checkoutField&preloads[]=ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=payment:status&whereHas[ticket][event_id][v]=${this.eventId}`
       );
+    },
+
+    buildDateQuery() {
+      const { startDate, endDate } = this.filters;
+      let dateQuery = '';
+
+      if (startDate) {
+        dateQuery += `&where[validated_at][gte]=${startDate}`;
+      }
+      if (endDate) {
+        dateQuery += `&where[validated_at][lte]=${endDate}`;
+      }
+
+      return dateQuery;
     },
 
     buildQueryParams() {
@@ -183,10 +399,7 @@ export default {
 
         if (ticket.validated) {
           // Desfazer validação
-          await eventCustomerTickets.invalidateCustomerTicket({
-            customerTicketId: ticket.id,
-            invalidatedBy: this.userId,
-          });
+          await eventCustomerTickets.invalidateCustomerTicket(ticket.id);
 
           toast.setToast({
             text: 'Check-in desfeito com sucesso!',
@@ -195,10 +408,7 @@ export default {
           });
         } else {
           // Fazer validação
-          await eventCustomerTickets.validateCustomerTicket({
-            customerTicketId: ticket.id,
-            validatedBy: this.userId,
-          });
+          await eventCustomerTickets.validateCustomerTicket(ticket.id);
 
           toast.setToast({
             text: 'Check-in realizado com sucesso!',
@@ -226,6 +436,56 @@ export default {
       this.selectedPaymentId = paymentId;
       this.showPaymentDetails = true;
     },
+
+    handleFiltersChange() {
+      this.fetchCustomerTickets();
+    },
+
+    clearFilters() {
+      this.filters = {
+        search: '',
+        startDate: '',
+        endDate: '',
+        ticketType: '',
+        checkinStatus: '',
+      };
+      this.fetchCustomerTickets();
+    },
+
+    clearStartDate() {
+      this.filters.startDate = '';
+      this.fetchCustomerTickets();
+    },
+
+    clearEndDate() {
+      this.filters.endDate = '';
+      this.fetchCustomerTickets();
+    },
+
+    handleDateSelect(_type) {
+      this.fetchCustomerTickets();
+    },
+
+    clearTicketType() {
+      this.filters.ticketType = '';
+      this.fetchCustomerTickets();
+    },
+
+    clearCheckinStatus() {
+      this.filters.checkinStatus = '';
+      this.fetchCustomerTickets();
+    },
+
+    getCheckinStatusText(status) {
+      switch (status) {
+        case 'validated':
+          return 'Check-in realizado';
+        case 'not_validated':
+          return 'Check-in não realizado';
+        default:
+          return 'Todos';
+      }
+    },
   },
 };
 </script>
@@ -244,50 +504,5 @@ export default {
 .validation-info {
   font-size: 12px;
   text-align: center;
-}
-
-.checkin-table {
-  background-color: var(--tertiary) !important;
-}
-
-::v-deep .checkin-table {
-  .v-data-table-header {
-    th {
-      font-size: 16px !important;
-      font-weight: 700 !important;
-      font-family: var(--font-family-inter-bold) !important;
-      color: var(--black-text) !important;
-      white-space: nowrap;
-    }
-  }
-
-  .v-data-table__wrapper {
-    tbody {
-      td {
-        font-size: 14px !important;
-        color: var(--black-text) !important;
-        font-family: var(--font-family) !important;
-        cursor: pointer !important;
-      }
-    }
-  }
-
-  .validation-button,
-  .validation-button-validated {
-    height: 34px !important;
-    min-width: 120px !important;
-    background-color: var(--gray3);
-    color: var(--black-text) !important;
-  }
-
-  .validation-button-validated {
-    background-color: var(--success) !important;
-    color: var(--white) !important;
-  }
-
-  td,
-  th {
-    padding: 8px 16px !important;
-  }
 }
 </style>
