@@ -90,8 +90,10 @@ export default class Payment extends VuexModule {
   public async fetchPaymentDetails(paymentId: string): Promise<void> {
     try {
       this.context.commit('SET_LOADING', true);
-      const response = await $axios.$get(`/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people`);
-      const {data} = handleGetResponse(response, 'Pagamento não encontrado');
+      const response = await $axios.$get(
+        `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people`
+      );
+      const { data } = handleGetResponse(response, 'Pagamento não encontrado');
 
       this.context.commit('SET_PAYMENT', data[0]);
       await this.context.dispatch('fetchRelatedTickets', paymentId);
@@ -112,7 +114,7 @@ export default class Payment extends VuexModule {
           'preloads[]=': 'ticket',
         },
       });
-      const {data} = handleGetResponse(response, 'Ingressos não encontrados');
+      const { data } = handleGetResponse(response, 'Ingressos não encontrados');
 
       this.context.commit('SET_RELATED_TICKETS', data || []);
     } catch (error) {
@@ -127,10 +129,11 @@ export default class Payment extends VuexModule {
       this.context.commit('SET_LOADING_ORDERS', true);
 
       const queryParams: any = {
-        'preloads': [
+        preloads: [
+          'payment:coupon',
           'payment:user:people',
           'payment:status',
-          'ticket:event'
+          'ticket:event:fees',
         ],
         'whereHas[ticket][event_id][v]': params.eventId,
         page: params.page || 1,
@@ -140,8 +143,12 @@ export default class Payment extends VuexModule {
 
       // Adiciona busca por nome/email do comprador
       if (params.search) {
-        queryParams['whereHas[payment][user][people][or][first_name][ilike]'] = `%${params.search}%`;
-        queryParams['whereHas[payment][user][people][or][last_name][ilike]'] = `%${params.search}%`;
+        queryParams[
+          'whereHas[payment][user][people][or][first_name][ilike]'
+        ] = `%${params.search}%`;
+        queryParams[
+          'whereHas[payment][user][people][or][last_name][ilike]'
+        ] = `%${params.search}%`;
         queryParams['whereHas[payment][user][or][email][ilike]'] = `%${params.search}%`;
       }
 
