@@ -1,11 +1,11 @@
 <template>
   <div v-if="!isMobile" height="50%">
-    <MiniLogo
+    <DesktopLogo
       v-if="!miniVariant"
       :class="{ 'cursor-pointer': clickToHome }"
       @click="handleClick" />
 
-    <SmallLogo v-else :class="{ 'cursor-pointer': clickToHome }" @click="handleClick" />
+    <MobileLogo v-else :class="{ 'cursor-pointer': clickToHome }" @click="handleClick" />
   </div>
 
   <v-app-bar-nav-icon v-else class="nav-icon" @click="toggleDrawer"></v-app-bar-nav-icon>
