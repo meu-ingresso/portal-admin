@@ -74,7 +74,9 @@
         <v-dialog v-model="showForm" max-width="720px" persistent :fullscreen="isMobile">
           <v-card :tile="isMobile">
             <v-card-title class="d-flex justify-space-between align-center">
-              <h3>{{ isEditing ? 'Atualizar uma' : 'Criar' }} lista de convidados</h3>
+              <h3 class="modalTitle">
+                {{ isEditing ? 'Atualizar uma' : 'Criar' }} lista de convidados
+              </h3>
               <v-btn icon :disabled="isSaving" @click="closeForm">
                 <v-icon>mdi-close</v-icon>
               </v-btn>
