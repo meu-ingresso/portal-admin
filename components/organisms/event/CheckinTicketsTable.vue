@@ -16,7 +16,8 @@
       :no-results-text="'Nenhum registro encontrado'"
       :loading-text="'Carregando...'"
       class="checkin-table"
-      @update:options="handleTableUpdate">
+      @update:options="handleTableUpdate"
+      @click:row="(item) => openPaymentDetails(item.payment.id)">
       <!-- Nome do Comprador -->
       <template #[`item.owner`]="{ item }">
         {{ item.currentOwner.first_name }} {{ item.currentOwner.last_name }}
@@ -25,11 +26,6 @@
       <!-- Tipo do Ingresso -->
       <template #[`item.ticket_type`]="{ item }">
         {{ item.ticket?.name }}
-      </template>
-
-      <!-- Identificador do Ingresso -->
-      <template #[`item.ticket_identifier`]="{ item }">
-        {{ item.ticket_identifier }}
       </template>
 
       <!-- Pedido -->
@@ -51,20 +47,23 @@
               {{ formatDateTimeWithTimezone(item.validated_at) }}
             </span>
           </template>
-          <span>Validado por: {{ item.validated_by_name || 'Sistema' }}</span>
+          <span>
+            Validado por: {{ item.validatedBy.people.first_name }}
+            {{ item.validatedBy.people.last_name }}
+          </span>
         </v-tooltip>
         <span v-else>-</span>
       </template>
 
-      <!-- Status e Ação -->
+      <!-- Ação -->
       <template #[`item.actions`]="{ item }">
         <div class="d-flex flex-column align-center">
           <v-btn
             small
-            :color="item.validated ? 'green' : 'grey'"
             :loading="validatingId === item.id"
             class="validation-button"
-            @click="toggleValidation(item)">
+            :class="{ 'validation-button-validated': item.validated }"
+            @click.stop="toggleValidation(item)">
             <template v-if="item.validated">
               <v-icon small color="white">mdi-check</v-icon>
             </template>
@@ -91,17 +90,28 @@ export default {
   data() {
     return {
       headers: [
-        { text: 'Comprador', value: 'owner', sortable: true },
-        { text: 'Tipo', value: 'ticket_type', sortable: true },
-        { text: 'Identificador', value: 'ticket_identifier', sortable: false },
-        { text: 'Pedido', value: 'payment_id', sortable: false },
+        { text: 'Nome', value: 'owner', sortable: true, width: '25%' },
+        { text: 'Ingresso', value: 'ticket_type', sortable: true, width: '30%' },
         {
-          text: 'Data Validação',
+          text: 'Identificador',
+          value: 'ticket_identifier',
+          sortable: true,
+          width: '15%',
+        },
+        {
+          text: 'Data Check-in',
           value: 'validated_at',
           sortable: true,
           align: 'center',
+          width: '20%',
         },
-        { text: 'Ações', value: 'actions', sortable: false, align: 'center' },
+        {
+          text: 'Ações',
+          value: 'actions',
+          sortable: false,
+          align: 'center',
+          width: '10%',
+        },
       ],
       options: {
         page: 1,
@@ -146,8 +156,9 @@ export default {
 
     async fetchCustomerTickets() {
       const query = this.buildQueryParams();
+
       await eventCustomerTickets.fetchAndPopulateByQuery(
-        `${query}&preloads[]=ticket:event&preloads[]=currentOwner&whereHas[ticket][event_id][v]=${this.eventId}&preloads[]=payment:status`
+        `${query}&preloads[]=ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=payment:status&whereHas[ticket][event_id][v]=${this.eventId}`
       );
     },
 
@@ -235,9 +246,11 @@ export default {
   text-align: center;
 }
 
-/* Estilos da tabela */
+.checkin-table {
+  background-color: var(--tertiary) !important;
+}
+
 ::v-deep .checkin-table {
-  /* Estilo do cabeçalho */
   .v-data-table-header {
     th {
       font-size: 16px !important;
@@ -248,26 +261,33 @@ export default {
     }
   }
 
-  /* Estilo das células */
   .v-data-table__wrapper {
     tbody {
       td {
-        font-size: 14px;
-        color: var(--black-text);
+        font-size: 14px !important;
+        color: var(--black-text) !important;
+        font-family: var(--font-family) !important;
+        cursor: pointer !important;
       }
     }
   }
 
-  /* Ajuste para o botão de check */
-  .validation-button {
+  .validation-button,
+  .validation-button-validated {
     height: 34px !important;
     min-width: 120px !important;
+    background-color: var(--gray3);
+    color: var(--black-text) !important;
   }
 
-  /* Ajuste do padding das células para comportar fonte maior */
+  .validation-button-validated {
+    background-color: var(--success) !important;
+    color: var(--white) !important;
+  }
+
   td,
   th {
     padding: 8px 16px !important;
   }
 }
-</style> 
+</style>
