@@ -361,3 +361,12 @@ header {
 .v-list {
   padding: 0 !important;
 }
+
+.theme--light.v-dialog--active.v-card {
+  background-color: var(--beige) !important;
+}
+
+/* Estilo global para modais */
+.v-dialog .v-card {
+  background-color: var(--beige) !important;
+}
