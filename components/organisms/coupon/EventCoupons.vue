@@ -20,7 +20,7 @@
         :tickets="coupon.tickets"
         :event-tickets="getTickets"
         :event-promoter="getEventPromoter"
-        @edit="handleEditCoupon"
+        @click="handleEditCoupon(coupon.id)"
         @delete="handleDeleteCoupon" />
     </v-col>
 
