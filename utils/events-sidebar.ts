@@ -21,8 +21,8 @@ export const eventsSideBar = [
     needPermissions: false,
   },
   {
-    icon: 'mdi-ticket-outline',
-    iconActive: 'mdi-ticket',
+    icon: 'mdi-tag-outline',
+    iconActive: 'mdi-tag-multiple',
     title: 'Cupons',
     to: '/events/:id/coupons',
     needPermissions: false,
