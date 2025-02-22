@@ -13,7 +13,11 @@
       </v-card-title>
 
       <v-card-text class="pt-4">
-        <v-skeleton-loader v-if="isLoading" type="article" />
+        <Lottie
+          v-if="isLoading"
+          path="./animations/loading_default.json"
+          height="300"
+          width="300" />
 
         <template v-else>
           <!-- Informações do Pagamento -->
