@@ -10,7 +10,6 @@ import { splitDateTime } from '@/utils/formatters';
   namespaced: true,
 })
 export default class EventGeneralInfo extends VuexModule {
-
   private isLoading: boolean = false;
 
   private info: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
@@ -53,6 +52,10 @@ export default class EventGeneralInfo extends VuexModule {
       totalViews: '0',
     },
     status: null,
+    fees: {
+      id: '',
+      platform_fee: 0,
+    },
   };
 
   private mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
@@ -67,7 +70,7 @@ export default class EventGeneralInfo extends VuexModule {
     },
     event_type: 'Presencial',
     rating: {
-      img:"https://meuingresso-attachments.s3.us-east-1.amazonaws.com/%2B14.png",
+      img: 'https://meuingresso-attachments.s3.us-east-1.amazonaws.com/%2B14.png',
       text: 'Maiores de 14 anos',
       value: 'fdc6ed28-5d77-4383-9820-621491c5b075',
     },
@@ -108,6 +111,10 @@ export default class EventGeneralInfo extends VuexModule {
       name: 'Aguardando Aprovação',
       module: 'event',
       description: 'Aguardando aprovação do evento',
+    },
+    fees: {
+      id: '',
+      platform_fee: 10,
     },
   };
 
@@ -183,7 +190,12 @@ export default class EventGeneralInfo extends VuexModule {
       errors.push('Data e hora de término são obrigatórios');
     }
 
-    if (this.info.start_date && this.info.start_time && this.info.end_date && this.info.end_time) {
+    if (
+      this.info.start_date &&
+      this.info.start_time &&
+      this.info.end_date &&
+      this.info.end_time
+    ) {
       const startDate = new Date(`${this.info.start_date}T${this.info.start_time}`);
       const endDate = new Date(`${this.info.end_date}T${this.info.end_time}`);
       const now = new Date();
@@ -233,7 +245,6 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   public async fetchAndPopulateByEventId(eventId: string) {
     try {
-
       this.context.commit('SET_LOADING', true);
 
       const preloads = [
@@ -244,6 +255,7 @@ export default class EventGeneralInfo extends VuexModule {
         'attachments',
         'collaborators',
         'status',
+        'fees',
       ];
 
       const response = await $axios.$get(
@@ -262,11 +274,15 @@ export default class EventGeneralInfo extends VuexModule {
       const startDateTime = splitDateTime(event.start_date);
       const endDateTime = splitDateTime(event.end_date);
 
-      const bannerAttachment = event.attachments.find((attachment: EventAttachment) => attachment.name === 'banner');
+      const bannerAttachment = event.attachments.find(
+        (attachment: EventAttachment) => attachment.name === 'banner'
+      );
       const bannerUrl = bannerAttachment ? bannerAttachment.url : null;
       const bannerId = bannerAttachment ? bannerAttachment.id : null;
 
-      const linkOnlineAttachment = event.attachments.find((attachment: EventAttachment) => attachment.name === 'link_online');
+      const linkOnlineAttachment = event.attachments.find(
+        (attachment: EventAttachment) => attachment.name === 'link_online'
+      );
       const linkOnlineUrl = linkOnlineAttachment ? linkOnlineAttachment.url : null;
       const linkOnlineId = linkOnlineAttachment ? linkOnlineAttachment.id : null;
 
@@ -297,22 +313,27 @@ export default class EventGeneralInfo extends VuexModule {
         availability: event.availability,
         is_featured: event.is_featured,
         absorb_service_fee: event.absorb_service_fee,
-        address: event.address && event.address.deleted_at === null ? {
-          id: event.address.id,
-          street: event.address.street,
-          number: event.address.number,
-          complement: event.address.complement || '',
-          neighborhood: event.address.neighborhood,
-          city: event.address.city,
-          state: event.address.state,
-          zipcode: event.address.zipcode,
-          location_name: event.location_name || '',
-          latitude: event.address.latitude ? Number(event.address.latitude) : null,
-          longitude: event.address.longitude ? Number(event.address.longitude) : null,
-        } : {
-            id: event.address.id,
-            deleted_at: event.address.deleted_at
-        },
+        address:
+          event.address && event.address.deleted_at === null
+            ? {
+                id: event.address.id,
+                street: event.address.street,
+                number: event.address.number,
+                complement: event.address.complement || '',
+                neighborhood: event.address.neighborhood,
+                city: event.address.city,
+                state: event.address.state,
+                zipcode: event.address.zipcode,
+                location_name: event.location_name || '',
+                latitude: event.address.latitude ? Number(event.address.latitude) : null,
+                longitude: event.address.longitude
+                  ? Number(event.address.longitude)
+                  : null,
+              }
+            : {
+                id: event.address.id,
+                deleted_at: event.address.deleted_at,
+              },
         link_online: linkOnlineUrl || '',
         link_online_id: linkOnlineId || '',
         promoter_id: event.promoter_id,
@@ -320,10 +341,13 @@ export default class EventGeneralInfo extends VuexModule {
         collaborators: event.collaborators,
         totalizers: event.totalizers,
         status: event.status,
+        fees: {
+          id: event.fees.id,
+          platform_fee: event.fees.platform_fee,
+        },
       });
 
       return event;
-
     } catch (error) {
       console.error('Erro ao buscar evento:', error);
       throw error;
@@ -335,11 +359,13 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   public async createEventBase(): Promise<{ eventId: string; addressId?: string }> {
     try {
-
       // Criar endereço se o evento for presencial
       const [addressId, draftStatus] = await Promise.all([
         this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
-        status.fetchStatusByModuleAndName({ module: 'event', name: 'Aguardando Aprovação' }),
+        status.fetchStatusByModuleAndName({
+          module: 'event',
+          name: 'Aguardando Aprovação',
+        }),
       ]);
 
       // Criar evento base
@@ -420,11 +446,10 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   public async updateEventBase(eventId: string) {
     try {
-
       // Atualiza ou deleta endereço
       if (this.info.event_type !== 'Online' && this.info.address?.id) {
         await this.updateAddress();
-      } else if(this.info.event_type === 'Online' && !this.info.address?.deleted_at) {
+      } else if (this.info.event_type === 'Online' && !this.info.address?.deleted_at) {
         await this.deleteAddress();
       }
 
@@ -459,10 +484,8 @@ export default class EventGeneralInfo extends VuexModule {
 
       // Atualiza ou deleta banner
       await this.handleEventBanner(eventId);
-  
 
       return eventResponse.body.result;
-
     } catch (error) {
       console.error('Erro ao atualizar evento base:', error);
       throw error;
@@ -537,19 +560,49 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  public async handleLinkOnline(eventId: string) {
+  public async updatePlatformFee(payload: { feeId: string; platformFee: number }) {
+    const response = await $axios.$patch('event-fee', {
+      id: payload.feeId,
+      platform_fee: payload.platformFee,
+    });
 
-    const attachment = this.$info.attachments.find((attachment: EventAttachment) => attachment.name === 'link_online');
+    if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+      throw new Error('Falha ao atualizar taxa negociada');
+    }
+
+    this.context.commit('UPDATE_INFO', {
+      fees: {
+        id: payload.feeId,
+        platform_fee: response.body.result.platform_fee,
+      },
+    });
+
+    return response.body.result;
+  }
+
+  @Action
+  public async handleLinkOnline(eventId: string) {
+    const attachment = this.$info.attachments.find(
+      (attachment: EventAttachment) => attachment.name === 'link_online'
+    );
 
     if (this.$info.link_online_id) {
-      
       if (attachment && attachment.url !== this.$info.link_online) {
         await this.deleteEventAttachment(attachment.id as string);
-        await this.createEventAttachment({eventId, name: 'link_online', type: 'link', url: this.$info.link_online});
+        await this.createEventAttachment({
+          eventId,
+          name: 'link_online',
+          type: 'link',
+          url: this.$info.link_online,
+        });
       }
-
-    }else if (this.$info.link_online) {
-      await this.createEventAttachment({eventId, name: 'link_online', type: 'link', url: this.$info.link_online});
+    } else if (this.$info.link_online) {
+      await this.createEventAttachment({
+        eventId,
+        name: 'link_online',
+        type: 'link',
+        url: this.$info.link_online,
+      });
     }
   }
 
@@ -564,15 +617,28 @@ export default class EventGeneralInfo extends VuexModule {
       return;
     }
 
-    const bannerId = await this.createEventAttachment({eventId, name: 'banner', type: 'image', url: this.$info.banner as string});
-    const bannerUrl = await this.uploadEventBanner({attachmentId: bannerId, banner: this.$info.banner as File});
-    await this.updateEventAttachment({attachmentId: bannerId, url: bannerUrl});
+    const bannerId = await this.createEventAttachment({
+      eventId,
+      name: 'banner',
+      type: 'image',
+      url: this.$info.banner as string,
+    });
+    const bannerUrl = await this.uploadEventBanner({
+      attachmentId: bannerId,
+      banner: this.$info.banner as File,
+    });
+    await this.updateEventAttachment({ attachmentId: bannerId, url: bannerUrl });
 
     return bannerId;
   }
 
   @Action
-  private async createEventAttachment(payload: {eventId: string, name: string, type: string, url: string}) {
+  private async createEventAttachment(payload: {
+    eventId: string;
+    name: string;
+    type: string;
+    url: string;
+  }) {
     const attachmentResponse = await $axios.$post('event-attachment', {
       event_id: payload.eventId,
       name: payload.name,
@@ -597,7 +663,7 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  private async uploadEventBanner(payload: {attachmentId: string, banner: File}) {
+  private async uploadEventBanner(payload: { attachmentId: string; banner: File }) {
     const formData = new FormData();
     formData.append('event_attachment_id', payload.attachmentId);
     formData.append('file', payload.banner);
@@ -616,7 +682,7 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  private async updateEventAttachment(payload: {attachmentId: string, url: string}) {
+  private async updateEventAttachment(payload: { attachmentId: string; url: string }) {
     const updateResponse = await $axios.$patch('event-attachment', {
       id: payload.attachmentId,
       url: payload.url,
@@ -626,4 +692,4 @@ export default class EventGeneralInfo extends VuexModule {
       throw new Error('Failed to update banner.');
     }
   }
-} 
+}

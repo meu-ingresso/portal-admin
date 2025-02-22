@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isMobile" class="coupon-row">
+  <div v-if="!isMobile" class="coupon-row" @click="$emit('click')">
     <div class="coupon-content">
       <!-- Coluna do código -->
       <div class="coupon-section code-section">
@@ -65,43 +65,44 @@
 
       <!-- Coluna de ações -->
       <div v-if="!disableMenu && canManageCoupon" class="coupon-section actions-section">
-        <ActionsMenu
-          class="coupon-actions-menu"
-          :show-edit="canManageCoupon"
-          :show-delete="canManageCoupon"
-          :show-duplicate="false"
-          :show-stop-sales="false"
-          icon="mdi-dots-horizontal"
-          @edit="handleMenuAction('edit')"
-          @delete="handleMenuAction('delete')" />
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-icon
+              color="red"
+              v-bind="attrs"
+              v-on="on"
+              @click.stop="handleMenuAction('delete')">
+              mdi-delete
+            </v-icon>
+          </template>
+          Excluir
+        </v-tooltip>
       </div>
     </div>
   </div>
 
-  <v-card v-else tile elevation="0" color="coupon-row-card">
+  <v-card v-else tile elevation="0" color="coupon-row-card" @click="$emit('click')">
     <v-card-text>
       <div class="first-coupon-column is-mobile">
         <div class="coupon-code">{{ code }}</div>
-        <ActionsMenu
-          v-if="!disableMenu && canManageCoupon"
-          :show-edit="canManageCoupon"
-          :show-delete="canManageCoupon"
-          :show-duplicate="false"
-          icon="mdi-dots-horizontal"
-          @edit="handleMenuAction('edit')"
-          @delete="handleMenuAction('delete')" />
-      </div>
 
-      <div class="second-coupon-column is-mobile">
         <div class="coupon-discount mb-2 mt-2">
           {{ formatDiscountValue }}
         </div>
+      </div>
 
+      <div class="second-coupon-column is-mobile">
         <div class="coupon-uses mb-2">{{ uses }} / {{ maxUses }}</div>
 
         <div class="coupon-tickets mb-2">
           {{ ticketsAppliedText }}
         </div>
+      </div>
+
+      <div class="is-mobile d-flex justify-end">
+        <v-icon color="red" size="28" @click.stop="handleMenuAction('delete')">
+          mdi-delete
+        </v-icon>
       </div>
     </v-card-text>
   </v-card>
@@ -366,5 +367,17 @@ export default {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.coupon-row {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--tertiary);
+  border-radius: 8px;
+}
+
+.coupon-row:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

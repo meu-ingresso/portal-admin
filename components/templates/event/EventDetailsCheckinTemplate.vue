@@ -17,14 +17,8 @@
           </v-tab>
         </v-tabs>
 
-        <v-tabs-items v-model="activeTab">
-          <v-tab-item>
-            <CheckinTicketsTable />
-          </v-tab-item>
-          <v-tab-item>
-            <CheckinGuestsTable />
-          </v-tab-item>
-        </v-tabs-items>
+        <CheckinTicketsTable v-if="activeTab === 0" />
+        <CheckinGuestsTable v-if="activeTab === 1" />
       </v-col>
     </v-row>
   </div>
@@ -55,5 +49,9 @@ export default {
 
 .custom-tabs {
   margin-bottom: 16px;
+}
+
+:deep(.theme--light.v-tabs > .v-tabs-bar) {
+  background-color: var(--tertiary) !important;
 }
 </style>

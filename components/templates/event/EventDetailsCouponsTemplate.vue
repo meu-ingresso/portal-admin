@@ -18,7 +18,7 @@
         </EmptyState>
       </template>
       <template v-else>
-        <StatisticList :statistics="getStatistics" title="Códigos promocionais" />
+        <StatisticList :statistics="getStatistics" title="Cupons" />
         <EventCoupons :event-id="getEvent.id" @add-coupon="openAddCouponModal" />
       </template>
     </div>
@@ -103,7 +103,7 @@ export default {
           value: `${totalUsed} / ${totalQuantity}`,
         },
         {
-          title: 'Códigos promocionais',
+          title: 'Cupons',
           value: `${this.getCoupons.length}`,
         },
       ];

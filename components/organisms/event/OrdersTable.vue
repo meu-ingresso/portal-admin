@@ -16,7 +16,7 @@
       :loading-text="'Carregando...'"
       class="orders-table"
       @update:options="handleTableUpdate"
-    >
+      @click:row="(item) => showDetails(item)">
       <!-- Slot para filtros -->
       <template #top>
         <v-toolbar flat>
@@ -30,8 +30,7 @@
                 clearable
                 hide-details="auto"
                 class="mr-4"
-                @input="handleFiltersChange"
-              />
+                @input="handleFiltersChange" />
             </v-col>
             <v-col cols="6" class="text-right">
               <!-- Menu de filtros -->
@@ -39,16 +38,9 @@
                 v-model="showFilters"
                 :close-on-content-click="false"
                 offset-y
-                max-width="500"
-              >
+                max-width="500">
                 <template #activator="{ on, attrs }">
-                  <v-btn
-                    icon
-                    v-bind="attrs"
-                    v-on="on"
-                    color="primary"
-                    class="ml-2"
-                  >
+                  <v-btn icon v-bind="attrs" color="primary" class="ml-2" v-on="on">
                     <v-icon size="24">mdi-filter</v-icon>
                     <v-badge
                       v-if="activeFiltersCount"
@@ -56,8 +48,7 @@
                       color="error"
                       offset-x="12"
                       offset-y="-8"
-                      dot
-                    />
+                      dot />
                   </v-btn>
                 </template>
 
@@ -74,26 +65,25 @@
                               transition="scale-transition"
                               offset-y
                               max-width="290px"
-                              min-width="290px"
-                            >
+                              min-width="290px">
                               <template #activator="{ on, attrs }">
                                 <v-text-field
                                   v-model="filters.startDate"
                                   label="Data inicial"
                                   readonly
+                                  outlined
+                                  dense
                                   v-bind="attrs"
-                                  v-on="on"
                                   clearable
                                   hide-details="auto"
-                                  @click:clear="clearStartDate"
-                                />
+                                  v-on="on"
+                                  @click:clear="clearStartDate" />
                               </template>
                               <v-date-picker
                                 v-model="filters.startDate"
                                 no-title
                                 locale="pt-br"
-                                @input="handleDateSelect('start')"
-                              />
+                                @input="handleDateSelect('start')" />
                             </v-menu>
                           </v-col>
                           <v-col cols="6">
@@ -103,26 +93,25 @@
                               transition="scale-transition"
                               offset-y
                               max-width="290px"
-                              min-width="290px"
-                            >
+                              min-width="290px">
                               <template #activator="{ on, attrs }">
                                 <v-text-field
                                   v-model="filters.endDate"
                                   label="Data final"
                                   readonly
+                                  outlined
+                                  dense
                                   v-bind="attrs"
-                                  v-on="on"
                                   clearable
                                   hide-details="auto"
-                                  @click:clear="clearEndDate"
-                                />
+                                  v-on="on"
+                                  @click:clear="clearEndDate" />
                               </template>
                               <v-date-picker
                                 v-model="filters.endDate"
                                 no-title
                                 locale="pt-br"
-                                @input="handleDateSelect('end')"
-                              />
+                                @input="handleDateSelect('end')" />
                             </v-menu>
                           </v-col>
                         </v-row>
@@ -136,20 +125,22 @@
                               v-model="filters.status"
                               :items="statusOptions"
                               label="Status"
+                              outlined
+                              dense
                               clearable
                               hide-details="auto"
-                              @change="handleFiltersChange"
-                            />
+                              @change="handleFiltersChange" />
                           </v-col>
                           <v-col cols="6">
                             <v-select
                               v-model="filters.paymentMethod"
                               :items="paymentMethodOptions"
                               label="Forma de pagamento"
+                              outlined
+                              dense
                               clearable
                               hide-details="auto"
-                              @change="handleFiltersChange"
-                            />
+                              @change="handleFiltersChange" />
                           </v-col>
                         </v-row>
                       </v-col>
@@ -158,11 +149,7 @@
                     <!-- Botão de limpar filtros -->
                     <v-row class="mt-4">
                       <v-col class="text-right">
-                        <v-btn
-                          text
-                          color="primary"
-                          @click="clearFilters"
-                        >
+                        <v-btn text color="primary" @click="clearFilters">
                           Limpar filtros
                         </v-btn>
                       </v-col>
@@ -175,23 +162,17 @@
         </v-toolbar>
 
         <!-- Chips de filtros ativos -->
-        <v-sheet v-if="activeFiltersCount" class="px-4 py-2">
+        <v-sheet v-if="activeFiltersCount" class="px-4 py-2 chip-filters">
           <v-chip
             v-if="filters.startDate || filters.endDate"
             class="mr-2"
             close
-            @click:close="clearDates"
-          >
+            @click:close="clearDates">
             <v-icon left small>mdi-calendar-range</v-icon>
             Período: {{ formatDateRange }}
           </v-chip>
 
-          <v-chip
-            v-if="filters.status"
-            class="mr-2"
-            close
-            @click:close="clearStatus"
-          >
+          <v-chip v-if="filters.status" class="mr-2" close @click:close="clearStatus">
             <v-icon left small>mdi-flag</v-icon>
             Status: {{ getStatusText(filters.status) }}
           </v-chip>
@@ -200,8 +181,7 @@
             v-if="filters.paymentMethod"
             class="mr-2"
             close
-            @click:close="clearPaymentMethod"
-          >
+            @click:close="clearPaymentMethod">
             <v-icon left small>mdi-credit-card</v-icon>
             Pagamento: {{ getPaymentMethod(filters.paymentMethod) }}
           </v-chip>
@@ -219,13 +199,37 @@
       </template>
 
       <!-- Valor -->
-      <template #[`item.value`]="{ item }">
-        {{ formatRealValue(item.gross_value) }}
+      <template #[`item.net_value`]="{ item }">
+        {{ formatRealValue(item.net_value) }}
+
+        <v-tooltip v-if="item.coupon_id" bottom>
+          <template #activator="{ on, attrs }">
+            <v-icon v-bind="attrs" small color="primary" v-on="on">mdi-tag</v-icon>
+          </template>
+          Cupom aplicado: {{ item.coupon?.code }}
+        </v-tooltip>
       </template>
 
       <!-- Forma de pagamento -->
       <template #[`item.payment_method`]="{ item }">
         {{ getPaymentMethod(item.payment_method) }}
+      </template>
+
+      <!-- Taxa -->
+      <template #[`item.fee`]="{ item }">
+        {{ item.tickets[0].ticket.event.fees.platform_fee || 0 }}%
+      </template>
+
+      <!-- Valor Líquido -->
+      <template #[`item.receipt_value`]="{ item }">
+        {{
+          formatRealValue(
+            calculateNetValue(
+              item.net_value,
+              item.tickets[0].ticket.event.fees.platform_fee || 0
+            )
+          )
+        }}
       </template>
 
       <!-- Status -->
@@ -236,9 +240,9 @@
       </template>
 
       <!-- Ações -->
-      <template #[`item.actions`]="{ item }">
+      <!-- <template #[`item.actions`]="{ item }">
         <v-icon left small color="primary" @click="showDetails(item)">mdi-eye</v-icon>
-      </template>
+      </template> -->
     </v-data-table>
 
     <template v-if="isLoading">
@@ -272,12 +276,19 @@ export default {
   data() {
     return {
       headers: [
-        { text: 'Data', value: 'created_at', sortable: true },
-        { text: 'Titular da compra', value: 'buyer', sortable: false },
-        { text: 'Forma de pagamento', value: 'payment_method', sortable: false },
-        { text: 'Valor', value: 'value', sortable: false },
-        { text: 'Status', value: 'status', sortable: false },
-        { text: 'Ações', value: 'actions', sortable: false, align: 'center' },
+        { text: 'Data', value: 'created_at', sortable: true, width: '15%' },
+        { text: 'Titular da compra', value: 'buyer', sortable: true, width: '20%' },
+        {
+          text: 'Forma de pagamento',
+          value: 'payment_method',
+          sortable: true,
+          width: '5%',
+        },
+        { text: 'Valor Total', value: 'net_value', sortable: true, width: '5%' },
+        { text: 'Taxa', value: 'fee', sortable: true, width: '5%' },
+        { text: 'Valor líquido', value: 'receipt_value', sortable: true, width: '5%' },
+        { text: 'Status', value: 'status', sortable: true, width: '5%' },
+        // { text: 'Ações', value: 'actions', sortable: false, align: 'center' },
       ],
       options: {
         page: 1,
@@ -333,8 +344,12 @@ export default {
     },
 
     formatDateRange() {
-      const start = this.filters.startDate ? formatDateTimeWithTimezone(this.filters.startDate) : '';
-      const end = this.filters.endDate ? formatDateTimeWithTimezone(this.filters.endDate) : '';
+      const start = this.filters.startDate
+        ? formatDateTimeWithTimezone(this.filters.startDate)
+        : '';
+      const end = this.filters.endDate
+        ? formatDateTimeWithTimezone(this.filters.endDate)
+        : '';
 
       if (start && end) return `${start} até ${end}`;
       if (start) return `A partir de ${start}`;
@@ -416,7 +431,7 @@ export default {
     },
 
     getStatusText(value) {
-      return this.statusOptions.find(opt => opt.value === value)?.text || value;
+      return this.statusOptions.find((opt) => opt.value === value)?.text || value;
     },
 
     buildQueryParams(page = 1, limit = 10) {
@@ -427,7 +442,9 @@ export default {
         sort: '-created_at',
         search: this.filters.search || undefined,
         startDate: this.filters.startDate || undefined,
-        endDate: this.filters.endDate ? `${this.filters.endDate}T23:59:59.999Z` : undefined,
+        endDate: this.filters.endDate
+          ? `${this.filters.endDate}T23:59:59.999Z`
+          : undefined,
         status: this.filters.status || undefined,
       };
     },
@@ -470,13 +487,24 @@ export default {
 
       return false;
     },
+
+    calculateNetValue(netValue, fee) {
+      return netValue - (netValue * fee) / 100;
+    },
   },
 };
 </script>
 
 <style lang="scss" scoped>
+.orders-table {
+  background-color: var(--tertiary) !important;
+}
+
+.chip-filters {
+  background-color: transparent !important;
+}
+
 ::v-deep .orders-table {
-  /* Estilo do cabeçalho */
   .v-data-table-header {
     th {
       font-size: 16px !important;
@@ -487,12 +515,13 @@ export default {
     }
   }
 
-  /* Estilo das células */
   .v-data-table__wrapper {
     tbody {
       td {
-        font-size: 14px;
-        color: var(--black-text);
+        font-size: 14px !important;
+        color: var(--black-text) !important;
+        font-family: var(--font-family) !important;
+        cursor: pointer !important;
       }
     }
   }
@@ -501,9 +530,9 @@ export default {
     height: auto !important;
     padding-top: 14px !important;
     padding-bottom: 14px !important;
+    background-color: transparent !important;
   }
 
-  /* Ajuste do padding das células */
   td,
   th {
     padding: 12px 16px !important;

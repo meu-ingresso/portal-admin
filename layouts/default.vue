@@ -9,7 +9,7 @@
       class="navigation-drawer">
       <v-list dense nav>
         <v-list-item class="drawer-logo">
-          <SmallLogo is-dark :click-to-home="true" />
+          <MobileLogo is-dark :click-to-home="true" />
         </v-list-item>
         <v-list-item
           v-for="item in topBarItems"

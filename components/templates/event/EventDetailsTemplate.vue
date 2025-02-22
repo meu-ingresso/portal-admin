@@ -5,8 +5,6 @@
     <div class="event-details-wrapper">
       <StatisticList :statistics="getStatistics" title="Visão geral" />
 
-      <!-- <EventSales :sales="getSales" /> -->
-
       <EventTickets
         v-if="hasTickets"
         disable-menu
