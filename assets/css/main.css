@@ -352,3 +352,12 @@ header {
 .w-full {
   width: 100% !important;
 }
+
+.v-list.v-select-list,
+.v-list.v-list-item {
+  padding: 0 !important;
+}
+
+.v-list {
+  padding: 0 !important;
+}

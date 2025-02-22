@@ -166,7 +166,7 @@
 
       <!-- Nome do Comprador -->
       <template #[`item.owner`]="{ item }">
-        {{ item.currentOwner.first_name }} {{ item.currentOwner.last_name }}
+        {{ getTicketUserName(item) }}
       </template>
 
       <!-- Tipo do Ingresso -->
@@ -302,6 +302,7 @@ export default {
     activeFiltersCount() {
       return Object.keys(this.filters).filter((key) => this.filters[key]).length;
     },
+
     formatDateRange() {
       const { startDate, endDate } = this.filters;
       if (startDate && endDate) {
@@ -324,6 +325,20 @@ export default {
   },
 
   methods: {
+    getTicketUserName(ticket) {
+      if (ticket?.ticketFields?.length) {
+        const nameField = ticket.ticketFields.find(
+          (field) => field.checkoutField.name === 'NOME'
+        );
+
+        if (nameField) {
+          return nameField.value;
+        }
+      }
+
+      return ` ${ticket.currentOwner.first_name} ${ticket.currentOwner.last_name}`;
+    },
+
     formatDateTimeWithTimezone,
 
     async handleTableUpdate(newOptions) {
@@ -345,7 +360,7 @@ export default {
         : '';
 
       await eventCustomerTickets.fetchAndPopulateByQuery(
-        `${query}${searchQuery}${ticketTypeQuery}${dateQuery}${checkinStatusQuery}&preloads[]=ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=payment:status&whereHas[ticket][event_id][v]=${this.eventId}`
+        `${query}${searchQuery}${ticketTypeQuery}${dateQuery}${checkinStatusQuery}&preloads[]=ticketFields:checkoutField&preloads[]=ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=payment:status&whereHas[ticket][event_id][v]=${this.eventId}`
       );
     },
 

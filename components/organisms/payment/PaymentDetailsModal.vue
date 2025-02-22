@@ -101,12 +101,16 @@
           <div class="tickets-actions d-flex align-center justify-space-between mt-4">
             <div class="d-flex align-center">
               <ButtonWithIcon
-                text="Imprimir ingressos"
+                text="Cancelar pedido"
                 outlined
-                :loading="isPrinting"
-                icon="mdi-printer"
-                @click="generatePDF" />
+                color="error"
+                :loading="isCancelling"
+                icon="mdi-cancel"
+                class="ml-2"
+                @click="showCancelConfirmation" />
+            </div>
 
+            <div class="d-flex justify-end">
               <ButtonWithIcon
                 text="Reenviar ingressos"
                 outlined
@@ -114,16 +118,14 @@
                 icon="mdi-email"
                 class="ml-2"
                 @click="resendTickets" />
-            </div>
 
-            <ButtonWithIcon
-              text="Cancelar pedido"
-              outlined
-              color="error"
-              :loading="isCancelling"
-              icon="mdi-cancel"
-              class="ml-2"
-              @click="showCancelConfirmation" />
+              <ButtonWithIcon
+                text="Imprimir ingressos"
+                outlined
+                :loading="isPrinting"
+                icon="mdi-printer"
+                @click="generatePDF" />
+            </div>
           </div>
         </template>
       </v-card-text>
