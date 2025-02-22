@@ -87,7 +87,7 @@
                         mdi-information-outline
                       </v-icon>
                     </template>
-                    <!-- TODO: Adicionar Calculo -->
+                    <!-- @TODO: Adicionar Calculo -->
                     <span>Valor bruto - Desconto</span>
                   </v-tooltip>
                 </div>
@@ -109,7 +109,7 @@
                         mdi-information-outline
                       </v-icon>
                     </template>
-                    <!-- TODO: Adicionar Calculo -->
+                    <!-- @TODO: Adicionar Calculo -->
                     <span>Valor Total - Taxa</span>
                   </v-tooltip>
                 </div>
@@ -264,7 +264,7 @@ export default {
     resendTickets() {
       try {
         this.isResending = true;
-        // TODO: Implementar lógica de reenvio
+        // @TODO: Implementar lógica de reenvio
         toast.setToast({
           text: 'Ingressos reenviados com sucesso!',
           type: 'success',
@@ -289,7 +289,7 @@ export default {
     cancelOrder() {
       try {
         this.isCancelling = true;
-        // TODO: Implementar lógica de cancelamento
+        // @TODO: Implementar lógica de cancelamento
         toast.setToast({
           text: 'Pedido cancelado com sucesso!',
           type: 'success',
