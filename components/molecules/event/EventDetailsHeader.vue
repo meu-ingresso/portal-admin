@@ -21,7 +21,7 @@
               class="ml-3 cursor-pointer"
               v-on="on"
               @click="openFeeModal">
-              mdi-sack-percent
+              mdi-percent-circle-outline
             </v-icon>
           </template>
           <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
@@ -186,7 +186,7 @@
 
     <template v-else>
       <div class="event-title-wrapper is-mobile mb-2">
-        <div class="badge-list justify-center">
+        <div class="badge-list">
           <StatusBadge v-if="getEventStatus" :text="getEventStatus" class="mr-2" />
 
           <NuxtLink :to="`/events/${getEvent.id}/promoters`">
@@ -201,10 +201,10 @@
                 v-bind="attrs"
                 color="primary"
                 size="30"
-                class="ml-3 cursor-pointer"
+                class="ml-4 cursor-pointer"
                 v-on="on"
                 @click="openFeeModal">
-                mdi-sack-percent
+                mdi-percent-circle-outline
               </v-icon>
             </template>
             <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
