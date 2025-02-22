@@ -6,7 +6,7 @@
     @input="$emit('update:show', $event)">
     <v-card :tile="isMobile">
       <v-card-title class="d-flex justify-space-between align-center">
-        <h3>Detalhes do Pagamento</h3>
+        <h3 class="modalTitle">Detalhes do Pagamento</h3>
         <v-btn icon @click="close">
           <v-icon>mdi-close</v-icon>
         </v-btn>
@@ -293,4 +293,4 @@ export default {
   font-weight: 500;
   color: var(--black-text);
 }
-</style> 
+</style>
