@@ -57,6 +57,20 @@
                 </v-list-item-icon>
                 <v-list-item-title>Solicitar publicação</v-list-item-title>
               </v-list-item>
+
+              <v-list-item>
+                <v-list-item-icon class="mr-2">
+                  <v-icon>mdi-content-copy </v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Duplicar evento</v-list-item-title>
+              </v-list-item>
+
+              <v-list-item>
+                <v-list-item-icon class="mr-2">
+                  <v-icon>mdi-delete </v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Cancelar evento</v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
         </div>
