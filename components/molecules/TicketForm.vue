@@ -554,7 +554,7 @@ export default {
       } catch (error) {
         return {
           success: false,
-          error: 'error.exception',
+          error: 'error.exception: ' + error,
         };
       }
     },
