@@ -335,6 +335,8 @@ export default {
 
       try {
         if (this.isEditing) {
+          // eventGeneralInfo.setEventStatus('');
+
           await eventGeneralInfo.updateEventBase(this.eventId);
           await eventTickets.updateTickets(this.eventId);
 
@@ -361,6 +363,7 @@ export default {
           }, 500);
         } else {
           eventGeneralInfo.setEventStatus(status);
+
           await eventPrincipal.createEvent();
 
           const message =

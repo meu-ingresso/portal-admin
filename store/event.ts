@@ -121,8 +121,7 @@ export default class Event extends VuexModule {
 
     return {
       ...this.event,
-
-      location: `${this.event.address.street}, ${this.event.address.number} - ${this.event.address.neighborhood}, ${this.event.address.city} - ${this.event.address.state}`,
+      location: this.event.address ? `${this.event.address.street}, ${this.event.address.number} - ${this.event.address.neighborhood}, ${this.event.address.city} - ${this.event.address.state}` : '',
     };
   }
 
@@ -154,7 +153,7 @@ export default class Event extends VuexModule {
   private SET_EVENT_LIST(data: any) {
     this.eventList = data.map((event: any) => ({
       ...event,
-      location: `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}`,
+      location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
     }));
   }
 

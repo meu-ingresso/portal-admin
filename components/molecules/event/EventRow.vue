@@ -1,10 +1,10 @@
 <template>
   <v-row
     class="event-row cursor-pointer"
-    :class="{ deleted: deletedAt !== null }"
+    :class="{ deleted: event.deleted_at !== null }"
     @click="goToEventDetail">
     <v-col sm="12" md="2" class="event-status">
-      <StatusBadge :text="deletedAt !== null ? 'Excluído' : statusText" />
+      <StatusBadge :text="event.deleted_at !== null ? 'Excluído' : event.status.name" />
     </v-col>
 
     <v-col sm="12" md="2">
@@ -12,23 +12,25 @@
     </v-col>
 
     <v-col sm="12" md="3">
-      <h4 class="event-title">{{ title }}</h4>
+      <h4 class="event-title">{{ event.name }}</h4>
 
       <p class="event-date">{{ formattedDate }}</p>
 
-      <p class="event-location">{{ location }}</p>
+      <p class="event-location">{{ event.location }}</p>
     </v-col>
 
     <v-col sm="12" md="2" class="text-right">
-      <p class="event-revenue">{{ formatToMoney(revenue) }}</p>
+      <p class="event-revenue">{{ formatToMoney(event.totalizers.totalSalesAmount) }}</p>
 
-      <p class="event-revenue-today">{{ formatToMoney(revenueToday) }} hoje</p>
+      <p class="event-revenue-today">
+        {{ formatToMoney(event.totalizers.totalSalesAmountToday) }} hoje
+      </p>
     </v-col>
 
     <v-col sm="12" md="1" class="text-right">
-      <p class="event-tickets">{{ tickets }}</p>
+      <p class="event-tickets">{{ event.totalizers.totalSales }}</p>
 
-      <p class="event-tickets-today">{{ ticketsToday }} hoje</p>
+      <p class="event-tickets-today">{{ event.totalizers.totalSalesToday }} hoje</p>
     </v-col>
 
     <v-col sm="12" md="2" class="text-right">
@@ -40,7 +42,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="statusText === 'Rascunho' && deletedAt === null"
+              v-if="canManageEvent"
               class="approve-icon"
               icon
               v-bind="attrs"
@@ -55,7 +57,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="statusText === 'Rascunho' && deletedAt === null"
+              v-if="canManageEvent"
               class="reject-icon"
               icon
               v-bind="attrs"
@@ -115,17 +117,9 @@ import {
 import { toast, event } from '@/store';
 export default {
   props: {
-    eventId: { type: String, required: true },
-    title: { type: String, required: true },
-    date: { type: String, required: true },
-    location: { type: String, required: true },
-    revenue: { type: Number, required: true },
-    revenueToday: { type: Number, required: true },
-    tickets: { type: Number, required: true },
-    ticketsToday: { type: Number, required: true },
-    statusText: { type: String, required: true },
+    event: { type: Object, required: true },
+    canManageEvent: { type: Boolean, required: true },
     image: { type: String, required: false, default: null },
-    deletedAt: { type: String, required: false, default: null },
   },
 
   data() {
@@ -143,7 +137,9 @@ export default {
 
   computed: {
     formattedDate() {
-      return `${formatDateToCustomString(this.date)} - ${formatHourToBr(this.date)}`;
+      return `${formatDateToCustomString(this.event.start_date)} - ${formatHourToBr(
+        this.event.start_date
+      )}`;
     },
 
     getImage() {
@@ -235,7 +231,7 @@ export default {
     },
 
     goToEventDetail() {
-      this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.eventId } });
+      this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.event.id } });
     },
     async approveEvent() {
       try {
@@ -244,7 +240,7 @@ export default {
         const newStatusId = responseStatus.data.id;
 
         await event.updateEvent({
-          id: this.eventId,
+          id: this.event.id,
           status_id: newStatusId,
         });
       } catch (error) {
@@ -258,7 +254,7 @@ export default {
         const newStatusId = responseStatus.data.id;
 
         await event.updateEvent({
-          id: this.eventId,
+          id: this.event.id,
           status_id: newStatusId,
         });
       } catch (error) {
@@ -268,7 +264,7 @@ export default {
     async deleteEvent() {
       try {
         this.isDeleting = true;
-        await event.deleteEvent({ eventId: this.eventId });
+        await event.deleteEvent({ eventId: this.event.id });
         this.isDeleting = false;
       } catch (error) {
         this.isDeleting = false;

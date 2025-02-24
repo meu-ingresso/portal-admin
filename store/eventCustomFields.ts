@@ -193,9 +193,11 @@ export default class EventCustomFields extends VuexModule {
           );
 
           // Trata o retorno e filtra por não deletados
-          const checkoutFieldsTicketsResult = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
+          const { data: checkoutFieldsTicketsResult } = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
 
-          const customFieldTickets = checkoutFieldsTicketsResult.data.map(
+          console.log('checkoutFieldsTicketsResult', checkoutFieldsTicketsResult);
+
+          const customFieldTickets = checkoutFieldsTicketsResult.map(
             (customFieldTicket: CustomFieldTicketApiResponse) => ({
               id: customFieldTicket.ticket.id,
               name: customFieldTicket.ticket.name,
@@ -246,9 +248,12 @@ export default class EventCustomFields extends VuexModule {
           );
 
           // Trata o retorno e filtra por não deletados
-          const checkoutFieldsTicketsResult = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
+          const { data: checkoutFieldsTicketsResult } = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
 
-          const customFieldTickets = checkoutFieldsTicketsResult.data.map(
+          // Filtra os tickets que existem
+          const checkoutFieldsTicketsResultWithTicket = checkoutFieldsTicketsResult.filter((customFieldTicket: CustomFieldTicketApiResponse) => customFieldTicket.ticket);
+
+          const customFieldTickets = checkoutFieldsTicketsResultWithTicket.map(
             (customFieldTicket: CustomFieldTicketApiResponse) => ({
               id: customFieldTicket.ticket.id,
               name: customFieldTicket.ticket.name,
@@ -264,9 +269,9 @@ export default class EventCustomFields extends VuexModule {
             );
 
             // Trata o retorno e filtra por não deletados
-            const fieldOptionsResult = handleGetResponse(responseFieldOptions, 'Opções não encontradas', null, true)
+            const { data: fieldOptionsResult } = handleGetResponse(responseFieldOptions, 'Opções não encontradas', null, true)
 
-            selectedOptions = fieldOptionsResult.data.map(
+            selectedOptions = fieldOptionsResult.map(
               (option: FieldSelectedOption) => {
                 return {
                   id: option.id,

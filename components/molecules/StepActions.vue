@@ -20,7 +20,8 @@
 
       <template v-else>
         <DefaultButton
-          :text="isEditing ? 'Salvar Alterações' : 'Salvar em rascunho'"
+          v-if="!isEditing"
+          text="Salvar em rascunho"
           :disabled="isSaving"
           class="mr-2"
           @click="$emit('submit', 'draft')" />
