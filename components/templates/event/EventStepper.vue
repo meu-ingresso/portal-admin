@@ -330,7 +330,7 @@ export default {
         }
       }
     },
-    async submitData() {
+    async submitData(status) {
       this.showProgressDialog = true;
 
       try {
@@ -360,10 +360,16 @@ export default {
             });
           }, 500);
         } else {
+          eventGeneralInfo.setEventStatus(status);
           await eventPrincipal.createEvent();
 
+          const message =
+            status === 'draft'
+              ? 'Evento salvo em rascunho com sucesso!'
+              : 'Evento enviado para aprovação!';
+
           toast.setToast({
-            text: 'Evento publicado com sucesso!',
+            text: message,
             type: 'success',
             time: 5000,
           });
@@ -376,7 +382,7 @@ export default {
         console.error('Error', error);
 
         toast.setToast({
-          text: 'Ocorreu um erro ao publicar o evento. Tente novamente.',
+          text: 'Ocorreu um erro ao salvar o evento. Tente novamente.',
           type: 'danger',
           time: 5000,
         });

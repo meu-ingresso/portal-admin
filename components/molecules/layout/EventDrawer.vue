@@ -50,6 +50,13 @@
                 </v-list-item-icon>
                 <v-list-item-title>Editar evento</v-list-item-title>
               </v-list-item>
+
+              <v-list-item>
+                <v-list-item-icon class="mr-2">
+                  <v-icon>mdi-rocket</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>Solicitar publicação</v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
         </div>

@@ -118,6 +118,8 @@ export default class EventGeneralInfo extends VuexModule {
     },
   };
 
+  private selectedStatus: string = null;
+
   constructor(module: VuexModule<ThisType<EventGeneralInfo>, EventGeneralInfo>) {
     super(module);
     this.info = process.env.USE_MOCK_DATA === 'true' ? this.mockInfo : this.info;
@@ -148,6 +150,11 @@ export default class EventGeneralInfo extends VuexModule {
   @Mutation
   private UPDATE_INFO_ADDRESS(payload: Partial<EventAddress>) {
     this.info.address = { ...this.info.address, ...payload };
+  }
+
+  @Mutation
+  private SET_STATUS(status: string) {
+    this.selectedStatus = status;
   }
 
   @Action
@@ -360,11 +367,11 @@ export default class EventGeneralInfo extends VuexModule {
   public async createEventBase(): Promise<{ eventId: string; addressId?: string }> {
     try {
       // Criar endereço se o evento for presencial
-      const [addressId, draftStatus] = await Promise.all([
+      const [addressId, eventStatus] = await Promise.all([
         this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
         status.fetchStatusByModuleAndName({
           module: 'event',
-          name: 'Aguardando Aprovação',
+          name: this.selectedStatus === 'draft' ? 'Rascunho' : 'Aguardando Aprovação',
         }),
       ]);
 
@@ -386,7 +393,7 @@ export default class EventGeneralInfo extends VuexModule {
         start_date: startDate.toISOString().replace('Z', '-0300'),
         end_date: endDate.toISOString().replace('Z', '-0300'),
         address_id: addressId,
-        status_id: draftStatus.id,
+        status_id: eventStatus.id,
         link_online: this.info.link_online,
         location_name: this.info.address?.location_name,
         promoter_id: this.info.promoter_id,
@@ -691,5 +698,10 @@ export default class EventGeneralInfo extends VuexModule {
     if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
       throw new Error('Failed to update banner.');
     }
+  }
+
+  @Action
+  public setEventStatus(status: string) {
+    this.context.commit('SET_STATUS', status);
   }
 }

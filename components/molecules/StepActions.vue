@@ -20,9 +20,15 @@
 
       <template v-else>
         <DefaultButton
+          :text="isEditing ? 'Salvar Alterações' : 'Salvar em rascunho'"
+          :disabled="isSaving"
+          class="mr-2"
+          @click="$emit('submit', 'draft')" />
+
+        <DefaultButton
           :text="isEditing ? 'Salvar Alterações' : 'Publicar Evento'"
           :disabled="isSaving"
-          @click="$emit('submit')" />
+          @click="$emit('submit', 'pending')" />
       </template>
     </v-col>
   </v-row>
