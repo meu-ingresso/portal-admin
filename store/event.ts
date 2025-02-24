@@ -195,7 +195,7 @@ export default class Event extends VuexModule {
           value: formatRealValue(data.totalizers.totalSalesAmout),
         },
       ],
-      promoters: data.collaborators.length,
+      collaborators: data.collaborators.length,
       tickets: nonDeletedTickets.map((ticket) => ({
         ...ticket,
         id: ticket.id,

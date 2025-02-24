@@ -24,7 +24,7 @@
         <EventDetailsGuestlistsTemplate v-if="isGuestlists" />
         <EventDetailsCheckinTemplate v-if="isCheckin" />
         <EventDetailsOrdersTemplate v-if="isOrders" />
-        <EventDetailsPromotersTemplate v-if="isPromoters" />
+        <EventDetailsCollaboratorsTemplate v-if="isCollaborators" />
       </div>
     </v-container>
     <Toast />
@@ -106,8 +106,8 @@ export default {
       return this.$route.meta.template === 'orders';
     },
 
-    isPromoters() {
-      return this.$route.meta.template === 'promoters';
+    isCollaborators() {
+      return this.$route.meta.template === 'collaborators';
     },
 
     userRole() {

@@ -7,6 +7,13 @@ export const eventsSideBar = [
     needPermissions: false,
   },
   {
+    icon: 'mdi-home-outline',
+    iconActive: 'mdi-home',
+    title: 'Colaboradores',
+    to: '/events/:id/collaborators',
+    needPermissions: false,
+  },
+  {
     icon: 'mdi-account-group-outline',
     iconActive: 'mdi-account-group',
     title: 'Convidados',
@@ -39,13 +46,6 @@ export const eventsSideBar = [
     iconActive: 'mdi-cart',
     title: 'Pedidos',
     to: '/events/:id/orders',
-    needPermissions: false,
-  },
-  {
-    icon: 'mdi-account-group-outline',
-    iconActive: 'mdi-account-group',
-    title: 'Promoters',
-    to: '/events/:id/promoters',
     needPermissions: false,
   },
 ];

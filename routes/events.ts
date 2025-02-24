@@ -114,11 +114,11 @@ export default [
         },
       },
       {
-        path: 'promoters',
-        name: 'eventsDetailsPromoters',
+        path: 'collaborators',
+        name: 'eventsDetailsCollaborators',
         meta: {
           name: 'eventsDetails',
-          template: 'promoters',
+          template: 'collaborators',
         },
       },
     ],

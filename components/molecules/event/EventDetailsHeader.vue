@@ -8,8 +8,10 @@
 
         <StatusBadge v-if="getEventStatus" :text="getEventStatus" />
 
-        <NuxtLink :to="`/events/${getEvent.id}/promoters`" class="cursor-pointer">
-          <PromotersBadge :count="getEvent.collaborators.length" class="cursor-pointer" />
+        <NuxtLink :to="`/events/${getEvent.id}/collaborators`" class="cursor-pointer">
+          <CollaboratorsBadge
+            :count="getEvent.collaborators.length"
+            class="cursor-pointer" />
         </NuxtLink>
 
         <v-tooltip bottom>
@@ -190,8 +192,8 @@
         <div class="badge-list">
           <StatusBadge v-if="getEventStatus" :text="getEventStatus" class="mr-2" />
 
-          <NuxtLink :to="`/events/${getEvent.id}/promoters`">
-            <PromotersBadge
+          <NuxtLink :to="`/events/${getEvent.id}/collaborators`">
+            <CollaboratorsBadge
               :count="getEvent.collaborators.length"
               class="cursor-pointer" />
           </NuxtLink>
