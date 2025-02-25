@@ -11,6 +11,7 @@
         <div class="image-container">
           <v-img
             v-if="selectedEventBanner || cachedBanner?.url"
+            class="image"
             :src="selectedEventBanner || cachedBanner?.url">
           </v-img>
 
@@ -385,8 +386,17 @@ export default {
 
 .image-container {
   position: relative;
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: 540px;
+  height: auto;
+}
+
+.image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  height: auto;
 }
 
 .edit-button {
