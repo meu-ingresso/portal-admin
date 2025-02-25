@@ -21,6 +21,7 @@
       <!-- Tabela de ingressos -->
       <template v-else>
         <StatisticList :statistics="getStatistics" title="Ingressos" />
+
         <EventTickets
           :event-id="getEvent.id"
           title="Lista de ingressos"
@@ -33,22 +34,26 @@
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>Adicionar ingresso</h3>
+
           <v-btn icon :disabled="isAddingTicket" @click="handleCloseAddDialog">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
+
         <v-card-text class="px-4">
           <TicketForm
             ref="ticketForm"
             :nomenclature="'Ingresso'"
             :event-id="getEvent.id" />
         </v-card-text>
+
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
           <DefaultButton
             outlined
             text="Cancelar"
             :disabled="isAddingTicket"
             @click="handleCloseAddDialog" />
+
           <DefaultButton
             text="Salvar"
             :is-loading="isAddingTicket"
