@@ -1,4 +1,4 @@
-import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation, CustomFieldTicket, PersonType } from '~/models/event';
+import { CustomField, CustomFieldApiResponse, FieldSelectedOption, FieldTicketRelation, CustomFieldTicket, PersonType, FieldPayload } from '~/models/event';
 
 export const defaultFields = ['Nome Completo', 'Email'];
 
@@ -169,3 +169,17 @@ export const getNextDisplayOrder = (fields: CustomField[]): number[] => {
 
   return displayOrders;
 };
+
+export const prepareFieldPayload = (field: CustomField, eventId: string, personType: PersonType, displayOrder: number): FieldPayload => {
+  return {
+    event_id: eventId,
+    name: field.name,
+    type: field.type,
+    person_type: personType,
+    required: field.options.includes('required'),
+    visible_on_ticket: field.options.includes('visible_on_ticket'),
+    is_unique: field.options.includes('is_unique'),
+    help_text: field.help_text || '',
+    display_order: displayOrder
+  };
+}

@@ -3,6 +3,7 @@ import { Event, EventAddress, ValidationResult, EventAttachment } from '~/models
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
+import { handleGetResponse } from '~/utils/responseHelpers';
 
 @Module({
   name: 'eventGeneralInfo',
@@ -118,6 +119,10 @@ export default class EventGeneralInfo extends VuexModule {
     },
   };
 
+  private selectedStatus: string = null;
+
+  private isLoadingEventStatus: boolean = false;
+
   constructor(module: VuexModule<ThisType<EventGeneralInfo>, EventGeneralInfo>) {
     super(module);
     this.info = process.env.USE_MOCK_DATA === 'true' ? this.mockInfo : this.info;
@@ -135,9 +140,18 @@ export default class EventGeneralInfo extends VuexModule {
     return this.isLoading;
   }
 
+  public get $isLoadingEventStatus() {
+    return this.isLoadingEventStatus;
+  }
+
   @Mutation
   private SET_LOADING(payload: boolean) {
     this.isLoading = payload;
+  }
+
+  @Mutation
+  private SET_LOADING_EVENT_STATUS(status: boolean) {
+    this.isLoadingEventStatus = status;
   }
 
   @Mutation
@@ -148,6 +162,11 @@ export default class EventGeneralInfo extends VuexModule {
   @Mutation
   private UPDATE_INFO_ADDRESS(payload: Partial<EventAddress>) {
     this.info.address = { ...this.info.address, ...payload };
+  }
+
+  @Mutation
+  private SET_STATUS(status: string) {
+    this.selectedStatus = status;
   }
 
   @Action
@@ -253,7 +272,8 @@ export default class EventGeneralInfo extends VuexModule {
         'address',
         'category',
         'attachments',
-        'collaborators',
+        'collaborators:user:people',
+        'collaborators:role',
         'status',
         'fees',
       ];
@@ -264,11 +284,10 @@ export default class EventGeneralInfo extends VuexModule {
           .join('&')}`
       );
 
-      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error('Evento não encontrado');
-      }
+      const { data } = handleGetResponse(response, 'Evento não encontrado', null, true);
 
-      const event = response.body.result.data[0];
+      // 
+      const event = data[0];
 
       // Separar data e hora
       const startDateTime = splitDateTime(event.start_date);
@@ -359,12 +378,14 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   public async createEventBase(): Promise<{ eventId: string; addressId?: string }> {
     try {
+      console.log('createEventBase', this.info);
+
       // Criar endereço se o evento for presencial
-      const [addressId, draftStatus] = await Promise.all([
+      const [addressId, eventStatus] = await Promise.all([
         this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
         status.fetchStatusByModuleAndName({
           module: 'event',
-          name: 'Aguardando Aprovação',
+          name: this.selectedStatus === 'draft' ? 'Rascunho' : 'Aguardando Aprovação',
         }),
       ]);
 
@@ -376,24 +397,28 @@ export default class EventGeneralInfo extends VuexModule {
       const endDate = new Date(endDateTime);
 
       const eventResponse = await $axios.$post('event', {
-        alias: this.info.alias,
-        name: this.info.name,
-        description: this.info.description,
-        general_information: this.info.general_information,
-        category_id: this.info.category?.value,
-        rating_id: this.info.rating?.value,
-        event_type: this.info.event_type,
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
-        address_id: addressId,
-        status_id: draftStatus.id,
-        link_online: this.info.link_online,
-        location_name: this.info.address?.location_name,
-        promoter_id: this.info.promoter_id,
-        sale_type: this.info.sale_type,
-        availability: this.info.availability,
-        is_featured: this.info.is_featured,
-        absorb_service_fee: this.info.absorb_service_fee || false,
+        data: [
+          {
+            alias: this.info.alias,
+            name: this.info.name,
+            description: this.info.description,
+            general_information: this.info.general_information,
+            category_id: this.info.category?.value,
+            rating_id: this.info.rating?.value,
+            event_type: this.info.event_type,
+            start_date: startDate.toISOString().replace('Z', '-0300'),
+            end_date: endDate.toISOString().replace('Z', '-0300'),
+            address_id: addressId,
+            status_id: eventStatus.id,
+            link_online: this.info.link_online,
+            location_name: this.info.address?.location_name,
+            promoter_id: this.info.promoter_id,
+            sale_type: this.info.sale_type,
+            availability: this.info.availability,
+            is_featured: this.info.is_featured,
+            absorb_service_fee: this.info.absorb_service_fee || false,
+          },
+        ],
       });
 
       if (!eventResponse.body || eventResponse.body.code !== 'CREATE_SUCCESS') {
@@ -401,7 +426,7 @@ export default class EventGeneralInfo extends VuexModule {
       }
 
       return {
-        eventId: eventResponse.body.result.id,
+        eventId: eventResponse.body.result[0].id,
         addressId,
       };
     } catch (error) {
@@ -413,16 +438,20 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   private async updateAddress() {
     const addressResponse = await $axios.$patch('address', {
-      id: this.info.address?.id,
-      street: this.info.address?.street,
-      number: this.info.address?.number,
-      complement: this.info.address?.complement,
-      neighborhood: this.info.address?.neighborhood,
-      city: this.info.address?.city,
-      state: this.info.address?.state,
-      zipcode: this.info.address?.zipcode,
-      latitude: this.info.address?.latitude,
-      longitude: this.info.address?.longitude,
+      data: [
+        {
+          id: this.info.address?.id,
+          street: this.info.address?.street,
+          number: this.info.address?.number,
+          complement: this.info.address?.complement,
+          neighborhood: this.info.address?.neighborhood,
+          city: this.info.address?.city,
+          state: this.info.address?.state,
+          zipcode: this.info.address?.zipcode,
+          latitude: this.info.address?.latitude,
+          longitude: this.info.address?.longitude,
+        },
+      ],
     });
 
     if (!addressResponse.body || addressResponse.body.code !== 'UPDATE_SUCCESS') {
@@ -460,22 +489,26 @@ export default class EventGeneralInfo extends VuexModule {
       const endDate = new Date(endDateTime);
 
       const eventResponse = await $axios.$patch('event', {
-        id: eventId,
-        name: this.info.name,
-        address_id: this.info.address?.id,
-        description: this.info.description,
-        general_information: this.info.general_information,
-        category_id: this.info.category?.value,
-        rating_id: this.info.rating?.value,
-        event_type: this.info.event_type,
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
-        link_online: this.info.link_online,
-        location_name: this.info.address?.location_name,
-        sale_type: this.info.sale_type,
-        availability: this.info.availability,
-        is_featured: this.info.is_featured,
-        absorb_service_fee: this.info.absorb_service_fee || false,
+        data: [
+          {
+            id: eventId,
+            name: this.info.name,
+            address_id: this.info.address?.id,
+            description: this.info.description,
+            general_information: this.info.general_information,
+            category_id: this.info.category?.value,
+            rating_id: this.info.rating?.value,
+            event_type: this.info.event_type,
+            start_date: startDate.toISOString().replace('Z', '-0300'),
+            end_date: endDate.toISOString().replace('Z', '-0300'),
+            link_online: this.info.link_online,
+            location_name: this.info.address?.location_name,
+            sale_type: this.info.sale_type,
+            availability: this.info.availability,
+            is_featured: this.info.is_featured,
+            absorb_service_fee: this.info.absorb_service_fee || false,
+          },
+        ],
       });
 
       if (!eventResponse.body || eventResponse.body.code !== 'UPDATE_SUCCESS') {
@@ -537,22 +570,26 @@ export default class EventGeneralInfo extends VuexModule {
   private async createAddress(address: EventAddress): Promise<string> {
     try {
       const addressResponse = await $axios.$post('address', {
-        street: address.street,
-        number: address.number,
-        complement: address.complement || '',
-        neighborhood: address.neighborhood,
-        city: address.city,
-        state: address.state,
-        zipcode: address.zipcode,
-        latitude: address.latitude || null,
-        longitude: address.longitude || null,
+        data: [
+          {
+            street: address.street,
+            number: address.number,
+            complement: address.complement || '',
+            neighborhood: address.neighborhood,
+            city: address.city,
+            state: address.state,
+            zipcode: address.zipcode,
+            latitude: address.latitude || null,
+            longitude: address.longitude || null,
+          },
+        ],
       });
 
       if (!addressResponse.body || addressResponse.body.code !== 'CREATE_SUCCESS') {
         throw new Error('Falha ao criar endereço');
       }
 
-      return addressResponse.body.result.id;
+      return addressResponse.body.result[0].id;
     } catch (error) {
       console.error('Erro ao criar endereço:', error);
       throw error;
@@ -562,8 +599,12 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   public async updatePlatformFee(payload: { feeId: string; platformFee: number }) {
     const response = await $axios.$patch('event-fee', {
-      id: payload.feeId,
-      platform_fee: payload.platformFee,
+      data: [
+        {
+          id: payload.feeId,
+          platform_fee: payload.platformFee,
+        },
+      ],
     });
 
     if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -621,7 +662,7 @@ export default class EventGeneralInfo extends VuexModule {
       eventId,
       name: 'banner',
       type: 'image',
-      url: this.$info.banner as string,
+      url: '',
     });
     const bannerUrl = await this.uploadEventBanner({
       attachmentId: bannerId,
@@ -640,17 +681,21 @@ export default class EventGeneralInfo extends VuexModule {
     url: string;
   }) {
     const attachmentResponse = await $axios.$post('event-attachment', {
-      event_id: payload.eventId,
-      name: payload.name,
-      type: payload.type,
-      url: payload.url,
+      data: [
+        {
+          event_id: payload.eventId,
+          name: payload.name,
+          type: payload.type,
+          url: payload.url,
+        },
+      ],
     });
 
     if (!attachmentResponse.body || attachmentResponse.body.code !== 'CREATE_SUCCESS') {
       throw new Error('Failed to create attachment.');
     }
 
-    return attachmentResponse.body.result.id;
+    return attachmentResponse.body.result[0].id;
   }
 
   @Action
@@ -665,8 +710,8 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   private async uploadEventBanner(payload: { attachmentId: string; banner: File }) {
     const formData = new FormData();
-    formData.append('event_attachment_id', payload.attachmentId);
-    formData.append('file', payload.banner);
+    formData.append('attachment_ids[]', payload.attachmentId);
+    formData.append('files[]', payload.banner);
 
     const uploadResponse = await $axios.$post('upload', formData, {
       headers: {
@@ -678,18 +723,63 @@ export default class EventGeneralInfo extends VuexModule {
       throw new Error('Failed to upload banner.');
     }
 
-    return uploadResponse.body.result.s3_url;
+    return uploadResponse.body.result[0].s3_url;
   }
 
   @Action
   private async updateEventAttachment(payload: { attachmentId: string; url: string }) {
     const updateResponse = await $axios.$patch('event-attachment', {
-      id: payload.attachmentId,
-      url: payload.url,
+      data: [
+        {
+          id: payload.attachmentId,
+          url: payload.url,
+        },
+      ],
     });
 
     if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
       throw new Error('Failed to update banner.');
     }
+  }
+
+  @Action
+  private async updateEventStatus(payload: { eventId: string; statusName: string }) {
+    this.context.commit('SET_LOADING_EVENT_STATUS', true);
+
+    const statusResponse = await status.fetchStatusByModuleAndName({
+      module: 'event',
+      name: payload.statusName,
+    });
+
+    const updateResponse = await $axios.$patch('event', {
+      data: [
+        {
+          id: payload.eventId,
+          status_id: statusResponse.id,
+        },
+      ],
+    });
+
+    if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
+      this.context.commit('SET_LOADING_EVENT_STATUS', false);
+      throw new Error('Failed to update status.');
+    }
+
+    this.context.commit('UPDATE_INFO', {
+      status: {
+        id: statusResponse.id,
+        name: statusResponse.name,
+        module: statusResponse.module,
+      },
+    });
+
+    this.context.commit('SET_LOADING_EVENT_STATUS', false);
+
+    return updateResponse.body.result;
+  }
+
+  @Action
+  public setEventStatus(status: string) {
+    this.context.commit('SET_STATUS', status);
   }
 }

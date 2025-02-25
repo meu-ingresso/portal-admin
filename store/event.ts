@@ -121,8 +121,7 @@ export default class Event extends VuexModule {
 
     return {
       ...this.event,
-
-      location: `${this.event.address.street}, ${this.event.address.number} - ${this.event.address.neighborhood}, ${this.event.address.city} - ${this.event.address.state}`,
+      location: this.event.address ? `${this.event.address.street}, ${this.event.address.number} - ${this.event.address.neighborhood}, ${this.event.address.city} - ${this.event.address.state}` : '',
     };
   }
 
@@ -154,7 +153,7 @@ export default class Event extends VuexModule {
   private SET_EVENT_LIST(data: any) {
     this.eventList = data.map((event: any) => ({
       ...event,
-      location: `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}`,
+      location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
     }));
   }
 
@@ -195,7 +194,7 @@ export default class Event extends VuexModule {
           value: formatRealValue(data.totalizers.totalSalesAmout),
         },
       ],
-      promoters: data.collaborators.length,
+      collaborators: data.collaborators.length,
       tickets: nonDeletedTickets.map((ticket) => ({
         ...ticket,
         id: ticket.id,
@@ -384,24 +383,16 @@ export default class Event extends VuexModule {
 
     preloads.forEach((preload) => params.append('preloads[]', preload));
 
-    return await $axios
-      .$get(`events?${params.toString()}`)
-      .then((response) => {
-        if (response.body && response.body.code !== 'SEARCH_SUCCESS')
-          throw new Error(response);
+    const response = await $axios.$get(`events?${params.toString()}`);
 
-        this.setLoading(false);
-        this.context.commit('SET_EVENT_LIST', response.body.result.data);
-        return response;
-      })
-      .catch(() => {
-        this.setLoading(false);
-        return {
-          data: 'Error',
-          code: 'FIND_NOTFOUND',
-          total: 0,
-        };
-      });
+    const { data: events } = handleGetResponse(response, 'Eventos não encontrados', null, true);
+
+    this.setLoading(false);
+    
+    this.context.commit('SET_EVENT_LIST', events);
+
+
+    return events;
   }
 
   @Action
@@ -492,7 +483,11 @@ export default class Event extends VuexModule {
   @Action
   public async updateEvent(payload) {
     try {
-      const response = await $axios.$patch('event', payload);
+      const response = await $axios.$patch('event', {
+        data: [
+          { ...payload }
+        ]
+      });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
         throw new Error('Falha ao atualizar o evento.');

@@ -6,10 +6,12 @@
 
         <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-        <StatusBadge v-if="getEventStatus" :text="getEventStatus" />
+        <StatusBadge v-if="getEventStatus" :text="getEventStatus" :is-header="true" />
 
-        <NuxtLink :to="`/events/${getEvent.id}/promoters`">
-          <PromotersBadge :count="getEvent.collaborators.length" />
+        <NuxtLink :to="`/events/${getEvent.id}/collaborators`" class="cursor-pointer">
+          <CollaboratorsBadge
+            :count="getEvent.collaborators.length"
+            class="cursor-pointer" />
         </NuxtLink>
 
         <v-tooltip bottom>
@@ -188,10 +190,16 @@
     <template v-else>
       <div class="event-title-wrapper is-mobile mb-2">
         <div class="badge-list">
-          <StatusBadge v-if="getEventStatus" :text="getEventStatus" class="mr-2" />
+          <StatusBadge
+            v-if="getEventStatus"
+            :text="getEventStatus"
+            class="mr-2"
+            :is-header="true" />
 
-          <NuxtLink :to="`/events/${getEvent.id}/promoters`">
-            <PromotersBadge :count="getEvent.collaborators.length" />
+          <NuxtLink :to="`/events/${getEvent.id}/collaborators`">
+            <CollaboratorsBadge
+              :count="getEvent.collaborators.length"
+              class="cursor-pointer" />
           </NuxtLink>
 
           <v-tooltip bottom>

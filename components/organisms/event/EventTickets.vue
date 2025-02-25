@@ -78,6 +78,7 @@
         </v-card-title>
         <v-card-text class="px-4">
           <TicketForm
+            v-if="showEditDialog"
             ref="ticketEditForm"
             :edit-index="selectedTicketIndex"
             :event-id="eventId"

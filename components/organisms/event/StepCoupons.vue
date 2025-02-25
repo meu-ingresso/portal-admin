@@ -176,11 +176,12 @@ export default {
     },
 
     getTickets() {
-      return eventTickets.$tickets.map((ticket) => {
+      return eventTickets.$tickets.map((ticket, index) => {
         return {
-          id: ticket.id,
+          id: ticket.id === '-1' ? index : ticket.id,
           name: ticket.name,
           _deleted: ticket._deleted,
+          _new: ticket.id === '-1',
         };
       });
     },
