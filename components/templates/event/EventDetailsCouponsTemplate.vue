@@ -33,7 +33,11 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4">
-          <CouponForm ref="couponForm" :event-id="getEvent.id" :tickets="getTickets" />
+          <CouponForm
+            v-if="showAddDialog"
+            ref="couponForm"
+            :event-id="getEvent.id"
+            :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
           <DefaultButton
@@ -123,8 +127,8 @@ export default {
       try {
         this.isAddingCoupon = true;
         const couponForm = this.$refs.couponForm;
-        const couponId = await couponForm.handleSubmit(true);
-        if (couponId) {
+        const { success } = await couponForm.handleSubmit(true);
+        if (success) {
           this.showAddDialog = false;
           toast.setToast({
             text: `Cupom adicionado com sucesso!`,

@@ -579,15 +579,74 @@ export default class EventCustomFields extends VuexModule {
             }
           } else {
             // Novo campo
-            operations.fieldsToCreate.push(
-              prepareFieldPayload(
-                field, 
-                payload.eventId, 
-                personType, 
-                displayOrders[this.fieldList.indexOf(field)]
-              )
+            const newField = prepareFieldPayload(
+              field, 
+              payload.eventId, 
+              personType, 
+              displayOrders[this.fieldList.indexOf(field)]
             );
+            operations.fieldsToCreate.push(newField);
+
+            // Adiciona relações com tickets para o novo campo
+            // Note: As relações serão criadas após o campo ser criado
+            field.tickets.forEach(ticket => {
+              if (!ticket._deleted) {
+                operations.ticketRelationsToCreate.push({
+                  // Temporariamente usamos um placeholder que será substituído pelo ID real
+                  event_checkout_field_id: `NEW_FIELD_${field.name}_${personType}`,
+                  ticket_id: ticket.id
+                });
+              }
+            });
+
+            // Se for campo multi-opção, adiciona as opções
+            if (isMultiOptionField(field.type)) {
+              field.selected_options.forEach(option => {
+                operations.optionsToCreate.push({
+                  // Temporariamente usamos um placeholder que será substituído pelo ID real
+                  event_checkout_field_id: `NEW_FIELD_${field.name}_${personType}`,
+                  name: option.name
+                });
+              });
+            }
           }
+        }
+      }
+
+      // Primeiro criamos os campos
+      if (operations.fieldsToCreate.length > 0) {
+        const createFieldsResponse = await $axios.$post('event-checkout-field', { 
+          data: operations.fieldsToCreate 
+        });
+
+        // Limpa o array de campos a serem criados
+        operations.fieldsToCreate = [];
+        
+        // Atualiza os IDs dos campos nas relações e opções
+        if (createFieldsResponse.body?.result) {
+          createFieldsResponse.body.result.forEach((createdField: any) => {
+            // Atualiza os IDs nas relações com tickets
+            operations.ticketRelationsToCreate = operations.ticketRelationsToCreate.map(relation => {
+              if (relation.event_checkout_field_id === `NEW_FIELD_${createdField.name}_${createdField.person_type}`) {
+                return {
+                  ...relation,
+                  event_checkout_field_id: createdField.id
+                };
+              }
+              return relation;
+            });
+
+            // Atualiza os IDs nas opções
+            operations.optionsToCreate = operations.optionsToCreate.map(option => {
+              if (option.event_checkout_field_id === `NEW_FIELD_${createdField.name}_${createdField.person_type}`) {
+                return {
+                  ...option,
+                  event_checkout_field_id: createdField.id
+                };
+              }
+              return option;
+            });
+          });
         }
       }
 
@@ -611,7 +670,9 @@ export default class EventCustomFields extends VuexModule {
     const apiCalls = [];
 
     if (operations.fieldsToDelete.length > 0) {
-      apiCalls.push($axios.$delete('event-checkout-field', { data: operations.fieldsToDelete }));
+      operations.fieldsToDelete.forEach(fieldId => {
+        apiCalls.push($axios.$delete(`event-checkout-field/${fieldId}`));
+      });
     }
 
     if (operations.fieldsToCreate.length > 0) {
@@ -623,7 +684,9 @@ export default class EventCustomFields extends VuexModule {
     }
 
     if (operations.optionsToDelete.length > 0) {
-      apiCalls.push($axios.$delete('event-checkout-field-option', { data: operations.optionsToDelete }));
+      operations.optionsToDelete.forEach(optionId => {
+        apiCalls.push($axios.$delete(`event-checkout-field-option/${optionId}`));
+      });
     }
 
     if (operations.optionsToCreate.length > 0) {
@@ -635,7 +698,9 @@ export default class EventCustomFields extends VuexModule {
     }
 
     if (operations.ticketRelationsToDelete.length > 0) {
-      apiCalls.push($axios.$delete('event-checkout-field-ticket', { data: operations.ticketRelationsToDelete }));
+      operations.ticketRelationsToDelete.forEach(relationId => {
+        apiCalls.push($axios.$delete(`event-checkout-field-ticket/${relationId}`));
+      });
     }
 
     if (operations.ticketRelationsToCreate.length > 0) {

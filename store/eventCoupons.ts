@@ -167,7 +167,9 @@ export default class EventCoupons extends VuexModule {
     }
 
     if (operations.couponsToDelete.length > 0) {
-      apiCalls.push($axios.$delete('coupon', { data: operations.couponsToDelete }));
+      operations.couponsToDelete.forEach(couponId => {
+        apiCalls.push($axios.$delete(`coupon/${couponId}`));
+      });
     }
 
     if (operations.ticketRelationsToCreate.length > 0) {
@@ -175,7 +177,9 @@ export default class EventCoupons extends VuexModule {
     }
 
     if (operations.ticketRelationsToDelete.length > 0) {
-      apiCalls.push($axios.$delete('coupon-ticket', { data: operations.ticketRelationsToDelete }));
+      operations.ticketRelationsToDelete.forEach(relationId => {
+        apiCalls.push($axios.$delete(`coupon-ticket/${relationId}`));
+      });
     }
 
     await Promise.all(apiCalls);
@@ -507,35 +511,45 @@ export default class EventCoupons extends VuexModule {
 
       // 3. Criar o cupom
       const couponResponse = await $axios.$post('coupon', {
-        event_id: payload.eventId,
-        status_id: availableStatus.id,
-        code: payload.coupon.code,
-        discount_type: payload.coupon.discount_type,
-        discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
-        max_uses: payload.coupon.max_uses,
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
+        data: [
+          {
+            event_id: payload.eventId,
+            status_id: availableStatus.id,
+            code: payload.coupon.code,
+            discount_type: payload.coupon.discount_type,
+            discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
+            max_uses: payload.coupon.max_uses,
+            start_date: startDate.toISOString().replace('Z', '-0300'),
+            end_date: endDate.toISOString().replace('Z', '-0300'),
+          }
+        ]
       });
 
       if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
         throw new Error('Falha ao criar cupom');
       }
 
-      const couponId = couponResponse.body.result.id;
+      // 
+      const couponId = couponResponse.body.result[0].id;
 
-      // 4. Criar relações com tickets se existirem
+      // 5. Criar relações com tickets se existirem
       if (payload.coupon.tickets && payload.coupon.tickets.length > 0) {
-        await Promise.all(
-          payload.coupon.tickets.map(ticket =>
-            $axios.$post('coupon-ticket', {
-              coupon_id: couponId,
-              ticket_id: ticket.id
-            })
-          )
-        );
+
+        const ticketRelationsToCreate: any[] = [];
+
+        payload.coupon.tickets.forEach(ticket => {
+          ticketRelationsToCreate.push({
+            coupon_id: couponId,
+            ticket_id: ticket.id
+          });
+        });
+
+        await $axios.$post('coupon-ticket', {
+          data: ticketRelationsToCreate
+        });
       }
 
-      // 5. Atualizar o state
+      // 6. Atualizar o state
       const createdCoupon = {
         ...payload.coupon,
         id: couponId,

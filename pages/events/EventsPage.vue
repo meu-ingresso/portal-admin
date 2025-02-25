@@ -19,7 +19,7 @@ export default {
   },
 
   async mounted() {
-    this.getData();
+    await this.getData();
   },
 
   methods: {

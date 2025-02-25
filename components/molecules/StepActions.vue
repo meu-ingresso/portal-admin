@@ -1,12 +1,6 @@
 <template>
   <v-row justify="space-between" class="mt-4" :class="{ 'fixed-actions px-2': isMobile }">
-    <v-col
-      cols="12"
-      class="d-flex"
-      :class="{
-        'justify-end': !isMobile || isFirstStep,
-        'justify-space-between': isMobile && !isFirstStep,
-      }">
+    <v-col cols="12" class="d-flex justify-space-between">
       <DefaultButton
         outlined
         :disabled="isSaving"

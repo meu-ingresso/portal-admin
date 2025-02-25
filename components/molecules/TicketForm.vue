@@ -604,6 +604,30 @@ export default {
         this.closeDateMenu = false;
       }
     },
+
+    resetForm() {
+      if (this.$refs.form) {
+        this.$refs.form.resetValidation();
+        // Reseta para os valores iniciais
+        this.localTicket = {
+          id: '-1',
+          name: '',
+          category: null,
+          price: '',
+          total_quantity: '',
+          min_purchase: 1,
+          max_purchase: '',
+          start_date: '',
+          start_time: '',
+          end_date: '',
+          end_time: '',
+          availability: 'Publico',
+        };
+        // Força a revalidação do formulário
+        this.isFormValid = false;
+        this.$refs.form.reset();
+      }
+    },
   },
 };
 </script>
