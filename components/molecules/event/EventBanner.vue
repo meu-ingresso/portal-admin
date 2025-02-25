@@ -1,6 +1,6 @@
 <template>
   <v-card class="event-card" @click="goToEventDetail">
-    <v-img :src="getImage" class="event-image" alt="Event Image" contain />
+    <v-img :src="getImage" class="event-image" alt="Event Image" />
 
     <v-card-text>
       <h3 class="event-title">{{ title }}</h3>
@@ -53,11 +53,20 @@ export default {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0px 0px 7.24px 0px #00000029 !important;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .event-card:hover {
   transform: scale(1.005);
 }
+
+.event-image {
+  height: 200px !important;
+  object-fit: cover;
+}
+
 .event-title {
   font-size: 16px;
   font-weight: 800;
@@ -69,6 +78,7 @@ export default {
   font-weight: 600;
   font-size: 14px;
 }
+
 .event-location {
   color: var(--black-text);
   font-weight: 400;
