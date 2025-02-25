@@ -174,8 +174,7 @@
           </v-form>
         </v-card-text>
 
-        <v-card-actions>
-          <v-spacer></v-spacer>
+        <v-card-actions class="d-flex justify-space-between">
           <DefaultButton outlined text="Cancelar" @click="closeAddressModal" />
           <DefaultButton text="Salvar" @click="saveAddress" />
         </v-card-actions>

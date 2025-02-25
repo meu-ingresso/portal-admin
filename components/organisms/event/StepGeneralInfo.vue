@@ -116,7 +116,7 @@
     <v-row>
       <!-- Categoria -->
       <v-col cols="12" md="4" sm="12">
-        <v-select
+        <v-autocomplete
           ref="category"
           v-model="formData.category"
           label="Categoria"
@@ -131,7 +131,7 @@
 
       <!-- Tipo do Evento -->
       <v-col cols="12" md="4" sm="12">
-        <v-select
+        <v-autocomplete
           ref="event_type"
           v-model="formData.event_type"
           label="Tipo do Evento"

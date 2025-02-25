@@ -1,37 +1,31 @@
 <template>
-  <v-card class="event-card" @click="goToEventDetail">
-    <v-card-text>
-      <h3 class="event-title mb-4">{{ title }}</h3>
-      <div class="d-flex align-end justify-space-between">
-        <div class="d-flex align-center justify-space-between w-full">
-          <div class="d-flex flex-column align-start justify-space-between">
-            <p class="event-revenue">{{ formatToMoney(revenue) }}</p>
-            <p class="event-revenue-today">{{ formatToMoney(revenueToday) }} hoje</p>
-          </div>
-          <div class="d-flex flex-column align-start justify-space-between">
-            <p class="event-tickets">{{ tickets }}</p>
-            <p class="event-tickets-today">{{ ticketsToday }} hoje</p>
+  <NuxtLink :to="`/events/${event.id}`">
+    <v-card class="event-card">
+      <v-card-text>
+        <h3 class="event-title mb-4">{{ event.title }}</h3>
+        <div class="d-flex align-end justify-space-between">
+          <div class="d-flex align-center justify-space-between w-full">
+            <div class="d-flex flex-column align-start justify-space-between">
+              <p class="event-revenue">{{ formatToMoney(event.totalizers.totalSalesAmount) }}</p>
+              <p class="event-revenue-today">{{ formatToMoney(event.totalizers.totalSalesAmountToday) }} hoje</p>
+            </div>
+            <div class="d-flex flex-column align-start justify-space-between">
+              <p class="event-tickets">{{ event.totalizers.totalSales  }}</p>
+              <p class="event-tickets-today">{{  event.totalizers.totalSalesToday  }} hoje</p>
+            </div>
           </div>
         </div>
-      </div>
-    </v-card-text>
-  </v-card>
+      </v-card-text>
+    </v-card>
+  </NuxtLink>
 </template>
 
 <script>
 import { formatDateTimeToBr, formatRealValue } from '@/utils/formatters';
 export default {
   props: {
-    eventId: { type: String, required: true },
-    title: { type: String, required: true },
-    date: { type: String, required: true },
-    location: { type: String, required: true },
-    revenue: { type: Number, required: true },
-    revenueToday: { type: Number, required: true },
-    tickets: { type: Number, required: true },
-    ticketsToday: { type: Number, required: true },
-    statusText: { type: String, required: true },
-    deletedAt: { type: String, required: false, default: null },
+    event: { type: Object, required: true },
+    canManageEvent: { type: Boolean, required: true },
   },
 
   computed: {
@@ -43,9 +37,6 @@ export default {
   methods: {
     formatToMoney(value) {
       return formatRealValue(value);
-    },
-    goToEventDetail() {
-      this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.eventId } });
     },
   },
 };

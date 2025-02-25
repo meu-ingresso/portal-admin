@@ -286,7 +286,6 @@ export default class EventGeneralInfo extends VuexModule {
 
       const { data } = handleGetResponse(response, 'Evento não encontrado', null, true);
 
-      // 
       const event = data[0];
 
       // Separar data e hora
