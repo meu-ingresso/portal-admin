@@ -51,7 +51,9 @@
                 <v-list-item-title>Editar evento</v-list-item-title>
               </v-list-item>
 
-              <v-list-item>
+              <v-list-item
+                v-if="getEvent.status.name === 'Rascunho'"
+                @click="requestPublication">
                 <v-list-item-icon class="mr-2">
                   <v-icon>mdi-rocket</v-icon>
                 </v-list-item-icon>
@@ -137,7 +139,7 @@
 </template>
 
 <script>
-import { loading } from '@/store';
+import { loading, eventGeneralInfo, toast } from '@/store';
 import { eventsSideBar } from '@/utils/events-sidebar';
 import { isMobileDevice } from '@/utils/utils';
 
@@ -147,13 +149,10 @@ export default {
       type: Boolean,
       default: false,
     },
+
     drawer: {
       type: Boolean,
       default: false,
-    },
-    eventData: {
-      type: Object,
-      default: null,
     },
   },
 
@@ -168,6 +167,10 @@ export default {
   },
 
   computed: {
+    getEvent() {
+      return eventGeneralInfo.$info;
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -185,9 +188,9 @@ export default {
     },
 
     selectedEventBanner() {
-      if (!this.eventData) return this.cachedBanner?.url || null;
+      if (!this.getEvent) return this.cachedBanner?.url || null;
 
-      const banner = this.eventData.attachments.find(
+      const banner = this.getEvent.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
 
@@ -284,7 +287,7 @@ export default {
       },
     },
 
-    'eventData.id': {
+    'getEvent.id': {
       handler(newId) {
         if (!newId) return;
 
@@ -299,10 +302,31 @@ export default {
   },
 
   methods: {
-    getCurrentBannerUrl() {
-      if (!this.eventData) return null;
+    async requestPublication() {
+      const response = await eventGeneralInfo.updateEventStatus({
+        eventId: this.getEvent.id,
+        statusName: 'Aguardando Aprovação',
+      });
 
-      const banner = this.eventData.attachments.find(
+      if (response.length > 0) {
+        toast.setToast({
+          text: 'Solicitação de publicação enviada com sucesso!',
+          type: 'success',
+          time: 5000,
+        });
+      } else {
+        toast.setToast({
+          text: 'Erro ao solicitar publicação!',
+          type: 'error',
+          time: 5000,
+        });
+      }
+    },
+
+    getCurrentBannerUrl() {
+      if (!this.getEvent) return null;
+
+      const banner = this.getEvent.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'
       );
 

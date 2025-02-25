@@ -1,16 +1,29 @@
 <template>
   <v-chip :color="color" text-color="white" class="status-badge">
-    {{ text }}
+    <v-skeleton-loader
+      v-if="$isLoading && isHeader"
+      type="chip"
+      class="status-badge-skeleton" />
+
+    <span v-else>{{ text }}</span>
   </v-chip>
 </template>
 
 <script>
+import { eventGeneralInfo } from '@/store';
+
 export default {
   props: {
     text: { type: String, required: true },
+
+    isHeader: { type: Boolean, default: false },
   },
 
   computed: {
+    $isLoading() {
+      return eventGeneralInfo.$isLoadingEventStatus;
+    },
+
     color() {
       switch (this.text) {
         case 'Publicado':

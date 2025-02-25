@@ -120,6 +120,8 @@ export default class EventGeneralInfo extends VuexModule {
 
   private selectedStatus: string = null;
 
+  private isLoadingEventStatus: boolean = false;
+
   constructor(module: VuexModule<ThisType<EventGeneralInfo>, EventGeneralInfo>) {
     super(module);
     this.info = process.env.USE_MOCK_DATA === 'true' ? this.mockInfo : this.info;
@@ -137,9 +139,18 @@ export default class EventGeneralInfo extends VuexModule {
     return this.isLoading;
   }
 
+  public get $isLoadingEventStatus() {
+    return this.isLoadingEventStatus;
+  }
+
   @Mutation
   private SET_LOADING(payload: boolean) {
     this.isLoading = payload;
+  }
+
+  @Mutation
+  private SET_LOADING_EVENT_STATUS(status: boolean) {
+    this.isLoadingEventStatus = status;
   }
 
   @Mutation
@@ -366,7 +377,6 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   public async createEventBase(): Promise<{ eventId: string; addressId?: string }> {
     try {
-
       console.log('createEventBase', this.info);
 
       // Criar endereço se o evento for presencial
@@ -406,8 +416,8 @@ export default class EventGeneralInfo extends VuexModule {
             availability: this.info.availability,
             is_featured: this.info.is_featured,
             absorb_service_fee: this.info.absorb_service_fee || false,
-          }
-        ]
+          },
+        ],
       });
 
       if (!eventResponse.body || eventResponse.body.code !== 'CREATE_SUCCESS') {
@@ -439,8 +449,8 @@ export default class EventGeneralInfo extends VuexModule {
           zipcode: this.info.address?.zipcode,
           latitude: this.info.address?.latitude,
           longitude: this.info.address?.longitude,
-        }
-      ]
+        },
+      ],
     });
 
     if (!addressResponse.body || addressResponse.body.code !== 'UPDATE_SUCCESS') {
@@ -496,8 +506,8 @@ export default class EventGeneralInfo extends VuexModule {
             availability: this.info.availability,
             is_featured: this.info.is_featured,
             absorb_service_fee: this.info.absorb_service_fee || false,
-          }
-        ]
+          },
+        ],
       });
 
       if (!eventResponse.body || eventResponse.body.code !== 'UPDATE_SUCCESS') {
@@ -570,8 +580,8 @@ export default class EventGeneralInfo extends VuexModule {
             zipcode: address.zipcode,
             latitude: address.latitude || null,
             longitude: address.longitude || null,
-          }
-        ]
+          },
+        ],
       });
 
       if (!addressResponse.body || addressResponse.body.code !== 'CREATE_SUCCESS') {
@@ -592,8 +602,8 @@ export default class EventGeneralInfo extends VuexModule {
         {
           id: payload.feeId,
           platform_fee: payload.platformFee,
-        }
-      ]
+        },
+      ],
     });
 
     if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -676,8 +686,8 @@ export default class EventGeneralInfo extends VuexModule {
           name: payload.name,
           type: payload.type,
           url: payload.url,
-        }
-      ]
+        },
+      ],
     });
 
     if (!attachmentResponse.body || attachmentResponse.body.code !== 'CREATE_SUCCESS') {
@@ -722,13 +732,49 @@ export default class EventGeneralInfo extends VuexModule {
         {
           id: payload.attachmentId,
           url: payload.url,
-        }
-      ]
+        },
+      ],
     });
 
     if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
       throw new Error('Failed to update banner.');
     }
+  }
+
+  @Action
+  private async updateEventStatus(payload: { eventId: string; statusName: string }) {
+    this.context.commit('SET_LOADING_EVENT_STATUS', true);
+
+    const statusResponse = await status.fetchStatusByModuleAndName({
+      module: 'event',
+      name: payload.statusName,
+    });
+
+    const updateResponse = await $axios.$patch('event', {
+      data: [
+        {
+          id: payload.eventId,
+          status_id: statusResponse.id,
+        },
+      ],
+    });
+
+    if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
+      this.context.commit('SET_LOADING_EVENT_STATUS', false);
+      throw new Error('Failed to update status.');
+    }
+
+    this.context.commit('UPDATE_INFO', {
+      status: {
+        id: statusResponse.id,
+        name: statusResponse.name,
+        module: statusResponse.module,
+      },
+    });
+
+    this.context.commit('SET_LOADING_EVENT_STATUS', false);
+
+    return updateResponse.body.result;
   }
 
   @Action

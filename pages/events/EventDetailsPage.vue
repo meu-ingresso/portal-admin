@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-container>
-      <EventDrawer :drawer="drawer" :event-data="getEvent" />
+      <EventDrawer :drawer="drawer" />
 
       <Lottie
         v-if="isLoading || isLoadingEvent"
