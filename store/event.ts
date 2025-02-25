@@ -383,24 +383,16 @@ export default class Event extends VuexModule {
 
     preloads.forEach((preload) => params.append('preloads[]', preload));
 
-    return await $axios
-      .$get(`events?${params.toString()}`)
-      .then((response) => {
-        if (response.body && response.body.code !== 'SEARCH_SUCCESS')
-          throw new Error(response);
+    const response = await $axios.$get(`events?${params.toString()}`);
 
-        this.setLoading(false);
-        this.context.commit('SET_EVENT_LIST', response.body.result.data);
-        return response;
-      })
-      .catch(() => {
-        this.setLoading(false);
-        return {
-          data: 'Error',
-          code: 'FIND_NOTFOUND',
-          total: 0,
-        };
-      });
+    const { data: events } = handleGetResponse(response, 'Eventos não encontrados', null, true);
+
+    this.setLoading(false);
+    
+    this.context.commit('SET_EVENT_LIST', events);
+
+
+    return events;
   }
 
   @Action
@@ -491,7 +483,11 @@ export default class Event extends VuexModule {
   @Action
   public async updateEvent(payload) {
     try {
-      const response = await $axios.$patch('event', payload);
+      const response = await $axios.$patch('event', {
+        data: [
+          { ...payload }
+        ]
+      });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
         throw new Error('Falha ao atualizar o evento.');

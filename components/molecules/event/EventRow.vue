@@ -42,7 +42,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="canManageEvent"
+              v-if="canManageEvent && event.status.name === 'Aguardando Aprovação'"
               class="approve-icon"
               icon
               v-bind="attrs"
@@ -57,7 +57,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="canManageEvent"
+              v-if="canManageEvent && event.status.name === 'Aguardando Aprovação'"
               class="reject-icon"
               icon
               v-bind="attrs"
@@ -72,7 +72,11 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
+<<<<<<< HEAD
               v-if="event?.deleted_at === null"
+=======
+              v-if="canManageEvent && event.deleted_at === null"
+>>>>>>> 987d462834a1b307c61a23636b8c5147bae15ed2
               class="delete-icon"
               icon
               v-bind="attrs"
@@ -86,25 +90,14 @@
       </template>
     </v-col>
 
-    <!-- Dialog de Confirmação -->
-    <v-dialog v-model="confirmationDialog.visible" persistent max-width="500">
-      <v-card>
-        <v-card-title class="d-flex justify-space-between align-center">
-          <h3>{{ confirmationDialog.title }}</h3>
-          <v-btn icon @click="confirmationDialog.visible = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-text>{{ confirmationDialog.message }}</v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-5">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            @click="confirmationDialog.visible = false" />
-          <DefaultButton text="Confirmar" @click="handleConfirmation" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <ConfirmDialog
+      v-model="confirmationDialog.visible"
+      :title="confirmationDialog.title"
+      :message="confirmationDialog.message"
+      confirm-text="Confirmar"
+      :loading="isChangingStatus"
+      @confirm="handleConfirmation"
+      @cancel="confirmationDialog.visible = false" />
   </v-row>
 </template>
 

@@ -42,6 +42,7 @@
 
         <v-card-text class="px-4">
           <TicketForm
+            v-if="showAddDialog"
             ref="ticketForm"
             :nomenclature="'Ingresso'"
             :event-id="getEvent.id" />

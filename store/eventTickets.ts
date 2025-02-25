@@ -629,31 +629,19 @@ export default class EventTickets extends VuexModule {
 
         this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
 
-        await Promise.all([
-          $axios.$patch('ticket', {
-            id: targetTicket.id,
-            display_order: movedDisplayOrder,
-          }),
+       
+        // Atualiza o display_order de todos os tickets
+        const updateData = this.ticketList.map((ticket: Ticket, index: number) => {
+          return {
+            id: ticket.id,
+            display_order: index + 1,
+          }
+        })
 
-          $axios.$patch('ticket', {
-            id: movedTicket.id,
-            display_order: targetDisplayOrder,
-          }),
-        ]);
+        await $axios.$patch('ticket', { data: updateData });
+
+
       } catch (error) {
-        try {
-          await $axios.$patch('ticket', {
-            id: movedTicket.id,
-            display_order: movedDisplayOrder,
-          });
-
-          await $axios.$patch('ticket', {
-            id: targetTicket.id,
-            display_order: targetDisplayOrder,
-          });
-        } catch (rollbackError) {
-          console.error('Erro ao tentar reverter alterações:', rollbackError);
-        }
         throw new Error('Falha ao reordenar tickets');
       }
     } else {

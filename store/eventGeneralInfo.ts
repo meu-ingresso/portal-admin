@@ -3,6 +3,7 @@ import { Event, EventAddress, ValidationResult, EventAttachment } from '~/models
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
+import { handleGetResponse } from '~/utils/responseHelpers';
 
 @Module({
   name: 'eventGeneralInfo',
@@ -283,11 +284,10 @@ export default class EventGeneralInfo extends VuexModule {
           .join('&')}`
       );
 
-      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
-        throw new Error('Evento não encontrado');
-      }
+      const { data } = handleGetResponse(response, 'Evento não encontrado', null, true);
 
-      const event = response.body.result.data[0];
+      // 
+      const event = data[0];
 
       // Separar data e hora
       const startDateTime = splitDateTime(event.start_date);
