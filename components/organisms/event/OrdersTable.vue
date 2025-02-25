@@ -1,6 +1,12 @@
 <template>
   <div>
+
+    <template v-if="isLoading">
+      <Lottie path="./animations/loading_default.json" height="300" width="300" />
+    </template>
+
     <v-data-table
+      v-else-if="!isLoading && orders.length > 0"
       :headers="headers"
       :items="orders"
       :loading="isLoading"
@@ -220,25 +226,19 @@
       </template> -->
     </v-data-table>
 
-    <template v-if="isLoading">
-      <Lottie path="./animations/loading_default.json" height="300" width="300" />
-    </template>
-
     <!-- Estado vazio -->
-    <template v-else-if="orders.length === 0">
+    <template v-else>
       <EmptyState
         title="Ainda não há pedidos"
         subtitle="Uma vez criados, seus pedidos aparecerão aqui"
         icon="mdi-cart-outline">
       </EmptyState>
     </template>
-    <template v-else>
-      <v-card flat class="mt-4">
-        <PaymentDetailsModal
-          :show.sync="showPaymentDetails"
-          :payment-id="selectedPaymentId" />
-      </v-card>
-    </template>
+
+    <PaymentDetailsModal
+      :show.sync="showPaymentDetails"
+      :payment-id="selectedPaymentId" />
+
   </div>
 </template>
 
