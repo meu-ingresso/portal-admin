@@ -72,11 +72,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-<<<<<<< HEAD
-              v-if="event?.deleted_at === null"
-=======
               v-if="canManageEvent && event.deleted_at === null"
->>>>>>> 987d462834a1b307c61a23636b8c5147bae15ed2
               class="delete-icon"
               icon
               v-bind="attrs"
