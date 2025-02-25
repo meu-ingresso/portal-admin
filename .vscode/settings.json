@@ -84,8 +84,5 @@
   },
   "typescript.updateImportsOnFileMove.enabled": "always",
   "git.confirmSync": false,
-  "workbench.colorTheme": "Anysphere",
-  "[vue]": {
-    "editor.defaultFormatter": "octref.vetur"
-  }
+  "workbench.colorTheme": "Default Dark Modern"
 }
