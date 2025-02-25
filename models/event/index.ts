@@ -420,6 +420,7 @@ export interface CouponTicketApiResponse {
 }
 
 export interface FieldPayload {
+  id?: string;
   event_id: string;
   name: string;
   type: string;

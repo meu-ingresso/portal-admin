@@ -12,7 +12,7 @@
         <DefaultButton text="Próximo" :disabled="isSaving" @click="$emit('next')" />
       </template>
 
-      <template v-else>
+      <div v-else>
         <DefaultButton
           v-if="!isEditing"
           text="Salvar em rascunho"
@@ -24,7 +24,7 @@
           :text="isEditing ? 'Salvar Alterações' : 'Publicar Evento'"
           :disabled="isSaving"
           @click="$emit('submit', 'pending')" />
-      </template>
+      </div>
     </v-col>
   </v-row>
 </template>

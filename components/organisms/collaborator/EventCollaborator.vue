@@ -125,7 +125,7 @@ export default {
       headers: [
         { text: 'Nome', value: 'name', sortable: true, width: '35%' },
         { text: 'Email', value: 'email', sortable: true, width: '35%' },
-        { text: 'Papel', value: 'role', sortable: true, width: '20%' },
+        { text: 'Função', value: 'role', sortable: true, width: '20%' },
         {
           text: 'Ações',
           value: 'actions',

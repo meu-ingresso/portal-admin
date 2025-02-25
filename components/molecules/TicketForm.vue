@@ -477,6 +477,19 @@ export default {
     },
   },
 
+  watch: {
+    'localTicket.total_quantity': {
+      handler() {
+        // Força a revalidação do formulário quando total_quantity mudar
+        this.$nextTick(() => {
+          if (this.$refs.form) {
+            this.$refs.form.validate();
+          }
+        });
+      }
+    }
+  },
+
   created() {
     if (this.isEditing) {
       const ticketToEdit = eventTickets.$tickets[this.editIndex];
