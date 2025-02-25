@@ -229,48 +229,51 @@ export default class EventTickets extends VuexModule {
       const ticketMap: Record<string, string> = {};
       const statusResponse = await status.fetchStatusByModuleAndName({
         module: 'ticket',
-        name: 'Disponível',
+        name: 'À Venda',
       });
-      let categoryMap = new Map<string, string>();
-      for (const [index, ticket] of this.ticketList.entries()) {
-        const createdCategory = await this.createCategory({
-          eventId,
-          categoryName: ticket.category.text,
-          categoryMap,
-        });
 
-        categoryMap = createdCategory.categoryMap;
+      // Cria todas as categorias em uma única chamada
+      const categoryMap = await this.createCategories({
+        eventId,
+        tickets: this.ticketList,
+      });
 
-        // Combina data e hora em uma única string ISO
-        const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
-        const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
+      // Prepara o payload com todos os tickets
+      const ticketsPayload = {
+        data: this.ticketList.map((ticket, index) => {
+          const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
+          const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
 
-        // Converte para Date para manipulação
-        const startDate = new Date(startDateTime);
-        const endDate = new Date(endDateTime);
+          const startDate = new Date(startDateTime);
+          const endDate = new Date(endDateTime);
 
-        const ticketResponse = await $axios.$post('ticket', {
-          event_id: eventId,
-          name: ticket.name,
-          total_quantity: ticket.total_quantity,
-          total_sold: 0,
-          price: parseFloat(ticket.price),
-          status_id: statusResponse.id,
-          start_date: startDate.toISOString().replace('Z', '-0300'),
-          end_date: endDate.toISOString().replace('Z', '-0300'),
-          availability: ticket.availability,
-          min_quantity_per_user: ticket.min_purchase,
-          max_quantity_per_user: ticket.max_purchase,
-          ticket_event_category_id: createdCategory.id,
-          display_order: ticket.display_order || index + 1,
-        });
+          return {
+            event_id: eventId,
+            name: ticket.name,
+            total_quantity: ticket.total_quantity,
+            remaining_quantity: ticket.total_quantity,
+            price: parseFloat(ticket.price),
+            status_id: statusResponse.id,
+            start_date: startDate.toISOString().replace('Z', '-0300'),
+            end_date: endDate.toISOString().replace('Z', '-0300'),
+            availability: ticket.availability,
+            min_quantity_per_user: ticket.min_purchase,
+            max_quantity_per_user: ticket.max_purchase,
+            ticket_event_category_id: ticket.category ? categoryMap.get(ticket.category.text) : null,
+            display_order: ticket.display_order || index + 1,
+          };
+        }),
+      };
 
-        if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
-          throw new Error(`Falha ao criar ingresso: ${ticket.name}`);
-        }
+      const ticketResponse = await $axios.$post('ticket', ticketsPayload);
 
-        ticketMap[ticket.name] = ticketResponse.body.result.id;
+      if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
+        throw new Error('Falha ao criar ingressos');
       }
+
+      ticketResponse.body.result.forEach((createdTicket: any) => {
+        ticketMap[createdTicket.name] = createdTicket.id;
+      });
 
       return ticketMap;
     } catch (error) {
@@ -282,147 +285,147 @@ export default class EventTickets extends VuexModule {
   @Action
   public async updateTickets(eventId: string) {
     try {
-      let categoryMap = new Map<string, string>();
 
-      // Busca as categorias existentes
+      const statusNewTicketResponse = await status.fetchStatusByModuleAndName({
+        module: 'ticket',
+        name: 'À Venda',
+      });
+
+  
+      // 1. Busca as categorias existentes
       const categoriesResponse = await $axios.$get(
         `ticket-event-categories?where[event_id][v]=${eventId}`
       );
 
-      const existingCategoriesResult = handleGetResponse(
+      const existingCategories = handleGetResponse(
         categoriesResponse,
         'Categorias não encontradas',
         eventId,
         true
-      );
+      ).data;
+
+      // 2. Prepara as operações de categoria
+      const categoriesToCreate: { event_id: string; name: string }[] = [];
+      const categoriesToUpdate: { id: string; name: string }[] = [];
+      const categoriesToDelete: string[] = [];
+      const categoryMap = new Map<string, string>();
 
       // Identifica mudanças necessárias nas categorias
-      const categoryChanges = getCategoryChanges(
-        existingCategoriesResult.data,
-        this.ticketList
-      );
+      const categoryChanges = getCategoryChanges(existingCategories, this.ticketList);
+      
+      // Mapeia categorias existentes
+      existingCategories.forEach(cat => {
+        categoryMap.set(cat.name, cat.id);
+      });
 
-      // Atualiza as categorias que mudaram
-      for (const category of categoryChanges.toUpdate) {
-        const response = await $axios.$patch('ticket-event-category', {
-          id: category.id,
-          name: category.name,
+      // Organiza operações de categoria
+      this.ticketList.forEach(ticket => {
+        if (ticket.category && ticket.category.id === '-1') {
+          if (!categoriesToCreate.find(c => c.name === ticket.category.text)) {
+            // Nova categoria
+            categoriesToCreate.push({
+              event_id: eventId,
+                name: ticket.category.text,
+            });
+          } else if (categoryChanges.toUpdate.find(c => c.id === ticket.category?.id)) {
+            // Categoria para atualizar
+            categoriesToUpdate.push({
+              id: ticket.category.id,
+              name: ticket.category.text,
+            });
+          }
+        }
+      });
+
+      // Adiciona categorias para deletar
+      categoriesToDelete.push(...categoryChanges.toDelete);
+
+      // 3. Executa operações de categoria em lote
+      if (categoriesToCreate.length > 0) {
+        const createResponse = await $axios.$post('ticket-event-category', {
+          data: categoriesToCreate,
         });
-
-        if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
-          throw new Error(`Falha ao atualizar categoria: ${category.name}`);
+        
+        if (createResponse.body?.code === 'CREATE_SUCCESS') {
+          createResponse.body.result.forEach((cat: any) => {
+            categoryMap.set(cat.name, cat.id);
+          });
         }
       }
 
-      // Remove categorias que não estão mais em uso
-      for (const categoryId of categoryChanges.toDelete) {
-        const response = await $axios.$delete(`ticket-event-category/${categoryId}`);
-
-        if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
-          throw new Error(`Falha ao deletar categoria: ${categoryId}`);
-        }
+      if (categoriesToUpdate.length > 0) {
+        await $axios.$patch('ticket-event-category', {
+          data: categoriesToUpdate,
+        });
       }
 
-      // Gera display_orders válidos para cada ticket
+      if (categoriesToDelete.length > 0) {
+        await $axios.$delete('ticket-event-category', {
+          data: categoriesToDelete,
+        });
+      }
+
+      // 4. Prepara operações de tickets
+      const ticketsToCreate: any[] = [];
+      const ticketsToUpdate: any[] = [];
+      const ticketsToDelete: string[] = [];
+
+      // Gera display_orders válidos
       const displayOrders = getNextDisplayOrder(this.ticketList);
 
-      for (const [index, ticket] of this.ticketList.entries()) {
-        // Combina data e hora em uma única string ISO
+      // Organiza operações de tickets
+      this.ticketList.forEach((ticket, index) => {
         const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
         const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
-
-        // Converte para Date para manipulação
         const startDate = new Date(startDateTime);
         const endDate = new Date(endDateTime);
 
-        const displayOrder = ticket.display_order || displayOrders[index];
+        const baseTicketData = {
+          name: ticket.name,
+          total_quantity: ticket.total_quantity,
+          price: parseFloat(ticket.price),
+          start_date: startDate.toISOString().replace('Z', '-0300'),
+          end_date: endDate.toISOString().replace('Z', '-0300'),
+          availability: ticket.availability,
+          min_quantity_per_user: ticket.min_purchase,
+          max_quantity_per_user: ticket.max_purchase,
+          ticket_event_category_id: ticket.category ? categoryMap.get(ticket.category.text) : null,
+          display_order: ticket.display_order || displayOrders[index],
+        };
 
-        // Se o ingresso não está deletado, atualiza
-        if (ticket.id !== '-1' && !ticket._deleted) {
-          let categoryId = null;
-
-          if (ticket.category && ticket.category.id === '-1') {
-            const createdCategory = await this.createCategory({
-              eventId,
-              categoryName: ticket.category.text,
-              categoryMap,
-            });
-            categoryMap = createdCategory.categoryMap;
-            categoryId = createdCategory.id;
-          } else if (categoryChanges.toDelete.includes(ticket.category?.id)) {
-            categoryId = null;
-          } else {
-            categoryId = ticket.category?.id;
-          }
-
-          const ticketResponse = await $axios.$patch('ticket', {
-            id: ticket.id,
-            name: ticket.name,
-            total_quantity: ticket.total_quantity,
-            price: parseFloat(ticket.price),
-            start_date: startDate.toISOString().replace('Z', '-0300'),
-            end_date: endDate.toISOString().replace('Z', '-0300'),
-            availability: ticket.availability,
-            min_quantity_per_user: ticket.min_purchase,
-            max_quantity_per_user: ticket.max_purchase,
-            ticket_event_category_id: categoryId,
-            display_order: displayOrder,
-          });
-
-          if (!ticketResponse.body || ticketResponse.body.code !== 'UPDATE_SUCCESS') {
-            throw new Error(`Falha ao atualizar ingresso: ${ticket.name}`);
-          }
-
-          // Se o ingresso está deletado, deleta
-        } else if (ticket.id !== '-1' && ticket._deleted) {
-          const ticketResponse = await $axios.$delete(`ticket/${ticket.id}`);
-
-          if (!ticketResponse.body || ticketResponse.body.code !== 'DELETE_SUCCESS') {
-            throw new Error(`Falha ao deletar ingresso: ${ticket.name}`);
-          }
-
-          // Se o ingresso não existe, cria
-        } else {
-          const statusResponse = await status.fetchStatusByModuleAndName({
-            module: 'ticket',
-            name: 'Disponível',
-          });
-
-          let categoryId = null;
-
-          if (ticket.category && ticket.category.id === '-1') {
-            const createdCategory = await this.createCategory({
-              eventId,
-              categoryName: ticket.category.text,
-              categoryMap,
-            });
-            categoryMap = createdCategory.categoryMap;
-            categoryId = createdCategory.id;
-          } else {
-            categoryId = ticket.category?.id;
-          }
-
-          const ticketResponse = await $axios.$post('ticket', {
+        if (ticket.id === '-1') {
+          // Novo ticket
+          ticketsToCreate.push({
+            ...baseTicketData,
             event_id: eventId,
-            name: ticket.name,
-            total_quantity: ticket.total_quantity,
-            total_sold: 0,
-            price: parseFloat(ticket.price),
-            status_id: statusResponse.id,
-            start_date: startDate.toISOString().replace('Z', '-0300'),
-            end_date: endDate.toISOString().replace('Z', '-0300'),
-            availability: ticket.availability,
-            min_quantity_per_user: ticket.min_purchase,
-            max_quantity_per_user: ticket.max_purchase,
-            ticket_event_category_id: categoryId,
-            display_order: displayOrder,
+            remaining_quantity: ticket.total_quantity,
+            status_id: statusNewTicketResponse.id,
           });
-
-          if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
-            throw new Error(`Falha ao criar ingresso: ${ticket.name}`);
-          }
+        } else if (ticket._deleted) {
+          // Ticket para deletar
+          ticketsToDelete.push(ticket.id);
+        } else {
+          // Ticket para atualizar
+          ticketsToUpdate.push({
+            ...baseTicketData,
+            id: ticket.id,
+          });
         }
+      });
+
+      // 5. Executa operações de tickets em lote
+      if (ticketsToCreate.length > 0) {
+        await $axios.$post('ticket', { data: ticketsToCreate });
       }
+
+      if (ticketsToUpdate.length > 0) {
+        await $axios.$patch('ticket', { data: ticketsToUpdate });
+      }
+
+      if (ticketsToDelete.length > 0) {
+        await $axios.$delete('ticket', { data: ticketsToDelete });
+      }
+
     } catch (error) {
       console.error('Erro ao atualizar ingressos:', error);
       throw error;
@@ -543,36 +546,42 @@ export default class EventTickets extends VuexModule {
   }
 
   @Action
-  private async createCategory(payload: {
+  private async createCategories(payload: {
     eventId: string;
-    categoryName: string;
-    categoryMap: Map<string, string>;
-  }): Promise<{ id: string; categoryMap: Map<string, string> }> {
-    if (!payload.categoryName) return null;
+    tickets: Ticket[];
+  }): Promise<Map<string, string>> {
+    try {
+      // Extrai categorias únicas dos tickets
+      const uniqueCategories = new Set(
+        payload.tickets
+          .filter(ticket => ticket.category?.text)
+          .map(ticket => ticket.category.text)
+      );
 
-    const existingCategoryId = payload.categoryMap.get(payload.categoryName);
-    if (existingCategoryId)
-      return {
-        id: existingCategoryId,
-        categoryMap: payload.categoryMap,
+      if (uniqueCategories.size === 0) return new Map();
+
+      // Prepara o payload para criar todas as categorias
+      const categoriesPayload = {
+        data: Array.from(uniqueCategories).map(categoryName => ({
+          event_id: payload.eventId,
+          name: categoryName,
+        })),
       };
 
-    const categoryResponse = await $axios.$post('ticket-event-category', {
-      event_id: payload.eventId,
-      name: payload.categoryName,
-    });
+      const response = await $axios.$post('ticket-event-category', categoriesPayload);
 
-    if (!categoryResponse.body || categoryResponse?.body?.code !== 'CREATE_SUCCESS') {
-      throw new Error(`Falha ao criar categoria de ingresso: ${payload.categoryName}`);
+      if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+        throw new Error('Falha ao criar categorias de ingresso');
+      }
+
+      // Cria um mapa com nome da categoria -> id
+      return new Map(
+        response.body.result.map((category: any) => [category.name, category.id])
+      );
+    } catch (error) {
+      console.error('Erro ao criar categorias:', error);
+      throw error;
     }
-
-    const categoryId = categoryResponse?.body?.result?.id;
-    payload.categoryMap.set(payload.categoryName, categoryId);
-
-    return {
-      id: categoryId,
-      categoryMap: payload.categoryMap,
-    };
   }
 
   @Action
@@ -799,49 +808,59 @@ export default class EventTickets extends VuexModule {
     eventId: string;
     ticket: Ticket;
   }): Promise<string> {
-    try {
-      this.context.commit('SET_LOADING', true);
-      let categoryId = null;
+  try {
+    this.context.commit('SET_LOADING', true);
 
-      // Se tem categoria e ela é nova (id === '-1'), cria primeiro
-      if (payload.ticket.category && payload.ticket.category.id === '-1') {
-        const categoryMap = new Map<string, string>();
-        const createdCategory = await this.createCategory({
-          eventId: payload.eventId,
-          categoryName: payload.ticket.category.text,
-          categoryMap,
-        });
-        categoryId = createdCategory.id;
-      } else {
-        categoryId = payload.ticket.category?.id;
+    // Busca o status "À Venda"
+    const statusResponse = await status.fetchStatusByModuleAndName({
+      module: 'ticket',
+      name: 'À Venda',
+    });
+
+    if (!statusResponse) {
+      throw new Error('Status "À Venda" não encontrado');
+    }
+
+    let categoryId = null;
+
+    // Se tem categoria e ela é nova (id === '-1'), cria primeiro
+    if (payload.ticket.category && payload.ticket.category.id === '-1') {
+      const categoriesPayload = {
+        data: [{
+          event_id: payload.eventId,
+          name: payload.ticket.category.text,
+        }]
+      };
+
+      const categoryResponse = await $axios.$post('ticket-event-category', categoriesPayload);
+
+      if (!categoryResponse.body || categoryResponse.body.code !== 'CREATE_SUCCESS') {
+        throw new Error('Falha ao criar categoria do ingresso');
       }
 
-      // Busca o status "Disponível"
-      const statusResponse = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'Disponível',
-      });
+      categoryId = categoryResponse.body.result[0].id;
+    } else {
+      categoryId = payload.ticket.category?.id;
+    }
 
-      if (!statusResponse) {
-        throw new Error('Status "Disponível" não encontrado');
-      }
+    // Obtém o próximo display_order
+    const nextOrder = getNextDisplayOrder(this.ticketList, true) as number;
 
-      // Obtém o próximo display_order usando o método existente
-      const nextOrder = getNextDisplayOrder(this.ticketList, true) as number;
+    // Combina data e hora em uma única string ISO
+    const startDateTime = `${payload.ticket.start_date}T${payload.ticket.start_time}:00.000Z`;
+    const endDateTime = `${payload.ticket.end_date}T${payload.ticket.end_time}:00.000Z`;
 
-      // Combina data e hora em uma única string ISO
-      const startDateTime = `${payload.ticket.start_date}T${payload.ticket.start_time}:00.000Z`;
-      const endDateTime = `${payload.ticket.end_date}T${payload.ticket.end_time}:00.000Z`;
+    // Converte para Date para manipulação
+    const startDate = new Date(startDateTime);
+    const endDate = new Date(endDateTime);
 
-      // Converte para Date para manipulação
-      const startDate = new Date(startDateTime);
-      const endDate = new Date(endDateTime);
-
-      const ticketResponse = await $axios.$post('ticket', {
+    // Prepara o payload do ticket usando o formato de array
+    const ticketPayload = {
+      data: [{
         event_id: payload.eventId,
         name: payload.ticket.name,
         total_quantity: payload.ticket.total_quantity,
-        total_sold: 0,
+        remaining_quantity: payload.ticket.total_quantity,
         price: parseFloat(payload.ticket.price),
         status_id: statusResponse.id,
         start_date: startDate.toISOString().replace('Z', '-0300'),
@@ -851,17 +870,21 @@ export default class EventTickets extends VuexModule {
         max_quantity_per_user: payload.ticket.max_purchase,
         ticket_event_category_id: categoryId,
         display_order: nextOrder,
-      });
+      }]
+    };
 
-      if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error(`Falha ao criar ingresso: ${payload.ticket.name}`);
-      }
+    const ticketResponse = await $axios.$post('ticket', ticketPayload);
 
-      return ticketResponse.body.result.id;
-    } catch (error) {
-      console.error('Erro ao criar ingresso:', error);
-      throw error;
-    } finally {
+    if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
+      throw new Error(`Falha ao criar ingresso: ${payload.ticket.name}`);
+    }
+
+    // Retorna o ID do ticket criado
+    return ticketResponse.body.result[0].id;
+  } catch (error) {
+    console.error('Erro ao criar ingresso:', error);
+    throw error;
+  } finally {
       this.context.commit('SET_LOADING', false);
     }
   }
@@ -879,16 +902,22 @@ export default class EventTickets extends VuexModule {
       // 1. Tratamento da categoria
       if (payload.ticket.category) {
         if (payload.ticket.category.id === '-1') {
-          // Categoria nova, precisa criar
-          const categoryMap = new Map<string, string>();
-          const createdCategory = await this.createCategory({
-            eventId: payload.eventId,
-            categoryName: payload.ticket.category.text,
-            categoryMap,
-          });
-          categoryId = createdCategory.id;
+          // Categoria nova, cria usando o novo formato
+          const categoryPayload = {
+            data: [{
+              event_id: payload.eventId,
+              name: payload.ticket.category.text,
+            }]
+          };
+
+          const categoryResponse = await $axios.$post('ticket-event-category', categoryPayload);
+
+          if (!categoryResponse.body || categoryResponse.body.code !== 'CREATE_SUCCESS') {
+            throw new Error('Falha ao criar categoria do ingresso');
+          }
+
+          categoryId = categoryResponse.body.result[0].id;
         } else {
-          // Usa categoria existente
           categoryId = payload.ticket.category.id;
         }
       }
@@ -903,17 +932,19 @@ export default class EventTickets extends VuexModule {
 
       // 3. Monta o payload da atualização
       const updatePayload = {
-        id: payload.ticketId,
-        name: payload.ticket.name,
-        total_quantity: payload.ticket.total_quantity,
-        price: parseFloat(payload.ticket.price),
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
-        availability: payload.ticket.availability,
-        min_quantity_per_user: payload.ticket.min_purchase,
-        max_quantity_per_user: payload.ticket.max_purchase,
-        ticket_event_category_id: categoryId,
-        display_order: payload.ticket.display_order,
+        data: [{
+          id: payload.ticketId,
+          name: payload.ticket.name,
+          total_quantity: payload.ticket.total_quantity,
+          price: parseFloat(payload.ticket.price),
+          start_date: startDate.toISOString().replace('Z', '-0300'),
+          end_date: endDate.toISOString().replace('Z', '-0300'),
+          availability: payload.ticket.availability,
+          min_quantity_per_user: payload.ticket.min_purchase,
+          max_quantity_per_user: payload.ticket.max_purchase,
+          ticket_event_category_id: categoryId,
+          display_order: payload.ticket.display_order,
+        }]
       };
 
       // 4. Faz a chamada de atualização
@@ -926,12 +957,16 @@ export default class EventTickets extends VuexModule {
       const oldTicket = this.ticketList.find((t) => t.id === payload.ticketId);
 
       // 5. Se a categoria antiga não está mais em uso, pode deletá-la
-      if (oldTicket.category?.id !== '-1' && oldTicket.category?.id !== categoryId) {
+      if (oldTicket?.category?.id && 
+          oldTicket.category.id !== '-1' && 
+          oldTicket.category.id !== categoryId) {
         // Busca outros tickets que usam a categoria antiga
         const oldCategoryId = oldTicket.category.id;
         const ticketsWithOldCategory = this.ticketList.filter(
           (t) =>
-            t.category?.id === oldCategoryId && t.id !== payload.ticketId && !t._deleted
+            t.category?.id === oldCategoryId && 
+            t.id !== payload.ticketId && 
+            !t._deleted
         );
 
         // Se não há outros tickets usando a categoria antiga, deleta
@@ -1033,14 +1068,14 @@ export default class EventTickets extends VuexModule {
       // 3. Busca próximo display_order disponível
       const nextOrder = getNextDisplayOrder(this.ticketList, true) as number;
 
-      // 4. Busca o status "Disponível"
+      // 4. Busca o status "À Venda"
       const availableStatus = await status.fetchStatusByModuleAndName({
         module: 'ticket',
-        name: 'Disponível',
+        name: 'À Venda',
       });
 
       if (!availableStatus) {
-        throw new Error('Status "Disponível" não encontrado');
+        throw new Error('Status "À Venda" não encontrado');
       }
 
       // 5. Prepara o novo ticket

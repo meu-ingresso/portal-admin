@@ -128,8 +128,8 @@ export default {
       try {
         this.isAddingTicket = true;
         const ticketForm = this.$refs.ticketForm;
-        const ticketId = await ticketForm.handleSubmit(true);
-        if (ticketId) {
+        const { success, error } = await ticketForm.handleSubmit(true);
+        if (success) {
           this.showAddDialog = false;
           toast.setToast({
             text: `Ingresso adicionado com sucesso!`,
@@ -137,7 +137,12 @@ export default {
             time: 5000,
           });
         } else {
-          console.log('[INSERÇÃO - TicketForm] Erro de validação');
+          console.log('[INSERÇÃO - TicketForm] Erro de validação', error);
+          toast.setToast({
+            text: `Erro ao adicionar ingresso`,
+            type: 'error',
+            time: 5000,
+          });
         }
       } catch (error) {
         console.log('[INSERÇÃO - TicketForm] Erro de validação');

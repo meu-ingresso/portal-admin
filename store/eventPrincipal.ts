@@ -240,69 +240,48 @@ export default class EventPrincipalModule extends VuexModule {
     try {
       this.context.commit('SET_SAVING', true);
 
-      // Validar todo o evento
+      // 1. Validar todo o evento
+      this.context.commit('SET_PROGRESS_TITLE', 'Validando evento...');
       const validation = await this.validateEvent();
       if (!validation.isValid) {
         throw new Error('Evento inválido: ' + validation.errors.join(', '));
       }
 
-      // 1. Criar evento base (inclui criação do endereço se necessário)
-      this.context.commit('SET_PROGRESS_TITLE', 'Criando Evento');
+      // 2. Criar evento base
+      this.context.commit('SET_PROGRESS_TITLE', 'Criando evento...');
       const { eventId } = await eventGeneralInfo.createEventBase();
 
-      this.context.commit('SET_PROGRESS_TITLE', 'Processando Ingressos e Cupons');
-
-      // Processa banner, tickets e cupons em paralelo
-      const [
-        , // banner result se necessário
-        , // link online result se necessário
-        ticketMap,
-        fieldTicketMap,
-        couponTicketMap] = await Promise.all([
-          eventGeneralInfo.handleEventBanner(eventId),
-          eventGeneralInfo.handleLinkOnline(eventId),
-          eventTickets.$tickets.length > 0
-            ? eventTickets.createTickets(eventId)
-            : {},
-
-          eventCustomFields.$customFields.length > 0
-            ? eventCustomFields.createCustomFields({ eventId, tickets: eventTickets.$tickets.map(ticket => ({
-              ...ticket,
-              id: ticket.id || '-1'
-            })) })
-            : {},
-
-          eventCoupons.$coupons.length > 0
-            ? eventCoupons.createCoupons(eventId)
-            : {},
-        ]);
-      
-
-      
-      
-
-      // Cria relações em paralelo se necessário
-      if (Object.keys(ticketMap).length > 0) {
-        this.context.commit('SET_PROGRESS_TITLE', 'Finalizando Configurações');
-        const relationPromises = [];
-
-        if (Object.keys(fieldTicketMap).length > 0) {
-          relationPromises.push(
-            this.createEventCheckoutFieldTicketRelations({ fieldTicketMap, ticketMap })
-          );
-        }
-
-        if (Object.keys(couponTicketMap).length > 0) {
-          relationPromises.push(this.createCouponTicketRelations({ couponTicketMap, ticketMap }));
-        }
-
-        if (relationPromises.length > 0) {
-          await Promise.all(relationPromises);
-        }
+      if (!eventId) {
+        throw new Error('Falha ao criar evento base');
       }
 
+      // 3. Processar banner e link online em paralelo
+      this.context.commit('SET_PROGRESS_TITLE', 'Processando mídia e configurações...');
+      await Promise.all([
+        eventGeneralInfo.handleEventBanner(eventId),
+        eventGeneralInfo.handleLinkOnline(eventId)
+      ]);
 
-      // 5. Resetar todos os módulos após sucesso
+      // 4. Criar ingressos
+      this.context.commit('SET_PROGRESS_TITLE', 'Criando ingressos...');
+      if (eventTickets.$tickets.length > 0) {
+        await eventTickets.createTickets(eventId);
+      }
+
+      // 5. Criar campos personalizados
+      this.context.commit('SET_PROGRESS_TITLE', 'Configurando campos personalizados...');
+      if (eventCustomFields.$customFields.length > 0) {
+        await eventCustomFields.createCustomFields(eventId);
+      }
+
+      // 6. Criar cupons
+      this.context.commit('SET_PROGRESS_TITLE', 'Configurando cupons...');
+      if (eventCoupons.$coupons.length > 0) {
+        await eventCoupons.createCoupons(eventId);
+      }
+
+      // 7. Resetar todos os módulos após sucesso
+      this.context.commit('SET_PROGRESS_TITLE', 'Finalizando...');
       this.resetAllModules();
 
       return { success: true, eventId };
@@ -318,29 +297,35 @@ export default class EventPrincipalModule extends VuexModule {
 
   @Action
   public async validateEvent(): Promise<ValidationResult> {
-    const [
-      generalInfoValidation,
-      ticketsValidation,
-      customFieldsValidation,
-      couponsValidation
-    ] = await Promise.all([
-      eventGeneralInfo.validateGeneralInfo(),
-      eventTickets.validateTickets(),
-      eventCustomFields.validateCustomFields(),
-      eventCoupons.validateCoupons()
-    ]);
 
-    const errors = [
-      ...generalInfoValidation.errors,
-      ...ticketsValidation.errors,
-      ...customFieldsValidation.errors,
-      ...couponsValidation.errors
-    ];
+    try {
+      const [
+        generalInfoValidation,
+        ticketsValidation,
+        customFieldsValidation,
+        couponsValidation
+      ] = await Promise.all([
+        eventGeneralInfo.validateGeneralInfo(),
+        eventTickets.validateTickets(),
+        eventCustomFields.validateCustomFields(),
+        eventCoupons.validateCoupons()
+      ]);
 
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
+      const errors = [
+        ...generalInfoValidation.errors,
+        ...ticketsValidation.errors,
+        ...customFieldsValidation.errors,
+        ...couponsValidation.errors
+      ];
+
+      return {
+        isValid: errors.length === 0,
+        errors
+      };
+    } catch (error) {
+      console.error('Erro ao validar evento:', error);
+      throw error;
+    }
   }
 
   @Action
