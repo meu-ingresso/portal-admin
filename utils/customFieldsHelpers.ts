@@ -172,6 +172,7 @@ export const getNextDisplayOrder = (fields: CustomField[]): number[] => {
 
 export const prepareFieldPayload = (field: CustomField, eventId: string, personType: PersonType, displayOrder: number): FieldPayload => {
   return {
+    id: field.field_ids[personType] ? field.field_ids[personType] : undefined,
     event_id: eventId,
     name: field.name,
     type: field.type,

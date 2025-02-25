@@ -263,9 +263,9 @@ export default class EventCustomFields extends VuexModule {
           
           let selectedOptions: FieldSelectedOption[] = [];
           
-          if (field.type === 'MULTI_CHECKBOX' || field.type === 'MENU_DROPDOWN') {
+          if (isMultiOptionField(field.type)) {
             const responseFieldOptions = await $axios.$get(
-              `event-checkout-field-option?where[event_checkout_field_id][v]=${field.id}`
+              `event-checkout-field-options?where[event_checkout_field_id][v]=${field.id}`
             );
 
             // Trata o retorno e filtra por não deletados
@@ -355,6 +355,9 @@ export default class EventCustomFields extends VuexModule {
         data: operations.fieldsToCreate
       });
 
+      // Limpa o array de campos a serem criados
+      operations.fieldsToCreate = [];
+
       if (!fieldsResponse.body || fieldsResponse.body.code !== 'CREATE_SUCCESS') {
         throw new Error('Falha ao criar campos personalizados');
       }
@@ -386,9 +389,12 @@ export default class EventCustomFields extends VuexModule {
           const fieldId = fieldMap.get(`${field.name}-${personType}`);
           if (fieldId) {
             field.tickets.forEach((ticket) => {
+
+              const ticketId = tickets.find((t: TicketApiResponse) => t.name === ticket.name)?.id;
+
               operations.ticketRelationsToCreate.push({
                 event_checkout_field_id: fieldId,
-                ticket_id: ticket.id
+                ticket_id: ticketId
               });
             });
           }
@@ -574,7 +580,7 @@ export default class EventCustomFields extends VuexModule {
 
               // Processa opções se for campo multi-opção
               if (isMultiOptionField(field.type)) {
-                await this.processFieldOptions(field, fieldId, operations);
+                await this.processFieldOptions({ field, fieldId, operations });
               }
             }
           } else {
@@ -710,30 +716,31 @@ export default class EventCustomFields extends VuexModule {
     await Promise.all(apiCalls);
   }
 
-  private async processFieldOptions(
+  @Action
+  public async processFieldOptions(payload: {
     field: CustomField, 
     fieldId: string, 
     operations: BatchOperations
-  ): Promise<void> {
-    if (!isMultiOptionField(field.type) || field._deleted) return;
+  }): Promise<void> {
+    if (!isMultiOptionField(payload.field.type) || payload.field._deleted) return;
 
-    const optionsResponse = await $axios.$get(`event-checkout-field-options?where[event_checkout_field_id][v]=${fieldId}`);
+    const optionsResponse = await $axios.$get(`event-checkout-field-options?where[event_checkout_field_id][v]=${payload.fieldId}`);
 
-    const existingOptions = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true).data;
+    const { data: existingOptions } = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true);
 
-    const optionChanges = getFieldOptionChanges(existingOptions, field.selected_options);
+    const optionChanges = getFieldOptionChanges(existingOptions, payload.field.selected_options);
     
-    operations.optionsToCreate.push(...optionChanges.toCreate.map(name => ({
-      event_checkout_field_id: fieldId,
+    payload.operations.optionsToCreate.push(...optionChanges.toCreate.map(name => ({
+      event_checkout_field_id: payload.fieldId,
       name
     })));
 
-    operations.optionsToUpdate.push(...optionChanges.toUpdate.map(opt => ({
+    payload.operations.optionsToUpdate.push(...optionChanges.toUpdate.map(opt => ({
       id: opt.id,
       name: opt.name
     })));
 
-    operations.optionsToDelete.push(...optionChanges.toDelete);
+    payload.operations.optionsToDelete.push(...optionChanges.toDelete);
   }
 
   @Action
