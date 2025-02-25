@@ -1,10 +1,10 @@
 <template>
   <v-row
     class="event-row cursor-pointer"
-    :class="{ deleted: deletedAt !== null }"
+    :class="{ deleted: event?.deleted_at !== null }"
     @click="goToEventDetail">
     <v-col sm="12" md="2" class="event-status">
-      <StatusBadge :text="deletedAt !== null ? 'Excluído' : statusText" />
+      <StatusBadge :text="event?.deleted_at !== null ? 'Excluído' : event.status.name" />
     </v-col>
 
     <v-col sm="12" md="2">
@@ -12,23 +12,25 @@
     </v-col>
 
     <v-col sm="12" md="3">
-      <h4 class="event-title">{{ title }}</h4>
+      <h4 class="event-title">{{ event.name }}</h4>
 
       <p class="event-date">{{ formattedDate }}</p>
 
-      <p class="event-location">{{ location }}</p>
+      <p class="event-location">{{ event.location }}</p>
     </v-col>
 
     <v-col sm="12" md="2" class="text-right">
-      <p class="event-revenue">{{ formatToMoney(revenue) }}</p>
+      <p class="event-revenue">{{ formatToMoney(event.totalizers.totalSalesAmount) }}</p>
 
-      <p class="event-revenue-today">{{ formatToMoney(revenueToday) }} hoje</p>
+      <p class="event-revenue-today">
+        {{ formatToMoney(event.totalizers.totalSalesAmountToday) }} hoje
+      </p>
     </v-col>
 
     <v-col sm="12" md="1" class="text-right">
-      <p class="event-tickets">{{ tickets }}</p>
+      <p class="event-tickets">{{ event.totalizers.totalSales }}</p>
 
-      <p class="event-tickets-today">{{ ticketsToday }} hoje</p>
+      <p class="event-tickets-today">{{ event.totalizers.totalSalesToday }} hoje</p>
     </v-col>
 
     <v-col sm="12" md="2" class="text-right">
@@ -40,7 +42,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="statusText === 'Rascunho' && deletedAt === null"
+              v-if="canManageEvent && event.status.name === 'Aguardando Aprovação'"
               class="approve-icon"
               icon
               v-bind="attrs"
@@ -55,7 +57,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="statusText === 'Rascunho' && deletedAt === null"
+              v-if="canManageEvent && event.status.name === 'Aguardando Aprovação'"
               class="reject-icon"
               icon
               v-bind="attrs"
@@ -70,7 +72,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="deletedAt === null"
+              v-if="canManageEvent && event.deleted_at === null"
               class="delete-icon"
               icon
               v-bind="attrs"
@@ -84,25 +86,14 @@
       </template>
     </v-col>
 
-    <!-- Dialog de Confirmação -->
-    <v-dialog v-model="confirmationDialog.visible" persistent max-width="500">
-      <v-card>
-        <v-card-title class="d-flex justify-space-between align-center">
-          <h3>{{ confirmationDialog.title }}</h3>
-          <v-btn icon @click="confirmationDialog.visible = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-text>{{ confirmationDialog.message }}</v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-5">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            @click="confirmationDialog.visible = false" />
-          <DefaultButton text="Confirmar" @click="handleConfirmation" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <ConfirmDialog
+      v-model="confirmationDialog.visible"
+      :title="confirmationDialog.title"
+      :message="confirmationDialog.message"
+      confirm-text="Confirmar"
+      :loading="isChangingStatus"
+      @confirm="handleConfirmation"
+      @cancel="confirmationDialog.visible = false" />
   </v-row>
 </template>
 
@@ -115,17 +106,9 @@ import {
 import { toast, event } from '@/store';
 export default {
   props: {
-    eventId: { type: String, required: true },
-    title: { type: String, required: true },
-    date: { type: String, required: true },
-    location: { type: String, required: true },
-    revenue: { type: Number, required: true },
-    revenueToday: { type: Number, required: true },
-    tickets: { type: Number, required: true },
-    ticketsToday: { type: Number, required: true },
-    statusText: { type: String, required: true },
+    event: { type: Object, required: true },
+    canManageEvent: { type: Boolean, required: true },
     image: { type: String, required: false, default: null },
-    deletedAt: { type: String, required: false, default: null },
   },
 
   data() {
@@ -143,7 +126,9 @@ export default {
 
   computed: {
     formattedDate() {
-      return `${formatDateToCustomString(this.date)} - ${formatHourToBr(this.date)}`;
+      return `${formatDateToCustomString(this.event.start_date)} - ${formatHourToBr(
+        this.event.start_date
+      )}`;
     },
 
     getImage() {
@@ -235,7 +220,7 @@ export default {
     },
 
     goToEventDetail() {
-      this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.eventId } });
+      this.$router.push({ name: 'Detalhe de Eventos', params: { id: this.event.id } });
     },
     async approveEvent() {
       try {
@@ -244,7 +229,7 @@ export default {
         const newStatusId = responseStatus.data.id;
 
         await event.updateEvent({
-          id: this.eventId,
+          id: this.event.id,
           status_id: newStatusId,
         });
       } catch (error) {
@@ -258,7 +243,7 @@ export default {
         const newStatusId = responseStatus.data.id;
 
         await event.updateEvent({
-          id: this.eventId,
+          id: this.event.id,
           status_id: newStatusId,
         });
       } catch (error) {
@@ -268,7 +253,7 @@ export default {
     async deleteEvent() {
       try {
         this.isDeleting = true;
-        await event.deleteEvent({ eventId: this.eventId });
+        await event.deleteEvent({ eventId: this.event.id });
         this.isDeleting = false;
       } catch (error) {
         this.isDeleting = false;

@@ -4,32 +4,16 @@
       <EventRow
         v-for="event in events"
         :key="event.id"
-        :event-id="event.id"
-        :title="event.name"
-        :date="event.start_date"
-        :location="event.location"
-        :revenue="event.totalizers.totalSalesAmount"
-        :revenue-today="event.totalizers.totalSalesAmountToday"
-        :tickets="event.totalizers.totalSales"
-        :tickets-today="event.totalizers.totalSalesToday"
-        :status-text="event.status.name"
-        :deleted-at="event.deleted_at"
+        :event="event"
+        :can-manage-event="canManageEvent"
         :image="findBannerImage(event)" />
     </template>
     <template v-else>
       <EventCard
         v-for="event in events"
         :key="event.id"
-        :event-id="event.id"
-        :title="event.name"
-        :date="event.start_date"
-        :location="event.location"
-        :revenue="event.totalizers.totalSalesAmount"
-        :revenue-today="event.totalizers.totalSalesAmountToday"
-        :tickets="event.totalizers.totalSales"
-        :tickets-today="event.totalizers.totalSalesToday"
-        :status-text="event.status.name"
-        :deleted-at="event.deleted_at" />
+        :event="event"
+        :can-manage-event="canManageEvent" />
     </template>
   </div>
 
@@ -54,6 +38,16 @@ export default {
     },
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+    userRole() {
+      return this.$cookies.get('user_role');
+    },
+    isAdmin() {
+      const role = this.userRole;
+      return role && role.name === 'Admin';
+    },
+    canManageEvent() {
+      return this.isAdmin;
     },
   },
 

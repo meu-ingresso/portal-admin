@@ -51,12 +51,18 @@ export default class User extends VuexModule {
 
   private userList = [];
 
+  private roleList = [];
+
   public get $user() {
     return this.user;
   }
 
   public get $userList() {
     return this.userList;
+  }
+
+  public get $roleList() {
+    return this.roleList;
   }
 
   @Mutation
@@ -68,6 +74,11 @@ export default class User extends VuexModule {
   @Mutation
   private SET_USER_LIST(data: any) {
     this.userList = data;
+  }
+
+  @Mutation
+  private SET_ROLE_LIST(data: any) {
+    this.roleList = data;
   }
 
   @Mutation
@@ -198,6 +209,27 @@ export default class User extends VuexModule {
         };
       });
     return status;
+  }
+
+  @Action
+  public async getRoles() {
+    return await $axios
+      .$get('roles')
+      .then((response) => {
+        if (response.body && response.body.code !== 'SEARCH_SUCCESS')
+          throw new Error(response);
+
+        this.context.commit('SET_ROLE_LIST', response.body.result.data);
+
+        return response;
+      })
+      .catch(() => {
+        return {
+          data: 'Error',
+          code: 'SEARCH_NOTFOUND',
+          total: 0,
+        };
+      });
   }
 
   @Action

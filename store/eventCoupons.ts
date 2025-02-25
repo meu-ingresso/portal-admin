@@ -1,10 +1,10 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { Coupon, CouponApiResponse, CouponTicketApiResponse, CustomFieldTicket, ValidationResult } from '~/models/event';
+import { BatchOperations, Coupon, CouponApiResponse, CouponTicketApiResponse, TicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
 import { handleGetResponse } from '~/utils/responseHelpers';
-import { getCouponTicketRelationChanges, shouldUpdateCoupon } from '~/utils/couponHelpers';
+import { getCouponTicketRelationChanges, prepareCouponPayload, shouldUpdateCoupon } from '~/utils/couponHelpers';
 @Module({
   name: 'eventCoupons',
   stateFactory: true,
@@ -155,35 +155,95 @@ export default class EventCoupons extends VuexModule {
   }
 
   @Action
-  public async createCoupons(
-    eventId: string
-  ): Promise<Record<string, string[]>> {
+  private async executeBatchOperations(operations: BatchOperations): Promise<void> {
+    const apiCalls = [];
 
-    if (!this.couponList.length) return;
+    if (operations.couponsToCreate.length > 0) {
+      apiCalls.push($axios.$post('coupon', { data: operations.couponsToCreate }));
+    }
 
+    if (operations.couponsToUpdate.length > 0) {
+      apiCalls.push($axios.$patch('coupon', { data: operations.couponsToUpdate }));
+    }
+
+    if (operations.couponsToDelete.length > 0) {
+      operations.couponsToDelete.forEach(couponId => {
+        apiCalls.push($axios.$delete(`coupon/${couponId}`));
+      });
+    }
+
+    if (operations.ticketRelationsToCreate.length > 0) {
+      apiCalls.push($axios.$post('coupon-ticket', { data: operations.ticketRelationsToCreate }));
+    }
+
+    if (operations.ticketRelationsToDelete.length > 0) {
+      operations.ticketRelationsToDelete.forEach(relationId => {
+        apiCalls.push($axios.$delete(`coupon-ticket/${relationId}`));
+      });
+    }
+
+    await Promise.all(apiCalls);
+  }
+
+
+  @Action
+  public async createCoupons(eventId: string): Promise<void> {
     try {
+      if (!this.couponList.length) {
+        console.log('Nenhum cupom para criar');
+        return;
+      };
 
-      const statusResponse = await status.fetchStatusByModuleAndName({ module: 'coupon', name: 'Disponível' });
+      const statusId = await this.getDefaultStatusId();
 
-      const [couponsWithTickets, couponsWithoutTickets] = this.couponList.reduce(
-        (acc, coupon) => {
-          acc[coupon.tickets.length > 0 ? 0 : 1].push(coupon);
-          return acc;
-        },
-        [[], []]
+      // Preparar payload para criação em lote
+      const couponsToCreate = this.couponList.map(coupon => 
+        prepareCouponPayload(coupon, eventId, statusId)
       );
 
-      const results = await Promise.all([
-        couponsWithTickets.length > 0
-          ? this.createCouponsWithTickets({ eventId, coupons: couponsWithTickets, statusId: statusResponse.id })
-          : {},
-        couponsWithoutTickets.length > 0
-          ? this.createCouponsWithoutTickets({ eventId, coupons: couponsWithoutTickets, statusId: statusResponse.id })
-          : null,
-      ]);
+      // Criar todos os cupons de uma vez
+      const couponResponse = await $axios.$post('coupon', {
+        data: couponsToCreate
+      });
 
-      // Retorna o mapa de cupons com ingressos
-      return results[0];
+      if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
+        throw new Error('Falha ao criar cupons');
+      }
+
+
+      if (this.couponList.some(c => c.tickets && c.tickets.length > 0)) {
+        const ticketsFromEvent = await this.getEventTickets(eventId);
+
+          // Criar relações com tickets
+          const ticketRelationsToCreate: any[] = [];
+          
+          couponResponse.body.result.forEach((createdCoupon: CouponApiResponse) => {
+            const originalCoupon = this.couponList.find(c => c.code === createdCoupon.code);
+            if (originalCoupon && originalCoupon.tickets) {
+              originalCoupon.tickets.forEach(ticket => {
+              
+
+                const couponTicketId = ticketsFromEvent.find(t => t.name === ticket.name)?.id;
+
+                if (couponTicketId) {
+                  ticketRelationsToCreate.push({
+                    coupon_id: createdCoupon.id,
+                    ticket_id: couponTicketId
+                  });
+                } else {
+                  console.error(`Ticket ${ticket.name} não encontrado para o cupom ${createdCoupon.code}`);
+                }
+              });
+            }
+          });
+
+          // Criar todas as relações de uma vez
+          if (ticketRelationsToCreate.length > 0) {
+            await $axios.$post('coupon-ticket', {
+              data: ticketRelationsToCreate
+            });
+          }
+      }
 
     } catch (error) {
       console.error('Erro ao criar cupons:', error);
@@ -249,94 +309,27 @@ export default class EventCoupons extends VuexModule {
 
 
   @Action
-  private async createCouponsWithTickets(payload: { eventId: string, coupons: Coupon[], statusId: string }) {
-    const couponTicketMap: Record<string, string[]> = {}; // Mapeia cupom -> ingressos
-
-    const couponPromises = payload.coupons.map(async (coupon) => {
-      const couponDiscountValue = parseFloat(coupon.discount_value.replace(',', '.'));
-
-      // Converte as datas para o timezone correto
-      const startDateTime = `${coupon.start_date}T${coupon.start_time}:00.000Z`;
-      const endDateTime = `${coupon.end_date}T${coupon.end_time}:00.000Z`;
-
-      const startDate = new Date(startDateTime);
-      const endDate = new Date(endDateTime);
-
-      const couponResponse = await $axios.$post('coupon', {
-        event_id: payload.eventId,
-        status_id: payload.statusId,
-        code: coupon.code,
-        discount_value: couponDiscountValue,
-        discount_type: coupon.discount_type,
-        max_uses: coupon.max_uses,
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
-      });
-
-      if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Failed to event coupon.');
-      }
-
-      const couponId = couponResponse.body.result.id;
-
-      // Relaciona o campo aos ingressos especificados
-      coupon.tickets.forEach((ticket) => {
-        if (!couponTicketMap[ticket.name]) {
-          couponTicketMap[ticket.name] = [];
-        }
-        couponTicketMap[ticket.name].push(couponId);
-      });
-    });
-
-    await Promise.all(couponPromises);
-
-    return couponTicketMap;
-  }
-
-  @Action
-  private async createCouponsWithoutTickets(payload: { eventId: string, coupons: Coupon[], statusId: string }) {
-    const couponPromises = payload.coupons.map(async (coupon) => {
-      const couponDiscountValue = parseFloat(coupon.discount_value.replace(',', '.'));
-
-      // Converte as datas para o timezone correto
-      const startDateTime = `${coupon.start_date}T${coupon.start_time}:00.000Z`;
-      const endDateTime = `${coupon.end_date}T${coupon.end_time}:00.000Z`;
-
-      const startDate = new Date(startDateTime);
-      const endDate = new Date(endDateTime);
-
-      const couponResponse = await $axios.$post('coupon', {
-        event_id: payload.eventId,
-        status_id: payload.statusId,
-        code: coupon.code,
-        discount_value: couponDiscountValue,
-        discount_type: coupon.discount_type,
-        max_uses: coupon.max_uses,
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
-      });
-
-      if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Failed to event coupon.');
-      }
-    });
-
-    await Promise.all(couponPromises);
-  }
-
-  @Action
-  public async updateEventCoupons( eventId: string): Promise<void> {
+  public async updateEventCoupons(eventId: string): Promise<void> {
     try {
       this.context.commit('SET_LOADING', true);
 
-      // 1. Buscar cupons existentes e suas relações
-      const [couponsResponse, ticketsResponse] = await Promise.all([
-        $axios.$get(`coupons?where[event_id][v]=${eventId}`),
-        $axios.$get(`tickets?where[event_id][v]=${eventId}`)
-      ]);
+      // 1. Buscar cupons e tickets existentes
+      const couponsResponse = await $axios.$get(`coupons?where[event_id][v]=${eventId}`);
 
-      const existingCoupons = couponsResponse.body?.result?.data || [];
-      const existingTickets = ticketsResponse.body?.result?.data || [];
+      const { data: existingCoupons } = handleGetResponse(couponsResponse, 'Cupons não encontrados', eventId, true);
+
+      const existingTickets = await this.getEventTickets(eventId);
+
+      const operations: BatchOperations = {
+        couponsToCreate: [],
+        couponsToUpdate: [],
+        couponsToDelete: [],
+        ticketRelationsToCreate: [],
+        ticketRelationsToDelete: [],
+      };
+
+      const statusId = await this.getDefaultStatusId();
+
       // 2. Processar cada cupom
       for (const coupon of this.couponList) {
         const existingCoupon = existingCoupons.find(
@@ -344,88 +337,51 @@ export default class EventCoupons extends VuexModule {
         );
 
         if (existingCoupon) {
-          // Buscar relações existentes com tickets
-          const ticketRelationsResponse = await $axios.$get(
-            `coupons-tickets?where[coupon_id][v]=${coupon.id}`
-          );
-          const existingTicketRelations = handleGetResponse(ticketRelationsResponse, 'Relações de tickets não encontradas', null, true);
-
-          // Se o cupom foi marcado como deletado
+          // Cupom existente
           if (coupon._deleted) {
-            // 1. Remover relações com tickets
-            await Promise.all(
-              existingTicketRelations.data.map((relation: CouponTicketApiResponse) =>
-                $axios.$delete(`coupon-ticket/${relation.id}`)
-              )
-            );
-
-            // 2. Remover o cupom
-            await $axios.$delete(`coupon/${coupon.id}`);
-            continue;
-          }
-
-          // Atualizar cupom existente se necessário
-          if (shouldUpdateCoupon(existingCoupon, coupon)) {
-            const startDateTime = `${coupon.start_date}T${coupon.start_time}:00.000Z`;
-            const endDateTime = `${coupon.end_date}T${coupon.end_time}:00.000Z`;
-
-            const startDate = new Date(startDateTime);
-            const endDate = new Date(endDateTime);
-
-            await $axios.$patch('coupon', {
+            operations.couponsToDelete.push(coupon.id);
+          } else if (shouldUpdateCoupon(existingCoupon, coupon)) {
+            operations.couponsToUpdate.push({
               id: coupon.id,
-              code: coupon.code,
-              discount_type: coupon.discount_type,
-              discount_value: parseFloat(coupon.discount_value.replace(',', '.')),
-              max_uses: coupon.max_uses,
-              start_date: startDate.toISOString().replace('Z', '-0300'),
-              end_date: endDate.toISOString().replace('Z', '-0300'),
+              ...prepareCouponPayload(coupon, eventId, statusId)
             });
           }
 
           // Processar relações com tickets
+          const ticketRelationsResponse = await $axios.$get(
+            `coupons-tickets?where[coupon_id][v]=${coupon.id}`
+          );
+
+          const { data: existingTicketRelations } = handleGetResponse(
+            ticketRelationsResponse,
+            'Relações de tickets não encontradas',
+            null,
+            true
+          );
+
           const relationChanges = getCouponTicketRelationChanges(
-            existingTicketRelations.data,
+            existingTicketRelations,
             existingTickets,
             coupon.tickets
           );
 
-          // Criar novas relações
-          const promiseCreationRelations = relationChanges.toCreate.map(async (ticket: CustomFieldTicket) => {
-            const responseTicket = await $axios.$get(
-              `tickets?where[name][v]=${ticket.name}&where[event_id][v]=${eventId}`
-            );
-
-            if (!responseTicket.body || responseTicket.body.code !== 'SEARCH_SUCCESS') {
-              throw new Error(`Ticket não encontrado para o evento ${eventId} e nome ${ticket.name}`);
-            }
-
-            const ticketId = responseTicket.body.result.data[0].id;
-
-            return $axios.$post('coupon-ticket', {
+          operations.ticketRelationsToDelete.push(...relationChanges.toDelete);
+          operations.ticketRelationsToCreate.push(
+            ...relationChanges.toCreate.map(ticket => ({
               coupon_id: coupon.id,
-              ticket_id: ticketId
-            });
-          });
-
-          await Promise.all(promiseCreationRelations);
-
-          // Deletar relações removidas
-          await Promise.all(
-            relationChanges.toDelete.map((relationId: string) =>
-              $axios.$delete(`coupon-ticket/${relationId}`)
-            )
+              ticket_id: ticket.id
+            }))
           );
-
         } else if (!coupon._deleted) {
-          // Criar novo cupom
-          await this.createCouponsWithTickets({
-            eventId,
-            coupons: [coupon],
-            statusId: await this.getDefaultStatusId()
-          });
+          // Novo cupom
+          operations.couponsToCreate.push(
+            prepareCouponPayload(coupon, eventId, statusId)
+          );
         }
       }
+
+      // 3. Executar todas as operações em lote
+      await this.executeBatchOperations(operations);
 
     } catch (error) {
       console.error('Erro ao atualizar cupons:', error);
@@ -454,69 +410,57 @@ export default class EventCoupons extends VuexModule {
     try {
       this.context.commit('SET_LOADING', true);
 
-      // 1. Buscar relações existentes com tickets
+      const operations: BatchOperations = {
+        couponsToCreate: [],
+        couponsToUpdate: [],
+        couponsToDelete: [],
+        ticketRelationsToCreate: [],
+        ticketRelationsToDelete: [],
+      };
+
+      // 1. Preparar atualização do cupom
+
+      const statusId = await this.getDefaultStatusId();
+
+      operations.couponsToUpdate.push({
+        id: payload.couponId,
+        ...prepareCouponPayload(
+          payload.coupon,
+          payload.eventId,
+          statusId
+        )
+      });
+
+      // 2. Buscar e processar relações com tickets
       const ticketRelationsResponse = await $axios.$get(
         `coupons-tickets?where[coupon_id][v]=${payload.couponId}&preloads[]=ticket`
       );
-      const resultTicketRelations = handleGetResponse(
-        ticketRelationsResponse, 
-        'Relações de tickets não encontradas', 
-        null, 
+      
+      const { data: existingTicketRelations } = handleGetResponse(
+        ticketRelationsResponse,
+        'Relações de tickets não encontradas',
+        null,
         true
       );
 
-      // 2. Preparar dados do cupom para atualização
-      const startDateTime = `${payload.coupon.start_date}T${payload.coupon.start_time}:00.000Z`;
-      const endDateTime = `${payload.coupon.end_date}T${payload.coupon.end_time}:00.000Z`;
+      const existingTickets = await this.getEventTickets(payload.eventId);
 
-      const startDate = new Date(startDateTime);
-      const endDate = new Date(endDateTime);
-
-      // 3. Atualizar o cupom
-      const couponResponse = await $axios.$patch('coupon', {
-        id: payload.couponId,
-        code: payload.coupon.code,
-        discount_type: payload.coupon.discount_type,
-        discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
-        max_uses: payload.coupon.max_uses,
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
-      });
-
-      if (!couponResponse.body || couponResponse.body.code !== 'UPDATE_SUCCESS') {
-        throw new Error('Falha ao atualizar cupom');
-      }
-
-      // 4. Gerenciar relações com tickets
-      const currentTicketIds = new Set(payload.coupon.tickets.map(t => t.id));
-      const existingTicketIds = new Set(resultTicketRelations.data.map((r: CouponTicketApiResponse) => r.ticket.id));
-
-      // Relações a serem removidas
-      const relationsToDelete = resultTicketRelations.data.filter(
-        (relation: CouponTicketApiResponse) => !currentTicketIds.has(relation.ticket.id)
+      const relationChanges = getCouponTicketRelationChanges(
+        existingTicketRelations,
+        existingTickets,
+        payload.coupon.tickets
       );
 
-      // Tickets a serem adicionados
-      const ticketsToAdd = payload.coupon.tickets.filter(
-        ticket => !existingTicketIds.has(ticket.id)
+      operations.ticketRelationsToDelete.push(...relationChanges.toDelete);
+      operations.ticketRelationsToCreate.push(
+        ...relationChanges.toCreate.map(ticket => ({
+          coupon_id: payload.couponId,
+          ticket_id: ticket.id
+        }))
       );
 
-      // 5. Remover relações antigas
-      await Promise.all(
-        relationsToDelete.map((relation: CouponTicketApiResponse) =>
-          $axios.$delete(`coupon-ticket/${relation.id}`)
-        )
-      );
-
-      // 6. Criar novas relações
-      await Promise.all(
-        ticketsToAdd.map(ticket =>
-          $axios.$post('coupon-ticket', {
-            coupon_id: payload.couponId,
-            ticket_id: ticket.id
-          })
-        )
-      );
+      // 3. Executar todas as operações
+      await this.executeBatchOperations(operations);
 
       // 7. Atualizar o state
       const updatedCoupon = {
@@ -567,35 +511,45 @@ export default class EventCoupons extends VuexModule {
 
       // 3. Criar o cupom
       const couponResponse = await $axios.$post('coupon', {
-        event_id: payload.eventId,
-        status_id: availableStatus.id,
-        code: payload.coupon.code,
-        discount_type: payload.coupon.discount_type,
-        discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
-        max_uses: payload.coupon.max_uses,
-        start_date: startDate.toISOString().replace('Z', '-0300'),
-        end_date: endDate.toISOString().replace('Z', '-0300'),
+        data: [
+          {
+            event_id: payload.eventId,
+            status_id: availableStatus.id,
+            code: payload.coupon.code,
+            discount_type: payload.coupon.discount_type,
+            discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
+            max_uses: payload.coupon.max_uses,
+            start_date: startDate.toISOString().replace('Z', '-0300'),
+            end_date: endDate.toISOString().replace('Z', '-0300'),
+          }
+        ]
       });
 
       if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
         throw new Error('Falha ao criar cupom');
       }
 
-      const couponId = couponResponse.body.result.id;
+      // 
+      const couponId = couponResponse.body.result[0].id;
 
-      // 4. Criar relações com tickets se existirem
+      // 5. Criar relações com tickets se existirem
       if (payload.coupon.tickets && payload.coupon.tickets.length > 0) {
-        await Promise.all(
-          payload.coupon.tickets.map(ticket =>
-            $axios.$post('coupon-ticket', {
-              coupon_id: couponId,
-              ticket_id: ticket.id
-            })
-          )
-        );
+
+        const ticketRelationsToCreate: any[] = [];
+
+        payload.coupon.tickets.forEach(ticket => {
+          ticketRelationsToCreate.push({
+            coupon_id: couponId,
+            ticket_id: ticket.id
+          });
+        });
+
+        await $axios.$post('coupon-ticket', {
+          data: ticketRelationsToCreate
+        });
       }
 
-      // 5. Atualizar o state
+      // 6. Atualizar o state
       const createdCoupon = {
         ...payload.coupon,
         id: couponId,
@@ -662,6 +616,13 @@ export default class EventCoupons extends VuexModule {
     } finally {
       this.context.commit('SET_LOADING', false);
     }
+  }
+
+  @Action
+  private async getEventTickets(eventId: string): Promise<TicketApiResponse[]> {
+    const response = await $axios.$get(`tickets?where[event_id][v]=${eventId}`);
+    const { data } = handleGetResponse(response, 'Tickets não encontrados', eventId, true);
+    return data;
   }
 
 } 

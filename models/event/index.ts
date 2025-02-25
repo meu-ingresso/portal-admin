@@ -1,3 +1,18 @@
+
+export interface BatchOperations {
+  fieldsToCreate?: any[];
+  fieldsToUpdate?: any[];
+  fieldsToDelete?: string[];
+  optionsToCreate?: any[];
+  optionsToUpdate?: any[];
+  optionsToDelete?: string[];
+  ticketRelationsToCreate?: any[];
+  ticketRelationsToDelete?: string[];
+  couponsToCreate?: any[];
+  couponsToUpdate?: any[];
+  couponsToDelete?: string[];
+  
+}
 export interface ResultMeta {
   total: number;
   perPage: number;
@@ -402,4 +417,27 @@ export interface CouponTicketApiResponse {
   ticket_id: string;
   ticket: TicketApiResponse;
   deleted_at?: string;
+}
+
+export interface FieldPayload {
+  event_id: string;
+  name: string;
+  type: string;
+  person_type: PersonType;
+  required: boolean;
+  visible_on_ticket: boolean;
+  is_unique: boolean;
+  help_text: string;
+  display_order: number;
+}
+
+export interface CouponPayload {
+  event_id: string;
+  status_id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  max_uses: number;
+  start_date: string;
+  end_date: string;
 }

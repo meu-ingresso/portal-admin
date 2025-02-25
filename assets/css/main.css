@@ -378,3 +378,64 @@ header {
 .v-dialog.secondary-dialog .v-card {
   background-color: var(--beige) !important;
 }
+
+/* Classes globais para modais de formulário */
+.form-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--grey-lighter);
+}
+
+.form-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.form-actions {
+  border-top: 1px solid var(--grey-lighter);
+  background: white;
+}
+
+.form-actions--mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.form-row {
+  margin: 8px 0;
+  border-radius: 8px;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--grey-lighter);
+    margin-bottom: 8px;
+  }
+}
+
+.form-row--even {
+  background-color: var(--tertiary);
+}
+
+/* Ajustes para mobile */
+@media (max-width: 600px) {
+  .form-card {
+    height: 100vh;
+  }
+
+  .form-content {
+    padding-bottom: 100px !important;
+  }
+
+  .form-row {
+    padding: 12px;
+    margin: 4px 0;
+  }
+}

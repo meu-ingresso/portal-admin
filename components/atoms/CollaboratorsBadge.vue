@@ -1,8 +1,8 @@
 <template>
-  <v-chip outlined class="promoters-badge ml-4 cursor-pointer">
+  <v-chip outlined class="collaborators-badge ml-4">
     <v-icon left small color="grey darken-2">mdi-account-group</v-icon>
 
-    <span>{{ count }} Promoters</span>
+    <span>{{ count }} Colaboradores</span>
   </v-chip>
 </template>
 
@@ -18,7 +18,7 @@ export default {
 </script>
 
 <style scoped>
-.promoters-badge {
+.collaborators-badge {
   border: 1px solid var(--black-text);
   padding: 8px 16px 8px 16px;
   gap: 10px;

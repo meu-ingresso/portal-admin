@@ -1,12 +1,6 @@
 <template>
   <v-row justify="space-between" class="mt-4" :class="{ 'fixed-actions px-2': isMobile }">
-    <v-col
-      cols="12"
-      class="d-flex"
-      :class="{
-        'justify-end': !isMobile || isFirstStep,
-        'justify-space-between': isMobile && !isFirstStep,
-      }">
+    <v-col cols="12" class="d-flex justify-space-between">
       <DefaultButton
         outlined
         :disabled="isSaving"
@@ -20,9 +14,16 @@
 
       <template v-else>
         <DefaultButton
+          v-if="!isEditing"
+          text="Salvar em rascunho"
+          :disabled="isSaving"
+          class="mr-2"
+          @click="$emit('submit', 'draft')" />
+
+        <DefaultButton
           :text="isEditing ? 'Salvar Alterações' : 'Publicar Evento'"
           :disabled="isSaving"
-          @click="$emit('submit')" />
+          @click="$emit('submit', 'pending')" />
       </template>
     </v-col>
   </v-row>

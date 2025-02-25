@@ -1,4 +1,4 @@
-import { Coupon, CouponApiResponse, CouponTicket, CouponTicketApiResponse, TicketApiResponse } from "~/models/event";
+import { Coupon, CouponApiResponse, CouponPayload, CouponTicket, CouponTicketApiResponse, TicketApiResponse } from "~/models/event";
 
 
 interface CouponRelationChanges {
@@ -55,3 +55,23 @@ export const getCouponTicketRelationChanges = (
       .map(rel => rel.id)
   };
 };
+
+
+  export const  prepareCouponPayload = (coupon: Coupon, eventId: string, statusId: string): CouponPayload => {
+    const startDateTime = `${coupon.start_date}T${coupon.start_time}:00.000Z`;
+    const endDateTime = `${coupon.end_date}T${coupon.end_time}:00.000Z`;
+
+    const startDate = new Date(startDateTime);
+    const endDate = new Date(endDateTime);
+
+    return {
+      event_id: eventId,
+      status_id: statusId,
+      code: coupon.code,
+      discount_type: coupon.discount_type,
+      discount_value: parseFloat(coupon.discount_value.replace(',', '.')),
+      max_uses: coupon.max_uses,
+      start_date: startDate.toISOString().replace('Z', '-0300'),
+      end_date: endDate.toISOString().replace('Z', '-0300'),
+    };
+  }
