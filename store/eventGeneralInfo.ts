@@ -271,7 +271,8 @@ export default class EventGeneralInfo extends VuexModule {
         'address',
         'category',
         'attachments',
-        'collaborators',
+        'collaborators:user:people',
+        'collaborators:role',
         'status',
         'fees',
       ];
