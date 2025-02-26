@@ -181,11 +181,11 @@ export default {
     formatDateTimeWithTimezone,
 
     getValidatedCount(list) {
-      return list.members?.filter((member) => member.validated).length || 0;
+      return list.members?.reduce((acc, member) => acc + (member.guestListMemberValidated?.reduce((acc, validated) => acc + validated.quantity, 0) || 0), 0) || 0;
     },
 
     getTotalMembers(list) {
-      return list.members?.length || 0;
+      return list.members?.reduce((acc, member) => acc + member.quantity, 0) || 0;
     },
 
     navigateToMembers(listId) {
@@ -285,7 +285,7 @@ export default {
 
     async fetchGuestLists() {
       await eventGuests.fetchGuestListAndPopulateByQuery(
-        `where[event_id][v]=${this.$route.params.id}&preloads[]=members`
+        `where[event_id][v]=${this.$route.params.id}&preloads[]=members:guestListMemberValidated`
       );
     },
   },

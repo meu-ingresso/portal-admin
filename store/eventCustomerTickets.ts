@@ -92,8 +92,12 @@ export default class EventCustomerTickets extends VuexModule {
   public async validateCustomerTicket(customerTicketId: string): Promise<void> {
     try {
       const response = await $axios.$patch(`customer-ticket`, {
-        id: customerTicketId,
-        validated: true,
+        data: [
+          {
+            id: customerTicketId,
+            validated: true,
+          }
+        ]
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -120,11 +124,15 @@ export default class EventCustomerTickets extends VuexModule {
   }
 
   @Action
-  async invalidateCustomerTicket(customerTicketId: string) {
+  public async invalidateCustomerTicket(customerTicketId: string): Promise<void> {
     try {
       const response = await $axios.$patch(`customer-ticket`, {
-        id: customerTicketId,
-        validated: false,
+        data: [
+          {
+            id: customerTicketId,
+            validated: false,
+          }
+        ]
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {

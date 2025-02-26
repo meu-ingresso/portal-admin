@@ -243,13 +243,21 @@ export default class EventGuests extends VuexModule {
     try {
       // this.context.commit('SET_LOADING', true);
 
-      const response = await $axios.$post('guest-list', payload);
+      const response = await $axios.$post('guest-list', {
+        data: [
+          {
+            event_id: payload.event_id,
+            name: payload.name,
+            created_by: payload.created_by
+          }
+        ]
+      });
       
       if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
         throw new Error('Falha ao criar lista de convidados');
       }
 
-      return response.body.result.id;
+      return response.body.result[0].id;
     } catch (error) {
       console.error('Erro ao criar lista de convidados:', error);
       throw error;
@@ -269,13 +277,23 @@ export default class EventGuests extends VuexModule {
     try {
       this.context.commit('SET_LOADING', true);
 
-      const response = await $axios.$post('guest-list-member', payload);
+      const response = await $axios.$post('guest-list-member', {
+        data: [
+          {
+            guest_list_id: payload.guest_list_id,
+            first_name: payload.first_name,
+            last_name: payload.last_name,
+            quantity: payload.quantity,
+            added_by: payload.added_by
+          }
+        ]
+      });
       
       if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
         throw new Error('Falha ao criar convidado');
       }
 
-      return response.body.result.id;
+      return response.body.result[0].id;
     } catch (error) {
       console.error('Erro ao criar convidado:', error);
       throw error;
@@ -331,34 +349,22 @@ export default class EventGuests extends VuexModule {
   }
 
   @Action
-  public async validateGuestListMember(payload: { 
-    memberId: string, 
-    validatedBy: string, 
-    validated: boolean
-  }): Promise<void> {
+  public async validateGuestListMember(payload: Array<{ id: string, quantity: number }>): Promise<void> {
     try {
       this.context.commit('SET_LOADING', true);
 
-      const response = await $axios.$put(`guest-list-member/${payload.memberId}`, {
-        validated: payload.validated,
-        validated_by: payload.validatedBy,
-        validated_at: new Date().toISOString()
+      const response = await $axios.$post(`guest-list-member-validated`, {
+        data: payload.map(validation => ({
+          guest_list_member_id: validation.id,
+          quantity: validation.quantity
+        }))
       });
 
-      if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+      if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
         throw new Error('Falha ao validar convidado');
       }
 
-      // Atualiza o estado local
-      this.context.commit('UPDATE_GUEST_LIST_MEMBER', {
-        index: this.guestListMembers.findIndex(g => g.id === payload.memberId),
-        guestListMember: {
-          id: payload.memberId,
-          validated: payload.validated,
-          validated_by: payload.validatedBy,
-          validated_at: new Date().toISOString()
-        }
-      });
+      return response.body.result;
 
     } catch (error) {
       console.error('Erro ao validar convidado:', error);
@@ -377,8 +383,12 @@ export default class EventGuests extends VuexModule {
       this.context.commit('SET_LOADING', true);
 
       const response = await $axios.$patch(`guest-list`, {
-        id: payload.id,
-        name: payload.name
+        data: [
+          {
+            id: payload.id,
+            name: payload.name
+          }
+        ]
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {

@@ -120,8 +120,11 @@
     <!-- Modal de Edição de Endereço -->
     <v-dialog v-model="showAddressModal" max-width="600px">
       <v-card>
-        <v-card-title class="headline mb-2">
-          {{ isAddressFilled ? 'Editar Endereço' : 'Preencher Endereço' }}
+        <v-card-title class="mb-2 d-flex justify-space-between align-center">
+          <h3 class="modalTitle">{{ isAddressFilled ? 'Editar Endereço' : 'Preencher Endereço' }}</h3>
+          <v-btn icon @click="closeAddressModal">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
         </v-card-title>
 
         <v-card-text>
