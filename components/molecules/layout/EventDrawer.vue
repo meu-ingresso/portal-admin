@@ -52,9 +52,7 @@
                 <v-list-item-title>Editar evento</v-list-item-title>
               </v-list-item>
 
-              <v-list-item
-                v-if="getEvent.status.name === 'Rascunho'"
-                @click="requestPublication">
+              <v-list-item v-if="canRequestPublication" @click="requestPublication">
                 <v-list-item-icon class="mr-2">
                   <v-icon>mdi-rocket</v-icon>
                 </v-list-item-icon>
@@ -183,6 +181,12 @@ export default {
   },
 
   computed: {
+    canRequestPublication() {
+      return (
+        this.getEvent.status.name !== 'Publicado' &&
+        this.getEvent.status.name !== 'Em análise'
+      );
+    },
     getEvent() {
       return eventGeneralInfo.$info;
     },
