@@ -13,7 +13,8 @@
               placeholder="Digite o e-mail do colaborador"
               required
               hide-details="auto"
-              :rules="validationRules.email"
+              :error="collaborator.errors?.email"
+              :error-messages="collaborator.errorMessages?.email"
               :disabled="editMode && index === 0"
               dense
               outlined />
@@ -23,11 +24,12 @@
             <v-autocomplete
               v-model="collaborator.role"
               :items="$roles"
-              label="Papel"
-              placeholder="Selecione o papel"
+              label="Função"
+              placeholder="Selecione a função"
               required
               hide-details="auto"
-              :rules="validationRules.role"
+              :error="collaborator.errors?.role"
+              :error-messages="collaborator.errorMessages?.role"
               dense
               outlined />
           </v-col>
@@ -74,13 +76,6 @@ export default {
     return {
       isFormValid: true,
       collaborators: [],
-      validationRules: {
-        email: [
-          (v) => !!v || 'E-mail é obrigatório',
-          (v) => /.+@.+\..+/.test(v) || 'E-mail inválido',
-        ],
-        role: [(v) => !!v || 'Papel é obrigatório'],
-      },
     };
   },
 
@@ -102,6 +97,8 @@ export default {
             {
               email: newVal.user.email,
               role: newVal.role.id,
+              errors: {},
+              errorMessages: {},
             },
           ];
         } else {
@@ -122,6 +119,8 @@ export default {
       return {
         email: '',
         role: null,
+        errors: {},
+        errorMessages: {},
       };
     },
 
@@ -136,25 +135,54 @@ export default {
     resetForm() {
       this.collaborators = [this.getEmptyCollaborator()];
       if (this.$refs.form) {
-        this.$refs.form.resetValidation();
         this.$refs.form.reset();
       }
     },
 
+    validateCollaborator(collaborator) {
+      const errors = {};
+      const errorMessages = {};
+
+      if (!collaborator.email) {
+        errors.email = true;
+        errorMessages.email = 'E-mail é obrigatório';
+      } else if (!/.+@.+\..+/.test(collaborator.email)) {
+        errors.email = true;
+        errorMessages.email = 'E-mail inválido';
+      }
+
+      if (!collaborator.role) {
+        errors.role = true;
+        errorMessages.role = 'Função é obrigatória';
+      }
+
+      return { errors, errorMessages, isValid: Object.keys(errors).length === 0 };
+    },
+
     async handleSubmit() {
-      if (!this.$refs.form.validate()) {
+      let isValid = true;
+
+      // Validate all collaborators
+      this.collaborators.forEach((collaborator) => {
+        const validation = this.validateCollaborator(collaborator);
+        this.$set(collaborator, 'errors', validation.errors);
+        this.$set(collaborator, 'errorMessages', validation.errorMessages);
+        if (!validation.isValid) {
+          isValid = false;
+        }
+      });
+
+      if (!isValid) {
         return { success: false };
       }
 
       try {
         if (this.editMode) {
-          // Emitir evento de atualização com os dados do colaborador
           await this.$emit('update', {
             id: this.collaborator.id,
             ...this.collaborators[0],
           });
         } else {
-          // Emitir evento de adição com a lista de colaboradores
           await this.$emit('add', this.collaborators);
         }
 

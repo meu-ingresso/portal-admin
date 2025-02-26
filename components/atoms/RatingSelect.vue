@@ -1,5 +1,5 @@
 <template>
-  <v-select
+  <v-autocomplete
     ref="select"
     v-model="selectedRating"
     :items="ratings"
@@ -30,7 +30,7 @@
         </v-list-item-content>
       </v-list-item>
     </template>
-  </v-select>
+  </v-autocomplete>
 </template>
 
 <script>
