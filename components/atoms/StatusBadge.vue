@@ -32,7 +32,7 @@ export default {
         case 'Rascunho':
         case 'Interrompido':
           return '#E0700D';
-        case 'Aguardando Aprovação':
+        case 'Em análise':
           return 'warning';
         case 'Excluído':
         case 'Cancelado':

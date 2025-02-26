@@ -52,9 +52,7 @@
                 <v-list-item-title>Editar evento</v-list-item-title>
               </v-list-item>
 
-              <v-list-item
-                v-if="getEvent.status.name === 'Rascunho'"
-                @click="requestPublication">
+              <v-list-item v-if="canRequestPublication" @click="requestPublication">
                 <v-list-item-icon class="mr-2">
                   <v-icon>mdi-rocket</v-icon>
                 </v-list-item-icon>
@@ -68,7 +66,7 @@
                 <v-list-item-title>Duplicar evento</v-list-item-title>
               </v-list-item>
 
-              <v-list-item>
+              <v-list-item @click="confirmCancelEvent">
                 <v-list-item-icon class="mr-2">
                   <v-icon>mdi-delete </v-icon>
                 </v-list-item-icon>
@@ -127,6 +125,15 @@
         </v-list-item>
       </div>
     </v-list>
+
+    <ConfirmDialog
+      v-model="confirmationDialog.visible"
+      :title="confirmationDialog.title"
+      :message="confirmationDialog.message"
+      confirm-text="Confirmar"
+      :loading="isChangingStatus"
+      @confirm="handleConfirmation"
+      @cancel="confirmationDialog.visible = false" />
   </v-navigation-drawer>
 
   <v-select
@@ -164,10 +171,22 @@ export default {
       showMenu: false,
       menuX: 0,
       menuY: 0,
+      confirmationDialog: {
+        visible: false,
+        title: '',
+        message: '',
+      },
+      isChangingStatus: false,
     };
   },
 
   computed: {
+    canRequestPublication() {
+      return (
+        this.getEvent.status.name !== 'Publicado' &&
+        this.getEvent.status.name !== 'Em análise'
+      );
+    },
     getEvent() {
       return eventGeneralInfo.$info;
     },
@@ -306,7 +325,7 @@ export default {
     async requestPublication() {
       const response = await eventGeneralInfo.updateEventStatus({
         eventId: this.getEvent.id,
-        statusName: 'Aguardando Aprovação',
+        statusName: 'Em análise',
       });
 
       if (response.length > 0) {
@@ -346,6 +365,56 @@ export default {
 
       const eventId = this.routerParams.id;
       this.$router.push(`/events/${eventId}/edit`);
+    },
+
+    confirmCancelEvent() {
+      this.showMenu = false;
+      this.confirmationDialog = {
+        visible: true,
+        title: 'Cancelar Evento',
+        message:
+          'Tem certeza que deseja cancelar este evento? Esta ação não poderá ser desfeita.',
+      };
+    },
+
+    async handleConfirmation() {
+      this.confirmationDialog.visible = false;
+
+      try {
+        this.isChangingStatus = true;
+
+        await eventGeneralInfo.updateEventStatus({
+          eventId: this.getEvent.id,
+          statusName: 'Cancelado',
+        });
+
+        this.isChangingStatus = false;
+
+        toast.setToast({
+          text: 'Evento cancelado com sucesso!',
+          type: 'success',
+          time: 5000,
+        });
+
+        await this.refresh();
+      } catch (error) {
+        console.error(error);
+        this.isChangingStatus = false;
+
+        toast.setToast({
+          text: 'Falha ao cancelar o evento. Tente novamente.',
+          type: 'danger',
+          time: 5000,
+        });
+      }
+    },
+
+    async refresh() {
+      try {
+        await eventGeneralInfo.fetchEventInfo(this.getEvent.id);
+      } catch (error) {
+        console.error('Erro ao carregar evento:', error);
+      }
     },
   },
 };
