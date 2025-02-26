@@ -109,9 +109,9 @@ export default class EventGeneralInfo extends VuexModule {
     },
     status: {
       id: '1',
-      name: 'Aguardando Aprovação',
+      name: 'Em análise',
       module: 'event',
-      description: 'Aguardando aprovação do evento',
+      description: 'Em análise do evento',
     },
     fees: {
       id: '',
@@ -384,7 +384,7 @@ export default class EventGeneralInfo extends VuexModule {
         this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
         status.fetchStatusByModuleAndName({
           module: 'event',
-          name: this.selectedStatus === 'draft' ? 'Rascunho' : 'Aguardando Aprovação',
+          name: this.selectedStatus === 'draft' ? 'Rascunho' : 'Em análise',
         }),
       ]);
 
