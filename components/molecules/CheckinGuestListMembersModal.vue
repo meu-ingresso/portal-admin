@@ -1,6 +1,6 @@
 <template>
-    <v-dialog :value="show" max-width="900px" @input="$emit('update:show', $event)">
-      <v-card>
+    <v-dialog :value="show" persistent fullscreen @input="$emit('update:show', $event)">
+      <v-card tile>
         <v-card-title class="d-flex justify-space-between align-center">
           <h3 class="modalTitle">Lista - {{ title }}</h3>
           <v-btn icon @click="handleClose">
@@ -48,53 +48,47 @@
             </template>
 
             <template #[`item.actions`]="{ item }">
-              <div class="d-flex align-center justify-end">
+              <div class="d-flex flex-column align-center">
                 <template v-if="isFullyValidated(item)">
                   <span class="primary--text">Check-in completo</span>
                 </template>
                 <template v-else>
                   <v-btn
-                    icon
-                    small
-                    class="mr-2"
-                    :disabled="!canDecrement(item)"
-                    @click="decrementQuantity(item)"
+                    class="validation-button"
+                    @click="openCheckInModal(item)"
                   >
-                    <v-icon>mdi-minus</v-icon>
-                  </v-btn>
-
-                  <span class="quantity-display">{{ checkInQuantities[item.id] || 0 }}</span>
-
-                  <v-btn
-                    icon
-                    small
-                    class="ml-2"
-                    :disabled="!canIncrement(item)"
-                    @click="incrementQuantity(item)"
-                  >
-                    <v-icon>mdi-plus</v-icon>
+                    Fazer check-in
                   </v-btn>
                 </template>
               </div>
             </template>
           </v-data-table>
         </v-card-text>
-        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+        <v-card-actions class="d-flex align-center justify-start py-4 px-4">
           <DefaultButton
             outlined
             text="Cancelar"
             @click="handleClose" />
-          <DefaultButton
-            text="Validar convidados"
-            :disabled="!hasSelectedMembers"
-            @click="handleCheckInAll" />
         </v-card-actions>
       </v-card>
+
+      <!-- Modal para check-in de quantidade -->
+      <CheckinQuantityModal
+        :show.sync="showQuantityModal"
+        :member-id="selectedMember ? selectedMember.id : null"
+        :member-name="selectedMember ? `${selectedMember.first_name} ${selectedMember.last_name}` : ''"
+        :total-quantity="selectedMember ? selectedMember.quantity : 0"
+        :validated-quantity="selectedMember ? getTotalValidatedQuantity(selectedMember) : 0"
+        @confirm="handleConfirmCheckIn"
+      />
   </v-dialog>
 </template>
 
 <script>
 export default {
+  components: {
+    CheckinQuantityModal: () => import('@/components/molecules/CheckinQuantityModal.vue')
+  },
 
   props: {
     show: {
@@ -123,7 +117,7 @@ export default {
     headers: [
       { text: 'Nome Completo', value: 'full_name', align: 'start', sortable: true },
       { text: 'Quantidade Total', value: 'quantity_info', align: 'center', sortable: false },
-      { text: 'Ações', value: 'actions', align: 'end', sortable: false },
+      { text: 'Ações', value: 'actions', align: 'center', sortable: false },
     ],
     checkInQuantities: {},
     options: {
@@ -134,6 +128,8 @@ export default {
     },
     search: '',
     debounceTimer: null,
+    showQuantityModal: false,
+    selectedMember: null,
   }),
 
   computed: {
@@ -170,53 +166,17 @@ export default {
       this.$emit('close');
     },
 
-    canDecrement(item) {
-      return (this.checkInQuantities[item.id] || 0) > 0;
+    openCheckInModal(member) {
+      this.selectedMember = member;
+      this.showQuantityModal = true;
     },
 
-    canIncrement(member) {
-      const currentQuantity = this.checkInQuantities[member.id] || 0;
-      const totalValidated = this.getTotalValidatedQuantity(member);
-      const remainingQuantity = member.quantity - totalValidated;
-      return currentQuantity < remainingQuantity;
-    },
-
-    incrementQuantity(member) {
-      if (!this.checkInQuantities[member.id]) {
-        this.$set(this.checkInQuantities, member.id, 0);
-      }
-      if (this.canIncrement(member)) {
-        this.checkInQuantities[member.id]++;
-      }
-    },
-
-    decrementQuantity(member) {
-      if (this.canDecrement(member)) {
-        this.checkInQuantities[member.id]--;
-      }
-    },
-
-    handleCheckInAll() {
-      try {
-        // Filtra apenas os membros que foram selecionados para check-in
-        const selectedMembers = this.members.filter(member => 
-          (this.checkInQuantities[member.id] || 0) > 0
-        );
-
-        // Prepara o payload com as quantidades selecionadas
-        const validations = selectedMembers.map(member => ({
-          id: member.id,
-          quantity: this.checkInQuantities[member.id]
-        }));
-
-        // Emite o evento com todas as validações
-        this.$emit('check-in-all', validations);
-
-        // Limpa todas as quantidades após o check-in
-        this.checkInQuantities = {};
-      } catch (error) {
-        console.error('Erro ao realizar check-in em massa:', error);
-      }
+    handleConfirmCheckIn(validation) {
+      this.$set(this.checkInQuantities, validation.id, validation.quantity);
+      this.$emit('check-in', {
+        ...validation,
+        refreshModalData: true
+      });
     },
 
     handleSearch() {

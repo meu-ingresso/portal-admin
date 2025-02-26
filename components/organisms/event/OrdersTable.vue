@@ -6,7 +6,7 @@
     </template>
 
     <v-data-table
-      v-else-if="!isLoading && orders.length > 0"
+      v-else-if="!isLoading && (orders.length > 0 || activeFiltersCount > 0 || isClearingFilters)"
       :headers="headers"
       :items="orders"
       :loading="isLoading"
@@ -220,10 +220,6 @@
         </v-chip>
       </template>
 
-      <!-- Ações -->
-      <!-- <template #[`item.actions`]="{ item }">
-        <v-icon left small color="primary" @click="showDetails(item)">mdi-eye</v-icon>
-      </template> -->
     </v-data-table>
 
     <!-- Estado vazio -->
@@ -263,7 +259,6 @@ export default {
         { text: 'Taxa', value: 'fee', sortable: true, width: '5%' },
         { text: 'Valor líquido', value: 'receipt_value', sortable: true, width: '5%' },
         { text: 'Status', value: 'status', sortable: true, width: '5%' },
-        // { text: 'Ações', value: 'actions', sortable: false, align: 'center' },
       ],
       options: {
         page: 1,
@@ -294,14 +289,12 @@ export default {
       ],
       debounceTimer: null,
       showFilters: false,
+      isLoading: false,
+      isClearingFilters: false,
     };
   },
 
   computed: {
-    isLoading() {
-      return payment.$isLoadingOrders;
-    },
-
     orders() {
       return payment.$orders;
     },
@@ -354,7 +347,9 @@ export default {
     handleFiltersChange() {
       // Debounce para evitar múltiplas requisições
       clearTimeout(this.debounceTimer);
+      this.isClearingFilters = true;
       this.debounceTimer = setTimeout(() => {
+        this.isClearingFilters = false;
         this.fetchOrders(this.options.page, this.options.itemsPerPage);
       }, 500);
     },
@@ -435,10 +430,13 @@ export default {
       try {
         const query = this.buildQueryParams(page, limit);
         if (this.isQueryDifferent(query, force)) {
+          this.isLoading = true;
           await payment.fetchEventOrders(query);
+          this.isLoading = false;
         }
       } catch (error) {
         console.error('Erro ao buscar pedidos:', error);
+        this.isLoading = false;
       }
     },
 
