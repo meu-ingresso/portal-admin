@@ -137,8 +137,10 @@
         <v-sheet v-if="activeFiltersCount" class="px-4 py-2 chip-filters">
           <v-chip
             v-if="filters.startDate || filters.endDate"
-            class="mr-2"
+            class="mr-2 chip-filter"
             close
+            dark
+            color="primary"
             @click:close="clearDates">
             <v-icon left small>mdi-calendar-range</v-icon>
             Período do check-in: {{ formatDateRange }}
@@ -146,8 +148,10 @@
 
           <v-chip
             v-if="filters.ticketType"
-            class="mr-2"
+            class="mr-2 chip-filter"
             close
+            dark
+            color="primary"
             @click:close="clearTicketType">
             <v-icon left small>mdi-ticket</v-icon>
             Tipo: {{ filters.ticketType }}
@@ -155,8 +159,10 @@
 
           <v-chip
             v-if="filters.checkinStatus"
-            class="mr-2"
+            class="mr-2 chip-filter" 
             close
+            dark
+            color="primary"
             @click:close="clearCheckinStatus">
             <v-icon left small>mdi-flag</v-icon>
             Status: {{ getCheckinStatusText(filters.checkinStatus) }}
@@ -491,6 +497,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.chip-filters{
+  background-color: transparent !important;
+}
+
+
 .payment-link {
   color: var(--primary);
   text-decoration: underline;
@@ -514,3 +525,4 @@ export default {
   }
 }
 </style>
+

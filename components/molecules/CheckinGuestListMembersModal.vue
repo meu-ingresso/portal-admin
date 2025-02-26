@@ -50,7 +50,7 @@
             <template #[`item.actions`]="{ item }">
               <div class="d-flex align-center justify-end">
                 <template v-if="isFullyValidated(item)">
-                  <span class="success--text">Check-in completo</span>
+                  <span class="primary--text">Check-in completo</span>
                 </template>
                 <template v-else>
                   <v-btn
@@ -123,7 +123,7 @@ export default {
     headers: [
       { text: 'Nome Completo', value: 'full_name', align: 'start', sortable: true },
       { text: 'Quantidade Total', value: 'quantity_info', align: 'center', sortable: false },
-      { text: 'Check-in', value: 'actions', align: 'end', sortable: false },
+      { text: 'Ações', value: 'actions', align: 'end', sortable: false },
     ],
     checkInQuantities: {},
     options: {
