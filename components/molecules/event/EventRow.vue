@@ -103,7 +103,7 @@ import {
   formatRealValue,
   formatDateToCustomString,
 } from '@/utils/formatters';
-import { toast, event } from '@/store';
+import { toast, event, eventGeneralInfo } from '@/store';
 export default {
   props: {
     event: { type: Object, required: true },
@@ -224,13 +224,9 @@ export default {
     },
     async approveEvent() {
       try {
-        const responseStatus = await event.fetchEventStatuses({ status: 'Publicado' });
-
-        const newStatusId = responseStatus.data.id;
-
-        await event.updateEvent({
-          id: this.event.id,
-          status_id: newStatusId,
+        await eventGeneralInfo.updateEventStatus({
+          eventId: this.event.id,
+          statusName: 'Publicado',
         });
       } catch (error) {
         console.error(error);
@@ -238,13 +234,9 @@ export default {
     },
     async rejectEvent() {
       try {
-        const responseStatus = await event.fetchEventStatuses({ status: 'Reprovado' });
-
-        const newStatusId = responseStatus.data.id;
-
-        await event.updateEvent({
-          id: this.event.id,
-          status_id: newStatusId,
+        await eventGeneralInfo.updateEventStatus({
+          eventId: this.event.id,
+          statusName: 'Reprovado',
         });
       } catch (error) {
         console.error(error);
