@@ -194,8 +194,8 @@
             </span>
           </template>
           <span>
-            Validado por: {{ item.validatedBy.people.first_name }}
-            {{ item.validatedBy.people.last_name }}
+            Validado por: {{ item.validatedBy?.people?.first_name }}
+            {{ item.validatedBy?.people?.last_name }}
           </span>
         </v-tooltip>
         <span v-else>-</span>

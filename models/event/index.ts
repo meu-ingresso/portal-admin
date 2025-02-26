@@ -79,6 +79,14 @@ export type PersonType = 'PF' | 'PJ' | 'ESTRANGEIRO';
 
 export type DiscountType = 'FIXED' | 'PERCENTAGE';
 
+export interface GuestListMemberValidated {
+  id: string;
+  guest_list_member_id: string;
+  validated_by: string;
+  quantity: number;
+  created_at: string;
+}
+
 export interface EventGuestListMember {
   id: string;
   guest_list_id: string;
@@ -92,6 +100,7 @@ export interface EventGuestListMember {
   created_at: string;
   updated_at: string;
   deleted_at: string;
+  guestListMemberValidated?: GuestListMemberValidated[];
 }
 
 export interface EventGuestList {
@@ -207,6 +216,13 @@ export interface EventTotalizer {
   totalViews: string;
 }
 
+export interface GroupEvent {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+}
+
 export interface Event {
   id?: string;
   name: string;
@@ -243,6 +259,7 @@ export interface Event {
     id: string;
     platform_fee: number;
   };
+  groups: GroupEvent[];
 }
 
 export interface EventFormState {
