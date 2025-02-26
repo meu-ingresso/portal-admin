@@ -337,7 +337,7 @@ header {
 }
 
 .cursor-pointer {
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .v-select__slot {
