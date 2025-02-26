@@ -104,7 +104,7 @@ export default {
       { text: 'Nome da Lista', value: 'guestList.name', align: 'start', sortable: true },
       { text: 'Nome Completo', value: 'full_name', align: 'start', sortable: true },
       { text: 'Quantidade Total', value: 'quantity_info', align: 'center', sortable: false },
-      { text: 'Check-in', value: 'actions', align: 'end', sortable: false },
+      { text: 'Ações', value: 'actions', align: 'end', sortable: false },
     ],
     checkInQuantities: {},
   }),
