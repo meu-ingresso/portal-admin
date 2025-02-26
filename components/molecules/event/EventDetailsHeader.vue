@@ -16,15 +16,11 @@
 
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
-            <v-icon
+            <FeeBadge
+              :fee="getEvent.fees.platform_fee"
               v-bind="attrs"
-              size="30"
-              color="primary"
-              class="ml-3 cursor-pointer"
-              v-on="on"
-              @click="openFeeModal">
-              mdi-percent-outline
-            </v-icon>
+              @click="openFeeModal"
+              v-on="on" />
           </template>
           <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
         </v-tooltip>
@@ -204,15 +200,11 @@
 
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-icon
+              <FeeBadge
+                :fee="getEvent.fees.platform_fee"
                 v-bind="attrs"
-                color="primary"
-                size="30"
-                class="ml-4 cursor-pointer"
-                v-on="on"
-                @click="openFeeModal">
-                mdi-percent-outline
-              </v-icon>
+                @click="openFeeModal"
+                v-on="on" />
             </template>
             <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
           </v-tooltip>
