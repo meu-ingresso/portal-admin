@@ -6,3 +6,9 @@ export interface SearchPayload {
   sortBy?: any;
   sortDesc?: any;
 }
+
+export interface GetPayload {
+  page: Number;
+  limit: Number;
+  preloads?: any;
+}

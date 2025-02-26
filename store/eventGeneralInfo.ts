@@ -57,6 +57,7 @@ export default class EventGeneralInfo extends VuexModule {
       id: '',
       platform_fee: 0,
     },
+    groups: [],
   };
 
   private mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
@@ -117,6 +118,7 @@ export default class EventGeneralInfo extends VuexModule {
       id: '',
       platform_fee: 10,
     },
+    groups: [],
   };
 
   private selectedStatus: string = null;
@@ -276,6 +278,7 @@ export default class EventGeneralInfo extends VuexModule {
         'collaborators:role',
         'status',
         'fees',
+        'groups',
       ];
 
       const response = await $axios.$get(
@@ -363,6 +366,7 @@ export default class EventGeneralInfo extends VuexModule {
           id: event.fees.id,
           platform_fee: event.fees.platform_fee,
         },
+        groups: event?.groups,
       });
 
       return event;
