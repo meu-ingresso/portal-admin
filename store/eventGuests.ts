@@ -412,5 +412,15 @@ export default class EventGuests extends VuexModule {
     }
   }
 
-
+  @Action
+  public clearGuestListMembers() {
+    this.context.commit('SET_GUEST_LIST_MEMBERS', []);
+    this.context.commit('SET_META_GUEST_LIST_MEMBER', {
+      total: 0,
+      perPage: 10,
+      currentPage: 1,
+      lastPage: 1,
+      firstPage: 1
+    });
+  }
 } 

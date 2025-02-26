@@ -106,7 +106,7 @@
       :total-items="guestListMembersMeta.total"
       @search="handleModalSearch"
       @update:options="handleModalOptionsUpdate"
-      @check-in-all="handleCheckInAll"
+      @check-in="handleCheckIn"
       @close="handleClose"
     />
   </div>
@@ -271,6 +271,9 @@ export default {
       this.showMembersModal = true;
       
       try {
+        // Limpar dados anteriores antes de buscar novos
+        await eventGuests.clearGuestListMembers();
+        
         await this.fetchMembers({ 
           page: 1, 
           itemsPerPage: 10, 
@@ -291,7 +294,6 @@ export default {
 
     async handleCheckIn(validation) {
       try {
-
         const response = await eventGuests.validateGuestListMember([validation]);
 
         if (response) {
@@ -301,37 +303,23 @@ export default {
             time: 5000,
           });
 
+          // Recarregar dados gerais
           if (this.viewMode === 'lists') {
             await this.loadGuestLists();
+            
+            // Se o modal estiver aberto e a validação veio do modal
+            if (validation.refreshModalData && this.showMembersModal && this.selectedGuestList) {
+              await this.fetchMembers({ 
+                page: this.options?.page || 1, 
+                itemsPerPage: this.options?.itemsPerPage || 10, 
+                sortBy: this.options?.sortBy || ['full_name'], 
+                sortDesc: this.options?.sortDesc || [false],
+                search: ''
+              });
+            }
           } else {
             await this.loadAllMembers();
           }
-        } else {
-          throw new Error('Falha ao realizar check-in');
-        }
-      } catch (error) {
-        console.error('Erro ao realizar check-in:', error);
-        toast.setToast({
-          text: 'Erro ao realizar check-in',
-          type: 'error',
-          time: 5000,
-        });
-      }
-    },
-
-    async handleCheckInAll(validations) {
-      try {
-        const response = await eventGuests.validateGuestListMember(validations);
-
-        if (response) {
-          toast.setToast({
-            text: 'Check-in realizado com sucesso para todos os convidados!',
-            type: 'success',
-            time: 5000,
-          });
-
-          this.handleClose();
-          await this.loadGuestLists();
         } else {
           throw new Error('Falha ao realizar check-in');
         }
