@@ -42,7 +42,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="canManageEvent && event.status.name === 'Aguardando Aprovação'"
+              v-if="canManageEvent && event.status.name === 'Em análise'"
               class="approve-icon"
               icon
               v-bind="attrs"
@@ -57,7 +57,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="canManageEvent && event.status.name === 'Aguardando Aprovação'"
+              v-if="canManageEvent && event.status.name === 'Em análise'"
               class="reject-icon"
               icon
               v-bind="attrs"
@@ -103,7 +103,7 @@ import {
   formatRealValue,
   formatDateToCustomString,
 } from '@/utils/formatters';
-import { toast, event } from '@/store';
+import { toast, event, eventGeneralInfo } from '@/store';
 export default {
   props: {
     event: { type: Object, required: true },
@@ -224,13 +224,9 @@ export default {
     },
     async approveEvent() {
       try {
-        const responseStatus = await event.fetchEventStatuses({ status: 'Publicado' });
-
-        const newStatusId = responseStatus.data.id;
-
-        await event.updateEvent({
-          id: this.event.id,
-          status_id: newStatusId,
+        await eventGeneralInfo.updateEventStatus({
+          eventId: this.event.id,
+          statusName: 'Publicado',
         });
       } catch (error) {
         console.error(error);
@@ -238,13 +234,9 @@ export default {
     },
     async rejectEvent() {
       try {
-        const responseStatus = await event.fetchEventStatuses({ status: 'Reprovado' });
-
-        const newStatusId = responseStatus.data.id;
-
-        await event.updateEvent({
-          id: this.event.id,
-          status_id: newStatusId,
+        await eventGeneralInfo.updateEventStatus({
+          eventId: this.event.id,
+          statusName: 'Reprovado',
         });
       } catch (error) {
         console.error(error);
@@ -295,11 +287,11 @@ export default {
 }
 .event-image {
   border-radius: 8px;
-  aspect-ratio: 954/500;  /* Mantém a proporção exata */
-  width: 100%;            /* Ocupa toda a largura da coluna */
-  height: auto;           /* Altura ajustada automaticamente */
-  object-fit: cover;      /* Garante que a imagem cubra todo o espaço sem distorção */
-  max-height: 120px;      /* Limita a altura máxima na listagem */
+  aspect-ratio: 954/500; /* Mantém a proporção exata */
+  width: 100%; /* Ocupa toda a largura da coluna */
+  height: auto; /* Altura ajustada automaticamente */
+  object-fit: cover; /* Garante que a imagem cubra todo o espaço sem distorção */
+  max-height: 120px; /* Limita a altura máxima na listagem */
 }
 .event-title {
   font-size: 16px;

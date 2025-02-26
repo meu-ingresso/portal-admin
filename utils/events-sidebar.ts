@@ -7,6 +7,13 @@ export const eventsSideBar = [
     needPermissions: false,
   },
   {
+    icon: 'mdi-account-check-outline',
+    iconActive: 'mdi-account-check',
+    title: 'Check-in',
+    to: '/events/:id/checkin',
+    needPermissions: false,
+  },
+  {
     icon: 'mdi-home-outline',
     iconActive: 'mdi-home',
     title: 'Colaboradores',
@@ -20,13 +27,7 @@ export const eventsSideBar = [
     to: '/events/:id/guestlists',
     needPermissions: false,
   },
-  {
-    icon: 'mdi-account-check-outline',
-    iconActive: 'mdi-account-check',
-    title: 'Check-in',
-    to: '/events/:id/checkin',
-    needPermissions: false,
-  },
+
   {
     icon: 'mdi-tag-outline',
     iconActive: 'mdi-tag-multiple',

@@ -6,7 +6,7 @@
       :timeout="-1"
       :bottom="!isMobile"
       :right="!isMobile"
-      :centered="isMobile || $route.fullPath === '/'">
+      :centered="isMobile">
       <v-row :class="`toast-${getToast.toastType} toast`">
         <v-col cols="12" :class="`toast-${getToast.toastType} toast-title`">
           <strong>Notificação</strong>
