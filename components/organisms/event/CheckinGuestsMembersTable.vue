@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-data-table
-      :headers="headers"
+      :headers="isMobile ? mobileHeaders : headers"
       :items="members"
       :loading="loading"
       :options="options"
@@ -14,6 +14,7 @@
       :no-data-text="'Nenhum convidado encontrado'"
       :no-results-text="'Nenhum convidado encontrado'"
       :loading-text="'Carregando...'"
+      :mobile-breakpoint="0"
       class="elevation-1"
       @update:options="$emit('update:options', $event)"
     >
@@ -46,6 +47,43 @@
             </v-btn>
           </template>
         </div>
+      </template>
+
+      <!-- Layout mobile com cards -->
+      <template v-if="isMobile" #item="{ item }">
+        <v-card class="mb-2 mt-2 member-card" elevation="0">
+          <v-card-text class="pa-3">
+            <div class="d-flex justify-space-between align-center mb-2">
+              <h3 class="text-subtitle-1 font-weight-medium mb-0">
+                {{ `${item.first_name} ${item.last_name}` }}
+              </h3>
+              <v-chip x-small color="primary" text-color="white" class="ml-2">
+                {{ item.guestList ? item.guestList.name : "Lista não encontrada" }}
+              </v-chip>
+            </div>
+            
+            <div class="d-flex justify-space-between align-center mt-3">
+              <div>
+                <div class="text-caption grey--text">Quantidade</div>
+                <div class="text-body-2 font-weight-medium">{{ getTotalValidatedQuantity(item) }}/{{ item.quantity }}</div>
+              </div>
+              
+              <div>
+                <template v-if="isFullyValidated(item)">
+                  <v-chip color="success" small>Check-in completo</v-chip>
+                </template>
+                <template v-else>
+                  <v-btn
+                    small
+                    @click.stop="openCheckInModal(item)"
+                  >
+                    Fazer check-in
+                  </v-btn>
+                </template>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
       </template>
     </v-data-table>
 
@@ -88,6 +126,10 @@ export default {
       type: String,
       default: '',
     },
+    isMobile: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data: () => ({
@@ -96,6 +138,9 @@ export default {
       { text: 'Nome Completo', value: 'full_name', align: 'start', sortable: true },
       { text: 'Quantidade Total', value: 'quantity_info', align: 'center', sortable: false },
       { text: 'Ações', value: 'actions', align: 'center', sortable: false },
+    ],
+    mobileHeaders: [
+      { text: 'Convidados', value: 'full_name', sortable: true },
     ],
     showQuantityModal: false,
     selectedMember: null,
@@ -137,6 +182,17 @@ export default {
 </script>
 
 <style scoped>
+.member-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.member-card:hover {
+  border-color: #e0e0e0;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
 .quantity-display {
   min-width: 24px;
   text-align: center;
