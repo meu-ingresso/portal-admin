@@ -53,7 +53,7 @@
           @click="handleClose"
         />
         <DefaultButton
-          text="Confirmar Check-in"
+          text="Fazer Check-in"
           color="primary"
           :disabled="quantity === 0"
           @click="confirmCheckIn"

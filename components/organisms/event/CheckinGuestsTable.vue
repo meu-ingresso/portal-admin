@@ -8,43 +8,75 @@
       :total-items="guestListsMeta.total"
       :options="listOptions"
       :search="listSearch"
+      :is-mobile="isMobile"
       @search="handleListSearch"
       @update:options="handleListOptionsUpdate"
       @row-click="handleListRowClick"
     >
       <template #toolbar>
-        <v-row>
-          <v-col cols="6">
-            <v-text-field
-              v-model="listSearch"
-              :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
-              prepend-inner-icon="mdi-magnify"
-              clearable
-              hide-details="auto"
-              @input="handleListSearch"
-            />
-          </v-col>
-          <v-col cols="6" class="d-flex justify-end align-center">
-            <div class="view-buttons">
-              <v-btn
-                text
-                :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
-                @click="viewMode = 'lists'"
-              >
-                <v-icon left size="18">mdi-format-list-bulleted</v-icon>
-                <span>Visão por Lista</span>
-              </v-btn>
-              <v-btn
-                text
-                :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
-                @click="viewMode = 'members'"
-              >
-                <v-icon left size="18">mdi-account-group</v-icon>
-                <span>Visão por Convidados</span>
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row>
+        <v-container class="px-1 py-1 d-flex align-center">
+          <v-row class="align-center">
+            <v-col :cols="isMobile ? 12 : 6" class="py-0 px-4 d-flex justify-center">
+              <v-text-field
+                v-model="listSearch"
+                :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                hide-details="auto"
+                @input="handleListSearch"
+              />
+            </v-col>
+
+            <template v-if="isMobile">
+              <v-col cols="12">
+                <div class="view-buttons">
+                  <v-btn
+                    text
+                    :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
+                    @click="viewMode = 'lists'"
+                  >
+                    <v-icon left size="18">mdi-format-list-bulleted</v-icon>
+                    <span>Visão por Lista</span>
+                  </v-btn>
+               </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="view-buttons">
+                  <v-btn
+                    text
+                    :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
+                    @click="viewMode = 'members'"
+                  >
+                    <v-icon left size="18">mdi-account-group</v-icon>
+                    <span>Visão por Convidados</span>
+                  </v-btn>
+                </div>  
+              </v-col>
+
+            </template>
+
+            <v-col v-else cols="6" class="d-flex justify-end align-center">
+              <div class="view-buttons">
+                <v-btn
+                  text
+                  :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
+                  @click="viewMode = 'lists'"
+                >
+                  <v-icon left size="18">mdi-format-list-bulleted</v-icon>
+                  <span>Visão por Lista</span>
+                </v-btn>
+                <v-btn
+                  text
+                  :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
+                  @click="viewMode = 'members'"
+                >
+                  <v-icon left size="18">mdi-account-group</v-icon>
+                  <span>Visão por Convidados</span>
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+        </v-container>
       </template>
     </CheckinGuestsListsTable>
 
@@ -56,43 +88,74 @@
       :total-items="guestListMembersMeta.total"
       :options="memberOptions"
       :search="memberSearch"
+      :is-mobile="isMobile"
       @search="handleMemberSearch"
       @update:options="handleMemberOptionsUpdate"
       @check-in="handleCheckIn"
     >
       <template #toolbar>
-        <v-row>
-          <v-col cols="6">
-            <v-text-field
-              v-model="memberSearch"
-              :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
-              prepend-inner-icon="mdi-magnify"
-              clearable
-              hide-details="auto"
-              @input="handleMemberSearch"
-            />
-          </v-col>
-          <v-col cols="6" class="d-flex justify-end align-center">
-            <div class="view-buttons">
-              <v-btn
-                text
-                :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
-                @click="viewMode = 'lists'"
-              >
-                <v-icon left size="18">mdi-format-list-bulleted</v-icon>
-                <span>Visão por Lista</span>
-              </v-btn>
-              <v-btn
-                text
-                :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
-                @click="viewMode = 'members'"
-              >
-                <v-icon left size="18">mdi-account-group</v-icon>
-                <span>Visão por Convidados</span>
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row>
+        <v-container class="px-1 py-1 d-flex align-center">
+          <v-row class="align-center">
+            <v-col :cols="isMobile ? 12 : 6" class="py-0 px-4 d-flex justify-center">
+              <v-text-field
+                v-model="memberSearch"
+                :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                hide-details="auto"
+                @input="handleMemberSearch"
+              />
+            </v-col>
+            
+            <template v-if="isMobile">
+              <v-col cols="12">
+                <div class="view-buttons">
+                  <v-btn
+                    text
+                    :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
+                    @click="viewMode = 'lists'"
+                  >
+                    <v-icon left size="18">mdi-format-list-bulleted</v-icon>
+                    <span>Visão por Lista</span>
+                  </v-btn>
+               </div>
+              </v-col>
+              <v-col cols="12">
+                <div class="view-buttons">
+                  <v-btn
+                    text
+                    :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
+                    @click="viewMode = 'members'"
+                  >
+                    <v-icon left size="18">mdi-account-group</v-icon>
+                    <span>Visão por Convidados</span>
+                  </v-btn>
+                </div>  
+              </v-col>
+            </template>
+
+            <v-col v-else cols="6" class="d-flex justify-end align-center">
+              <div class="view-buttons">
+                <v-btn
+                  text
+                  :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
+                  @click="viewMode = 'lists'"
+                >
+                  <v-icon left size="18">mdi-format-list-bulleted</v-icon>
+                  <span>Visão por Lista</span>
+                </v-btn>
+                <v-btn
+                  text
+                  :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
+                  @click="viewMode = 'members'"
+                >
+                  <v-icon left size="18">mdi-account-group</v-icon>
+                  <span>Visão por Convidados</span>
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+        </v-container>
       </template>
     </CheckinGuestsMembersTable>
 
@@ -104,6 +167,7 @@
       :members="guestListMembers"
       :loading="isLoadingMembers"
       :total-items="guestListMembersMeta.total"
+      :is-mobile="isMobile"
       @search="handleModalSearch"
       @update:options="handleModalOptionsUpdate"
       @check-in="handleCheckIn"
@@ -115,6 +179,7 @@
 <script>
 import { eventGuests, toast } from '@/store';
 import { formatDateTimeWithTimezone } from '@/utils/formatters';
+import { isMobileDevice } from '@/utils/utils';
 
 export default {
   data: () => ({
@@ -160,6 +225,10 @@ export default {
 
     isLoadingMembers() {
       return eventGuests.$isLoading;
+    },
+
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
     },
   },
 
@@ -272,7 +341,7 @@ export default {
       
       try {
         // Limpar dados anteriores antes de buscar novos
-        await eventGuests.clearGuestListMembers();
+        eventGuests.clearGuestListMembers();
         
         await this.fetchMembers({ 
           page: 1, 
@@ -380,6 +449,17 @@ export default {
   .view-buttons {
     display: flex;
     gap: 24px;
+
+    @media (max-width: 600px) {
+      width: 100%;
+      gap: 8px;
+      justify-content: space-between;
+      
+      .view-btn {
+        flex: 1;
+        text-align: center;
+      }
+    }
 
     .view-btn {
       text-transform: none;
