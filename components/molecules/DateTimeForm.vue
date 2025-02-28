@@ -1,149 +1,147 @@
 <template>
   <div>
-    <v-row class="mb-4 mt-4">
-      <v-col cols="12">
-        <v-card outlined>
-          <v-card-title class="d-flex justify-space-between align-center">
-            <p class="subtitle-1 mb-0">{{ titleText }}</p>
-            <v-btn 
-              color="primary" 
-              outlined
-              small 
-              @click="handleAddDateClick">
-              <v-icon left>mdi-plus</v-icon>
-              Adicionar Data
-            </v-btn>
-          </v-card-title>
-          <v-card-text>
-            <!-- Inputs diretos para a primeira data (mostrados quando houver 0 ou 1 data) -->
-            <div v-if="eventDates.length <= 1">
-              <v-form ref="initialForm" v-model="isInitialFormValid">
-                <v-row>
-                  <!-- Data de Início -->
-                  <v-col cols="12" md="3" sm="6">
-                    <v-menu
-                      v-model="initialDateMenu.start"
-                      :close-on-content-click="false"
-                      transition="scale-transition"
-                      offset-y
-                      min-width="auto">
-                      <template #activator="{ on, attrs }">
-                        <v-text-field
-                          :value="formattedInitialStartDate"
-                          label="Data de Início*"
-                          prepend-inner-icon="mdi-calendar"
-                          readonly
-                          outlined
-                          dense
-                          required
-                          hide-details="auto"
-                          :rules="rules.start_date"
-                          v-bind="attrs"
-                          v-on="on" />
-                      </template>
-                      <v-date-picker
-                        v-model="initialFormData.start_date"
-                        locale="pt-br"
-                        no-title
-                        dense
-                        :min="minDate"
-                        @input="initialDateMenu.start = false" />
-                    </v-menu>
-                  </v-col>
 
-                  <!-- Horário de Início -->
-                  <v-col cols="12" md="3" sm="6">
+    <v-card flat class="mb-8">
+      <v-card-title class="d-flex justify-space-between align-center">
+        <p class="subtitle-1 mb-0">{{ titleText }}</p>
+        <v-btn 
+          color="primary" 
+          outlined
+          small 
+          @click="handleAddDateClick">
+          <v-icon left>mdi-plus</v-icon>
+          Adicionar Data
+        </v-btn>
+      </v-card-title>
+      <v-card-text>
+        <!-- Inputs diretos para a primeira data (mostrados quando houver 0 ou 1 data) -->
+        <div v-if="eventDates.length <= 1">
+          <v-form ref="initialForm" v-model="isInitialFormValid">
+            <v-row>
+              <!-- Data de Início -->
+              <v-col cols="12" md="3" sm="6">
+                <v-menu
+                  v-model="initialDateMenu.start"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="auto">
+                  <template #activator="{ on, attrs }">
                     <v-text-field
-                      v-model="initialFormData.start_time"
-                      v-mask="'##:##'"
-                      label="Horário de Início*"
-                      prepend-inner-icon="mdi-clock-outline"
-                      placeholder="21:30"
+                      :value="formattedInitialStartDate"
+                      label="Data de Início*"
+                      prepend-inner-icon="mdi-calendar"
+                      readonly
                       outlined
                       dense
-                      hide-details="auto"
                       required
-                      :rules="rules.start_time"
-                      @input="validateTime($event, 'start_time', 'initial')" />
-                  </v-col>
+                      hide-details="auto"
+                      :rules="rules.start_date"
+                      v-bind="attrs"
+                      v-on="on" />
+                  </template>
+                  <v-date-picker
+                    v-model="initialFormData.start_date"
+                    locale="pt-br"
+                    no-title
+                    dense
+                    :min="minDate"
+                    @input="initialDateMenu.start = false" />
+                </v-menu>
+              </v-col>
 
-                  <!-- Data de Término -->
-                  <v-col cols="12" md="3" sm="6">
-                    <v-menu
-                      v-model="initialDateMenu.end"
-                      :close-on-content-click="false"
-                      transition="scale-transition"
-                      offset-y
-                      min-width="auto">
-                      <template #activator="{ on, attrs }">
-                        <v-text-field
-                          :value="formattedInitialEndDate"
-                          label="Data de Término*"
-                          prepend-inner-icon="mdi-calendar"
-                          readonly
-                          outlined
-                          dense
-                          required
-                          hide-details="auto"
-                          :rules="rules.end_date"
-                          v-bind="attrs"
-                          v-on="on" />
-                      </template>
-                      <v-date-picker
-                        v-model="initialFormData.end_date"
-                        locale="pt-br"
-                        dense
-                        no-title
-                        :min="initialFormData.start_date || minDate"
-                        @input="initialDateMenu.end = false" />
-                    </v-menu>
-                  </v-col>
+              <!-- Horário de Início -->
+              <v-col cols="12" md="3" sm="6">
+                <v-text-field
+                  v-model="initialFormData.start_time"
+                  v-mask="'##:##'"
+                  label="Horário de Início*"
+                  prepend-inner-icon="mdi-clock-outline"
+                  placeholder="21:30"
+                  outlined
+                  dense
+                  hide-details="auto"
+                  required
+                  :rules="rules.start_time"
+                  @input="validateTime($event, 'start_time', 'initial')" />
+              </v-col>
 
-                  <!-- Horário de Término -->
-                  <v-col cols="12" md="3" sm="6">
+              <!-- Data de Término -->
+              <v-col cols="12" md="3" sm="6">
+                <v-menu
+                  v-model="initialDateMenu.end"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="auto">
+                  <template #activator="{ on, attrs }">
                     <v-text-field
-                      v-model="initialFormData.end_time"
-                      v-mask="'##:##'"
-                      label="Horário de Término*"
-                      prepend-inner-icon="mdi-clock-outline"
-                      placeholder="00:00"
+                      :value="formattedInitialEndDate"
+                      label="Data de Término*"
+                      prepend-inner-icon="mdi-calendar"
+                      readonly
                       outlined
                       dense
-                      hide-details="auto"
                       required
-                      :rules="rules.end_time"
-                      @input="validateTime($event, 'end_time', 'initial')" />
-                  </v-col>
+                      hide-details="auto"
+                      :rules="rules.end_date"
+                      v-bind="attrs"
+                      v-on="on" />
+                  </template>
+                  <v-date-picker
+                    v-model="initialFormData.end_date"
+                    locale="pt-br"
+                    dense
+                    no-title
+                    :min="initialFormData.start_date || minDate"
+                    @input="initialDateMenu.end = false" />
+                </v-menu>
+              </v-col>
 
-                  <v-col v-if="getEventDuration(initialFormData)" cols="12">
-                    <p class="caption grey--text" v-html="getEventDuration(initialFormData)" />
-                  </v-col>
-                </v-row>
-              </v-form>
-            </div>
+              <!-- Horário de Término -->
+              <v-col cols="12" md="3" sm="6">
+                <v-text-field
+                  v-model="initialFormData.end_time"
+                  v-mask="'##:##'"
+                  label="Horário de Término*"
+                  prepend-inner-icon="mdi-clock-outline"
+                  placeholder="00:00"
+                  outlined
+                  dense
+                  hide-details="auto"
+                  required
+                  :rules="rules.end_time"
+                  @input="validateTime($event, 'end_time', 'initial')" />
+              </v-col>
 
-            <!-- Lista de datas existentes (apenas quando há mais de uma data) -->
-            <v-list v-else dense>
-              <v-list-item v-for="(date, index) in eventDates" :key="index" class="py-2">
-                <v-list-item-content>
-                  <v-list-item-title>
-                    Data {{ index + 1 }}: {{ getFormattedDateRange(date) }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle v-if="getEventDuration(date)">
-                    <p class="subtitle-2" v-html="getEventDuration(date)" />
-                  </v-list-item-subtitle>
-                </v-list-item-content>
-                <v-list-item-action>
-                  <v-btn icon @click="editDate(index)">
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-                </v-list-item-action>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+              <v-col v-if="getEventDuration(initialFormData)" cols="12">
+                <p class="caption grey--text" v-html="getEventDuration(initialFormData)" />
+              </v-col>
+            </v-row>
+          </v-form>
+        </div>
+
+        <!-- Lista de datas existentes (apenas quando há mais de uma data) -->
+        <v-list v-else dense>
+          <v-list-item v-for="(date, index) in eventDates" :key="index" class="py-2">
+            <v-list-item-content>
+              <v-list-item-title>
+                Data {{ index + 1 }}: {{ getFormattedDateRange(date) }}
+              </v-list-item-title>
+              <v-list-item-subtitle v-if="getEventDuration(date)">
+                <p class="subtitle-2" v-html="getEventDuration(date)" />
+              </v-list-item-subtitle>
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-btn icon @click="editDate(index)">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+    </v-card>
+
 
     <!-- Date Entry Dialog (Modal) -->
     <v-dialog v-model="dateDialog.show" max-width="600px">
@@ -477,7 +475,7 @@ export default {
     },
     // Título dinâmico conforme o número de datas
     titleText() {
-      return this.eventDates.length <= 1 ? 'Data e Horário' : 'Datas e Horários';
+      return this.eventDates.length <= 1 ? '3. Data e Horário' : '3. Datas e Horários';
     },
     formattedStartDate() {
       return this.formData.start_date ? formatDateToBr(this.formData.start_date) : '';

@@ -101,6 +101,10 @@ header {
   background-color: var(--beige) !important;
 }
 
+.bg-transparent {
+  background-color: transparent !important;
+}
+
 .inline-switch-checkbox {
   display: inline-flex;
 }
