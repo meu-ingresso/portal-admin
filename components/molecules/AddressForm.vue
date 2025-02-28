@@ -1,119 +1,132 @@
 <template>
-  <v-form ref="form" v-model="isFormValid">
-    <v-row>
-      <v-col cols="12" md="8" sm="12">
-        <v-text-field
-          ref="location_name"
-          v-model="localLocationName"
-          label="Local do Evento"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          placeholder="Digite o local do evento"
-          :rules="rules?.location_name" />
-      </v-col>
-
-      <v-col cols="12" md="4" sm="12">
-        <v-text-field
-          ref="zipcode"
-          v-model="localZipcode"
-          label="CEP"
-          outlined
-          dense
-          placeholder="Digite o CEP"
-          required
-          maxlength="9"
-          hide-details="auto"
-          :rules="rules?.zipcode"
-          @input="onChangeCEP" />
-      </v-col>
-
+  <div>
+    <v-row class="mb-4">
       <v-col cols="12">
-        <v-card v-if="isFetchingAddress" outlined class="mt-3 mb-3">
-          <v-card-text class="d-flex align-center justify-center">
-            <v-progress-circular indeterminate color="primary" class="mr-2" />
-            <p>Buscando endereço...</p>
-          </v-card-text>
-        </v-card>
-
-        <v-card v-else-if="addressError" outlined class="mt-3 mb-3">
+        <v-card outlined>
+          <v-card-title class="d-flex justify-space-between align-center">
+            <p class="subtitle-1 mb-0">Endereço do Evento</p>
+          </v-card-title>
           <v-card-text>
-            <div class="d-flex align-center mb-2">
-              <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
-              <span>{{ addressError }}</span>
-            </div>
+            <v-form ref="form" v-model="isFormValid">
+              <v-row>
+                <v-col cols="12" md="8" sm="12">
+                  <v-text-field
+                    ref="location_name"
+                    v-model="localLocationName"
+                    label="Local do Evento"
+                    outlined
+                    dense
+                    hide-details="auto"
+                    required
+                    placeholder="Digite o local do evento"
+                    :rules="rules?.location_name" />
+                </v-col>
 
-            <ButtonWithIcon
-              text="Preencher endereço manualmente"
-              icon="mdi-pencil"
-              direction="left"
-              outlined
-              is-text
-              @click="openAddressModal" />
+                <v-col cols="12" md="4" sm="12">
+                  <v-text-field
+                    ref="zipcode"
+                    v-model="localZipcode"
+                    label="CEP"
+                    outlined
+                    dense
+                    placeholder="Digite o CEP"
+                    required
+                    maxlength="9"
+                    hide-details="auto"
+                    :rules="rules?.zipcode"
+                    @input="onChangeCEP" />
+                </v-col>
+
+                <v-col cols="12">
+                  <!-- Loading state -->
+                  <v-card v-if="isFetchingAddress" outlined class="status-card">
+                    <v-card-text class="d-flex align-center justify-center py-3">
+                      <v-progress-circular indeterminate color="primary" class="mr-2" size="20" width="2" />
+                      <p class="mb-0">Buscando endereço...</p>
+                    </v-card-text>
+                  </v-card>
+
+                  <!-- Error state -->
+                  <v-card v-else-if="addressError" outlined class="status-card error-card">
+                    <v-card-text class="py-3">
+                      <div class="d-flex align-center mb-2">
+                        <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+                        <span>{{ addressError }}</span>
+                      </div>
+
+                      <ButtonWithIcon
+                        text="Preencher endereço manualmente"
+                        icon="mdi-pencil"
+                        direction="left"
+                        outlined
+                        is-text
+                        @click="openAddressModal" />
+                    </v-card-text>
+                  </v-card>
+
+                  <!-- Address info state -->
+                  <div v-else-if="isAddressFilled" class="mt-3 mb-3">
+                    <div class="d-flex justify-space-between address-info">
+                      <div class="address-details pa-3">
+                        <div class="d-flex flex-wrap">
+                          <div class="address-item pr-6">
+                            <p class="caption grey--text">Rua</p>
+                            <p class="body-1">{{ formData.street }}</p>
+                          </div>
+                          <div class="address-item pr-6">
+                            <p class="caption grey--text">Bairro</p>
+                            <p class="body-1">{{ formData.neighborhood }}</p>
+                          </div>
+                          <div class="address-item pr-6">
+                            <p class="caption grey--text">Cidade</p>
+                            <p class="body-1">{{ formData.city }}</p>
+                          </div>
+                          <div class="address-item">
+                            <p class="caption grey--text">Estado</p>
+                            <p class="body-1">{{ formData.state }}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="address-actions pa-3">
+                        <v-btn icon small class="mr-1" color="primary" @click="openAddressModal">
+                          <v-icon small>mdi-pencil</v-icon>
+                        </v-btn>
+                        <v-btn icon small color="grey" @click="clearAddress">
+                          <v-icon small>mdi-close</v-icon>
+                        </v-btn>
+                      </div>
+                    </div>
+                  </div>
+                </v-col>
+
+                <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
+                  <v-text-field
+                    ref="number"
+                    v-model="localNumber"
+                    label="Número"
+                    type="number"
+                    outlined
+                    dense
+                    hide-details="auto"
+                    min="0"
+                    required
+                    placeholder="Digite o número"
+                    :rules="rules?.number" />
+                </v-col>
+
+                <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
+                  <v-text-field
+                    v-model="localComplement"
+                    label="Complemento"
+                    outlined
+                    dense
+                    hide-details="auto"
+                    placeholder="Digite o complemento" />
+                </v-col>
+              </v-row>
+            </v-form>
           </v-card-text>
         </v-card>
-
-        <v-card v-else-if="isAddressFilled" outlined class="mt-3 mb-3">
-          <v-card-text>
-            <div class="d-flex justify-space-between">
-              <div>
-                <p><strong>Rua:</strong> {{ formData.street }}</p>
-                <p><strong>Bairro:</strong> {{ formData.neighborhood }}</p>
-                <p><strong>Cidade:</strong> {{ formData.city }}</p>
-                <p><strong>Estado:</strong> {{ formData.state }}</p>
-              </div>
-              <div class="d-flex">
-                <v-tooltip bottom>
-                  <template #activator="{ on, attrs }">
-                    <v-btn
-                      icon
-                      class="mr-2"
-                      v-bind="attrs"
-                      v-on="on"
-                      @click="openAddressModal">
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Editar endereço</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template #activator="{ on, attrs }">
-                    <v-btn icon v-bind="attrs" v-on="on" @click="clearAddress">
-                      <v-icon>mdi-close</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Excluir endereço</span>
-                </v-tooltip>
-              </div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
-        <v-text-field
-          ref="number"
-          v-model="localNumber"
-          label="Número"
-          type="number"
-          outlined
-          dense
-          hide-details="auto"
-          min="0"
-          required
-          placeholder="Digite o número"
-          :rules="rules?.number" />
-      </v-col>
-
-      <v-col v-if="isAddressFilled" cols="12" md="6" sm="12">
-        <v-text-field
-          v-model="localComplement"
-          label="Complemento"
-          outlined
-          dense
-          hide-details="auto"
-          placeholder="Digite o complemento" />
       </v-col>
     </v-row>
 
@@ -183,7 +196,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-form>
+  </div>
 </template>
 
 <script>
@@ -397,7 +410,42 @@ export default {
 </script>
 
 <style scoped>
-.mt-3 {
-  margin-top: 16px;
+.status-card {
+  border-radius: 4px;
+  box-shadow: none !important;
+  border: 1px solid #e0e0e0;
+}
+
+.error-card {
+  border-left: 4px solid #FFC107;
+}
+
+.address-info {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.address-details {
+  flex-grow: 1;
+}
+
+.address-item {
+  margin-bottom: 8px;
+  min-width: 140px;
+}
+
+.address-item p {
+  margin-bottom: 0;
+}
+
+.address-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 500;
 }
 </style>

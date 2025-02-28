@@ -227,23 +227,10 @@
       </v-col>
     </v-row>
 
-    <!-- Data e Hora -->
-    <v-row>
-      <v-col cols="12">
-        <h3>Data e Horário</h3>
-      </v-col>
-    </v-row>
-
     <!-- Outros campos -->
     <DateTimeForm ref="dateTimeForm" />
 
     <template v-if="isEventPresencialOrHibrito && nomenclature !== 'Doação'">
-      <v-row>
-        <v-col cols="12">
-          <h3>Localização</h3>
-        </v-col>
-      </v-row>
-
       <!-- Endereço do Evento -->
       <AddressForm ref="addressForm" />
     </template>
@@ -251,7 +238,7 @@
     <!-- Configurações do Evento/Ingressos -->
     <v-row class="mt-4">
       <v-col cols="12">
-        <v-card tile elevation="1" class="ticket-configuration">
+        <v-card outlined>
           <v-card-title>
             <p class="subtitle-1">Configurações</p>
           </v-card-title>
@@ -431,10 +418,6 @@ export default {
         event_type: this.formData.event_type,
         rating: this.formData.rating?.value,
         link_online: this.formData.link_online,
-        start_date: this.formData.start_date,
-        start_time: this.formData.start_time,
-        end_date: this.formData.end_date,
-        end_time: this.formData.end_time,
         address: this.formData.address,
       };
     },
@@ -651,13 +634,6 @@ export default {
             this.formHasErrors = false;
           }
 
-          const fieldFromDateTimeForm = [
-            'start_date',
-            'start_time',
-            'end_date',
-            'end_time',
-          ].includes(f);
-
           if (this.isEventPresencialOrHibrito) {
             if (f === 'address' && this.$refs.addressForm.validate(true)) {
               this.formHasErrors = true;
@@ -668,8 +644,12 @@ export default {
             this.formHasErrors = true;
           }
 
-          if (fieldFromDateTimeForm && this.$refs.dateTimeForm.validate(true)) {
-            this.formHasErrors = true;
+          if (this.$refs.dateTimeForm) {
+            const hasDateErrors = this.$refs.dateTimeForm.validate(true);
+            if (hasDateErrors) {
+              console.log('hasDateErrors', hasDateErrors);
+              this.formHasErrors = true;
+            }
           }
 
           if (this.$refs[f] && !this.$refs[f].validate(true) && f !== 'rating') {
@@ -749,10 +729,6 @@ export default {
   border-radius: 8px;
   border: 2px solid #ccc;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.ticket-configuration {
-  box-shadow: 0px 0px 2.24px 0px rgba(0, 0, 0, 0.16078) !important;
 }
 
 .helpText {
