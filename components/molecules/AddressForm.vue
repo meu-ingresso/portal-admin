@@ -10,48 +10,9 @@
           <v-row>
             <!-- Lado esquerdo: Campos de entrada -->
             <v-col cols="12" md="6" sm="12" order="1" order-md="1">
-              <div class="d-flex justify-space-between align-center mb-2">
-                <div class="subtitle-1">Buscar endereço por:</div>
-                <v-btn-toggle
-                  v-model="searchMethod"
-                  mandatory
-                  dense
-                  color="primary"
-                  class="elevation-0">
-                  <v-btn :value="'cep'" small>
-                    <v-icon left small>mdi-numeric</v-icon>
-                    CEP
-                  </v-btn>
-                  <v-btn :value="'google'" small>
-                    <v-icon left small>mdi-map-search</v-icon>
-                    Google Maps
-                  </v-btn>
-                </v-btn-toggle>
-              </div>
-
-              <!-- Busca por CEP -->
-              <template v-if="searchMethod === 'cep'">
+              <div class="autocomplete-container mb-4">
                 <v-text-field
-                  ref="zipcode"
-                  v-model="localZipcode"
-                  label="CEP*"
-                  outlined
-                  dense
-                  placeholder="Digite o CEP"
-                  required
-                  maxlength="9"
-                  hide-details="auto"
-                  :rules="rules?.zipcode"
-                  :loading="isFetchingAddress"
-                  :disabled="isFetchingAddress"
-                  :append-icon="isFetchingAddress ? '' : ''"
-                  class="mb-4"
-                  @input="onChangeCEP" />
-              </template>
-
-              <!-- Busca pelo Google Maps -->
-              <template v-else>
-                <v-text-field
+                  ref="googleAutocomplete"
                   v-model="googleSearchQuery"
                   label="Endereço completo*"
                   outlined
@@ -59,12 +20,30 @@
                   hide-details="auto"
                   :loading="isFetchingAddress"
                   :disabled="isFetchingAddress"
-                  append-icon="mdi-magnify"
-                  placeholder="Ex: Rua Exemplo, 123, Cidade - UF"
-                  class="mb-4"
-                  @keyup.enter="searchGoogleAddress"
-                  @click:append="searchGoogleAddress" />
-              </template>
+                  append-icon="mdi-close-circle"
+                  append-inner-icon="mdi-magnify"
+                  placeholder="Comece a digitar o endereço..."
+                  @focus="showAutocompleteResults = true"
+                  @input="onGoogleSearchInput"
+                  @click:append="clearAddress" />
+                  
+                <!-- Lista de sugestões do autocomplete -->
+                <div v-if="showAutocompleteResults && autocompleteResults.length > 0" class="autocomplete-results">
+                  <v-list dense>
+                    <v-list-item
+                      v-for="(result, index) in autocompleteResults"
+                      :key="index"
+                      @click="selectAutocompleteResult(result)">
+                      <v-list-item-icon class="mr-2">
+                        <v-icon small>mdi-map-marker</v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-content>
+                        <v-list-item-title>{{ result.description }}</v-list-item-title>
+                      </v-list-item-content>
+                    </v-list-item>
+                  </v-list>
+                </div>
+              </div>
 
               <v-text-field
                 ref="location_name"
@@ -79,7 +58,6 @@
                 class="mb-4" />
 
               <template v-if="isAddressFilled">
- 
                 <v-text-field
                   ref="number"
                   v-model="localNumber"
@@ -104,7 +82,6 @@
                   placeholder="Digite o complemento" 
                   class="mb-4"
                   />
-               
               </template>
             </v-col>
 
@@ -123,70 +100,34 @@
                     <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
                     <span>{{ addressError }}</span>
                   </div>
-
-                  <ButtonWithIcon
-                    text="Preencher endereço manualmente"
-                    icon="mdi-pencil"
-                    direction="left"
-                    outlined
-                    is-text
-                    @click="openAddressModal" />
                 </v-card-text>
               </v-card>
 
               <!-- Address info state - Compact layout -->
-              <v-card v-else-if="isAddressFilled" outlined class="address-display-card flex-grow-1">
-                <v-card-text class="px-4 py-3">
-                  <div class="d-flex justify-space-between align-center">
-                    <h3 class="subtitle-1 mb-0 primary--text">Localização</h3>
-                    <div class="address-actions">
-                      <v-btn icon small class="mr-1" color="primary" @click="openAddressModal">
-                        <v-icon small>mdi-pencil</v-icon>
-                      </v-btn>
-                      <v-btn icon small color="grey" @click="clearAddress">
-                        <v-icon small>mdi-close</v-icon>
-                      </v-btn>
-                    </div>
+              <div v-else-if="isAddressFilled" class="map-wrapper flex-grow-1">
+                <!-- Mapa do Google -->
+                <div class="map-container-clean">
+                  <div id="google-map" class="google-map"></div>
+                  <div class="map-actions-clean">
+                    <v-btn 
+                      x-small 
+                      outlined 
+                      color="primary" 
+                      class="mt-2"
+                      :href="googleMapsUrl" 
+                      target="_blank">
+                      <v-icon left small>mdi-open-in-new</v-icon>
+                      Ver no Google Maps
+                    </v-btn>
                   </div>
-                  <v-divider class="my-3"></v-divider>
-                  
-                  <!-- Endereço completo em uma única linha -->
-                  <div class="address-single-line d-flex align-start">
-                    <v-icon color="primary" class="mr-2 mt-1">mdi-map-marker</v-icon>
-                    <div class="address-content">
-                      <p class="body-2 font-weight-medium mb-0" :title="fullAddressText">
-                        {{ formData.street }}{{ formData.number ? `, ${formData.number}` : '' }}{{ formData.complement ? `, ${formData.complement}` : '' }}
-                      </p>
-                      <p class="body-2 mb-0" :title="fullAddressText">
-                        {{ formData.neighborhood }}, {{ formData.city }} - {{ formData.state }}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <!-- Mapa do Google -->
-                  <div v-if="showMap" class="map-container mt-3">
-                    <div id="google-map" class="google-map"></div>
-                    <div class="map-actions">
-                      <v-btn 
-                        x-small 
-                        outlined 
-                        color="primary" 
-                        class="mt-2"
-                        :href="googleMapsUrl" 
-                        target="_blank">
-                        <v-icon left small>mdi-open-in-new</v-icon>
-                        Ver no Google Maps
-                      </v-btn>
-                    </div>
-                  </div>
-                </v-card-text>
-              </v-card>
+                </div>
+              </div>
               
               <!-- Estado vazio (sem endereço) -->
               <div v-else class="empty-address-placeholder d-flex flex-column justify-center align-center flex-grow-1">
                 <v-icon color="grey lighten-1" size="48">mdi-map-marker-outline</v-icon>
                 <p class="caption text-center grey--text mt-2">
-                  {{ searchMethod === 'cep' ? 'Digite o CEP para buscar o endereço' : 'Digite o endereço completo para buscar' }}
+                  Comece a digitar o endereço para buscar
                 </p>
               </div>
             </v-col>
@@ -194,110 +135,32 @@
         </v-form>
       </v-card-text>
     </v-card>
-
-    <!-- Modal de Edição de Endereço -->
-    <v-dialog v-model="showAddressModal" max-width="600px">
-      <v-card>
-        <v-card-title class="mb-2 d-flex justify-space-between align-center">
-          <h3 class="modalTitle">{{ isAddressFilled ? 'Editar Endereço' : 'Preencher Endereço' }}</h3>
-          <v-btn icon @click="closeAddressModal">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-
-        <v-card-text>
-          <v-form ref="editAddressForm" v-model="isAddressFormValid">
-            <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="editAddress.street"
-                  label="Rua"
-                  outlined
-                  dense
-                  required
-                  hide-details="auto"
-                  :rules="rules?.street" />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editAddress.neighborhood"
-                  label="Bairro"
-                  outlined
-                  dense
-                  required
-                  hide-details="auto"
-                  :rules="rules?.neighborhood" />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editAddress.city"
-                  label="Cidade"
-                  outlined
-                  dense
-                  required
-                  hide-details="auto"
-                  :rules="rules?.city" />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editAddress.state"
-                  label="Estado"
-                  outlined
-                  dense
-                  required
-                  hide-details="auto"
-                  :rules="rules?.state" />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions class="d-flex justify-space-between">
-          <DefaultButton outlined text="Cancelar" @click="closeAddressModal" />
-          <DefaultButton text="Salvar" @click="saveAddress" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
 <script>
-import Debounce from '@/utils/Debounce';
-import { onFormatCEP } from '@/utils/formatters';
-import { cep, eventGeneralInfo } from '@/store';
+import { eventGeneralInfo } from '@/store';
 
 export default {
   data() {
     return {
       isFetchingAddress: false,
       addressError: '',
-      debouncerCEP: null,
-      localZipcode: eventGeneralInfo.$info.address.zipcode,
       localLocationName: eventGeneralInfo.$info.address.location_name,
       localNumber: eventGeneralInfo.$info.address.number,
       localComplement: eventGeneralInfo.$info.address.complement,
       isFormValid: false,
-      showAddressModal: false,
-      isAddressFormValid: false,
-      editAddress: {
-        street: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-      },
       googleSearchQuery: '',
       showMap: false,
       googleMap: null,
       googleMapMarker: null,
       googleApiLoaded: false,
+      googleAutocomplete: null,
+      autocompleteResults: [],
+      showAutocompleteResults: false,
+      placesService: null,
+      autocompleteDebounceTimeout: null,
       rules: {
-        zipcode: [
-          (v) => !!v || 'CEP é obrigatório',
-          (v) => v.length === 9 || 'CEP inválido',
-        ],
         location_name: [(v) => !!v || 'Local do evento é obrigatório'],
         number: [(v) => !!v || 'Número é obrigatório'],
         street: [(v) => !!v || 'Rua é obrigatória'],
@@ -305,7 +168,6 @@ export default {
         city: [(v) => !!v || 'Cidade é obrigatória'],
         state: [(v) => !!v || 'Estado é obrigatório'],
       },
-      searchMethod: 'cep',
     };
   },
 
@@ -321,14 +183,12 @@ export default {
 
     formData() {
       return {
-        ...eventGeneralInfo.$info.address,
-        zipcode: onFormatCEP(eventGeneralInfo.$info.address.zipcode),
+        ...eventGeneralInfo.$info.address
       };
     },
 
     form() {
       return {
-        zipcode: eventGeneralInfo.$info.address.zipcode,
         location_name: eventGeneralInfo.$info.address.location_name,
         number: eventGeneralInfo.$info.address.number,
       };
@@ -358,14 +218,6 @@ export default {
   },
 
   watch: {
-    'form.zipcode': {
-      immediate: true,
-      handler(newValue) {
-        if (newValue) {
-          this.localZipcode = onFormatCEP(newValue);
-        }
-      },
-    },
     localLocationName: {
       immediate: true,
       handler(newValue) {
@@ -413,48 +265,27 @@ export default {
   },
 
   created() {
-    this.debouncerCEP = new Debounce(this.fetchAddressByCEP, 300);
     this.loadGoogleMapsApi();
   },
 
+  mounted() {
+    // Adicionamos um click handler ao documento para fechar as sugestões quando o usuário clicar fora
+    document.addEventListener('click', this.handleClickOutside);
+  },
+
+  beforeDestroy() {
+    document.removeEventListener('click', this.handleClickOutside);
+  },
+
   methods: {
-    openAddressModal() {
-      this.editAddress = {
-        street: this.formData.street || '',
-        neighborhood: this.formData.neighborhood || '',
-        city: this.formData.city || '',
-        state: this.formData.state || '',
-      };
-      this.showAddressModal = true;
-    },
-
-    closeAddressModal() {
-      this.showAddressModal = false;
-      this.editAddress = {
-        street: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-      };
-    },
-
-    saveAddress() {
-      if (this.$refs.editAddressForm.validate()) {
-        eventGeneralInfo.updateGeneralInfoAddress({
-          ...eventGeneralInfo.$info.address,
-          ...this.editAddress,
-        });
-        this.closeAddressModal();
-      }
-    },
-
     clearAddress() {
-      this.localZipcode = '';
       this.localLocationName = '';
       this.localNumber = '';
       this.localComplement = '';
       this.googleSearchQuery = '';
       this.showMap = false;
+      this.autocompleteResults = [];
+      this.showAutocompleteResults = false;
       
       if (this.googleMap) {
         this.googleMap = null;
@@ -487,51 +318,126 @@ export default {
       return !this.isFormValid;
     },
 
-    onChangeCEP() {
-      this.localZipcode = onFormatCEP(this.localZipcode);
-      this.debouncerCEP.execute();
-    },
-    async fetchAddressByCEP() {
-      if (this.localZipcode.length === 9) {
-        this.isFetchingAddress = true;
-        this.addressError = '';
-        try {
-          const responseCEP = await cep.fetchCep(this.localZipcode);
-
-          // Verifica se o retorno está vazio (todos os campos null)
-          const isEmptyResponse =
-            !responseCEP.street &&
-            !responseCEP.neighborhood &&
-            !responseCEP.city &&
-            !responseCEP.state;
-
-          if (isEmptyResponse) {
-            this.addressError = 'Endereço não encontrado para o CEP informado.';
-            return;
-          }
-
-          eventGeneralInfo.updateGeneralInfoAddress({
-            street: responseCEP.street,
-            neighborhood: responseCEP.neighborhood,
-            city: responseCEP.city,
-            state: responseCEP.state,
-            state_name: responseCEP.state_name || responseCEP.state,
-            latitude: responseCEP.latitude,
-            longitude: responseCEP.longitude,
-            zipcode: this.localZipcode,
-            location_name: this.localLocationName,
-            number: this.localNumber,
-            complement: this.localComplement,
-          });
-        } catch (error) {
-          console.error('Erro ao buscar endereço:', error);
-          this.addressError = 'Endereço não encontrado. Verifique o CEP digitado.';
-          this.clearAddress();
-        } finally {
-          this.isFetchingAddress = false;
-        }
+    handleClickOutside(event) {
+      const autocompleteContainer = this.$el.querySelector('.autocomplete-container');
+      if (autocompleteContainer && !autocompleteContainer.contains(event.target)) {
+        this.showAutocompleteResults = false;
       }
     },
+
+    onGoogleSearchInput() {
+      // Debounce para não fazer muitas requisições enquanto o usuário digita
+      if (this.autocompleteDebounceTimeout) {
+        clearTimeout(this.autocompleteDebounceTimeout);
+      }
+      
+      this.autocompleteDebounceTimeout = setTimeout(() => {
+        this.fetchAutocompletePredictions();
+      }, 300);
+    },
+
+    async fetchAutocompletePredictions() {
+      if (!this.googleSearchQuery || !this.googleApiLoaded || this.googleSearchQuery.length < 3) {
+        this.autocompleteResults = [];
+        this.showAutocompleteResults = false;
+        return;
+      }
+
+      const autocompleteService = new google.maps.places.AutocompleteService();
+      const request = {
+        input: this.googleSearchQuery,
+        componentRestrictions: { country: 'br' },
+        types: ['address']
+      };
+
+      try {
+        const predictions = await new Promise((resolve, reject) => {
+          autocompleteService.getPlacePredictions(request, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+              resolve(results);
+            } else {
+              reject(new Error('Não foi possível obter sugestões'));
+            }
+          });
+        });
+
+        this.autocompleteResults = predictions;
+        this.showAutocompleteResults = predictions.length > 0;
+      } catch (error) {
+        console.error('Erro ao buscar sugestões:', error);
+        this.autocompleteResults = [];
+        this.showAutocompleteResults = false;
+      }
+    },
+
+    async selectAutocompleteResult(result) {
+      this.isFetchingAddress = true;
+      this.addressError = '';
+      this.googleSearchQuery = result.description;
+      this.showAutocompleteResults = false;
+
+      try {
+        // Criar um serviço de Places se ainda não existir
+        if (!this.placesService) {
+          // Precisamos de um elemento DOM para o PlacesService
+          const mapDiv = document.createElement('div');
+          this.placesService = new google.maps.places.PlacesService(mapDiv);
+        }
+
+        // Obter detalhes do local selecionado
+        const placeDetails = await new Promise((resolve, reject) => {
+          this.placesService.getDetails(
+            { placeId: result.place_id, fields: ['address_components', 'geometry', 'formatted_address'] },
+            (place, status) => {
+              if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                resolve(place);
+              } else {
+                reject(new Error('Não foi possível obter detalhes do endereço'));
+              }
+            }
+          );
+        });
+
+        const position = placeDetails.geometry.location;
+        const addressComponents = this.parseGoogleAddressComponents(placeDetails.address_components);
+        
+        // Preservar o número apenas se vier do Google, caso contrário manter o que o usuário digitou
+        const number = addressComponents.number || this.localNumber;
+        
+        // Atualizar dados do endereço (sem sobrescrever localLocationName, que deve ser definido pelo usuário)
+        eventGeneralInfo.updateGeneralInfoAddress({
+          street: addressComponents.street || '',
+          neighborhood: addressComponents.neighborhood || '',
+          city: addressComponents.city || '',
+          state: addressComponents.state || '',
+          state_name: addressComponents.state_name || addressComponents.state || '',
+          latitude: position.lat(),
+          longitude: position.lng(),
+          zipcode: addressComponents.zipcode || '',
+          location_name: this.localLocationName, // Manter o valor inserido pelo usuário
+          number, // Usar o número do Google se disponível
+          complement: this.localComplement, // Sempre manter o complemento inserido pelo usuário
+        });
+        
+        // Atualizar o número local se vier do Google
+        if (addressComponents.number) {
+          this.localNumber = addressComponents.number;
+        }
+        
+        // Forçar a atualização do mapa
+        this.showMap = false;
+        this.$nextTick(() => {
+          this.showMap = true;
+          this.initGoogleMap();
+        });
+      } catch (error) {
+        console.error('Erro ao buscar detalhes do endereço:', error);
+        this.addressError = 'Não foi possível obter detalhes do endereço selecionado.';
+      } finally {
+        this.isFetchingAddress = false;
+      }
+    },
+
     loadGoogleMapsApi() {
       // Na implementação real, você precisará obter uma API key do Google
       if (window.google && window.google.maps) {
@@ -545,8 +451,7 @@ export default {
       }
 
       // Carrega a API do Google Maps dinamicamente
-      // Na implementação real, substitua YOUR_API_KEY pela sua chave de API do Google
-      const apiKey = 'YOUR_API_KEY'; 
+      const apiKey = 'AIzaSyAtFS9cuqhd4j5sihXFlfRgLMAgll8TOfk'; 
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       script.async = true;
@@ -611,58 +516,6 @@ export default {
       } else {
         // Inicializar mapa se ainda não existir
         this.initGoogleMap();
-      }
-    },
-
-    async searchGoogleAddress() {
-      if (!this.googleSearchQuery || !this.googleApiLoaded) return;
-      
-      this.isFetchingAddress = true;
-      this.addressError = '';
-      
-      try {
-        // Usar Geocoding API para converter endereço em coordenadas
-        const geocoder = new google.maps.Geocoder();
-        const result = await new Promise((resolve, reject) => {
-          geocoder.geocode({ address: this.googleSearchQuery }, (results, status) => {
-            if (status === "OK" && results[0]) {
-              resolve(results[0]);
-            } else {
-              reject(new Error('Endereço não encontrado'));
-            }
-          });
-        });
-        
-        const position = result.geometry.location;
-        const addressComponents = this.parseGoogleAddressComponents(result.address_components);
-        
-        // Atualizar dados do endereço
-        eventGeneralInfo.updateGeneralInfoAddress({
-          street: addressComponents.street || '',
-          neighborhood: addressComponents.neighborhood || '',
-          city: addressComponents.city || '',
-          state: addressComponents.state || '',
-          state_name: addressComponents.state_name || addressComponents.state || '',
-          latitude: position.lat(),
-          longitude: position.lng(),
-          zipcode: addressComponents.zipcode || this.localZipcode,
-          location_name: this.localLocationName || addressComponents.name,
-          number: addressComponents.number || this.localNumber,
-          complement: this.localComplement,
-        });
-        
-        // Se o local não foi preenchido, usar o nome formatado do resultado
-        if (!this.localLocationName) {
-          this.localLocationName = result.formatted_address.split(',')[0];
-        }
-        
-        this.googleSearchQuery = '';
-        this.showMap = true;
-      } catch (error) {
-        console.error('Erro ao buscar endereço:', error);
-        this.addressError = 'Endereço não encontrado. Tente ser mais específico.';
-      } finally {
-        this.isFetchingAddress = false;
       }
     },
     
@@ -766,27 +619,67 @@ export default {
   background-color: rgba(33, 150, 243, 0.05);
 }
 
-.map-container {
-  width: 100%;
-  overflow: hidden;
-  border-radius: 4px;
-  border: 1px solid #e0e0e0;
+.map-wrapper {
+  display: flex;
+  flex-direction: column;
 }
 
-.map-actions {
+.map-container-clean {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.map-actions-clean {
   display: flex;
   justify-content: flex-end;
-  padding: 0 8px 8px;
-  background-color: #fafafa;
+  padding: 8px;
+  background-color: white;
 }
 
 .google-map {
-  height: 200px;
+  height: 250px;
   width: 100%;
 }
 
 .modalTitle {
   font-size: 1.25rem;
   font-weight: 500;
+}
+
+/* Estilos para o autocomplete */
+.autocomplete-container {
+  position: relative;
+}
+
+.autocomplete-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.autocomplete-results .v-list-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.autocomplete-results .v-list-item:hover {
+  background-color: rgba(33, 150, 243, 0.05);
+}
+
+.autocomplete-results .v-list-item-title {
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
 }
 </style>
