@@ -12,6 +12,7 @@ import { handleGetResponse } from '~/utils/responseHelpers';
 })
 export default class EventGeneralInfo extends VuexModule {
   private isLoading: boolean = false;
+  private eventList: EventApiResponse[] = [];
 
   private info: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
     id: '',
@@ -148,6 +149,10 @@ export default class EventGeneralInfo extends VuexModule {
     return this.isLoadingEventStatus;
   }
 
+  public get $eventList() {
+    return this.eventList;
+  }
+
   @Mutation
   private SET_LOADING(payload: boolean) {
     this.isLoading = payload;
@@ -196,6 +201,11 @@ export default class EventGeneralInfo extends VuexModule {
   @Mutation
   private SET_GROUP_ID(groupId: string) {
     this.info.group_id = groupId;
+  }
+
+  @Mutation
+  private SET_EVENT_LIST(events: EventApiResponse[]) {
+    this.eventList = events;
   }
 
   @Action
@@ -474,7 +484,7 @@ export default class EventGeneralInfo extends VuexModule {
       ]);
 
       // Preparar array com todas as datas do evento
-      const eventData = this.info.event_dates.map(date => {
+      const eventData = this.info.event_dates.map((date, index) => {
         const startDateTime = `${date.start_date}T${date.start_time}:00.000Z`;
         const endDateTime = `${date.end_date}T${date.end_time}:00.000Z`;
 
@@ -482,7 +492,7 @@ export default class EventGeneralInfo extends VuexModule {
         const endDate = new Date(endDateTime);
 
         return {
-          alias: this.info.alias,
+          alias: index === 0 ? this.info.alias : `${this.info.alias}-${index}`,
           name: this.info.name,
           description: this.info.description,
           general_information: this.info.general_information,
@@ -612,7 +622,7 @@ export default class EventGeneralInfo extends VuexModule {
       }
 
       // Atualiza ou deleta banner
-      await this.handleEventBanner(eventId);
+      await this.handleEventBanner([eventId]);
 
       // Gerenciar outras datas (eventos do grupo)
       await this.handleOtherEventDates(eventId);
@@ -831,7 +841,7 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  public async handleLinkOnline(eventId: string) {
+  public async handleLinkOnline(eventIds: string[]) {
     const attachment = this.$info.attachments.find(
       (attachment: EventAttachment) => attachment.name === 'link_online'
     );
@@ -840,7 +850,7 @@ export default class EventGeneralInfo extends VuexModule {
       if (attachment && attachment.url !== this.$info.link_online) {
         await this.deleteEventAttachment(attachment.id as string);
         await this.createEventAttachment({
-          eventId,
+          eventIds,
           name: 'link_online',
           type: 'link',
           url: this.$info.link_online,
@@ -848,7 +858,7 @@ export default class EventGeneralInfo extends VuexModule {
       }
     } else if (this.$info.link_online) {
       await this.createEventAttachment({
-        eventId,
+        eventIds,
         name: 'link_online',
         type: 'link',
         url: this.$info.link_online,
@@ -857,7 +867,7 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  public async handleEventBanner(eventId: string) {
+  public async handleEventBanner(eventIds: string[]) {
     if (!this.$info.banner) return null;
 
     if (this.info.banner instanceof File && this.$info.banner_id) {
@@ -867,44 +877,42 @@ export default class EventGeneralInfo extends VuexModule {
       return;
     }
 
-    const bannerId = await this.createEventAttachment({
-      eventId,
+    const bannerIds = await this.createEventAttachment({
+      eventIds,
       name: 'banner',
       type: 'image',
       url: '',
     });
-    const bannerUrl = await this.uploadEventBanner({
-      attachmentId: bannerId,
+    const bannerUrls = await this.uploadEventBanner({
+      attachmentIds: bannerIds,
       banner: this.$info.banner as File,
     });
-    await this.updateEventAttachment({ attachmentId: bannerId, url: bannerUrl });
+    await this.updateEventAttachment({ attachmentIds: bannerIds, url: bannerUrls });
 
-    return bannerId;
+    return bannerIds;
   }
 
   @Action
   private async createEventAttachment(payload: {
-    eventId: string;
+    eventIds: string[];
     name: string;
     type: string;
     url: string;
   }) {
     const attachmentResponse = await $axios.$post('event-attachment', {
-      data: [
-        {
-          event_id: payload.eventId,
-          name: payload.name,
-          type: payload.type,
-          url: payload.url,
-        },
-      ],
+      data: payload.eventIds.map((eventId) => ({
+        event_id: eventId,
+        name: payload.name,
+        type: payload.type,
+        url: payload.url,
+      })),
     });
 
     if (!attachmentResponse.body || attachmentResponse.body.code !== 'CREATE_SUCCESS') {
       throw new Error('Failed to create attachment.');
     }
 
-    return attachmentResponse.body.result[0].id;
+    return attachmentResponse.body.result.map((result) => result.id);
   }
 
   @Action
@@ -917,10 +925,13 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
-  private async uploadEventBanner(payload: { attachmentId: string; banner: File }) {
+  private async uploadEventBanner(payload: { attachmentIds: string[]; banner: File }) {
     const formData = new FormData();
-    formData.append('attachment_ids[]', payload.attachmentId);
-    formData.append('files[]', payload.banner);
+    
+    payload.attachmentIds.forEach((attachmentId) => {
+      formData.append('attachment_ids[]', attachmentId);
+      formData.append('files[]', payload.banner);
+    });
 
     const uploadResponse = await $axios.$post('upload', formData, {
       headers: {
@@ -932,18 +943,16 @@ export default class EventGeneralInfo extends VuexModule {
       throw new Error('Failed to upload banner.');
     }
 
-    return uploadResponse.body.result[0].s3_url;
+    return uploadResponse.body.result.map((result) => result.s3_url);
   }
 
   @Action
-  private async updateEventAttachment(payload: { attachmentId: string; url: string }) {
+  private async updateEventAttachment(payload: { attachmentIds: string[]; url: string[] }) {
     const updateResponse = await $axios.$patch('event-attachment', {
-      data: [
-        {
-          id: payload.attachmentId,
-          url: payload.url,
-        },
-      ],
+      data: payload.attachmentIds.map((attachmentId, index) => ({
+        id: attachmentId,
+        url: payload.url[index],
+      })),
     });
 
     if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
@@ -1029,6 +1038,57 @@ export default class EventGeneralInfo extends VuexModule {
     } catch (error) {
       console.error('Erro ao buscar eventos do grupo:', error);
       return [];
+    }
+  }
+
+  @Action
+  public async fetchEvents(params?: {
+    sortBy?: string[];
+    sortDesc?: boolean[];
+    whereHas?: Record<string, any>;
+    preloads?: string[];
+  }) {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // Construir a query string
+      const queryParams: string[] = [];
+
+      // Adicionar ordenação
+      if (params?.sortBy?.length) {
+        params.sortBy.forEach((field, index) => {
+          queryParams.push(`sort[${field}]=${params.sortDesc?.[index] ? 'desc' : 'asc'}`);
+        });
+      }
+
+      // Adicionar whereHas conditions
+      if (params?.whereHas) {
+        Object.entries(params.whereHas).forEach(([key, conditions]) => {
+          Object.entries(conditions).forEach(([field, value]) => {
+            queryParams.push(`whereHas[${key}][${field}]=${value}`);
+          });
+        });
+      }
+
+      // Adicionar preloads
+      if (params?.preloads?.length) {
+        params.preloads.forEach(preload => {
+          queryParams.push(`preloads[]=${preload}`);
+        });
+      }
+
+      const queryString = queryParams.length ? `?${queryParams.join('&')}` : '';
+      
+      const response = await $axios.$get(`events${queryString}`);
+      const { data } = handleGetResponse(response, 'Eventos não encontrados', null, true);
+
+      this.context.commit('SET_EVENT_LIST', data || []);
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar eventos:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
     }
   }
 }

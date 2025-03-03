@@ -1,6 +1,5 @@
 <template>
   <div class="event-details-checkin">
-    <EventDetailsHeader />
     <v-row class="mb-4">
       <v-col cols="12">
         <div class="event-details-checkin-title">Check-in</div>
@@ -33,12 +32,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details-checkin {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
-
 .event-details-checkin-title {
   font-weight: 600;
   text-align: left;

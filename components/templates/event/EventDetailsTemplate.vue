@@ -1,17 +1,13 @@
 <template>
-  <div v-if="getEvent" class="event-details">
-    <EventDetailsHeader />
+  <div class="event-details-wrapper">
+    <StatisticList :statistics="getStatistics" title="Visão geral" />
 
-    <div class="event-details-wrapper">
-      <StatisticList :statistics="getStatistics" title="Visão geral" />
-
-      <EventTickets
-        v-if="hasTickets"
-        disable-menu
-        disable-hover
-        title="Detalhamento das vendas"
-        :event-id="getEvent.id" />
-    </div>
+    <EventTickets
+      v-if="hasTickets"
+      disable-menu
+      disable-hover
+      title="Detalhamento das vendas"
+      :event-id="getEvent.id" />
   </div>
 </template>
 
@@ -92,11 +88,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
 .event-details-wrapper {
   max-width: 1480px;
 }

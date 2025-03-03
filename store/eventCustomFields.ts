@@ -195,8 +195,6 @@ export default class EventCustomFields extends VuexModule {
           // Trata o retorno e filtra por não deletados
           const { data: checkoutFieldsTicketsResult } = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
 
-          console.log('checkoutFieldsTicketsResult', checkoutFieldsTicketsResult);
-
           const customFieldTickets = checkoutFieldsTicketsResult.map(
             (customFieldTicket: CustomFieldTicketApiResponse) => ({
               id: customFieldTicket.ticket.id,
@@ -308,102 +306,103 @@ export default class EventCustomFields extends VuexModule {
   }
 
   @Action
-  public async createCustomFields(eventId: string): Promise<void> {
+  public async createCustomFields(eventIds: string[]): Promise<void> {
     try {
+      // Para cada evento, teremos um conjunto de operações em lote
+      for (const eventId of eventIds) {
+        // 1. Preparar arrays para operações em lote
+        const operations: BatchOperations = {
+          fieldsToCreate: [],
+          fieldsToUpdate: [],
+          fieldsToDelete: [],
+          optionsToCreate: [],
+          optionsToUpdate: [],
+          optionsToDelete: [],
+          ticketRelationsToCreate: [],
+          ticketRelationsToDelete: []
+        };
 
-      // 1. Preparar arrays para operações em lote
-      const operations: BatchOperations = {
-        fieldsToCreate: [],
-        fieldsToUpdate: [],
-        fieldsToDelete: [],
-        optionsToCreate: [],
-        optionsToUpdate: [],
-        optionsToDelete: [],
-        ticketRelationsToCreate: [],
-        ticketRelationsToDelete: []
-      };
+        const fieldMap = new Map<string, string>(); 
 
-      const fieldMap = new Map<string, string>(); 
+        const tickets = await this.getEventTickets(eventId);
 
-      const tickets = await this.getEventTickets(eventId);
+        // 2. Processar campos
+        this.fieldList.forEach((field, index) => {
+          
+          if (field.is_default) {
+            field.tickets = tickets;
+          }
 
-      // 2. Processar campos
-      this.fieldList.forEach((field, index) => {
-        
-        if (field.is_default) {
-          field.tickets = tickets;
-        }
-
-        // Para cada tipo de pessoa, criar um campo
-        field.person_types.forEach((personType) => {
-          operations.fieldsToCreate.push({
-            event_id: eventId,
-            name: field.name,
-            type: field.type,
-            person_type: personType,
-            required: field.options.includes('required'),
-            visible_on_ticket: field.options.includes('visible_on_ticket'),
-            is_unique: field.options.includes('is_unique'),
-            help_text: field.help_text || '',
-            display_order: field.display_order || index
+          // Para cada tipo de pessoa, criar um campo
+          field.person_types.forEach((personType) => {
+            operations.fieldsToCreate.push({
+              event_id: eventId,
+              name: field.name,
+              type: field.type,
+              person_type: personType,
+              required: field.options.includes('required'),
+              visible_on_ticket: field.options.includes('visible_on_ticket'),
+              is_unique: field.options.includes('is_unique'),
+              help_text: field.help_text || '',
+              display_order: field.display_order || index
+            });
           });
         });
-      });
 
-      // 3. Criar todos os campos de uma vez
-      const fieldsResponse = await $axios.$post('event-checkout-field', {
-        data: operations.fieldsToCreate
-      });
+        // 3. Criar todos os campos de uma vez
+        const fieldsResponse = await $axios.$post('event-checkout-field', {
+          data: operations.fieldsToCreate
+        });
 
-      // Limpa o array de campos a serem criados
-      operations.fieldsToCreate = [];
+        // Limpa o array de campos a serem criados
+        operations.fieldsToCreate = [];
 
-      if (!fieldsResponse.body || fieldsResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Falha ao criar campos personalizados');
-      }
+        if (!fieldsResponse.body || fieldsResponse.body.code !== 'CREATE_SUCCESS') {
+          throw new Error(`Falha ao criar campos personalizados para o evento ${eventId}`);
+        }
 
-      // 4. Mapear campos criados
-      fieldsResponse.body.result.forEach((createdField: any) => {
-        fieldMap.set(`${createdField.name}-${createdField.person_type}`, createdField.id);
-      });
+        // 4. Mapear campos criados
+        fieldsResponse.body.result.forEach((createdField: any) => {
+          fieldMap.set(`${createdField.name}-${createdField.person_type}`, createdField.id);
+        });
 
-      // 5. Preparar criação de opções e relações com tickets
-      this.fieldList.forEach((field) => {
-        // Se é campo de múltipla escolha, criar opções
-        if (isMultiOptionField(field.type)) {
+        // 5. Preparar criação de opções e relações com tickets
+        this.fieldList.forEach((field) => {
+          // Se é campo de múltipla escolha, criar opções
+          if (isMultiOptionField(field.type)) {
+            field.person_types.forEach((personType) => {
+              const fieldId = fieldMap.get(`${field.name}-${personType}`);
+              if (fieldId) {
+                field.selected_options.forEach((option) => {
+                  operations.optionsToCreate.push({
+                    event_checkout_field_id: fieldId,
+                    name: option.name
+                  });
+                });
+              }
+            });
+          }
+
+          // Criar relações com tickets
           field.person_types.forEach((personType) => {
             const fieldId = fieldMap.get(`${field.name}-${personType}`);
             if (fieldId) {
-              field.selected_options.forEach((option) => {
-                operations.optionsToCreate.push({
+              field.tickets.forEach((ticket) => {
+
+                const ticketId = tickets.find((t: TicketApiResponse) => t.name === ticket.name)?.id;
+
+                operations.ticketRelationsToCreate.push({
                   event_checkout_field_id: fieldId,
-                  name: option.name
+                  ticket_id: ticketId
                 });
               });
             }
           });
-        }
-
-        // Criar relações com tickets
-        field.person_types.forEach((personType) => {
-          const fieldId = fieldMap.get(`${field.name}-${personType}`);
-          if (fieldId) {
-            field.tickets.forEach((ticket) => {
-
-              const ticketId = tickets.find((t: TicketApiResponse) => t.name === ticket.name)?.id;
-
-              operations.ticketRelationsToCreate.push({
-                event_checkout_field_id: fieldId,
-                ticket_id: ticketId
-              });
-            });
-          }
         });
-      });
 
-      // 6. Executar operações em lote para opções e relações
-      await this.executeBatchOperations(operations);
-
+        // 6. Executar operações em lote para opções e relações
+        await this.executeBatchOperations(operations);
+      }
     } catch (error) {
       console.error('Erro ao criar campos personalizados:', error);
       throw error;

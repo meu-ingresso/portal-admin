@@ -315,6 +315,12 @@ export interface EventApiResponse {
   alias: string;
   description: string;
   general_information: string;
+  groups: GroupEvent[];
+  status_id: string;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
 }
 
 export interface TicketApiResponse {

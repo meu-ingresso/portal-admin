@@ -1,29 +1,25 @@
 <template>
-  <div v-if="getEvent" class="event-details-tickets">
-    <EventDetailsHeader />
-    <div class="event-details-wrapper">
-      <!-- Estado vazio -->
-      <template v-if="getCoupons?.length === 0">
-        <EmptyState
-          title="Ainda não há cupons"
-          subtitle="Uma vez criados, seus cupons aparecerão aqui"
-          icon="mdi-ticket">
-          <template #action>
-            <DefaultButton
-              text="Adicionar"
-              icon="mdi-plus"
-              class="mt-6"
-              @click="openAddCouponModal" />
-          </template>
-        </EmptyState>
-      </template>
-      <template v-else>
-        <StatisticList :statistics="getStatistics" title="Cupons" />
+  <div class="event-details-wrapper">
+    <!-- Estado vazio -->
+    <template v-if="getCoupons?.length === 0">
+      <EmptyState
+        title="Ainda não há cupons"
+        subtitle="Uma vez criados, seus cupons aparecerão aqui"
+        icon="mdi-ticket">
+        <template #action>
+          <DefaultButton
+            text="Adicionar"
+            icon="mdi-plus"
+            class="mt-6"
+            @click="openAddCouponModal" />
+        </template>
+      </EmptyState>
+    </template>
+    <template v-else>
+      <StatisticList :statistics="getStatistics" title="Cupons" />
 
-        <EventCoupons :event-id="getEvent.id" @add-coupon="openAddCouponModal" />
-      </template>
-    </div>
-
+      <EventCoupons :event-id="getEvent.id" @add-coupon="openAddCouponModal" />
+    </template>
     <!-- Modal de adição -->
     <v-dialog v-model="showAddDialog" max-width="900px" persistent :fullscreen="isMobile">
       <v-card :tile="isMobile">
@@ -150,11 +146,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details-tickets {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
 .event-details-wrapper {
   max-width: 1480px;
 }
