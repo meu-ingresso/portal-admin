@@ -12,6 +12,7 @@ import { handleGetResponse } from '~/utils/responseHelpers';
 })
 export default class EventGeneralInfo extends VuexModule {
   private isLoading: boolean = false;
+  private eventList: EventApiResponse[] = [];
 
   private info: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
     id: '',
@@ -148,6 +149,10 @@ export default class EventGeneralInfo extends VuexModule {
     return this.isLoadingEventStatus;
   }
 
+  public get $eventList() {
+    return this.eventList;
+  }
+
   @Mutation
   private SET_LOADING(payload: boolean) {
     this.isLoading = payload;
@@ -196,6 +201,11 @@ export default class EventGeneralInfo extends VuexModule {
   @Mutation
   private SET_GROUP_ID(groupId: string) {
     this.info.group_id = groupId;
+  }
+
+  @Mutation
+  private SET_EVENT_LIST(events: EventApiResponse[]) {
+    this.eventList = events;
   }
 
   @Action
@@ -1028,6 +1038,57 @@ export default class EventGeneralInfo extends VuexModule {
     } catch (error) {
       console.error('Erro ao buscar eventos do grupo:', error);
       return [];
+    }
+  }
+
+  @Action
+  public async fetchEvents(params?: {
+    sortBy?: string[];
+    sortDesc?: boolean[];
+    whereHas?: Record<string, any>;
+    preloads?: string[];
+  }) {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      // Construir a query string
+      const queryParams: string[] = [];
+
+      // Adicionar ordenação
+      if (params?.sortBy?.length) {
+        params.sortBy.forEach((field, index) => {
+          queryParams.push(`sort[${field}]=${params.sortDesc?.[index] ? 'desc' : 'asc'}`);
+        });
+      }
+
+      // Adicionar whereHas conditions
+      if (params?.whereHas) {
+        Object.entries(params.whereHas).forEach(([key, conditions]) => {
+          Object.entries(conditions).forEach(([field, value]) => {
+            queryParams.push(`whereHas[${key}][${field}]=${value}`);
+          });
+        });
+      }
+
+      // Adicionar preloads
+      if (params?.preloads?.length) {
+        params.preloads.forEach(preload => {
+          queryParams.push(`preloads[]=${preload}`);
+        });
+      }
+
+      const queryString = queryParams.length ? `?${queryParams.join('&')}` : '';
+      
+      const response = await $axios.$get(`events${queryString}`);
+      const { data } = handleGetResponse(response, 'Eventos não encontrados', null, true);
+
+      this.context.commit('SET_EVENT_LIST', data || []);
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar eventos:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
     }
   }
 }

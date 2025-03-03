@@ -195,8 +195,6 @@ export default class EventCustomFields extends VuexModule {
           // Trata o retorno e filtra por não deletados
           const { data: checkoutFieldsTicketsResult } = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
 
-          console.log('checkoutFieldsTicketsResult', checkoutFieldsTicketsResult);
-
           const customFieldTickets = checkoutFieldsTicketsResult.map(
             (customFieldTicket: CustomFieldTicketApiResponse) => ({
               id: customFieldTicket.ticket.id,
