@@ -236,7 +236,7 @@ export default class EventPrincipalModule extends VuexModule {
 
   // Actions - Event Creation Flow
   @Action
-  public async createEvent(): Promise<{ success: boolean; eventId?: string }> {
+  public async createEvent(): Promise<{ success: boolean; eventIds?: string[] }> {
     try {
       this.context.commit('SET_SAVING', true);
 
@@ -249,42 +249,44 @@ export default class EventPrincipalModule extends VuexModule {
 
       // 2. Criar evento base
       this.context.commit('SET_PROGRESS_TITLE', 'Criando evento...');
-      const { eventId } = await eventGeneralInfo.createEventBase();
+      const responseEvents = await eventGeneralInfo.createEventBase();
 
-      if (!eventId) {
+      if (!responseEvents) {
         throw new Error('Falha ao criar evento base');
       }
+
+      const eventIds = responseEvents.map((event) => event.id);
 
       // 3. Processar banner e link online em paralelo
       this.context.commit('SET_PROGRESS_TITLE', 'Processando mídia e configurações...');
       await Promise.all([
-        eventGeneralInfo.handleEventBanner(eventId),
-        eventGeneralInfo.handleLinkOnline(eventId)
+        eventGeneralInfo.handleEventBanner(eventIds),
+        eventGeneralInfo.handleLinkOnline(eventIds)
       ]);
 
       // 4. Criar ingressos
       this.context.commit('SET_PROGRESS_TITLE', 'Criando ingressos...');
       if (eventTickets.$tickets.length > 0) {
-        await eventTickets.createTickets(eventId);
+        await eventTickets.createTickets(eventIds);
       }
 
       // 5. Criar campos personalizados
       this.context.commit('SET_PROGRESS_TITLE', 'Configurando campos personalizados...');
       if (eventCustomFields.$customFields.length > 0) {
-        await eventCustomFields.createCustomFields(eventId);
+        await eventCustomFields.createCustomFields(eventIds);
       }
 
       // 6. Criar cupons
       this.context.commit('SET_PROGRESS_TITLE', 'Configurando cupons...');
       if (eventCoupons.$coupons.length > 0) {
-        await eventCoupons.createCoupons(eventId);
+        await eventCoupons.createCoupons(eventIds);
       }
 
       // 7. Resetar todos os módulos após sucesso
       this.context.commit('SET_PROGRESS_TITLE', 'Finalizando...');
       this.resetAllModules();
 
-      return { success: true, eventId };
+      return { success: true, eventIds };
 
     } catch (error) {
       console.error('Erro ao criar evento:', error);

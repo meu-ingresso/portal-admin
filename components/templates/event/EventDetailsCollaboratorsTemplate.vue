@@ -1,15 +1,11 @@
 <template>
-  <div v-if="getEvent" class="event-details-collaborators">
-    <EventDetailsHeader />
-
-    <div class="event-details-wrapper">
-      <EventCollaborator
-        :event-id="getEvent.id"
-        :collaborators="getEvent.collaborators"
-        @added="handleCollaboratorAdded"
-        @updated="handleCollaboratorUpdated"
-        @deleted="handleCollaboratorDeleted" />
-    </div>
+  <div class="event-details-wrapper">
+    <EventCollaborator
+      :event-id="getEvent.id"
+      :collaborators="getEvent.collaborators"
+      @added="handleCollaboratorAdded"
+      @updated="handleCollaboratorUpdated"
+      @deleted="handleCollaboratorDeleted" />
   </div>
 </template>
 
@@ -42,12 +38,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details-collaborators {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
-
 .event-details-wrapper {
   max-width: 1480px;
 }

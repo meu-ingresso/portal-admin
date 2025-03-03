@@ -216,11 +216,20 @@ export interface EventTotalizer {
   totalViews: string;
 }
 
+
 export interface GroupEvent {
   id: string;
   name: string;
   description: string;
   created_at: string;
+}
+
+export interface EventDate {
+  id?: string;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
 }
 
 export interface Event {
@@ -237,10 +246,6 @@ export interface Event {
   banner_id?: string;
   link_online?: string;
   link_online_id?: string;
-  start_date: string;
-  start_time: string;
-  end_date: string;
-  end_time: string;
   address?: EventAddress;
   sale_type: string;
   availability: 'Publico' | 'Privado';
@@ -260,6 +265,8 @@ export interface Event {
     platform_fee: number;
   };
   groups: GroupEvent[];
+  event_dates: EventDate[];
+  group_id?: string;
 }
 
 export interface EventFormState {
@@ -276,11 +283,6 @@ export interface CreateEventPayload extends Omit<Event, 'id'> {}
 
 export interface UpdateEventPayload extends Partial<Event> {
   id: string;
-}
-export interface EventResponse {
-  success: boolean;
-  data?: Event;
-  message?: string;
 }
 
 export interface ValidationResult {
@@ -313,6 +315,12 @@ export interface EventApiResponse {
   alias: string;
   description: string;
   general_information: string;
+  groups: GroupEvent[];
+  status_id: string;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
 }
 
 export interface TicketApiResponse {

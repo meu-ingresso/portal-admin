@@ -1,33 +1,30 @@
 <template>
-  <div v-if="getEvent" class="event-details-tickets">
-    <EventDetailsHeader />
-    <div class="event-details-wrapper">
-      <!-- Estado vazio -->
-      <template v-if="getTickets?.length === 0">
-        <EmptyState
-          title="Ainda não há ingressos"
-          subtitle="Uma vez criados, seus ingressos aparecerão aqui"
-          icon="mdi-ticket">
-          <template #action>
-            <DefaultButton
-              text="Adicionar ingresso"
-              icon="mdi-plus"
-              class="mt-6"
-              @click="openAddTicketModal" />
-          </template>
-        </EmptyState>
-      </template>
+  <div class="event-details-wrapper">
+    <!-- Estado vazio -->
+    <template v-if="getTickets?.length === 0">
+      <EmptyState
+        title="Ainda não há ingressos"
+        subtitle="Uma vez criados, seus ingressos aparecerão aqui"
+        icon="mdi-ticket">
+        <template #action>
+          <DefaultButton
+            text="Adicionar ingresso"
+            icon="mdi-plus"
+            class="mt-6"
+            @click="openAddTicketModal" />
+        </template>
+      </EmptyState>
+    </template>
 
-      <!-- Tabela de ingressos -->
-      <template v-else>
-        <StatisticList :statistics="getStatistics" title="Ingressos" />
+    <!-- Tabela de ingressos -->
+    <template v-else>
+      <StatisticList :statistics="getStatistics" title="Ingressos" />
 
-        <EventTickets
-          :event-id="getEvent.id"
-          title="Lista de ingressos"
-          @add-ticket="openAddTicketModal" />
-      </template>
-    </div>
+      <EventTickets
+        :event-id="getEvent.id"
+        title="Lista de ingressos"
+        @add-ticket="openAddTicketModal" />
+    </template>
 
     <!-- Modal de adição -->
     <v-dialog v-model="showAddDialog" max-width="900px" persistent :fullscreen="isMobile">
@@ -161,11 +158,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details-tickets {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
 .event-details-wrapper {
   max-width: 1480px;
 }
