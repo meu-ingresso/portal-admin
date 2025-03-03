@@ -224,60 +224,71 @@ export default class EventTickets extends VuexModule {
   }
 
   @Action
-  public async createTickets(eventId: string): Promise<Record<string, string>> {
+  public async createTickets(eventIds: string[]): Promise<Record<string, string>[]> {
     try {
-      const ticketMap: Record<string, string> = {};
+      // Array para armazenar os mapas de tickets para cada evento
+      const ticketMaps: Record<string, string>[] = [];
+      
       const statusResponse = await status.fetchStatusByModuleAndName({
         module: 'ticket',
         name: 'À Venda',
       });
 
       // Cria todas as categorias em uma única chamada
-      const categoryMap = await this.createCategories({
-        eventId,
+      const categoryMaps = await this.createCategories({
+        eventIds,
         tickets: this.ticketList,
       });
 
-      // Prepara o payload com todos os tickets
-      const ticketsPayload = {
-        data: this.ticketList.map((ticket, index) => {
-          const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
-          const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
+      // Processa cada evento individualmente
+      for (let i = 0; i < eventIds.length; i++) {
+        const eventId = eventIds[i];
+        const categoryMap = categoryMaps[i] || new Map<string, string>();
+        const ticketMap: Record<string, string> = {};
 
-          const startDate = new Date(startDateTime);
-          const endDate = new Date(endDateTime);
+        // Prepara o payload com todos os tickets para este evento
+        const ticketsPayload = {
+          data: this.ticketList.map((ticket, index) => {
+            const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
+            const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
 
-          return {
-            event_id: eventId,
-            name: ticket.name,
-            total_quantity: ticket.total_quantity,
-            remaining_quantity: ticket.total_quantity,
-            price: parseFloat(ticket.price),
-            status_id: statusResponse.id,
-            start_date: startDate.toISOString().replace('Z', '-0300'),
-            end_date: endDate.toISOString().replace('Z', '-0300'),
-            availability: ticket.availability,
-            min_quantity_per_user: ticket.min_purchase,
-            max_quantity_per_user: ticket.max_purchase,
-            ticket_event_category_id: ticket.category
-              ? categoryMap.get(ticket.category.text)
-              : null,
-            display_order: ticket.display_order || index + 1,
-          };
-        }),
-      };
+            const startDate = new Date(startDateTime);
+            const endDate = new Date(endDateTime);
 
-      const ticketResponse = await $axios.$post('ticket', ticketsPayload);
+            return {
+              event_id: eventId,
+              name: ticket.name,
+              total_quantity: ticket.total_quantity,
+              remaining_quantity: ticket.total_quantity,
+              price: parseFloat(ticket.price),
+              status_id: statusResponse.id,
+              start_date: startDate.toISOString().replace('Z', '-0300'),
+              end_date: endDate.toISOString().replace('Z', '-0300'),
+              availability: ticket.availability,
+              min_quantity_per_user: ticket.min_purchase,
+              max_quantity_per_user: ticket.max_purchase,
+              ticket_event_category_id: ticket.category
+                ? categoryMap.get(ticket.category.text) || null
+                : null,
+              display_order: ticket.display_order || index + 1,
+            };
+          }),
+        };
 
-      if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Falha ao criar ingressos');
+        const ticketResponse = await $axios.$post('ticket', ticketsPayload);
+
+        if (!ticketResponse.body || ticketResponse.body.code !== 'CREATE_SUCCESS') {
+          throw new Error(`Falha ao criar ingressos para o evento ${eventId}`);
+        }
+
+        ticketResponse.body.result.forEach((createdTicket: any) => {
+          ticketMap[createdTicket.name] = createdTicket.id;
+        });
+
+        ticketMaps.push(ticketMap);
       }
 
-      ticketResponse.body.result.forEach((createdTicket: any) => {
-        ticketMap[createdTicket.name] = createdTicket.id;
-      });
-
-      return ticketMap;
+      return ticketMaps;
     } catch (error) {
       console.error('Erro ao criar ingressos:', error);
       throw error;
@@ -548,9 +559,9 @@ export default class EventTickets extends VuexModule {
 
   @Action
   private async createCategories(payload: {
-    eventId: string;
+    eventIds: string[];
     tickets: Ticket[];
-  }): Promise<Map<string, string>> {
+  }): Promise<Map<string, string>[]> {
     try {
       // Extrai categorias únicas dos tickets
       const uniqueCategories = new Set(
@@ -559,26 +570,37 @@ export default class EventTickets extends VuexModule {
           .map((ticket) => ticket.category.text)
       );
 
-      if (uniqueCategories.size === 0) return new Map();
+      if (uniqueCategories.size === 0) return [];
 
-      // Prepara o payload para criar todas as categorias
-      const categoriesPayload = {
-        data: Array.from(uniqueCategories).map((categoryName) => ({
-          event_id: payload.eventId,
-          name: categoryName,
-        })),
-      };
+      // Array para armazenar os mapas de categorias para cada evento
+      const categoryMaps: Map<string, string>[] = [];
+      
+      // Processa cada evento individualmente
+      for (const eventId of payload.eventIds) {
+        // Prepara o payload para criar categorias para este evento
+        const categoriesPayload = {
+          data: Array.from(uniqueCategories).map((categoryName) => ({
+            event_id: eventId,
+            name: categoryName,
+          })),
+        };
 
-      const response = await $axios.$post('ticket-event-category', categoriesPayload);
+        const response = await $axios.$post('ticket-event-category', categoriesPayload);
 
-      if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Falha ao criar categorias de ingresso');
+        if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+          throw new Error(`Falha ao criar categorias de ingresso para o evento ${eventId}`);
+        }
+
+        // Cria um mapa com nome da categoria -> id para este evento
+        const categoryMap = new Map<string, string>();
+        response.body.result.forEach((category: any) => {
+          categoryMap.set(category.name, category.id);
+        });
+        
+        categoryMaps.push(categoryMap);
       }
 
-      // Cria um mapa com nome da categoria -> id
-      return new Map(
-        response.body.result.map((category: any) => [category.name, category.id])
-      );
+      return categoryMaps;
     } catch (error) {
       console.error('Erro ao criar categorias:', error);
       throw error;

@@ -29,8 +29,8 @@
         <!-- Step 1: Informações Gerais -->
         <v-stepper-content
           step="1"
-          class="bg-white px-6 py-6"
-          :class="{ 'fixed-height-content': isMobile }">
+          class="bg-transparent px-0 py-0"
+          :class="{ 'fixed-height-content': isMobile, 'bg-beige px-6 py-6': currentStep > 1 }">
           <Lottie
             v-if="isLoadingGeneralInfo"
             path="./animations/loading_default.json"

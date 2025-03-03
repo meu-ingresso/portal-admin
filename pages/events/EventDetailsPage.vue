@@ -17,7 +17,13 @@
         <ValueNoExists text="Você não possui acesso à esse evento" />
       </div>
 
-      <div v-else-if="getEvent">
+      <div v-else-if="getEvent" class="event-details-page">
+
+        <div class="d-flex justify-space-between">
+          <EventDetailsHeader />
+          <EventSessionSelector />
+        </div>
+
         <EventDetailsTemplate v-if="isPanel" />
         <EventDetailsTicketsTemplate v-if="isTickets" />
         <EventDetailsCouponsTemplate v-if="isCoupons" />
@@ -165,8 +171,25 @@ export default {
 
         loading.setIsLoading(true);
 
+        // Primeiro, busca o evento específico para obter o ID do grupo
+        await eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id);
+
+        const currentEvent = eventGeneralInfo.$info;
+        const groupId = currentEvent?.groups?.[0]?.id;
+
+        // Se o evento pertence a um grupo, busca todos os eventos relacionados
+        if (groupId) {
+          await eventGeneralInfo.fetchEvents({
+            whereHas: {
+              groups: {
+                id: groupId
+              }
+            },
+            preloads: ['rating', 'coupons', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups']
+          });
+        }
+
         const promises = [
-          eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id),
           eventTickets.fetchAndPopulateByEventId(this.$route.params.id),
           eventCustomFields.fetchAndPopulateByEventId(this.$route.params.id),
           eventCoupons.fetchAndPopulateByEventId(this.$route.params.id),
@@ -185,3 +208,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.event-details-page {
+  padding-top: 16px;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+</style>

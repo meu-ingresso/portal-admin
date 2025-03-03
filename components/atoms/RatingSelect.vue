@@ -3,7 +3,7 @@
     ref="select"
     v-model="selectedRating"
     :items="ratings"
-    label="Classificação Indicativa"
+    label="Classificação Indicativa*"
     item-value="value"
     item-text="text"
     dense

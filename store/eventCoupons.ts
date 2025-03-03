@@ -187,32 +187,33 @@ export default class EventCoupons extends VuexModule {
 
 
   @Action
-  public async createCoupons(eventId: string): Promise<void> {
+  public async createCoupons(eventIds: string[]): Promise<void> {
     try {
       if (!this.couponList.length) {
         console.log('Nenhum cupom para criar');
         return;
-      };
+      }
 
       const statusId = await this.getDefaultStatusId();
 
-      // Preparar payload para criação em lote
-      const couponsToCreate = this.couponList.map(coupon => 
-        prepareCouponPayload(coupon, eventId, statusId)
-      );
+      // Processar cada evento individualmente
+      for (const eventId of eventIds) {
+        // Preparar payload para criação em lote
+        const couponsToCreate = this.couponList.map(coupon => 
+          prepareCouponPayload(coupon, eventId, statusId)
+        );
 
-      // Criar todos os cupons de uma vez
-      const couponResponse = await $axios.$post('coupon', {
-        data: couponsToCreate
-      });
+        // Criar todos os cupons de uma vez
+        const couponResponse = await $axios.$post('coupon', {
+          data: couponsToCreate
+        });
 
-      if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Falha ao criar cupons');
-      }
+        if (!couponResponse.body || couponResponse.body.code !== 'CREATE_SUCCESS') {
+          throw new Error(`Falha ao criar cupons para o evento ${eventId}`);
+        }
 
-
-      if (this.couponList.some(c => c.tickets && c.tickets.length > 0)) {
-        const ticketsFromEvent = await this.getEventTickets(eventId);
+        if (this.couponList.some(c => c.tickets && c.tickets.length > 0)) {
+          const ticketsFromEvent = await this.getEventTickets(eventId);
 
           // Criar relações com tickets
           const ticketRelationsToCreate: any[] = [];
@@ -221,8 +222,6 @@ export default class EventCoupons extends VuexModule {
             const originalCoupon = this.couponList.find(c => c.code === createdCoupon.code);
             if (originalCoupon && originalCoupon.tickets) {
               originalCoupon.tickets.forEach(ticket => {
-              
-
                 const couponTicketId = ticketsFromEvent.find(t => t.name === ticket.name)?.id;
 
                 if (couponTicketId) {
@@ -243,8 +242,8 @@ export default class EventCoupons extends VuexModule {
               data: ticketRelationsToCreate
             });
           }
+        }
       }
-
     } catch (error) {
       console.error('Erro ao criar cupons:', error);
       throw error;

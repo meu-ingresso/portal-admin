@@ -364,6 +364,7 @@ export default class Event extends VuexModule {
       'attachments',
       'coupons',
       'collaborators',
+      'groups'
     ];
 
     const params = new URLSearchParams();
