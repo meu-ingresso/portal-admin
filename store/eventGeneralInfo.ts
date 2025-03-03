@@ -917,10 +917,11 @@ export default class EventGeneralInfo extends VuexModule {
   @Action
   private async uploadEventBanner(payload: { attachmentIds: string[]; banner: File }) {
     const formData = new FormData();
+    
     payload.attachmentIds.forEach((attachmentId) => {
       formData.append('attachment_ids[]', attachmentId);
+      formData.append('files[]', payload.banner);
     });
-    formData.append('files[]', payload.banner);
 
     const uploadResponse = await $axios.$post('upload', formData, {
       headers: {
