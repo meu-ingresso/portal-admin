@@ -6,6 +6,7 @@
       v-if="hasTickets"
       disable-menu
       disable-hover
+      disable-add-ticket
       title="Detalhamento das vendas"
       :event-id="getEvent.id" />
   </div>

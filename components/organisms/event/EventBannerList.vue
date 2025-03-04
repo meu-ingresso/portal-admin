@@ -7,7 +7,8 @@
         :date="event.start_date"
         :location="event.location_name || 'Local não definido'"
         :image="getImage(event)"
-        :has-multiple-sessions="hasMultipleSessions(event)" />
+        :has-multiple-sessions="event.hasSessions"
+        :sessions-count="event.sessionsCount" />
     </v-col>
   </v-row>
 </template>
@@ -25,18 +26,6 @@ export default {
       );
 
       return banner && banner?.url ? banner?.url : '/assets/images/default_banner.png';
-    },
-
-    hasMultipleSessions(event) {
-      if (!event.groups || !event.groups.length) return false;
-      
-      const currentGroupId = event.groups[0].id;
-      return this.events.some(
-        otherEvent => 
-          otherEvent.id !== event.id && 
-          otherEvent.groups?.length && 
-          otherEvent.groups[0].id === currentGroupId
-      );
     },
   },
 };

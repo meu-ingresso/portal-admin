@@ -1,7 +1,12 @@
 <template>
   <v-row class="mb-4">
     <v-col cols="12">
-      <div class="statistics-title">{{ title }}</div>
+      <div class="d-flex justify-space-between align-center">
+        <div class="statistics-title">{{ title }}</div>
+        <div>
+          <slot name="action" />
+        </div>
+      </div>
     </v-col>
 
     <v-col

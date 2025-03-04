@@ -7,7 +7,7 @@
         small
         class="ma-2"
         dark>
-        Múltiplas sessões
+        {{ sessionsCount }} datas disponíveis
       </v-chip>
     </v-img>
 
@@ -31,6 +31,7 @@ export default {
     location: { type: String, required: true },
     image: { type: String, required: false, default: null },
     hasMultipleSessions: { type: Boolean, required: false, default: false },
+    sessionsCount: { type: Number, required: false, default: 0 },
   },
 
   computed: {
