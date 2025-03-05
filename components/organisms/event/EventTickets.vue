@@ -2,10 +2,10 @@
   <v-row class="mb-4">
     <v-col cols="12">
       <div class="d-flex justify-space-between">
-        <div class="event-tickets-title">
+        <div v-if="!disableTitle" class="event-tickets-title">
           {{ title }}
         </div>
-        <DefaultButton v-if="!disableMenu" text="Adicionar" @click="handleAddTicket" />
+        <DefaultButton v-if="!disableAddTicket" text="Adicionar" @click="handleAddTicket" />
       </div>
     </v-col>
 
@@ -16,7 +16,7 @@
         :non-drag-area-selector="'.is-swapping'"
         @drop="onDrop">
         <Draggable
-          v-for="ticket in getTickets"
+          v-for="ticket in displayedTickets"
           :key="ticket.id"
           class="pt-4 draggable-ticket"
           :class="{ 'is-swapping': isSwapping }">
@@ -44,7 +44,7 @@
       </Container>
       <template v-else>
         <TicketRow
-          v-for="ticket in getTickets"
+          v-for="ticket in displayedTickets"
           :id="ticket.id"
           :key="ticket.id"
           class="mt-1"
@@ -158,9 +158,12 @@ export default {
 
   props: {
     title: { type: String, required: false, default: 'Detalhamento das vendas' },
+    disableTitle: { type: Boolean, required: false, default: false },
     disableMenu: { type: Boolean, required: false, default: false },
+    disableAddTicket: { type: Boolean, required: false, default: false },
     eventId: { type: String, required: true },
     disableHover: { type: Boolean, required: false, default: false },
+    customTickets: { type: Array, required: false, default: null },
   },
   data() {
     return {
@@ -183,6 +186,10 @@ export default {
     },
     getEventPromoter() {
       return eventGeneralInfo.$info?.promoter_id;
+    },
+    // Use customTickets if provided, otherwise use all tickets
+    displayedTickets() {
+      return this.customTickets || this.getTickets;
     },
   },
   methods: {
@@ -252,111 +259,114 @@ export default {
       }
     },
 
-    async handleStopSales(ticketId) {
+    async handleStopSales(ticket) {
       try {
-        await eventTickets.stopTicketSales(ticketId);
-
+        await eventTickets.stopTicketSales(ticket.id);
+        await eventTickets.fetchAndPopulateByEventId(this.eventId);
         toast.setToast({
-          text: `Vendas interrompidas com sucesso!`,
+          text: `Venda do ingresso "${ticket.name}" pausada com sucesso!`,
           type: 'success',
           time: 5000,
         });
       } catch (error) {
         toast.setToast({
-          text: `Falha ao interromper vendas do ingresso. Tente novamente.`,
+          text: `Falha ao pausar venda do ingresso. Tente novamente.`,
           type: 'danger',
           time: 5000,
         });
-        console.error('Erro ao interromper vendas do ingresso:', error);
+        console.error('Erro ao pausar venda do ingresso:', error);
+      }
+    },
+
+    async confirmDelete() {
+      try {
+        this.isLoading = true;
+        await eventTickets.fetchDeleteTicket(this.selectedTicket.id);
+        await eventTickets.fetchAndPopulateByEventId(this.eventId);
+        toast.setToast({
+          text: `Ingresso excluído com sucesso!`,
+          type: 'success',
+          time: 5000,
+        });
+        this.handleCloseDialog();
+      } catch (error) {
+        toast.setToast({
+          text: `Falha ao excluir ingresso. Tente novamente.`,
+          type: 'danger',
+          time: 5000,
+        });
+        console.error('Erro ao excluir ingresso:', error);
+      } finally {
+        this.isLoading = false;
       }
     },
 
     async submitEdit() {
+      this.isLoading = true;
       try {
-        this.isLoading = true;
-
-        const ticketEditForm = this.$refs.ticketEditForm;
-        const { success } = await ticketEditForm.handleSubmit(true);
-
+        const ticketForm = this.$refs.ticketEditForm;
+        const { success, error } = await ticketForm.handleSubmit(false);
         if (success) {
-          this.isLoading = false;
-
-          this.handleCloseEditDialog();
+          this.showEditDialog = false;
           toast.setToast({
             text: `Ingresso atualizado com sucesso!`,
             type: 'success',
             time: 5000,
           });
         } else {
-          console.log('[ATUALIZAÇÃO - TicketForm] Erro de validação');
+          console.log('[EDIÇÃO - TicketForm] Erro de validação', error);
+          toast.setToast({
+            text: `Erro ao atualizar ingresso`,
+            type: 'error',
+            time: 5000,
+          });
         }
       } catch (error) {
-        this.showEditDialog = false;
-        this.isLoading = false;
-        console.error('Erro ao atualizar ingresso:', error);
+        console.error('Erro ao enviar formulário:', error);
+        toast.setToast({
+          text: `Erro ao atualizar ingresso`,
+          type: 'error',
+          time: 5000,
+        });
       } finally {
         this.isLoading = false;
       }
     },
 
-    async confirmDelete() {
-      if (!this.selectedTicket) return;
-
-      try {
-        this.isLoading = true;
-
-        await eventTickets.fetchDeleteTicket(this.selectedTicket.id);
-        this.$emit('deleted', this.selectedTicket.id);
-        this.handleCloseDialog();
-
-        // Notifica o usuário
-        toast.setToast({
-          text: `Ingresso "${this.selectedTicket.name}" removido com sucesso!`,
-          type: 'success',
-          time: 5000,
-        });
-
-        await eventTickets.fetchAndPopulateByEventId(this.eventId);
-      } catch (error) {
-        console.error('Erro ao remover ingresso:', error);
-        toast.setToast({
-          text: `Falha ao remover ingresso. Tente novamente.`,
-          type: 'danger',
-          time: 5000,
-        });
-      } finally {
-        this.isLoading = false;
-        this.showConfirmDialog = false;
+    async onDrop(dropResult) {
+      // Se não houve remoção e adição real, não faz nada
+      if (dropResult.removedIndex === null || dropResult.addedIndex === null) {
+        return;
       }
-    },
 
-    async onDrop({ removedIndex, addedIndex }) {
-      if (removedIndex !== null && addedIndex !== null && removedIndex !== addedIndex) {
-        try {
-          this.isSwapping = true;
+      this.isSwapping = true;
 
+      // Se estamos usando customTickets, precisamos mapear os índices para os tickets reais
+      if (this.customTickets) {
+        const removedTicket = this.customTickets[dropResult.removedIndex];
+        const addedTicket = this.customTickets[dropResult.addedIndex];
+        
+        // Encontrar os índices reais no array completo de tickets
+        const allTicketsRemovedIndex = this.getTickets.findIndex(t => t.id === removedTicket.id);
+        const allTicketsAddedIndex = this.getTickets.findIndex(t => t.id === addedTicket.id);
+        
+        if (allTicketsRemovedIndex !== -1 && allTicketsAddedIndex !== -1) {
           await eventTickets.swapTicketsOrder({
-            removedIndex,
-            addedIndex,
+            removedIndex: allTicketsRemovedIndex,
+            addedIndex: allTicketsAddedIndex,
             persist: true,
           });
-
-          toast.setToast({
-            text: `Ingressos reordenados com sucesso!`,
-            type: 'success',
-            time: 5000,
-          });
-        } catch (error) {
-          console.error('Erro ao trocar ordem de exibição dos ingressos:', error);
-          toast.setToast({
-            text: `Falha ao reordenar ingressos. Tente novamente.`,
-            type: 'danger',
-            time: 5000,
-          });
-        } finally {
-          this.isSwapping = false;
         }
+      } else {
+        // Comportamento original
+        await eventTickets.swapTicketsOrder({
+          removedIndex: dropResult.removedIndex,
+          addedIndex: dropResult.addedIndex,
+          persist: true,
+        });
       }
+
+      this.isSwapping = false;
     },
   },
 };
@@ -364,22 +374,21 @@ export default {
 
 <style scoped>
 .event-tickets-title {
-  font-weight: 600;
-  font-size: 26px;
-  text-align: left;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
 }
 
 @media (max-width: 360px) {
   .event-tickets-title {
-    font-size: 16px !important;
+    font-size: 14px;
   }
 }
 
 @media (min-width: 361px) and (max-width: 480px) {
   .event-tickets-title {
-    font-size: 18px !important;
+    font-size: 16px;
   }
 }
 </style>

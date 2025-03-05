@@ -2,7 +2,17 @@
   <NuxtLink :to="`/events/${event.id}`">
     <v-card class="event-card">
       <v-card-text>
-        <h3 class="event-title mb-4">{{ event.title }}</h3>
+        <div class="d-flex align-items-center">
+          <h3 class="event-title mb-4">{{ event.title }}</h3>
+          <v-chip
+            v-if="showSessionsIndicator && event.hasSessions"
+            color="primary"
+            small
+            class="ml-2"
+            dark>
+            {{ event.sessionsCount }} datas disponíveis
+          </v-chip>
+        </div>
         <div class="d-flex align-end justify-space-between">
           <div class="d-flex align-center justify-space-between w-full">
             <div class="d-flex flex-column align-start justify-space-between">
@@ -26,6 +36,7 @@ export default {
   props: {
     event: { type: Object, required: true },
     canManageEvent: { type: Boolean, required: true },
+    showSessionsIndicator: { type: Boolean, default: false },
   },
 
   computed: {

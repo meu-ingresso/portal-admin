@@ -7,8 +7,16 @@
       <StatusBadge :text="event?.deleted_at !== null ? 'Excluído' : event.status.name" />
     </v-col>
 
-    <v-col sm="12" md="2">
+    <v-col sm="12" md="2" class="position-relative">
       <v-img :src="getImage" class="event-image"></v-img>
+      <v-chip
+        v-if="showSessionsIndicator && event.hasSessions"
+        color="primary"
+        small
+        class="sessions-chip ma-2"
+        dark>
+        {{ event.sessionsCount }} datas disponíveis
+      </v-chip>
     </v-col>
 
     <v-col sm="12" md="3">
@@ -109,6 +117,7 @@ export default {
     event: { type: Object, required: true },
     canManageEvent: { type: Boolean, required: true },
     image: { type: String, required: false, default: null },
+    showSessionsIndicator: { type: Boolean, default: false },
   },
 
   data() {
@@ -322,5 +331,16 @@ export default {
 
 .delete-icon {
   color: red !important;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.sessions-chip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 </style>
