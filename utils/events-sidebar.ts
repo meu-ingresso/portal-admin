@@ -49,4 +49,11 @@ export const eventsSideBar = [
     to: '/events/:id/orders',
     needPermissions: false,
   },
+  {
+    icon: 'mdi-point-of-sale-outline',
+    iconActive: 'mdi-point-of-sale',
+    title: 'PDV',
+    to: '/events/:id/pdv',
+    needPermissions: false,
+  },
 ];

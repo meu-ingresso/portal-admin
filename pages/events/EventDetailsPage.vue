@@ -31,6 +31,7 @@
         <EventDetailsCheckinTemplate v-if="isCheckin" />
         <EventDetailsOrdersTemplate v-if="isOrders" />
         <EventDetailsCollaboratorsTemplate v-if="isCollaborators" />
+        <EventDetailsPdvTemplate v-if="isPdv" />
       </div>
     </v-container>
     <Toast />
@@ -114,6 +115,10 @@ export default {
 
     isCollaborators() {
       return this.$route.meta.template === 'collaborators';
+    },
+    
+    isPdv() {
+      return this.$route.meta.template === 'pdv';
     },
 
     userRole() {
