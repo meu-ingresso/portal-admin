@@ -23,7 +23,7 @@
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
-    <EventList :events="filteredEvents" />
+    <EventList :events="filteredEvents" :show-sessions-indicator="showSessionsIndicator" />
 
     <v-row v-if="filteredEvents.length > 0">
       <v-col cols="12" class="text-center">
@@ -39,6 +39,7 @@ import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
     events: { type: Array, required: true },
+    showSessionsIndicator: { type: Boolean, default: false },
   },
   data() {
     return {

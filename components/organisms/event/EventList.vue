@@ -6,14 +6,16 @@
         :key="event.id"
         :event="event"
         :can-manage-event="canManageEvent"
-        :image="findBannerImage(event)" />
+        :image="findBannerImage(event)"
+        :show-sessions-indicator="showSessionsIndicator" />
     </template>
     <template v-else>
       <EventCard
         v-for="event in events"
         :key="event.id"
         :event="event"
-        :can-manage-event="canManageEvent" />
+        :can-manage-event="canManageEvent"
+        :show-sessions-indicator="showSessionsIndicator" />
     </template>
   </div>
 
@@ -30,6 +32,7 @@ import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
     events: { type: Array, required: true },
+    showSessionsIndicator: { type: Boolean, default: false },
   },
 
   computed: {
