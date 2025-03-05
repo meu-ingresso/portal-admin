@@ -360,7 +360,7 @@ export default {
       }
     },
 
-    addNewCategory() {
+    async addNewCategory() {
       if (!this.isCategoryFormValid || !this.newCategoryName) return;
 
       try {
@@ -378,25 +378,22 @@ export default {
           return;
         }
 
-        // Criar nova categoria
-        const newCategory = {
-          text: this.newCategoryName,
-          value: `category_${Date.now()}`, // valor único
-          id: null // será atribuído após salvar no backend
-        };
+        // Criar nova categoria e adicionar ao store
+        await eventTickets.createTicketCategory({
+          eventId: this.getEvent.id,
+          category: this.newCategoryName
+        });
 
-        // Adicionar a nova categoria ao store
-        eventTickets.setTicketCategories([...this.getTicketCategories, newCategory]);
+        toast.setToast({
+          text: `Categoria "${this.newCategoryName}" adicionada com sucesso!`,
+          type: 'success',
+          time: 5000,
+        });
 
         // Limpar o formulário e fechar o modal
         this.newCategoryName = '';
         this.showAddCategoryDialog = false;
 
-        toast.setToast({
-          text: `Categoria "${newCategory.text}" adicionada com sucesso!`,
-          type: 'success',
-          time: 5000,
-        });
       } catch (error) {
         console.error('[INSERÇÃO - Categoria] Erro:', error);
         toast.setToast({
