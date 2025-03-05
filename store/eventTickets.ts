@@ -1,5 +1,6 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import {
+  CategoryApiResponse,
   CategoryOption,
   Ticket,
   TicketApiResponse,
@@ -113,12 +114,16 @@ export default class EventTickets extends VuexModule {
   @Mutation
   private SET_TICKETS(tickets: Ticket[]) {
     this.ticketList = tickets;
-    this.ticketCategories = getUniqueCategories(tickets);
   }
 
   @Mutation
-  private SET_TICKET_CATEGORIES(categories: CategoryOption[]) {
-    this.ticketCategories = categories;
+  private SET_TICKET_CATEGORIES(categories: CategoryApiResponse[]) {
+    this.ticketCategories = categories.map((category) => ({
+      id: category.id,
+      value: category.name,
+      text: category.name,
+      _deleted: category.deleted_at !== null,
+    }));
   }
 
   @Mutation
@@ -204,7 +209,7 @@ export default class EventTickets extends VuexModule {
   }
 
   @Action
-  public setTicketCategories(categories: CategoryOption[]) {
+  public setTicketCategories(categories: CategoryApiResponse[]) {
     this.context.commit('SET_TICKET_CATEGORIES', categories);
   }
 
@@ -449,13 +454,25 @@ export default class EventTickets extends VuexModule {
     try {
       this.context.commit('SET_LOADING', true);
 
-      const response = await $axios.$get(
-        `tickets?where[event_id][v]=${eventId}&preloads[]=category&preloads[]=status`
-      );
+      const promises = [      
+        $axios.$get(
+          `tickets?where[event_id][v]=${eventId}&preloads[]=category&preloads[]=status`
+        ),
+        $axios.$get(`ticket-event-categories?where[event_id][v]=${eventId}`)
+      ];
+
+      const [ticketsResponse, categoriesResponse] = await Promise.all(promises);
 
       const ticketsResult = handleGetResponse(
-        response,
+        ticketsResponse,
         'Tickets não encontrados',
+        eventId,
+        true
+      );
+
+      const categoriesResult = handleGetResponse(
+        categoriesResponse,
+        'Categorias não encontradas',
         eventId,
         true
       );
@@ -463,6 +480,8 @@ export default class EventTickets extends VuexModule {
       const orderedTickets = ticketsResult.data.sort(
         (a: TicketApiResponse, b: TicketApiResponse) => a.display_order - b.display_order
       );
+      
+      this.context.commit('SET_TICKET_CATEGORIES', categoriesResult.data);
 
       this.context.commit(
         'SET_TICKETS',
@@ -555,6 +574,34 @@ export default class EventTickets extends VuexModule {
   public reset() {
     this.context.commit('SET_TICKETS', []);
     this.context.commit('SET_TICKET_CATEGORIES', []);
+  }
+
+  @Action
+  public async createTicketCategory(payload: {
+    eventId: string;
+    category: string;
+  }): Promise<void> {
+    try {
+      const response = await $axios.$post('ticket-event-category', {
+        data: [{
+          event_id: payload.eventId,
+          name: payload.category,
+        }],
+      });
+
+      if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
+        throw new Error(`Falha ao criar categoria de ingresso para o evento ${payload.eventId}`);
+      }
+
+      this.context.commit('SET_TICKET_CATEGORIES', [...this.ticketCategories, {
+        text: payload.category,
+        value: payload.category,
+        id: response.body.result[0].id,
+      }]);
+    } catch (error) {
+      console.error('Erro ao criar categoria de ingresso:', error);
+      throw error;
+    }
   }
 
   @Action
