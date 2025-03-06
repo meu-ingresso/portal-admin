@@ -107,31 +107,24 @@
               dense
             ></v-text-field>
             
-            <v-autocomplete
+            <AdvancedAutocomplete
               v-model="selectedUsers"
               :items="availableUsers"
               label="Usuários"
-              multiple
-              chips
-              outlined
-              dense
               item-text="name"
               item-value="id"
-              return-object
-            ></v-autocomplete>
+              item-subtitle="email"
+              more-label="usuários"
+            />
             
-            <v-autocomplete
+            <AdvancedAutocomplete
               v-model="selectedTickets"
               :items="getTickets"
               label="Ingressos"
-              multiple
-              chips
-              outlined
-              dense
               item-text="name"
               item-value="id"
-              return-object
-            ></v-autocomplete>
+              more-label="ingressos"
+            />
           </v-form>
         </v-card-text>
          <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
@@ -171,61 +164,26 @@
             ></v-text-field>
             
             <div class="mb-4">
-              <div class="d-flex justify-space-between align-center mb-2">
-                <div class="text-subtitle-1">Usuários associados</div>
-                <v-btn 
-                  small
-                  text
-                  color="primary"
-                  @click="openAddUserModal">
-                  <v-icon small class="mr-1">mdi-plus</v-icon>
-                  Adicionar
-                </v-btn>
-              </div>
-              <v-list v-if="editingPdv.users && editingPdv.users.length > 0" dense>
-                <v-list-item v-for="user in editingPdv.users" :key="user.id">
-                  <v-list-item-content>
-                    <v-list-item-title>{{ user.user?.people?.first_name + ' ' + user.user?.people?.last_name || 'Usuário não identificado' }}</v-list-item-title>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <v-btn icon x-small @click="removeUserFromPdv(user.id)">
-                      <v-icon x-small>mdi-close</v-icon>
-                    </v-btn>
-                  </v-list-item-action>
-                </v-list-item>
-              </v-list>
-              <div v-else class="text-center py-3 grey lighten-3 rounded">
-                <span class="text-medium-emphasis">Nenhum usuário associado</span>
-              </div>
+              <AdvancedAutocomplete
+                v-model="editUserSelection"
+                :items="availableUsers"
+                label="Usuários associados"
+                item-text="name"
+                item-value="id"
+                item-subtitle="email"
+                more-label="usuários"
+              />
             </div>
-            
+      
             <div>
-              <div class="d-flex justify-space-between align-center mb-2">
-                <div class="text-subtitle-1">Ingressos associados</div>
-                <v-btn 
-                  small
-                  text
-                  color="primary"
-                  @click="openAddTicketModal">
-                  <v-icon small class="mr-1">mdi-plus</v-icon>
-                  Adicionar
-                </v-btn>
-              </div>
-              <v-list v-if="editingPdv.tickets && editingPdv.tickets.length > 0" dense>
-                <v-list-item v-for="ticket in editingPdv.tickets" :key="ticket.id">
-                  <v-list-item-content>
-                    <v-list-item-title>{{ ticket.ticket?.name || 'Ingresso não identificado' }}</v-list-item-title>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <v-btn icon x-small @click="removeTicketFromPdv(ticket.id)">
-                      <v-icon x-small>mdi-close</v-icon>
-                    </v-btn>
-                  </v-list-item-action>
-                </v-list-item>
-              </v-list>
-              <div v-else class="text-center py-3 grey lighten-3 rounded">
-                <span class="text-medium-emphasis">Nenhum ingresso associado</span>
-              </div>
+              <AdvancedAutocomplete
+                v-model="editTicketSelection"
+                :items="getTickets"
+                label="Ingressos associados"
+                item-text="name"
+                item-value="id"
+                more-label="ingressos"
+              />
             </div>
           </v-form>
         </v-card-text>
@@ -252,18 +210,15 @@
           Adicionar Usuários
         </v-card-title>
         <v-card-text>
-          <v-autocomplete
+          <AdvancedAutocomplete
             v-model="userToAdd"
             :items="availableUsers"
             label="Selecione os usuários"
-            multiple
-            chips
-            outlined
-            dense
-            item-text="name"
+            item-text="name" 
             item-value="id"
-            return-object
-          ></v-autocomplete>
+            item-subtitle="email"
+            more-label="usuários"
+          />
         </v-card-text>
          <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
           <DefaultButton
@@ -288,18 +243,14 @@
           Adicionar Ingressos
         </v-card-title>
         <v-card-text>
-          <v-autocomplete
+          <AdvancedAutocomplete
             v-model="ticketToAdd"
             :items="getTickets"
             label="Selecione os ingressos"
-            multiple
-            chips
-            outlined
-            dense
             item-text="name"
             item-value="id"
-            return-object
-          ></v-autocomplete>
+            more-label="ingressos"
+          />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
           <DefaultButton
@@ -338,9 +289,14 @@ import {
   eventPdv,
   user,
 } from '@/store';
+import AdvancedAutocomplete from '@/components/molecules/AdvancedAutocomplete.vue';
 
 
 export default {
+  components: {
+    AdvancedAutocomplete
+  },
+
   data() {
     return {
       headers: [
@@ -376,6 +332,8 @@ export default {
       selectedTickets: [],
       userToAdd: [],
       ticketToAdd: [],
+      editUserSelection: [],
+      editTicketSelection: [],
       availableStatuses: [],
     };
   },
@@ -414,7 +372,38 @@ export default {
     },
   },
 
+  watch: {
+    editPdvModal(isOpen) {
+      // Quando o modal for aberto, preencher os campos de seleção
+      if (isOpen && this.editingPdv) {
+        this.populateEditSelections();
+      }
+    }
+  },
+
+  created() {
+    // Carregar dados necessários ao iniciar o componente
+    this.fetchInitialData();
+  },
+
   methods: {
+    async fetchInitialData() {
+      try {
+        await eventPdv.fetchAndPopulateByEventId(this.eventId);
+        // Precarregar a lista de usuários se ainda não estiver carregada
+        if (!user.$userList.length) {
+          await user.fetchUsers();
+        }
+        // Precarregar a lista de ingressos se ainda não estiver carregada
+        if (!eventTickets.$tickets.length) {
+          await eventTickets.fetchByEventId(this.eventId);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados iniciais:', error);
+        this.$toast.error('Erro ao carregar dados. Tente novamente.');
+      }
+    },
+
     async fetchEventPdvs() {
       await eventPdv.fetchAndPopulateByEventId(this.eventId);
     },
@@ -449,9 +438,43 @@ export default {
       };
       this.editPdvModal = true;
     },
+    
+    populateEditSelections() {
+      // Evitar chamadas desnecessárias se não tiver dados
+      if (!this.editingPdv || !this.editingPdv.id) return;
+
+      // Mapear usuários atuais para o formato do autocomplete - otimizado
+      this.editUserSelection = this.editingPdv.users
+        .filter(u => u.user && u.user.id)
+        .map(u => {
+          const userData = this.availableUsers.find(au => au.id === u.user.id);
+          if (userData) return userData;
+          
+          return {
+            id: u.user.id,
+            name: u.user.people?.first_name + ' ' + (u.user.people?.last_name || '') || u.user.email || 'Usuário sem nome',
+            email: u.user.email
+          };
+        });
+        
+      // Mapear ingressos atuais para o formato do autocomplete - otimizado
+      this.editTicketSelection = this.editingPdv.tickets
+        .filter(t => t.ticket && t.ticket.id)
+        .map(t => {
+          const ticketData = this.getTickets.find(gt => gt.id === t.ticket.id);
+          if (ticketData) return ticketData;
+          
+          return {
+            id: t.ticket.id,
+            name: t.ticket.name || 'Ingresso sem nome'
+          };
+        });
+    },
 
     closeEditPdvModal() {
       this.editPdvModal = false;
+      this.editUserSelection = [];
+      this.editTicketSelection = [];
       this.$nextTick(() => {
         if (this.$refs.editPdvForm) {
           this.$refs.editPdvForm.reset();
@@ -539,6 +562,7 @@ export default {
       try {
         this.isSubmitting = true;
 
+        // Atualiza os dados básicos do PDV
         const updateData = {
           data: {
             id: this.editingPdv.id,
@@ -551,6 +575,71 @@ export default {
         if (!response.success) {
           throw new Error('Erro ao atualizar PDV');
         }
+        
+        // Processa as atualizações em lote para melhorar performance
+        const updatePromises = [];
+        
+        // Obter usuários atuais para comparação
+        const currentUserIds = this.editingPdv.users
+          .filter(u => u.user && u.user.id)
+          .map(u => u.user.id);
+          
+        // Obter usuários selecionados
+        const selectedUserIds = this.editUserSelection.map(u => u.id);
+        
+        // Identificar usuários a serem removidos
+        const usersToRemove = this.editingPdv.users.filter(
+          u => u.user && u.user.id && !selectedUserIds.includes(u.user.id)
+        );
+        
+        // Identificar usuários a serem adicionados
+        const userIdsToAdd = this.editUserSelection
+          .filter(u => !currentUserIds.includes(u.id))
+          .map(u => u.id);
+        
+        // Agendar remoções de usuários
+        usersToRemove.forEach(userAssoc => {
+          updatePromises.push(eventPdv.removeUserAssociation(userAssoc.id));
+        });
+        
+        // Agendar adição de novos usuários em um único batch
+        if (userIdsToAdd.length > 0) {
+          updatePromises.push(eventPdv.associateUsers({
+            pdvId: this.editingPdv.id,
+            userIds: userIdsToAdd
+          }));
+        }
+        
+        // Mesmo processo para ingressos
+        const currentTicketIds = this.editingPdv.tickets
+          .filter(t => t.ticket && t.ticket.id)
+          .map(t => t.ticket.id);
+          
+        const selectedTicketIds = this.editTicketSelection.map(t => t.id);
+        
+        const ticketsToRemove = this.editingPdv.tickets.filter(
+          t => t.ticket && t.ticket.id && !selectedTicketIds.includes(t.ticket.id)
+        );
+        
+        const ticketIdsToAdd = this.editTicketSelection
+          .filter(t => !currentTicketIds.includes(t.id))
+          .map(t => t.id);
+        
+        // Agendar remoções de ingressos
+        ticketsToRemove.forEach(ticketAssoc => {
+          updatePromises.push(eventPdv.removeTicketAssociation(ticketAssoc.id));
+        });
+        
+        // Agendar adição de novos ingressos em um único batch
+        if (ticketIdsToAdd.length > 0) {
+          updatePromises.push(eventPdv.associateTickets({
+            pdvId: this.editingPdv.id,
+            ticketIds: ticketIdsToAdd
+          }));
+        }
+        
+        // Executar todas as operações em paralelo
+        await Promise.all(updatePromises);
 
         this.$toast.success('PDV atualizado com sucesso');
         this.closeEditPdvModal();
@@ -609,6 +698,7 @@ export default {
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.users = updatedPdv.users || [];
+          this.populateEditSelections();
         }
 
         this.$toast.success('Usuários adicionados com sucesso');
@@ -645,6 +735,7 @@ export default {
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.tickets = updatedPdv.tickets || [];
+          this.populateEditSelections();
         }
 
         this.$toast.success('Ingressos adicionados com sucesso');
@@ -674,6 +765,7 @@ export default {
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.users = updatedPdv.users || [];
+          this.populateEditSelections();
         }
 
         this.$toast.success('Usuário removido com sucesso');
@@ -702,6 +794,7 @@ export default {
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.tickets = updatedPdv.tickets || [];
+          this.populateEditSelections();
         }
 
         this.$toast.success('Ingresso removido com sucesso');
