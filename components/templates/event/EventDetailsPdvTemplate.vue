@@ -8,7 +8,7 @@
         icon="mdi-point-of-sale">
         <template #action>
           <DefaultButton
-            text="Adicionar PDV"
+            text="Adicionar"
             icon="mdi-plus"
             class="mt-6"
             @click="openAddPdvModal" />
@@ -19,95 +19,82 @@
     <!-- Lista de PDVs -->
     <template v-else>
       <div class="d-flex justify-space-between align-center mb-4">
-        <div>
-          <h2 class="text-h5 font-weight-bold">PDVs</h2>
-          <p class="text-body-2 text-medium-emphasis">Gerencie os Pontos de Venda para este evento</p>
+        <div class="pdv-list-title">
+          PDVs
         </div>
         <DefaultButton
-          text="Adicionar PDV"
+          text="Adicionar"
           icon="mdi-plus"
           @click="openAddPdvModal" />
       </div>
 
       <!-- Tabela de PDVs -->
-      <v-card class="mb-6">
-        <v-data-table
-          :headers="headers"
-          :items="getPdvs"
-          :items-per-page="10"
-          class="pdv-table"
-          :loading="isLoading"
-          no-data-text="Nenhum PDV encontrado"
-          :footer-props="{
-            'items-per-page-options': [5, 10, 15, 20],
-            'items-per-page-text': 'PDVs por página',
-          }">
-          <template #[`item.name`]="{ item }">
-            <div class="d-flex align-center">
-              <v-icon class="mr-2" small>mdi-point-of-sale</v-icon>
-              <span>{{ item.name }}</span>
-            </div>
-          </template>
+      <v-data-table
+        :headers="headers"
+        :items="getPdvs"
+        :items-per-page="10"
+        class="pdv-table"
+        :loading="isLoading"
+        no-data-text="Nenhum PDV encontrado"
+        :footer-props="{
+          'items-per-page-options': [5, 10, 15, 20],
+          'items-per-page-text': 'PDVs por página',
+        }"
+        @click:row="(item) => openEditPdvModal(item)">
 
-          <template #[`item.status`]="{ item }">
-            <v-chip
-              small
-              :color="item.status?.color || 'grey'"
-              text-color="white">
-              {{ item.status?.name || 'Status não definido' }}
-            </v-chip>
-          </template>
+        <template #[`item.status`]="{ item }">
+          <span>{{ item.status?.name || 'Status não definido' }}</span>
+        </template>
 
-          <template #[`item.users`]="{ item }">
-            <div>
-              <template v-if="item.users && item.users.length > 0">
-                <div v-for="(user, index) in item.users" :key="user.id" class="mb-1">
-                  <span>{{ user.user?.people?.name || 'Usuário não identificado' }}</span>
-                  <span v-if="index < item.users.length - 1">, </span>
-                </div>
-              </template>
-              <span v-else class="text-medium-emphasis">Nenhum usuário associado</span>
-            </div>
-          </template>
+        <template #[`item.users`]="{ item }">
+          <div>
+            <template v-if="item.users && item.users.length > 0">
+              <div v-for="(user, index) in item.users" :key="user.id" class="mb-1">
+                <span>{{ user.user?.people?.first_name || 'Usuário não identificado' }}</span>
+                <span v-if="index < item.users.length - 1">, </span>
+              </div>
+            </template>
+            <span v-else class="text-medium-emphasis">Nenhum usuário associado</span>
+          </div>
+        </template>
 
-          <template #[`item.tickets`]="{ item }">
-            <div>
-              <template v-if="item.tickets && item.tickets.length > 0">
-                <div v-for="(ticket, index) in item.tickets" :key="ticket.id" class="mb-1">
-                  <span>{{ ticket.ticket?.name || 'Ingresso não identificado' }}</span>
-                  <span v-if="index < item.tickets.length - 1">, </span>
-                </div>
-              </template>
-              <span v-else class="text-medium-emphasis">Nenhum ingresso associado</span>
-            </div>
-          </template>
+        <template #[`item.tickets`]="{ item }">
+          <div>
+            <template v-if="item.tickets && item.tickets.length > 0">
+              <div v-for="(ticket, index) in item.tickets" :key="ticket.id" class="mb-1">
+                <span>{{ ticket.ticket?.name || 'Ingresso não identificado' }}</span>
+                <span v-if="index < item.tickets.length - 1">, </span>
+              </div>
+            </template>
+            <span v-else class="text-medium-emphasis">Nenhum ingresso associado</span>
+          </div>
+        </template>
 
-          <template #[`item.actions`]="{ item }">
-            <v-btn 
-              icon 
-              small 
-              class="mr-2" 
-              color="primary"
-              @click="openEditPdvModal(item)">
-              <v-icon small>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn 
-              icon 
-              small 
-              color="error"
-              @click="openDeletePdvModal(item)">
-              <v-icon small>mdi-delete</v-icon>
-            </v-btn>
-          </template>
-        </v-data-table>
-      </v-card>
+        <template #[`item.actions`]="{ item }">
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn 
+                icon 
+                color="error"
+                @click="openDeletePdvModal(item)"
+                v-on="on">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </template>
+            Excluir PDV
+          </v-tooltip>
+        </template>
+      </v-data-table>
     </template>
 
     <!-- Modal para adicionar PDV -->
-    <v-dialog v-model="addPdvModal" max-width="600px">
+    <v-dialog v-model="addPdvModal" max-width="600px" :fullscreen="isMobile">
       <v-card>
-        <v-card-title class="text-h5">
-          Adicionar PDV
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3 class="modalTitle">Adicionar PDV</h3>
+          <v-btn icon @click="closeAddPdvModal">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
         </v-card-title>
         <v-card-text>
           <v-form ref="addPdvForm" v-model="addPdvFormValid" lazy-validation>
@@ -147,14 +134,18 @@
             ></v-autocomplete>
           </v-form>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="grey darken-1" text @click="closeAddPdvModal">
-            Cancelar
-          </v-btn>
-          <v-btn color="primary" text :loading="isSubmitting" @click="savePdv">
-            Salvar
-          </v-btn>
+         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+          <DefaultButton
+            text="Cancelar"
+            outlined
+            @click="closeAddPdvModal"
+          />
+          <DefaultButton
+            text="Salvar"
+            color="primary"
+            :loading="isSubmitting"
+            @click="savePdv"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -162,8 +153,11 @@
     <!-- Modal para editar PDV -->
     <v-dialog v-model="editPdvModal" max-width="600px">
       <v-card>
-        <v-card-title class="text-h5">
-          Editar PDV
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3 class="modalTitle">Editar PDV</h3>
+          <v-btn icon @click="closeEditPdvModal">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
         </v-card-title>
         <v-card-text>
           <v-form ref="editPdvForm" v-model="editPdvFormValid" lazy-validation>
@@ -175,16 +169,6 @@
               outlined
               dense
             ></v-text-field>
-
-            <v-select
-              v-model="editingPdv.status_id"
-              :items="availableStatuses"
-              label="Status"
-              outlined
-              dense
-              item-text="name"
-              item-value="id"
-            ></v-select>
             
             <div class="mb-4">
               <div class="d-flex justify-space-between align-center mb-2">
@@ -201,7 +185,7 @@
               <v-list v-if="editingPdv.users && editingPdv.users.length > 0" dense>
                 <v-list-item v-for="user in editingPdv.users" :key="user.id">
                   <v-list-item-content>
-                    <v-list-item-title>{{ user.user?.people?.name || 'Usuário não identificado' }}</v-list-item-title>
+                    <v-list-item-title>{{ user.user?.people?.first_name + ' ' + user.user?.people?.last_name || 'Usuário não identificado' }}</v-list-item-title>
                   </v-list-item-content>
                   <v-list-item-action>
                     <v-btn icon x-small @click="removeUserFromPdv(user.id)">
@@ -245,14 +229,18 @@
             </div>
           </v-form>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="grey darken-1" text @click="closeEditPdvModal">
-            Cancelar
-          </v-btn>
-          <v-btn color="primary" text :loading="isSubmitting" @click="updatePdv">
-            Atualizar
-          </v-btn>
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+          <DefaultButton
+            text="Cancelar"
+            outlined
+            @click="closeEditPdvModal"
+          />
+          <DefaultButton
+            text="Atualizar"
+            color="primary"
+            :loading="isSubmitting"
+            @click="updatePdv"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -277,14 +265,18 @@
             return-object
           ></v-autocomplete>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="grey darken-1" text @click="closeAddUserModal">
-            Cancelar
-          </v-btn>
-          <v-btn color="primary" text :loading="isSubmitting" @click="addUsersToPdv">
-            Adicionar
-          </v-btn>
+         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+          <DefaultButton
+            text="Cancelar"
+            outlined
+            @click="closeAddUserModal"
+          />
+          <DefaultButton
+            text="Adicionar"
+            color="primary"
+            :loading="isSubmitting"
+            @click="addUsersToPdv"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -309,14 +301,18 @@
             return-object
           ></v-autocomplete>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="grey darken-1" text @click="closeAddTicketModal">
-            Cancelar
-          </v-btn>
-          <v-btn color="primary" text :loading="isSubmitting" @click="addTicketsToPdv">
-            Adicionar
-          </v-btn>
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+          <DefaultButton
+            text="Cancelar"
+            outlined
+            @click="closeAddTicketModal"
+          />
+          <DefaultButton
+            text="Adicionar"
+            color="primary"
+            :loading="isSubmitting"
+            @click="addTicketsToPdv"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -335,16 +331,14 @@
 </template>
 
 <script>
+import { isMobileDevice } from '@/utils/utils';
 import { 
   eventTickets, 
   eventGeneralInfo,
-  loading, 
+  eventPdv,
   user,
-  status 
 } from '@/store';
 
-// Como a store eventPdv foi criada recentemente, precisamos importá-la diretamente
-import eventPdv from '@/store/eventPdv';
 
 export default {
   data() {
@@ -382,7 +376,6 @@ export default {
       selectedTickets: [],
       userToAdd: [],
       ticketToAdd: [],
-      availableUsers: [],
       availableStatuses: [],
     };
   },
@@ -390,6 +383,18 @@ export default {
   computed: {
     isLoading() {
       return eventPdv.$isLoading;
+    },
+
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
+
+    availableUsers() {
+      return user.$userList.map(user => ({
+        id: user.id,
+        name: user.people?.first_name + ' ' + user.people?.last_name || user.email || 'Usuário sem nome',
+        email: user.email
+      }));
     },
 
     getPdvs() {
@@ -409,45 +414,9 @@ export default {
     },
   },
 
-  async created() {
-    await this.fetchEventPdvs();
-    await this.fetchAvailableUsers();
-    await this.fetchAvailableStatuses();
-  },
-
   methods: {
     async fetchEventPdvs() {
-      loading.setIsLoading(true);
       await eventPdv.fetchAndPopulateByEventId(this.eventId);
-      loading.setIsLoading(false);
-    },
-
-    async fetchAvailableUsers() {
-      try {
-        // Buscar todos os usuários/colaboradores disponíveis
-        const response = await user.fetchUsers();
-        if (response.success) {
-          this.availableUsers = response.data.map(u => ({
-            id: u.id,
-            name: u.people?.name || u.email || 'Usuário sem nome',
-            email: u.email
-          }));
-        }
-      } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
-      }
-    },
-
-    async fetchAvailableStatuses() {
-      try {
-        // Buscar status disponíveis para PDV
-        const response = await status.fetchStatusByModule('pdv');
-        if (response && response.success) {
-          this.availableStatuses = response.data;
-        }
-      } catch (error) {
-        console.error('Erro ao buscar status:', error);
-      }
     },
 
     openAddPdvModal() {
@@ -571,10 +540,9 @@ export default {
         this.isSubmitting = true;
 
         const updateData = {
-          id: this.editingPdv.id,
           data: {
+            id: this.editingPdv.id,
             name: this.editingPdv.name,
-            status_id: this.editingPdv.status_id
           }
         };
 
@@ -749,11 +717,18 @@ export default {
 </script>
 
 <style scoped>
-.event-details-wrapper {
-  margin-top: 16px;
+.pdv-list-title{
+  font-weight: 600;
+  font-size: 26px;
+  color: var(--black-text);
+  font-family: var(--font-family-inter-bold);
 }
 
 .pdv-table :deep(th) {
   font-weight: bold !important;
+}
+
+.pdv-table :deep(td) {
+  cursor: pointer;
 }
 </style> 

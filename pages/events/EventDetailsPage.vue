@@ -45,6 +45,8 @@ import {
   eventCoupons,
   eventCustomFields,
   eventGuests,
+  eventPdv,
+  user,
   loading,
 } from '@/store';
 
@@ -201,10 +203,13 @@ export default {
           eventGuests.fetchGuestListAndPopulateByQuery(
             `where[event_id][v]=${this.$route.params.id}&preloads[]=members`
           ),
+          eventPdv.fetchAndPopulateByEventId(this.$route.params.id),
+          user.getAllUsers(),
         ];
 
         await Promise.all(promises);
       } catch (error) {
+        console.error('Erro ao buscar dados do evento:', error);
         this.eventInvalid = true;
       } finally {
         loading.setIsLoading(false);

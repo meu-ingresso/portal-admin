@@ -5,6 +5,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 
 import { SearchPayload } from '@/models';
+import { handleGetResponse } from '~/utils/responseHelpers';
 
 interface CreatePayload {
   first_name: String;
@@ -166,6 +167,20 @@ export default class User extends VuexModule {
           total: 0,
         };
       });
+  }
+
+  @Action
+  public async getAllUsers() {
+    const response = await $axios
+      .$get('users?preloads[]=people');
+    
+    const responseResult = handleGetResponse(response, 'Usuários não encontrados');
+
+    if (responseResult && responseResult.data) {
+      this.context.commit('SET_USER_LIST', responseResult.data);
+    }
+
+    return response;
   }
 
   @Action
