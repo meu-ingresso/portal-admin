@@ -28,6 +28,7 @@ export default {
       switch (this.text) {
         case 'Publicado':
         case 'À Venda':
+        case 'Disponível':
           return '#0DBB73';
         case 'Rascunho':
         case 'Interrompido':
