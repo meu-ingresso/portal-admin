@@ -31,6 +31,7 @@
         <EventDetailsCheckinTemplate v-if="isCheckin" />
         <EventDetailsOrdersTemplate v-if="isOrders" />
         <EventDetailsCollaboratorsTemplate v-if="isCollaborators" />
+        <EventDetailsPdvTemplate v-if="isPdv" />
       </div>
     </v-container>
     <Toast />
@@ -44,6 +45,8 @@ import {
   eventCoupons,
   eventCustomFields,
   eventGuests,
+  eventPdv,
+  user,
   loading,
 } from '@/store';
 
@@ -114,6 +117,10 @@ export default {
 
     isCollaborators() {
       return this.$route.meta.template === 'collaborators';
+    },
+    
+    isPdv() {
+      return this.$route.meta.template === 'pdv';
     },
 
     userRole() {
@@ -196,10 +203,13 @@ export default {
           eventGuests.fetchGuestListAndPopulateByQuery(
             `where[event_id][v]=${this.$route.params.id}&preloads[]=members`
           ),
+          eventPdv.fetchAndPopulateByEventId(this.$route.params.id),
+          user.getAllUsers(),
         ];
 
         await Promise.all(promises);
       } catch (error) {
+        console.error('Erro ao buscar dados do evento:', error);
         this.eventInvalid = true;
       } finally {
         loading.setIsLoading(false);

@@ -377,6 +377,32 @@ export interface UserApiResponse {
   people?: PeopleApiResponse;
 }
 
+export interface PDVUserApiResponse {
+  id: string;
+  user_id: string;
+  pdv_id: string;
+  user?: UserApiResponse;
+}
+
+export interface PDVTicketApiResponse {
+  id: string;
+  ticket_id: string;
+  pdv_id: string;
+  ticket?: TicketApiResponse;
+}
+export interface PDVApiResponse {
+  id?: string;
+  event_id: string;
+  name: string;
+  status_id: string;
+  status?: StatusApiResponse;
+  created_at?: string;
+  updated_at?: string;
+  users?: PDVUserApiResponse[];
+  tickets?: PDVTicketApiResponse[];
+}
+
+
 export interface PaymentApiResponse {
   id: string;
   status_id: string;

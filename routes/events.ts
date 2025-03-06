@@ -121,6 +121,14 @@ export default [
           template: 'collaborators',
         },
       },
+      {
+        path: 'pdv',
+        name: 'eventsDetailsPdv',
+        meta: {
+          name: 'eventsDetails',
+          template: 'pdv',
+        },
+      },
     ],
   },
   {
