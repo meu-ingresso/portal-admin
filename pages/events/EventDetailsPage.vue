@@ -19,7 +19,7 @@
 
       <div v-else-if="getEvent" class="event-details-page">
 
-        <div class="d-flex justify-space-between">
+        <div class="d-flex justify-space-between" :class="{ 'flex-column': isMobile }">
           <EventDetailsHeader />
           <EventSessionSelector />
         </div>
@@ -49,6 +49,7 @@ import {
   user,
   loading,
 } from '@/store';
+import { isMobileDevice } from '@/utils/utils';
 
 export default {
   data() {
@@ -59,6 +60,11 @@ export default {
   },
 
   computed: {
+
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
+
     isLoading() {
       return loading.$isLoading;
     },

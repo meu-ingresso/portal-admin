@@ -2,7 +2,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { handleGetResponse } from '~/utils/responseHelpers';
-import { PDVApiResponse } from '~/models/event';
+import { PDVApiResponse, StatusApiResponse } from '~/models/event';
 @Module({
   name: 'eventPdv',
   stateFactory: true,
@@ -13,6 +13,7 @@ export default class EventPdv extends VuexModule {
   private isLoading: boolean = false;
   private selectedPdv: PDVApiResponse | null = null;
   private statusDefault: any = null;
+  private statuses: StatusApiResponse[] = [];
 
   public get $pdvs() {
     return this.pdvList;
@@ -28,6 +29,10 @@ export default class EventPdv extends VuexModule {
 
   public get $statusDefault() {
     return this.statusDefault;
+  }
+
+  public get $statuses() {
+    return this.statuses;
   }
 
   @Mutation
@@ -48,6 +53,11 @@ export default class EventPdv extends VuexModule {
   @Mutation
   private SET_STATUS_DEFAULT(statusData: any) {
     this.statusDefault = statusData;
+  }
+
+  @Mutation
+  private SET_STATUSES(statuses: StatusApiResponse[]) {
+    this.statuses = statuses;
   }
 
   @Mutation
@@ -87,18 +97,27 @@ export default class EventPdv extends VuexModule {
   }
 
   @Action
+  public async fetchStatuses() {
+    const response = await status.fetchStatusByModule('pdv');
+
+    if (response && response.data) {  
+      this.context.commit('SET_STATUSES', response.data);
+      this.context.commit('SET_STATUS_DEFAULT', response.data.find((status: StatusApiResponse) => status.name.toLowerCase() === 'disponível' || status.name.toLowerCase() === 'disponivel'));
+
+      return response.data;
+    }
+
+    return [];
+  }
+
+  @Action
   public async fetchAndPopulateByEventId(eventId: string) {
     try {
       this.setIsLoading(true);
 
-      // Buscar o status padrão para PDV
-      const statusResponse = await status.fetchStatusByModuleAndName({
-        module: 'pdv',
-        name: 'Disponível'
-      });
-      
-      if (statusResponse) {
-        this.context.commit('SET_STATUS_DEFAULT', statusResponse);
+      // Buscar os statuses disponíveis se não estão carregados
+      if (this.$statuses.length === 0) {
+        await this.fetchStatuses();
       }
 
       // Buscar os PDVs do evento, usuarios e ingressos associados
@@ -150,7 +169,7 @@ export default class EventPdv extends VuexModule {
       const response = await $axios.$post('pdv', payload);
       
       if (response && response.body && response.body.code === 'CREATE_SUCCESS') {
-        const newPdv = response.body.result.data[0];
+        const newPdv = response.body.result[0];
         this.context.commit('ADD_PDV', newPdv);
         return { success: true, data: newPdv };
       }

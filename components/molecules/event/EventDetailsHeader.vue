@@ -242,11 +242,11 @@
           <v-icon class="mr-2 details-icon is-mobile">mdi-calendar</v-icon>
 
           <div class="d-flex align-center">
-            <p>{{ formatDateToCustomString(getEvent.start_date) }}</p>
+            <p>{{ formatDateToCustomString(getEvent?.event_dates[0]?.start_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ getEvent.start_time }}</p>
+            <p>{{ getEvent?.event_dates[0]?.start_time }}</p>
           </div>
 
           <div class="mr-2 ml-2">
@@ -254,11 +254,11 @@
           </div>
 
           <div class="d-flex align-center">
-            <p>{{ formatDateToCustomString(getEvent.end_date) }}</p>
+            <p>{{ formatDateToCustomString(getEvent?.event_dates[0]?.end_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ getEvent.end_time }}</p>
+            <p>{{ getEvent?.event_dates[0]?.end_time }}</p>
           </div>
         </div>
 

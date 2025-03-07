@@ -19,20 +19,16 @@
     >
       <template #prepend-item>
         <v-list-item ripple @click="toggleSelectAll">
-          <v-list-item-action>
-            <v-checkbox
-              :input-value="areAllSelected"
-              :indeterminate="isIndeterminate"
-              color="primary"
-            ></v-checkbox>
+          <v-list-item-action class="mr-2">
+            <v-icon color="primary">
+              {{ icon }}
+            </v-icon>
           </v-list-item-action>
           <v-list-item-content>
-            <v-list-item-title class="font-weight-medium">
-              {{ areAllSelected ? 'Desmarcar todos' : 'Selecionar todos' }}
-            </v-list-item-title>
+            <v-list-item-title> Todos </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-divider class="mt-2"></v-divider>
+        <v-divider></v-divider>
       </template>
       
       <template #selection="{ item, index }">
@@ -54,7 +50,7 @@
 
       <template #item="{ item }">
         <v-list-item
-          dense
+          
           :class="{'selected-item': isSelected(item)}"
           @click.stop="toggleItem(item)"
         >
@@ -62,7 +58,6 @@
             <v-checkbox
               :input-value="isSelected(item)"
               color="primary"
-              dense
               @click.stop="onCheckboxClick($event, item)"
             ></v-checkbox>
           </v-list-item-action>
@@ -133,6 +128,12 @@ export default {
     isIndeterminate() {
       return this.selectedItems.length > 0 && 
         !this.areAllSelected;
+    },
+
+    icon() {
+      if (this.areAllSelected) return 'mdi-checkbox-marked';
+      if (this.isIndeterminate) return 'mdi-minus-box';
+      return 'mdi-checkbox-blank-outline';
     },
   },
   
@@ -235,7 +236,7 @@ export default {
 }
 
 :deep(.selected-item) {
-  background-color: rgba(var(--v-primary-base, 25, 118, 210), 0.08);
+  background-color: var(--tertiary);
 }
 
 /* Corrigir o alinhamento do checkbox com o texto */
