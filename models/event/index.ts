@@ -364,6 +364,12 @@ export interface PeopleApiResponse {
   deleted_at?: string;
 }
 
+export interface RoleApiResponse {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface UserApiResponse {
   id: string;
   people_id: string;
@@ -375,6 +381,7 @@ export interface UserApiResponse {
   updated_at: string;
   deleted_at?: string;
   people?: PeopleApiResponse;
+  role?: RoleApiResponse;
 }
 
 export interface PDVUserApiResponse {
@@ -468,6 +475,15 @@ export interface CouponTicketApiResponse {
   ticket_id: string;
   ticket: TicketApiResponse;
   deleted_at?: string;
+}
+
+export interface EventCollaboratorApiResponse {
+  id: string;
+  event_id: string;
+  user_id: string;
+  role_id: string;
+  event?: EventApiResponse;
+  user?: UserApiResponse;
 }
 
 export interface FieldPayload {

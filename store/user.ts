@@ -174,7 +174,7 @@ export default class User extends VuexModule {
     const response = await $axios
       .$get('users?preloads[]=people');
     
-    const responseResult = handleGetResponse(response, 'Usuários não encontrados');
+    const responseResult = handleGetResponse(response, 'Usuários não encontrados', null, true);
 
     if (responseResult && responseResult.data) {
       this.context.commit('SET_USER_LIST', responseResult.data);

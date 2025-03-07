@@ -15,7 +15,6 @@
               hide-details="auto"
               :error="collaborator.errors?.email"
               :error-messages="collaborator.errorMessages?.email"
-              :disabled="editMode && index === 0"
               dense
               outlined />
           </v-col>
@@ -34,7 +33,7 @@
               outlined />
           </v-col>
 
-          <v-col v-if="!editMode" cols="3" md="1" sm="3" class="d-flex align-center">
+          <v-col cols="3" md="1" sm="3" class="d-flex align-center">
             <v-btn icon small color="error" @click="removeCollaboratorRow(index)">
               <v-icon>mdi-delete</v-icon>
             </v-btn>
@@ -43,7 +42,7 @@
       </div>
     </div>
 
-    <div v-if="!editMode" class="d-flex justify-center mt-4">
+    <div class="d-flex justify-center mt-4">
       <v-btn text color="primary" @click="addNewCollaboratorRow">
         <v-icon left>mdi-plus</v-icon>
         Novo colaborador
@@ -53,22 +52,13 @@
 </template>
 
 <script>
-import { user } from '@/store';
+import { user, eventCollaborators } from '@/store';
 
 export default {
-  name: 'CollaboratorForm',
   props: {
     eventId: {
       type: String,
       required: true,
-    },
-    collaborator: {
-      type: Object,
-      default: null,
-    },
-    editMode: {
-      type: Boolean,
-      default: false,
     },
   },
 
@@ -89,29 +79,16 @@ export default {
   },
 
   watch: {
-    collaborator: {
-      immediate: true,
-      handler(newVal) {
-        if (this.editMode && newVal) {
-          this.collaborators = [
-            {
-              email: newVal.user.email,
-              role: newVal.role.id,
-              errors: {},
-              errorMessages: {},
-            },
-          ];
-        } else {
-          this.resetForm();
-        }
-      },
-    },
     collaborators: {
       deep: true,
       handler(newVal) {
         this.$emit('count-changed', newVal.length);
       },
     },
+  },
+
+  created() {
+    this.resetForm();
   },
 
   methods: {
@@ -177,16 +154,34 @@ export default {
       }
 
       try {
-        if (this.editMode) {
-          await this.$emit('update', {
-            id: this.collaborator.id,
-            ...this.collaborators[0],
+        // Add collaborators
+        const collaboratorPayload = this.collaborators.map((collab) => ({
+          email: collab.email,
+          role: collab.role,
+        }));
+        
+        const result = await eventCollaborators.addCollaborators({
+          eventId: this.eventId,
+          collaborators: collaboratorPayload,
+        });
+        
+        if (!result.success && result.invalidEmails && result.invalidEmails.length > 0) {
+          // Mark emails that don't exist in the system with errors
+          this.collaborators.forEach((collaborator) => {
+            if (result.invalidEmails.includes(collaborator.email)) {
+              this.$set(collaborator, 'errors', { ...collaborator.errors, email: true });
+              this.$set(collaborator, 'errorMessages', { 
+                ...collaborator.errorMessages, 
+                email: 'Usuário com este e-mail não encontrado no sistema'
+              });
+            }
           });
-        } else {
-          await this.$emit('add', this.collaborators);
+          
+          return { success: false };
         }
-
-        return { success: true };
+        
+        return { success: result.success };
+        
       } catch (error) {
         console.error('Erro ao salvar colaborador:', error);
         return { success: false };
