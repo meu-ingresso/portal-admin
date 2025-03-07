@@ -84,6 +84,7 @@ export default {
   },
 
   build: {
+    transpile: ['chart.js'],
     extractCSS: true,
     loaders: {
       vue: {
