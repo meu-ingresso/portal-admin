@@ -4,7 +4,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 
 import { $axios } from '@/utils/nuxt-instance';
 
-import { SearchPayload } from '@/models';
+import { SearchPayload as BaseSearchPayload } from '@/models';
 import { handleGetResponse } from '~/utils/responseHelpers';
 
 interface CreatePayload {
@@ -18,6 +18,11 @@ interface CreatePayload {
   role_id: String;
   is_active: Boolean;
   sellers: Array<String>;
+}
+
+// Extend the base SearchPayload to include preloads
+interface ExtendedSearchPayload extends BaseSearchPayload {
+  preloads?: string[];
 }
 
 @Module({ name: 'user', stateFactory: true, namespaced: true })
@@ -184,13 +189,22 @@ export default class User extends VuexModule {
   }
 
   @Action
-  public async getUsers({ page, limit, search, sortBy, sortDesc }: SearchPayload) {
+  public async getUsers({ page, limit, search, sortBy, sortDesc, preloads = ['people'] }: ExtendedSearchPayload) {
     let filter = '';
     let filter2 = '';
     let orderAux = '';
+    let preloadsStr = '';
 
     filter += page ? `page=${page}&` : '';
     filter += limit ? `limit=${limit}&` : '';
+    
+    // Add preloads if provided
+    if (preloads && preloads.length > 0) {
+      preloadsStr = preloads.map(preload => `preloads[]=${preload}`).join('&');
+      if (preloadsStr) {
+        preloadsStr = `&${preloadsStr}`;
+      }
+    }
 
     for (let i = 0; i < sortBy.length; i++) {
       const sortDescAux = sortDesc[i] ? 'desc' : 'asc';
@@ -203,7 +217,7 @@ export default class User extends VuexModule {
     }
 
     const status = await $axios
-      .$get(`users?${filter}${filter2}&preloads[]=role${orderAux}`)
+      .$get(`users?${filter}${filter2}&preloads[]=role${preloadsStr}${orderAux}`)
       .then((response) => {
         if (response.body && response.body.code !== 'SEARCH_SUCCESS')
           throw new Error(response);

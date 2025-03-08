@@ -18,7 +18,7 @@
     <v-row v-else>
       <v-col cols="12">
         <div class="d-flex justify-space-between">
-          <div class="event-collaborators-title">Colaboradores</div>
+          <div class="template-title">Colaboradores</div>
           <DefaultButton text="Adicionar" @click="handleShowModal" />
         </div>
       </v-col>
@@ -310,13 +310,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.event-collaborators-title {
-  font-weight: 600;
-  text-align: left;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-  font-size: 26px;
-}
-</style>

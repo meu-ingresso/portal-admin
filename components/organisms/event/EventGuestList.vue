@@ -7,7 +7,7 @@
     <template v-else>
       <v-col v-if="guestLists.length > 0" cols="12">
         <div class="d-flex justify-space-between">
-          <div class="guest-lists-title">Lista de Convidados</div>
+          <div class="template-title">Lista de Convidados</div>
           <DefaultButton text="Adicionar" icon="mdi-plus" @click="openGuestListForm" />
         </div>
       </v-col>
@@ -293,12 +293,7 @@ export default {
 </script>
 
 <style scoped>
-.guest-lists-title {
-  font-weight: 600;
-  font-size: 26px;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-}
+
 
 .guest-lists-container {
   display: flex;
@@ -368,9 +363,6 @@ export default {
 }
 
 @media (max-width: 600px) {
-  .guest-lists-title {
-    font-size: 20px;
-  }
 
   .guest-list-name {
     font-size: 16px;

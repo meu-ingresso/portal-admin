@@ -1,7 +1,10 @@
 <template>
   <div>
     <v-container>
-      <ReportsDrawer :drawer="drawer" :selected-event="selectedEvent" />
+      <ReportsDrawer 
+        :drawer="drawer" 
+        :selected-event="selectedEvent" 
+        :selected-view="$route.meta.template" />
 
       <ReportsLoading
         v-if="isLoading || isLoadingEvents"
@@ -12,7 +15,7 @@
       </div>
 
       <div v-else class="reports-page">
-        <div class="d-flex justify-space-between" :class="{ 'flex-column': isMobile }">
+        <div v-if="currentTemplate !== 'users'" class="d-flex justify-space-between" :class="{ 'flex-column': isMobile }">
           <ReportsHeader 
             :selected-event="selectedEvent" 
             :grouped-events="groupedEvents"
@@ -23,6 +26,7 @@
         <ReportsSalesTemplate v-if="isSales" />
         <ReportsTicketsTemplate v-if="isTickets" />
         <ReportsAttendanceTemplate v-if="isAttendance" />
+        <ReportsUsersTemplate v-if="isUsers" />
       </div>
     </v-container>
     <Toast />
@@ -67,10 +71,8 @@ export default {
     },
 
     groupedEvents() {
-      // Aplicar o agrupamento de eventos por sessão usando a função de utilidade
       const grouped = groupEventsBySession(this.getEvents);
-      
-      // Processamento adicional não é necessário, pois nossa utilidade já está completa
+    
       return grouped;
     },
 
@@ -80,6 +82,10 @@ export default {
 
     currentRouter() {
       return this.$route;
+    },
+
+    currentTemplate() {
+      return this.$route.meta.template;
     },
 
     isOverview() {
@@ -96,6 +102,10 @@ export default {
 
     isAttendance() {
       return this.$route.meta.template === 'attendance';
+    },
+
+    isUsers() {
+      return this.$route.meta.template === 'users';
     },
 
     userRole() {

@@ -33,4 +33,12 @@ export default [
       template: 'attendance',
     },
   },
+  {
+    path: '/reports/users',
+    name: 'ReportsUsers',
+    component: ReportsPage,
+    meta: {
+      template: 'users',
+    },
+  },
 ]; 

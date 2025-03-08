@@ -31,4 +31,12 @@ export const reportsSideBar = [
     template: 'attendance',
     needPermissions: false,
   },
+  {
+    icon: 'mdi-account-outline',
+    iconActive: 'mdi-account',
+    title: 'Usuários',
+    to: '/reports/users',
+    template: 'users',
+    needPermissions: false,
+  },
 ]; 

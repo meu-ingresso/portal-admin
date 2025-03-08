@@ -19,7 +19,7 @@
     <!-- Lista de PDVs -->
     <template v-else>
       <div class="d-flex justify-space-between align-center mb-4">
-        <div class="pdv-list-title">
+        <div class="template-title">
           PDVs
         </div>
         <DefaultButton
@@ -1083,13 +1083,6 @@ export default {
 </script>
 
 <style scoped>
-.pdv-list-title{
-  font-weight: 600;
-  font-size: 26px;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-}
-
 .pdv-table :deep(th) {
   font-weight: bold !important;
 }
