@@ -77,7 +77,7 @@
         </div>
       </v-list-item>
 
-      <div v-for="(item, i) in getSidebar" :key="i">
+      <div v-for="(item, i) in getSidebar" :key="i" class="event-drawer-item">
         <v-tooltip v-if="$_miniVariant" right>
           <template #activator="{ on, attrs }">
             <v-list-item
@@ -432,7 +432,7 @@ export default {
   color: var(--black-text) !important;
   font-weight: 400 !important;
   font-size: 16px !important;
-  font-display: var(--font-family-inter-bold) !important;
+  font-family: var(--font-family) !important;
 }
 
 .navigationMobile {
@@ -442,11 +442,10 @@ export default {
 
 .active-item {
   background-color: var(--primary) !important;
-  border-top-right-radius: 38px;
-  border-bottom-right-radius: 38px;
+  border-radius: 8px; 
   color: white;
   font-size: 16px !important;
-  font-display: var(--font-family-inter-bold) !important;
+  font-family: var(--font-family) !important;
 }
 
 .active-item::before {
@@ -484,5 +483,25 @@ export default {
   margin-bottom: 8px;
   padding: 0;
   overflow: hidden;
+}
+
+.event-drawer-item {
+  padding-right: 8px;
+  padding-left: 8px;
+  margin-bottom: 2px;
+}
+
+.event-drawer-item:hover {
+  background-color: var(--tertiary);
+  border-radius: 8px;
+}
+
+.event-drawer-item a:hover {
+  background-color: transparent;
+}
+
+.event-drawer-item a:hover::before {
+  background-color: transparent;
+  opacity: 0;
 }
 </style>

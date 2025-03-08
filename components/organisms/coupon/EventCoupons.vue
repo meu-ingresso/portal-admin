@@ -2,7 +2,7 @@
   <v-row class="mb-4">
     <v-col cols="12">
       <div class="d-flex justify-space-between">
-        <div class="event-coupons-title">Lista de cupons</div>
+        <div class="template-title">Lista de cupons</div>
         <DefaultButton text="Adicionar" @click="handleAddCoupon" />
       </div>
     </v-col>
@@ -202,25 +202,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.event-coupons-title {
-  font-weight: 700;
-  text-align: left;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-  font-size: 26px;
-}
-
-@media (max-width: 360px) {
-  .event-coupons-title {
-    font-size: 16px !important;
-  }
-}
-
-@media (min-width: 361px) and (max-width: 480px) {
-  .event-coupons-title {
-    font-size: 18px !important;
-  }
-}
-</style>
