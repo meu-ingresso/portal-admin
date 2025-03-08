@@ -38,6 +38,44 @@ type EventGroupMap = {
 };
 
 /**
+ * Encontra eventos que pertencem ao mesmo grupo de um evento específico
+ * @param event - O evento de referência
+ * @param allEvents - Lista completa de eventos
+ * @returns Lista de eventos do mesmo grupo
+ */
+export function getEventsInSameGroup(event: Event | null | undefined, allEvents: Event[] | null | undefined): Event[] {
+  if (!event || !event.groups || !event.groups.length || !allEvents) return [];
+  
+  const groupId = event.groups[0].id;
+  return allEvents.filter(e => 
+    e.groups && 
+    e.groups.length && 
+    e.groups[0].id === groupId
+  );
+}
+
+/**
+ * Retorna a contagem de sessões para um evento
+ * @param event - O evento
+ * @param allEvents - Lista completa de eventos
+ * @returns Número de sessões
+ */
+export function getSessionsCount(event: Event | null | undefined, allEvents: Event[] | null | undefined): number {
+  if (!event) return 0;
+  
+  if ('sessionsCount' in event && typeof event.sessionsCount === 'number') {
+    return event.sessionsCount;
+  }
+  
+  if ('sessionIds' in event && Array.isArray(event.sessionIds)) {
+    return event.sessionIds.length;
+  }
+  
+  // Se não tiver informações explícitas, calculamos com base nos eventos do mesmo grupo
+  return getEventsInSameGroup(event, allEvents).length;
+}
+
+/**
  * Agrupa eventos que pertencem ao mesmo grupo (sessões) e retorna apenas o mais próximo de cada grupo
  * 
  * @param events Lista completa de eventos

@@ -1,5 +1,5 @@
-
 import Events from './events';
+import Reports from './reports';
 import LoginPage from '@/pages/LoginPage.vue';
 
 export default [
@@ -9,4 +9,5 @@ export default [
     component: LoginPage,
   },
   ...Events,
+  ...Reports,
 ];

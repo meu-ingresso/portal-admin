@@ -46,6 +46,7 @@ import {
   eventCustomFields,
   eventGuests,
   eventPdv,
+  eventCollaborators, 
   user,
   loading,
 } from '@/store';
@@ -211,6 +212,8 @@ export default {
           ),
           eventPdv.fetchAndPopulateByEventId(this.$route.params.id),
           user.getAllUsers(),
+          user.getRoles(),
+          eventCollaborators.fetchCollaborators({ eventId: this.$route.params.id }),
         ];
 
         await Promise.all(promises);
