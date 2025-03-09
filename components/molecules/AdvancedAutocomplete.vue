@@ -16,6 +16,7 @@
       clearable
       menu-props="auto"
       :filter="customFilter"
+      :debounce-search="300"
     >
       <template #prepend-item>
         <v-list-item ripple @click="toggleSelectAll">
@@ -25,33 +26,27 @@
             </v-icon>
           </v-list-item-action>
           <v-list-item-content>
-            <v-list-item-title> Todos </v-list-item-title>
+            <v-list-item-title>{{ selectAllLabel }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-divider></v-divider>
       </template>
-      
-      <template #selection="{ item, index }">
+
+      <template #selection="{ item }">
         <v-chip
-          v-if="index < 3"
           small
+          class="my-2"
           close
           @click:close="removeItem(item)"
         >
           <span>{{ getItemText(item) }}</span>
         </v-chip>
-        <span
-          v-if="index === 3"
-          class="grey--text text-caption pl-2"
-        >
-          (+{{ selectedItems.length - 3 }} {{ moreLabel }})
-        </span>
       </template>
 
       <template #item="{ item }">
         <v-list-item
-          
-          :class="{'selected-item': isSelected(item)}"
+          :class="{ 'selected-item': isSelected(item) }"
+          :disabled="isDisabled(item)"
           @click.stop="toggleItem(item)"
         >
           <v-list-item-action class="mr-2">
@@ -62,7 +57,7 @@
             ></v-checkbox>
           </v-list-item-action>
           <v-list-item-content>
-            <v-list-item-title :class="{'font-weight-medium': isSelected(item)}">
+            <v-list-item-title :class="{ 'font-weight-medium': isSelected(item) }">
               {{ getItemText(item) }}
             </v-list-item-title>
             <v-list-item-subtitle v-if="getItemSubtitle(item)">
@@ -88,19 +83,19 @@ export default {
     },
     label: {
       type: String,
-      default: 'Selecione'
+      default: "Selecione"
     },
     itemText: {
       type: String,
-      default: 'name'
+      default: "name"
     },
     itemValue: {
       type: String,
-      default: 'id'
+      default: "id"
     },
     itemSubtitle: {
       type: String,
-      default: ''
+      default: ""
     },
     loading: {
       type: Boolean,
@@ -108,35 +103,41 @@ export default {
     },
     moreLabel: {
       type: String,
-      default: 'itens'
+      default: "itens"
+    },
+    selectAllLabel: {
+      type: String,
+      default: "Selecionar Todos"
+    },
+    disabledItems: {
+      type: Array,
+      default: () => []
     }
   },
-  
+
   data() {
     return {
       selectedItems: [],
-      search: null,
+      search: null
     };
   },
-  
+
   computed: {
     areAllSelected() {
-      return this.items.length > 0 && 
-        this.selectedItems.length === this.items.length;
+      return this.items.length > 0 && this.selectedItems.length === this.items.length;
     },
-    
+
     isIndeterminate() {
-      return this.selectedItems.length > 0 && 
-        !this.areAllSelected;
+      return this.selectedItems.length > 0 && !this.areAllSelected;
     },
 
     icon() {
-      if (this.areAllSelected) return 'mdi-checkbox-marked';
-      if (this.isIndeterminate) return 'mdi-minus-box';
-      return 'mdi-checkbox-blank-outline';
-    },
+      if (this.areAllSelected) return "mdi-checkbox-marked";
+      if (this.isIndeterminate) return "mdi-minus-box";
+      return "mdi-checkbox-blank-outline";
+    }
   },
-  
+
   watch: {
     value: {
       handler(newVal) {
@@ -146,25 +147,25 @@ export default {
       },
       immediate: true
     },
-    
+
     selectedItems: {
       handler(newVal) {
         if (JSON.stringify(this.value) !== JSON.stringify(newVal)) {
-          this.$emit('input', newVal);
+          this.$emit("input", newVal);
         }
       }
     }
   },
-  
+
   methods: {
     toggleSelectAll() {
       if (this.areAllSelected) {
         this.selectedItems = [];
       } else {
-        this.selectedItems = JSON.parse(JSON.stringify(this.items));
+        this.selectedItems = this.items.filter(item => !this.isDisabled(item));
       }
     },
-    
+
     removeItem(item) {
       const index = this.selectedItems.findIndex(
         selected => selected[this.itemValue] === item[this.itemValue]
@@ -173,55 +174,53 @@ export default {
         this.selectedItems.splice(index, 1);
       }
     },
-    
+
     toggleItem(item) {
+      if (this.isDisabled(item)) return;
+
       const index = this.selectedItems.findIndex(
         selected => selected[this.itemValue] === item[this.itemValue]
       );
-      
       if (index >= 0) {
-        // Item já está selecionado, vamos remover
         this.selectedItems.splice(index, 1);
       } else {
-        // Item não está selecionado, vamos adicionar
-        this.selectedItems.push({...item});
+        this.selectedItems.push({ ...item });
       }
     },
-    
+
     isSelected(item) {
       return this.selectedItems.some(
         selected => selected[this.itemValue] === item[this.itemValue]
       );
     },
-    
-    getItemText(item) {
-      return this.itemText.includes('.')
-        ? this.itemText.split('.').reduce((o, i) => o ? o[i] : null, item)
-        : item[this.itemText];
-    },
-    
-    getItemSubtitle(item) {
-      if (!this.itemSubtitle) return '';
-      
-      return this.itemSubtitle.includes('.')
-        ? this.itemSubtitle.split('.').reduce((o, i) => o ? o[i] : null, item)
-        : item[this.itemSubtitle];
-    },
-    
-    customFilter(item, queryText) {
-      if (!queryText) return true;
-      
-      const text = this.getItemText(item) || '';
-      const subtitle = this.getItemSubtitle(item) || '';
-      
-      const searchText = queryText.toLowerCase().trim();
-      if (!searchText) return true;
-      
-      return text.toLowerCase().includes(searchText) || 
-             subtitle.toLowerCase().includes(searchText);
+
+    isDisabled(item) {
+      return this.disabledItems.some(
+        disabled => disabled[this.itemValue] === item[this.itemValue]
+      );
     },
 
-    // Garantir que os cliques no checkbox funcionem corretamente
+    getItemText(item) {
+      return this.itemText.includes(".")
+        ? this.itemText.split(".").reduce((o, i) => (o ? o[i] : null), item)
+        : item[this.itemText];
+    },
+
+    getItemSubtitle(item) {
+      if (!this.itemSubtitle) return "";
+      return this.itemSubtitle.includes(".")
+        ? this.itemSubtitle.split(".").reduce((o, i) => (o ? o[i] : null), item)
+        : item[this.itemSubtitle];
+    },
+
+    customFilter(item, queryText) {
+      if (!queryText) return true;
+      const text = (this.getItemText(item) || "").toLowerCase();
+      const subtitle = (this.getItemSubtitle(item) || "").toLowerCase();
+      const searchText = queryText.toLowerCase().trim();
+      return text.includes(searchText) || subtitle.includes(searchText);
+    },
+
     onCheckboxClick(event, item) {
       event.stopPropagation();
       this.toggleItem(item);
@@ -236,10 +235,9 @@ export default {
 }
 
 :deep(.selected-item) {
-  background-color: var(--tertiary);
+  background-color: var(--v-primary-lighten5);
 }
 
-/* Corrigir o alinhamento do checkbox com o texto */
 :deep(.v-list-item__action) {
   margin-top: 0;
   margin-bottom: 0;
@@ -252,4 +250,4 @@ export default {
 :deep(.v-input__slot) {
   cursor: text;
 }
-</style> 
+</style>
