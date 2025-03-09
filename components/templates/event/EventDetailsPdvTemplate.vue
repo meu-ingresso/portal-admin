@@ -198,37 +198,41 @@
         </v-card-title>
         <v-card-text>
           <v-form ref="editPdvForm" v-model="editPdvFormValid" lazy-validation>
-            <v-text-field
-              v-model="editingPdv.name"
-              label="Nome do PDV"
-              :rules="[v => !!v || 'Nome é obrigatório']"
-              required
-              outlined
-              dense
-            ></v-text-field>
+            <v-row>
+              <v-col cols="12" md="12">
+                <v-text-field
+                  v-model="editingPdv.name"
+                  label="Nome do PDV"
+                  :rules="[v => !!v || 'Nome é obrigatório']"
+                  required
+                  outlined
+                  dense
+                />
+              </v-col>
             
-            <div class="mb-4">
-              <AdvancedAutocomplete
-                v-model="editUserSelection"
-                :items="availableUsers"
-                label="Usuários associados"
-                item-text="name"
-                item-value="id"
-                item-subtitle="email"
-                more-label="usuários"
-              />
-            </div>
+              <v-col cols="12" md="12">
+                <AdvancedAutocomplete
+                  v-model="editUserSelection"
+                  :items="availableUsers"
+                  label="Usuários associados"
+                  item-text="name"
+                  item-value="id"
+                  item-subtitle="email"
+                  more-label="usuários"
+                />
+              </v-col>
       
-            <div>
-              <AdvancedAutocomplete
-                v-model="editTicketSelection"
-                :items="getTickets"
-                label="Ingressos associados"
-                item-text="name"
-                item-value="id"
-                more-label="ingressos"
-              />
-            </div>
+              <v-col cols="12" md="12">
+                <AdvancedAutocomplete
+                  v-model="editTicketSelection"
+                  :items="getTickets"
+                  label="Ingressos associados"
+                  item-text="name"
+                  item-value="id"
+                  more-label="ingressos"
+                />
+              </v-col>
+            </v-row>
           </v-form>
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">

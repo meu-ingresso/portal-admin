@@ -71,8 +71,8 @@ export default class EventCollaborators extends VuexModule {
       };
 
       if (params.search) {
-        queryParams['whereHas[user][people][first_name][o]'] = `LIKE`;
-        queryParams['whereHas[user][people][first_name][v]'] = `%${params.search}%`;
+        queryParams['search[email][o]'] = `LIKE`;
+        queryParams['search[email][v]'] = `%${params.search}%`;
       }
 
       const response = await $axios.$get(`event-collaborators`, { params: queryParams });
