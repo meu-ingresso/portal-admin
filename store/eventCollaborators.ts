@@ -104,8 +104,7 @@ export default class EventCollaborators extends VuexModule {
         try {
           const userResponse = await $axios.$get('users', {
             params: {
-              'preloads[]': 'people',
-              'whereHas[people][email][v]': email,
+              'where[email][v]': email,
             },
           });
           
@@ -154,8 +153,7 @@ export default class EventCollaborators extends VuexModule {
         payload.collaborators.map(async (collaborator) => {
           const userResponse = await $axios.$get('users', {
             params: {
-              'preloads[]': 'people',
-              'whereHas[people][email][v]': collaborator.email,
+              'where[email][v]': collaborator.email,
             },
           });
 
