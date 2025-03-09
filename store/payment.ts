@@ -3,8 +3,20 @@ import { $axios } from '@/utils/nuxt-instance';
 import { handleGetResponse } from '~/utils/responseHelpers';
 import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
 
-interface OrderFilters {
+interface OrderByEventFilters {
   eventId: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  paymentMethod?: string;
+}
+
+interface OrderByUserFilters {
+  userId: string;
   page?: number;
   limit?: number;
   sort?: string;
@@ -26,11 +38,19 @@ export default class Payment extends VuexModule {
   private payment: PaymentApiResponse | null = null;
   private relatedTickets: CustomerTicketApiResponse[] = [];
   private orders: PaymentApiResponse[] = [];
+  private userOrders: PaymentApiResponse[] = [];
+  
   private ordersMeta = {
     total: 0,
     page: 1,
     limit: 10,
   };
+
+  private userOrdersMeta = {
+    total: 0,
+    page: 1,
+    limit: 10,
+  };  
 
   public get $isLoading() {
     return this.isLoading;
@@ -56,10 +76,24 @@ export default class Payment extends VuexModule {
     return this.ordersMeta;
   }
 
-  @Mutation
-  private SET_LOADING(loading: boolean) {
-    this.isLoading = loading;
+  public get $userOrders() {
+    return this.userOrders;
   }
+
+  public get $userOrdersMeta() {
+    return this.userOrdersMeta;
+  }
+
+  @Mutation
+  private SET_USER_ORDERS(orders: PaymentApiResponse[]) {
+    this.userOrders = orders;
+  }
+
+  @Mutation
+  private SET_USER_ORDERS_META(meta: any) {
+    this.userOrdersMeta = meta;
+  }
+  
 
   @Mutation
   private SET_LOADING_ORDERS(loading: boolean) {
@@ -89,7 +123,6 @@ export default class Payment extends VuexModule {
   @Action
   public async fetchPaymentDetails(paymentId: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
       const response = await $axios.$get(
         `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people`
       );
@@ -100,8 +133,6 @@ export default class Payment extends VuexModule {
     } catch (error) {
       console.error('Erro ao buscar detalhes do pagamento:', error);
       throw error;
-    } finally {
-      this.context.commit('SET_LOADING', false);
     }
   }
 
@@ -124,7 +155,7 @@ export default class Payment extends VuexModule {
   }
 
   @Action
-  public async fetchEventOrders(params: OrderFilters): Promise<void> {
+  public async fetchEventOrders(params: OrderByEventFilters): Promise<void> {
     try {
       this.context.commit('SET_LOADING_ORDERS', true);
 
@@ -189,6 +220,77 @@ export default class Payment extends VuexModule {
       this.context.commit('SET_ORDERS_META', meta);
     } catch (error) {
       console.error('Erro ao buscar pedidos do evento:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING_ORDERS', false);
+    }
+  }
+
+  @Action
+  public async fetchUserOrders(params: OrderByUserFilters): Promise<void> {
+    try {
+      this.context.commit('SET_LOADING_ORDERS', true);
+
+      const queryParams: any = {
+        preloads: [
+          'payment:coupon',
+          'payment:user:people',
+          'payment:status',
+          'ticket:event:fees',
+        ],
+        'whereHas[payment][user][id][v]': params.userId,
+        page: params.page || 1,
+        limit: params.limit || 10,
+        sort: params.sort || '-created_at',
+      };
+
+      // Adiciona filtro por status
+      if (params.status) {
+        queryParams['whereHas[payment][status][name][v]'] = params.status;
+      }
+
+      // Adiciona filtro por método de pagamento
+      if (params.paymentMethod) {
+        queryParams['whereHas[payment][payment_method][v]'] = params.paymentMethod;
+      }
+
+      // Adiciona filtro de busca
+      if (params.search) {
+        queryParams['whereHas[payment][user][people][orWhere][first_name][operator][ilike]'] = `%${params.search}%`;
+        queryParams['whereHas[payment][user][people][orWhere][last_name][operator][ilike]'] = `%${params.search}%`;
+        queryParams['whereHas[payment][user][orWhere][email][operator][ilike]'] = `%${params.search}%`;
+      }
+
+      // Adiciona filtro por data inicial
+      if (params.startDate) {
+        queryParams['where[created_at][operator][>=]'] = params.startDate;
+      }
+
+      // Adiciona filtro por data final
+      if (params.endDate) {
+        queryParams['where[created_at][operator][<=]'] = params.endDate;
+      }
+
+      const response = await $axios.$get('/customer-tickets', { params: queryParams });
+      const { data, meta } = handleGetResponse(response, 'Pedidos não encontrados');
+
+      // Agrupar pedidos pelo ID do pagamento
+      const groupedOrders: Record<string, any> = {};
+      if (data) {
+        data.forEach((ticket: any) => {
+          const paymentId = ticket.payment_id;
+          if (paymentId) {
+            if (!groupedOrders[paymentId]) {
+              groupedOrders[paymentId] = { ...ticket };
+            }
+          }
+        });
+      }
+
+      this.context.commit('SET_USER_ORDERS', Object.values(groupedOrders));
+      this.context.commit('SET_USER_ORDERS_META', meta);
+    } catch (error) {
+      console.error('Erro ao buscar pedidos do usuário:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING_ORDERS', false);
