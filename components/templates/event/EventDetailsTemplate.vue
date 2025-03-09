@@ -9,6 +9,8 @@
       disable-add-ticket
       title="Detalhamento das vendas"
       :event-id="getEvent.id" />
+
+    <EventSessionsTable :sessions="getSessions" />
   </div>
 </template>
 
@@ -17,9 +19,14 @@ import { eventGeneralInfo, eventTickets, eventCoupons } from '@/store';
 import { formatRealValue } from '~/utils/formatters';
 
 export default {
+
   computed: {
     getEvent() {
       return eventGeneralInfo.$info;
+    },
+
+    getSessions() {
+      return eventGeneralInfo.$eventList;
     },
 
     getStatistics() {
@@ -85,6 +92,7 @@ export default {
       return this.getTickets.length > 0;
     },
   },
+
 };
 </script>
 
