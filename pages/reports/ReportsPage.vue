@@ -48,7 +48,7 @@ export default {
       drawer: true,
       selectedEvent: null,
       hasEvents: true,
-      currentGroupId: null, // Rastrear o grupo atual
+      currentGroupId: null,
       loadingMessage: 'Carregando dados...'
     };
   },
@@ -151,7 +151,7 @@ export default {
         .sort((a, b) => {
           const aEnd = new Date(a.end_date);
           const bEnd = new Date(b.end_date);
-          return bEnd - aEnd; // Most recent past events first
+          return bEnd - aEnd; 
         });
     },
   },
@@ -168,8 +168,7 @@ export default {
         }
       },
     },
-    
-    // Monitorar mudanças no evento selecionado para atualizar o grupo atual
+
     selectedEvent: {
       handler(newEvent) {
         if (newEvent && newEvent.groups && newEvent.groups.length > 0) {
@@ -189,7 +188,6 @@ export default {
         loading.setIsLoading(true);
         this.loadingMessage = 'Buscando eventos...';
 
-        // Fetch all events for the user with preloads necessários para agrupamento
         await eventGeneralInfo.fetchEvents({
           preloads: ['rating', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups']
         });
@@ -209,19 +207,17 @@ export default {
     },
 
     selectMostRelevantEvent() {
-      // Prioritize upcoming events, then recent past events
       if (this.upcomingGroupedEvents.length > 0) {
-        this.selectedEvent = this.upcomingGroupedEvents[0]; // Soonest upcoming event
+        this.selectedEvent = this.upcomingGroupedEvents[0];
       } else if (this.pastGroupedEvents.length > 0) {
-        this.selectedEvent = this.pastGroupedEvents[0]; // Most recent past event
+        this.selectedEvent = this.pastGroupedEvents[0];
       } else if (this.groupedEvents && this.groupedEvents.length > 0) {
-        this.selectedEvent = this.groupedEvents[0]; // Fallback to first event
+        this.selectedEvent = this.groupedEvents[0];
       } else if (this.getEvents && this.getEvents.length > 0) {
-        this.selectedEvent = this.getEvents[0]; // Fallback to ungrouped events
+        this.selectedEvent = this.getEvents[0];
       }
 
       if (this.selectedEvent) {
-        // Atualizar o grupo atual
         if (this.selectedEvent.groups && this.selectedEvent.groups.length > 0) {
           this.currentGroupId = this.selectedEvent.groups[0].id;
         }

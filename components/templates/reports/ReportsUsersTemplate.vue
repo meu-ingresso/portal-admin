@@ -85,6 +85,13 @@
         </v-data-table>
       </v-col>
     </v-row>
+
+    <!-- Modal de pedidos do usuário -->
+    <UserOrdersModal
+      :show.sync="showUserOrders"
+      :user-id="selectedUserId"
+      :user-name="selectedUserName" />
+
   </div>
 </template>
 
@@ -116,6 +123,9 @@ export default {
       currentQuery: null,
       searchTimeout: null,
       isLoadingInternal: false,
+      showUserOrders: false,
+      selectedUserId: null,
+      selectedUserName: '',
     };
   },
   
@@ -216,7 +226,9 @@ export default {
     },
     
     viewOrders(user) {
-      console.log('Ver pedidos do usuário:', user.id);
+      this.selectedUserId = user.id;
+      this.selectedUserName = `${user.people?.first_name} ${user.people?.last_name}`;
+      this.showUserOrders = true;
     },
   },
 };
