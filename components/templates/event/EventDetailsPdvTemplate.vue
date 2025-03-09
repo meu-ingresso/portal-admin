@@ -105,6 +105,7 @@
                   icon 
                   :color="getPdvStatusColor(item)"
                   class="mr-2"
+                  :loading="item.isLoading"
                   @click.stop="togglePdvStatus(item)"
                   v-on="on">
                   <v-icon>{{ getPdvStatusIcon(item) }}</v-icon>
@@ -1024,6 +1025,9 @@ export default {
     async togglePdvStatus(pdv) {
       try {
         this.isSubmitting = true;
+
+        pdv.isLoading = true;
+
         const currentStatusName = pdv.status?.name?.toLowerCase() || '';
         let newStatusId = null;
         
@@ -1076,6 +1080,7 @@ export default {
         });
       } finally {
         this.isSubmitting = false;
+        pdv.isLoading = false;
       }
     },
   }

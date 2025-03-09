@@ -97,7 +97,7 @@
       :event-id="eventId"
       @update:show="showDialog = $event"
       @close="handleCloseModal"
-      @added="loadItems" />
+      @added="handleAddedCollaborator" />
 
     <ConfirmDialog
       v-model="showConfirmDialog"
@@ -192,6 +192,12 @@ export default {
   },
 
   methods: {
+
+    handleAddedCollaborator() {
+      this.handleCloseModal();
+      this.loadItems(true);
+    },
+
     buildQueryParams() {
       const { page, itemsPerPage, sortBy, sortDesc } = this.options;
       
@@ -208,11 +214,10 @@ export default {
       };
     },
 
-    async loadItems() {
-      
+    async loadItems(force = false) {
       try {
         const query = this.buildQueryParams();
-        if (this.isQueryDifferent(query)) {
+        if (this.isQueryDifferent(query, force)) {
           this.isLoading = true;
           await eventCollaborators.fetchCollaborators(query);
           this.isLoading = false;
@@ -252,7 +257,6 @@ export default {
     handleCloseModal() {
       this.showDialog = false;
       this.selectedCollaborator = null;
-      this.loadItems();
     },
 
     handleDeleteCollaborator(collaborator) {
@@ -278,7 +282,7 @@ export default {
             time: 5000,
           });
           
-          this.loadItems();
+          this.loadItems(true);
         }
       } catch (error) {
         console.error('Erro ao remover colaborador:', error);
