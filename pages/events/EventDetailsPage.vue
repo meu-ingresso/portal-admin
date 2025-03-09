@@ -199,7 +199,7 @@ export default {
                 id: groupId
               }
             },
-            preloads: ['rating', 'coupons', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups']
+            preloads: ['rating', 'coupons', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups', 'tickets']
           });
         }
 
