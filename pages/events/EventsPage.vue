@@ -1,7 +1,8 @@
 <template>
   <EventsTemplate
     v-if="!isLoading"
-    :events="groupedEvents"
+    :events="events"
+    :grouped-events="groupedEvents"
     :show-sessions-indicator="true"
     @update-search="handleSearchEvents" />
 

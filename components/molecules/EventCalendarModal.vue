@@ -85,6 +85,8 @@
 </template>
 
 <script>
+import { formatEventsForCalendar } from '@/utils/event-utils'
+
 export default {
   props: {
     value: {
@@ -125,49 +127,11 @@ export default {
       return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(date)
     },
     calendarEvents() {
-      const events = []
-      
-      this.events.forEach(event => {
-        // Verifica se o evento tem datas múltiplas
-        if (Array.isArray(event.dates) && event.dates.length > 0) {
-          // Adiciona um evento para cada data
-          event.dates.forEach(date => {
-            events.push({
-              name: event.name,
-              start: new Date(date.start_date || date.date),
-              end: new Date(date.end_date || date.date),
-              color: event.status?.color || 'primary',
-              time: this.formatEventTime(date.start_date || date.date),
-              originalEvent: event,
-              timed: false
-            })
-          })
-        } else {
-          // Caso seja um evento com data única
-          events.push({
-            name: event.name,
-            start: new Date(event.start_date),
-            end: new Date(event.end_date),
-            color: event.status?.color || 'primary',
-            time: this.formatEventTime(event.start_date),
-            originalEvent: event,
-            timed: false
-          })
-        }
-      })
-
-      return events
+      return formatEventsForCalendar(this.events)
     }
   },
 
   methods: {
-    formatEventTime(date) {
-      if (!date) return ''
-      return new Date(date).toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit'
-      })
-    },
     showEvent({ event }) {
       if (event.originalEvent) {
         this.$router.push(`/events/${event.originalEvent.id}`)
