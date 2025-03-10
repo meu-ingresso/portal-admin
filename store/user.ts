@@ -203,7 +203,7 @@ export default class User extends VuexModule {
       this.context.commit('SET_USER', result.data[0]);
     }
 
-    return result;
+    return result.data[0];
   }
 
   @Action
@@ -245,7 +245,7 @@ export default class User extends VuexModule {
 
     if (search) {
       const newString = encodeURIComponent(`${search}`);
-      filter2 += `&search[first_name][o]=_LIKE_&search[first_name][v]=${newString}&search[last_name][o]=_LIKE_&search[last_name][v]=${newString}&search[email][o]=_LIKE_&search[email][v]=${newString}`;
+      filter2 += `&search[people][first_name:last_name][o]=LIKE&search[people][first_name:last_name][v]=${newString}&search[email][o]=LIKE&search[email][v]=${newString}`;
     }
 
     const status = await $axios

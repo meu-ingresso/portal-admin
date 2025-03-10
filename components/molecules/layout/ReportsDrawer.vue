@@ -6,28 +6,6 @@
     app
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
     <v-list class="py-0">
-      <v-list-item v-if="selectedEvent && selectedView !== 'users'" class="event-detail-image">
-        <div class="image-container">
-          <v-img
-            v-if="selectedEventBanner"
-            class="image"
-            :src="selectedEventBanner">
-          </v-img>
-
-          <div
-            v-else
-            class="d-flex justify-center align-center"
-            :style="{ margin: '0 auto', height: '100%', width: '100%' }">
-            <v-progress-circular
-              indeterminate
-              color="primary"
-              size="48"
-              class="progress-circular" />
-          </div>
-        </div>
-      </v-list-item>
-    
-
       <div v-for="(item, i) in getSidebar" :key="i" class="event-drawer-item">
         <v-list-item
           :to="item.to"
