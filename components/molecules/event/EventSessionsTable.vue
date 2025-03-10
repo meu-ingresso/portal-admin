@@ -1,7 +1,7 @@
 <template>
   <v-row class="mb-4">
       <v-col cols="12">
-        <div class="session-table-title">Visão geral por datas</div>
+        <div class="session-table-title">Detalhamento por sessão</div>
       </v-col>
 
       <v-col cols="12" md="12" sm="12">

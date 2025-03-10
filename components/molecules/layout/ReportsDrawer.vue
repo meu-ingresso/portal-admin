@@ -5,7 +5,7 @@
     clipped
     app
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
-    <v-list class="py-0">
+    <v-list class="py-2">
       <div v-for="(item, i) in getSidebar" :key="i" class="event-drawer-item">
         <v-list-item
           :to="item.to"
