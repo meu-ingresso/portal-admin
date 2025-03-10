@@ -49,6 +49,7 @@ import { status } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
+    groupedEvents: { type: Array, required: true },
     events: { type: Array, required: true },
     showSessionsIndicator: { type: Boolean, default: false },
   },
@@ -86,10 +87,10 @@ export default {
 
     filteredEvents() {
       if (this.selectedDeleted) {
-        return this.events.filter((event) => event.deleted_at !== null);
+        return this.groupedEvents.filter((event) => event.deleted_at !== null);
       }
 
-      return this.events.filter(
+      return this.groupedEvents.filter(
         (event) =>
           (this.selectedAll || event.status.name === this.selectedFilter.name) &&
           event.name.toLowerCase().includes(this.search.toLowerCase())
