@@ -2,7 +2,7 @@
   <v-dialog :value="value" max-width="500px" persistent @input="$emit('input', $event)">
     <v-card :tile="isMobile">
       <v-card-title v-if="!loading" class="d-flex justify-space-between align-center">
-        <span class="headline">{{ title }}</span>
+        <span class="modalTitle">{{ title }}</span>
         <v-btn icon :disabled="loading" @click="handleClose">
           <v-icon>mdi-close</v-icon>
         </v-btn>

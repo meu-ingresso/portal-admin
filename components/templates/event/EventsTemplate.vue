@@ -5,6 +5,12 @@
         <div class="events-template-title">Lista de Eventos</div>
       </v-col>
       <v-col cols="12" md="6" sm="12" class="d-flex justify-md-end justify-sm-start">
+        <ButtonWithIcon
+          text="Ver calendário"
+          icon="mdi-calendar"
+          class="mr-2"
+          @click="showCalendar = true"
+        />
         <DefaultButton text="Criar um evento" :block="isMobile" to="/events/create" />
       </v-col>
     </v-row>
@@ -30,6 +36,11 @@
         <v-btn color="primary" text>Ver mais...</v-btn>
       </v-col>
     </v-row>
+
+    <EventCalendarModal
+      v-model="showCalendar"
+      :events="events"
+    />
   </v-container>
 </template>
 
@@ -45,6 +56,7 @@ export default {
     return {
       search: '',
       selectedFilter: { name: 'Todos' },
+      showCalendar: false,
     };
   },
   computed: {
