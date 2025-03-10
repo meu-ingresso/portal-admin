@@ -1,6 +1,6 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { handleGetResponse } from '~/utils/responseHelpers';
+import { handleCreateResponse, handleGetResponse } from '~/utils/responseHelpers';
 import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
 
 interface OrderByEventFilters {
@@ -25,6 +25,23 @@ interface OrderByUserFilters {
   endDate?: string;
   status?: string;
   paymentMethod?: string;
+}
+
+interface CreatePaymentData {
+  user_id: string;
+  status_id: string;
+  payment_method: string;
+  gross_value: string;
+  net_value: string;
+  coupon_id?: string;
+  paid_at?: string;
+}
+
+interface CreateCustomerTicketData {
+  ticket_id: string;
+  current_owner_id: string;
+  payment_id: string;
+  status_id: string;
 }
 
 @Module({
@@ -294,6 +311,30 @@ export default class Payment extends VuexModule {
       throw error;
     } finally {
       this.context.commit('SET_LOADING_ORDERS', false);
+    }
+  }
+
+  @Action
+  public async createPayment(paymentData: CreatePaymentData): Promise<PaymentApiResponse> {
+    try {
+      const response = await $axios.$post('/payment', paymentData);
+      const data = handleCreateResponse(response, 'Erro ao criar pagamento');
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar pagamento:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async createCustomerTicket(customerTicketData: CreateCustomerTicketData): Promise<CustomerTicketApiResponse> {
+    try {
+      const response = await $axios.$post('/customer-ticket', customerTicketData);
+      const data = handleCreateResponse(response, 'Erro ao criar ingresso');
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar ingresso:', error);
+      throw error;
     }
   }
 
