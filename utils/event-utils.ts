@@ -203,4 +203,66 @@ export function logEventGroupingDiagnostics(
   });
   
   console.log('===== FIM DO DIAGNÓSTICO =====');
+}
+
+/**
+ * Interface para eventos formatados para exibição no calendário
+ */
+interface CalendarEvent {
+  name: string;
+  start: Date;
+  end: Date;
+  color?: string;
+  time?: string;
+  originalEvent: Event;
+  timed: boolean;
+  groupId?: string | number;
+  status?: string;
+}
+
+/**
+ * Formata eventos para exibição no calendário, mantendo eventos do mesmo grupo
+ * 
+ * @param events Lista de eventos para formatar
+ * @returns Lista de eventos formatados para o calendário
+ */
+export function formatEventsForCalendar(events: Event[] | null | undefined): CalendarEvent[] {
+  if (!events || !Array.isArray(events) || events.length === 0) {
+    return [];
+  }
+
+  const calendarEvents: CalendarEvent[] = [];
+  
+  // Mapear eventos diretamente para o calendário
+  events.forEach(event => {
+    if (event.start_date) {
+      calendarEvents.push({
+        name: event.name,
+        start: new Date(event.start_date),
+        end: new Date(event.end_date || event.start_date),
+        color: event.status?.color || 'primary',
+        time: formatEventTime(event.start_date),
+        originalEvent: event,
+        timed: false,
+        groupId: event.groups?.[0]?.id,
+        status: event.status?.name
+      });
+    }
+  });
+
+  return calendarEvents;
+}
+
+/**
+ * Formata a hora do evento para exibição
+ * 
+ * @param date Data do evento
+ * @returns Hora formatada ou string vazia
+ */
+function formatEventTime(date: string | Date | undefined): string {
+  if (!date) return '';
+  return new Date(date).toLocaleTimeString('pt-BR', { 
+    hour: '2-digit', 
+    minute: '2-digit'
+  });
 } 
