@@ -235,6 +235,10 @@
       :show.sync="showPaymentDetails"
       :payment-id="selectedPaymentId" />
 
+    <PdvOrderDetailsModal
+      :show.sync="showPdvOrderDetails"
+      :payment-id="selectedPaymentId" />
+
   </div>
 </template>
 
@@ -267,6 +271,7 @@ export default {
         sortDesc: [true],
       },
       showPaymentDetails: false,
+      showPdvOrderDetails: false,
       selectedPaymentId: null,
       filters: {
         search: '',
@@ -286,6 +291,7 @@ export default {
         { text: 'Cartão de Crédito', value: 'credit_card' },
         { text: 'PIX', value: 'pix' },
         { text: 'Boleto', value: 'bank_slip' },
+        { text: 'PDV', value: 'PDV' },
       ],
       debounceTimer: null,
       showFilters: false,
@@ -442,7 +448,16 @@ export default {
 
     showDetails(order) {
       this.selectedPaymentId = order.id;
+
       this.showPaymentDetails = true;
+      
+/*       // Se o método de pagamento for PDV, exibimos a modal específica para PDV
+      if (order.payment_method === 'PDV') {
+        this.showPdvOrderDetails = true;
+      } else {
+        // Para outros métodos de pagamento, usamos a modal padrão
+        this.showPaymentDetails = true;
+      } */
     },
 
     isQueryDifferent(newQuery, force = false) {

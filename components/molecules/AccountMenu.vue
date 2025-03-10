@@ -55,8 +55,8 @@ export default Vue.extend({
   },
 
   methods: {
-    userEdit(this: any, id: string): void {
-      this.$router.replace('/user/edit/' + id);
+    userEdit(id: string): void {
+      this.$router.push(`/user/edit/${id}`);
     },
 
     getInitials(name) {
