@@ -1,33 +1,26 @@
 <template>
-  <EventsTemplate
-    v-if="!isLoading"
-    :events="events"
-    :grouped-events="groupedEvents"
-    :show-sessions-indicator="true"
-    @update-search="handleSearchEvents" />
-
-  <Lottie v-else path="./animations/loading_default.json" height="300" width="300" />
+    <EventsTemplate
+      :events="events"
+      :grouped-events="groupedEvents"
+      :show-sessions-indicator="true"
+      :pagination-meta="paginationMeta"
+      @update-search="handleSearchEvents"
+      @update-filter="handleFilterChange"
+      @load-more="handleLoadMore" />
 </template>
+
 <script>
-/**
- * @page EventsPage
- * 
- * @description
- * Página de listagem de eventos do sistema de venda de ingressos.
- * 
- * @businessRules
- * - Eventos pertencentes ao mesmo grupo representam "sessões" de um mesmo evento
- * - Na listagem, apenas o evento com data mais próxima (mais antiga) de cada grupo é exibido
- * - As informações sobre quantidade de sessões são adicionadas ao evento exibido
- * - As demais sessões serão exibidas na página de detalhes do evento
- */
-import { event, loading } from '@/store';
+
+import { event } from '@/store';
 import { groupEventsBySession, logEventGroupingDiagnostics } from '~/utils/event-utils';
 
 export default {
   data() {
     return {
       diagnosticRun: false,
+      currentFilter: 'Todos',
+      currentSearch: '',
+      currentPage: 1,
     };
   },
 
@@ -38,15 +31,23 @@ export default {
     groupedEvents() {
       return groupEventsBySession(this.events);
     },
-    isLoading() {
-      return loading.$isLoading;
+
+    paginationMeta() {
+      return event.$paginationMeta || {
+        current_page: 1,
+        last_page: 1,
+        per_page: 12,
+        total: 0
+      };
+    },
+    hasMorePages() {
+      return this.paginationMeta.current_page < this.paginationMeta.last_page;
     },
   },
 
   async mounted() {
     await this.getData();
     
-    // Executar diagnóstico apenas uma vez em ambiente de desenvolvimento
     if (process.env.NODE_ENV === 'development' && !this.diagnosticRun) {
       this.logGroupedEvents();
       this.diagnosticRun = true;
@@ -56,10 +57,13 @@ export default {
   methods: {
     async getData() {
       try {
-        await event.fetchEvents({
+        const { meta } = await event.fetchEvents({
+          page: this.currentPage,
           sortBy: ['name'],
           sortDesc: [false],
+          status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
         });
+        this.currentPage = meta.current_page;
       } catch (error) {
         console.error('Erro ao carregar eventos:', error);
       }
@@ -67,13 +71,52 @@ export default {
 
     async handleSearchEvents(search) {
       try {
+        this.currentSearch = search;
+        this.currentPage = 1;
         await event.fetchEvents({
+          page: this.currentPage,
           sortBy: ['name'],
           sortDesc: [false],
           search,
+          status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
         });
       } catch (error) {
         console.error('Erro ao carregar eventos:', error);
+      }
+    },
+
+    async handleFilterChange(filter) {
+      try {
+        this.currentFilter = filter.name;
+        this.currentPage = 1;
+        await event.fetchEvents({
+          page: this.currentPage,
+          sortBy: ['name'],
+          sortDesc: [false],
+          search: this.currentSearch,
+          status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
+        });
+      } catch (error) {
+        console.error('Erro ao filtrar eventos:', error);
+      }
+    },
+
+    async handleLoadMore() {
+      if (!this.hasMorePages) return;
+      
+      try {
+        this.currentPage += 1;
+        await event.fetchEvents({
+          page: this.currentPage,
+          sortBy: ['name'],
+          sortDesc: [false],
+          search: this.currentSearch,
+          status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
+          append: true,
+        });
+      } catch (error) {
+        console.error('Erro ao carregar mais eventos:', error);
+        this.currentPage -= 1;
       }
     },
 

@@ -29,11 +29,26 @@
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
-    <EventList :events="filteredEvents" :show-sessions-indicator="showSessionsIndicator" />
+    <EventList :events="groupedEvents" :show-sessions-indicator="showSessionsIndicator" />
 
-    <v-row v-if="filteredEvents.length > 0">
+    <!-- Estado vazio -->
+    <template v-if="groupedEvents.length === 0 && !isLoadingEvents">
+      <EmptyState
+        title="Ainda não há eventos para esta busca"
+        subtitle="Uma vez criados, seus eventos aparecerão aqui"
+        icon="mdi-calendar-outline" />
+    </template>
+
+    <v-row v-if="groupedEvents.length > 0 && !isLoadingEvents">
       <v-col cols="12" class="text-center">
-        <v-btn color="primary" text>Ver mais...</v-btn>
+        <v-btn 
+          v-if="hasEvents" 
+          color="primary" 
+          text 
+          :disabled="!hasMorePages"
+          @click="loadMore">
+          {{ loadMoreButtonText }}
+        </v-btn>
       </v-col>
     </v-row>
 
@@ -45,13 +60,22 @@
 </template>
 
 <script>
-import { status } from '@/store';
+import { event, status } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
     groupedEvents: { type: Array, required: true },
     events: { type: Array, required: true },
     showSessionsIndicator: { type: Boolean, default: false },
+    paginationMeta: { 
+      type: Object, 
+      default: () => ({
+        current_page: 1,
+        last_page: 1,
+        per_page: 12,
+        total: 0
+      }) 
+    },
   },
   data() {
     return {
@@ -65,6 +89,10 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
 
+    isLoadingEvents() {
+      return event.$isLoading;
+    },
+
     isLoadingStatus() {
       return status.$isLoading;
     },
@@ -73,28 +101,21 @@ export default {
       return [
         { name: 'Todos' },
         ...status.$getStatusByModule('event'),
-        { name: 'Excluído' },
       ];
     },
 
-    selectedAll() {
-      return this.selectedFilter.name === 'Todos';
+    hasEvents() {
+      return this.groupedEvents.length > 0;
     },
 
-    selectedDeleted() {
-      return this.selectedFilter.name === 'Excluído';
+    hasMorePages() {
+      return this.paginationMeta.current_page < this.paginationMeta.last_page;
     },
 
-    filteredEvents() {
-      if (this.selectedDeleted) {
-        return this.groupedEvents.filter((event) => event.deleted_at !== null);
-      }
-
-      return this.groupedEvents.filter(
-        (event) =>
-          (this.selectedAll || event.status.name === this.selectedFilter.name) &&
-          event.name.toLowerCase().includes(this.search.toLowerCase())
-      );
+    loadMoreButtonText() {
+      return this.hasMorePages 
+        ? 'Ver mais...' 
+        : 'Não há mais eventos para carregar';
     },
   },
 
@@ -105,10 +126,16 @@ export default {
   methods: {
     handleFilterChange(filter) {
       this.selectedFilter = filter;
+      this.$emit('update-filter', filter);
     },
     handleSearch(search) {
       this.search = search;
       this.$emit('update-search', search);
+    },
+    loadMore() {
+      if (this.hasMorePages) {
+        this.$emit('load-more');
+      }
     },
     async handleFetchFilterStatus() {
       try {

@@ -1,8 +1,14 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
+import { status } from '@/utils/store-util';
 import { SearchPayload } from '~/models';
 import { formatRealValue } from '~/utils/formatters';
 import { handleGetResponse } from '~/utils/responseHelpers';
+
+// Extend SearchPayload interface to include status
+interface EventSearchPayload extends SearchPayload {
+  status?: string;
+}
 
 @Module({
   name: 'event',
@@ -17,9 +23,19 @@ export default class Event extends VuexModule {
   private isEditing: boolean = false;
   private isDeleting: boolean = false;
   private progressTitle: string = '';
+  private paginationMeta: any = {
+    current_page: 1,
+    last_page: 1,
+    per_page: 12,
+    total: 0
+  };
 
   public get $eventList() {
-    return this.eventList;
+    return this.eventList || [];
+  }
+
+  public get $paginationMeta() {
+    return this.paginationMeta;
   }
 
   private defaultFields = [
@@ -158,6 +174,15 @@ export default class Event extends VuexModule {
   }
 
   @Mutation
+  private APPEND_TO_EVENT_LIST(data: any) {
+    const mappedData = data.map((event: any) => ({
+      ...event,
+      location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
+    }));
+    this.eventList = [...this.eventList, ...mappedData];
+  }
+
+  @Mutation
   private SET_EVENT(data: any) {
     const nonDeletedTickets = data.tickets.filter((ticket) => !ticket.deleted_at);
 
@@ -279,6 +304,16 @@ export default class Event extends VuexModule {
     this.progressTitle = value;
   }
 
+  @Mutation
+  private SET_PAGINATION_META(meta: any) {
+    this.paginationMeta = meta || {
+      current_page: 1,
+      last_page: 1,
+      per_page: 12,
+      total: 0
+    };
+  }
+
   @Action
   public setLoading(value: boolean) {
     this.context.commit('SET_IS_LOADING', value);
@@ -352,7 +387,9 @@ export default class Event extends VuexModule {
     search,
     sortBy,
     sortDesc,
-  }: SearchPayload) {
+    status,
+    append = false,
+  }: EventSearchPayload & { append?: boolean }) {
     this.setLoading(true);
 
     const preloads = [
@@ -382,18 +419,27 @@ export default class Event extends VuexModule {
       params.append('search[name][v]', encodeURIComponent(String(search)));
     }
 
+    if (status && status !== 'Todos') {
+      params.append('whereHas[status][name]', status);
+    }
+
     preloads.forEach((preload) => params.append('preloads[]', preload));
 
     const response = await $axios.$get(`events?${params.toString()}`);
 
-    const { data: events } = handleGetResponse(response, 'Eventos não encontrados', null, true);
+    const { data: events, meta } = handleGetResponse(response, 'Eventos não encontrados', null, true);
 
     this.setLoading(false);
     
-    this.context.commit('SET_EVENT_LIST', events);
+    if (append) {
+      this.context.commit('APPEND_TO_EVENT_LIST', events);
+    } else {
+      this.context.commit('SET_EVENT_LIST', events);
+    }
+    
+    this.context.commit('SET_PAGINATION_META', meta);
 
-
-    return events;
+    return { events, meta };
   }
 
   @Action
@@ -504,6 +550,21 @@ export default class Event extends VuexModule {
   public async deleteEvent(payload) {
     try {
       const { eventId } = payload;
+
+      const deleteStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Excluído' });
+
+      if (!deleteStatus) {
+        throw new Error('Status de exclusão não encontrado.');
+      }
+
+      const updateEventStatus = await this.updateEvent({
+        id: eventId,
+        status_id: deleteStatus.id,
+      });
+
+      if (!updateEventStatus.success) {
+        throw new Error('Falha ao atualizar o status do evento.');
+      }
 
       const response = await $axios.$delete(`event/${eventId}`);
 
