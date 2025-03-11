@@ -55,7 +55,7 @@ export default {
 
 <style scoped>
 .event-card {
-  transition: transform 0.3s ease;
+  transition: all 0.5s;
   border-radius: 8px !important;
   overflow: hidden;
   box-shadow: none !important;
