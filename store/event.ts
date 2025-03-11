@@ -427,7 +427,7 @@ export default class Event extends VuexModule {
 
     const response = await $axios.$get(`events?${params.toString()}`);
 
-    const { data: events, meta } = handleGetResponse(response, 'Eventos não encontrados', null, true);
+    const { data: events, meta } = handleGetResponse(response, 'Eventos não encontrados', null, false);
 
     this.setLoading(false);
     
