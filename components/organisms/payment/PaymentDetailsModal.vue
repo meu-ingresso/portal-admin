@@ -129,6 +129,7 @@
                     <th>Tipo</th>
                     <th>Identificador</th>
                     <th>Status</th>
+                    <th>Data. Check-in</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -142,6 +143,9 @@
                         text-color="white">
                         {{ ticket.validated ? 'Validado' : 'Não Validado' }}
                       </v-chip>
+                    </td>
+                    <td>
+                      {{ ticket.validated ? formatDateTimeWithTimezone(ticket.validated_at) : '-' }}
                     </td>
                   </tr>
                 </tbody>

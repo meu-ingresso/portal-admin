@@ -103,7 +103,7 @@
               <template #activator="{ on }">
                 <v-btn 
                   icon 
-                  :color="getPdvStatusColor(item)"
+                  color="primary"
                   class="mr-2"
                   :loading="item.isLoading"
                   @click.stop="togglePdvStatus(item)"
@@ -334,6 +334,7 @@ import { isMobileDevice } from '@/utils/utils';
 import { 
   eventTickets, 
   eventGeneralInfo,
+  eventCollaborators,
   eventPdv,
   user,
   toast,
@@ -395,7 +396,24 @@ export default {
     },
 
     availableUsers() {
-      return user.$userList.map(user => ({
+      // Apenas usuários admin e gerente e colaboradores do evento com permissão de PDV
+
+      const adminAndGerenteUsers = user.$userList.filter(user => user?.role?.name === 'Admin' || user?.role?.name === 'Gerente');
+
+      const collaboratorsWithPdvPermission = eventCollaborators.$collaborators.filter(
+        collaborator => collaborator?.role?.name === 'PDV (Ponto de venda)' ||
+          collaborator?.role?.name === 'Admin' ||
+          collaborator?.role?.name === 'Gerente'
+      );
+
+      // Remover duplicatas
+      const uniqueCollaborators = collaboratorsWithPdvPermission.filter(collaborator => !adminAndGerenteUsers.some(admin => admin.id === collaborator.user_id));
+
+      const usersWithPdvPermission = [...adminAndGerenteUsers, ...uniqueCollaborators.map(collaborator => collaborator.user)];
+
+      console.log('[PDV] Usuários com permissão de PDV', usersWithPdvPermission);
+
+      return usersWithPdvPermission.map(user => ({
         id: user.id,
         name: user.people?.first_name + ' ' + user.people?.last_name || user.email || 'Usuário sem nome',
         email: user.email

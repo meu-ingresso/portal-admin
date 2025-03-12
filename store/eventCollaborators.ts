@@ -66,7 +66,7 @@ export default class EventCollaborators extends VuexModule {
         ],
         'whereHas[event][event_id][v]': params.eventId,
         page: params.page || 1,
-        limit: params.limit || 10,
+        limit: params.limit || 9999,
         sort: params.sort || '-created_at',
       };
 
