@@ -24,7 +24,7 @@ import EventCustomerTickets from '@/store/eventCustomerTickets';
 import EventPdv from '@/store/eventPdv';
 import Payment from '@/store/payment';
 import EventCollaborators from '@/store/eventCollaborators';
-
+import EventCheckout from '@/store/eventCheckout';
 let auth: Auth;
 let toast: Toast;
 let filter: Filter;
@@ -47,6 +47,7 @@ let eventCustomerTickets: EventCustomerTickets;
 let eventPdv: EventPdv;
 let payment: Payment;
 let eventCollaborators: EventCollaborators;
+let eventCheckout: EventCheckout;
 
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
@@ -71,6 +72,7 @@ const initializeStores = (store: Store<any>) => {
   eventPdv = getModule(EventPdv, store);
   payment = getModule(Payment, store);
   eventCollaborators = getModule(EventCollaborators, store);
+  eventCheckout = getModule(EventCheckout, store);
 };
 
 export {
@@ -97,4 +99,5 @@ export {
   eventPdv,
   payment,
   eventCollaborators,
+  eventCheckout,
 };

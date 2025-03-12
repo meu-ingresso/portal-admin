@@ -389,7 +389,8 @@ export default class Event extends VuexModule {
     sortDesc,
     status,
     append = false,
-  }: EventSearchPayload & { append?: boolean }) {
+    filterDeleted = false,
+  }: EventSearchPayload & { append?: boolean, filterDeleted?: boolean }) {
     this.setLoading(true);
 
     const preloads = [
@@ -427,7 +428,7 @@ export default class Event extends VuexModule {
 
     const response = await $axios.$get(`events?${params.toString()}`);
 
-    const { data: events, meta } = handleGetResponse(response, 'Eventos não encontrados', null, false);
+    const { data: events, meta } = handleGetResponse(response, 'Eventos não encontrados', null, filterDeleted);
 
     this.setLoading(false);
     
