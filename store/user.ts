@@ -209,7 +209,7 @@ export default class User extends VuexModule {
   @Action
   public async getAllUsers() {
     const response = await $axios
-      .$get('users?preloads[]=people');
+      .$get('users?preloads[]=people&preloads[]=role');
     
     const responseResult = handleGetResponse(response, 'Usuários não encontrados', null, true);
 

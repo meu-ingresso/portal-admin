@@ -29,7 +29,6 @@
         <div class="d-flex align-center">
           <v-icon small class="mr-2">mdi-calendar</v-icon>
           <span :class="{'font-weight-bold': item.isCurrentSession}">{{ getDisplayDate(item) }}</span>
-          <v-chip v-if="item.isCurrentSession" x-small color="primary" class="ml-2" label>Atual</v-chip>
         </div>
       </template>
       <template #item="{ item }">
@@ -38,7 +37,6 @@
             <div class="d-flex align-center">
               <v-icon small class="mr-2" :color="item.isCurrentSession ? 'primary' : undefined">mdi-calendar</v-icon>
               <span>{{ getDisplayDate(item) }}</span>
-              <v-chip v-if="item.isCurrentSession" x-small color="primary" class="ml-2" label>Atual</v-chip>
             </div>
           </v-list-item-title>
           <v-list-item-subtitle v-if="item.status === 2" class="caption text-caption">
@@ -276,7 +274,7 @@ export default {
 }
 
 .session-select {
-  max-width: 350px;
+  max-width: 250px;
 }
 
 :deep(.v-input__slot) {
@@ -299,7 +297,7 @@ export default {
 }
 
 :deep(.v-select__selection) {
-  max-width: 90%;
+  max-width: 80%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
