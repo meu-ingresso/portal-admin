@@ -1,9 +1,8 @@
 <template>
   <div class="event-details-wrapper">
-    <!-- Componente oculto para cálculos de estatísticas -->
+
     <CategoryTicketsStats ref="categoryStats" />
 
-    <!-- Estado vazio -->
     <template v-if="getTickets?.length === 0">
       <EmptyState
         title="Ainda não há ingressos"
@@ -19,31 +18,24 @@
       </EmptyState>
     </template>
 
-    <!-- Tabela de ingressos -->
     <template v-else>
-      <!-- Estatísticas gerais e por categoria -->
       <StatisticList :statistics="getCurrentStatistics" :title="getStatisticsTitle"/>
-      
-      <!-- Abas de categorias -->
       <div class="d-flex justify-space-between align-center">
-        <v-tabs v-model="selectedCategoryTab" background-color="transparent" color="primary" class="mb-4">
-          <v-tab key="all">Todos os ingressos</v-tab>
-          <v-tab key="uncategorized">Sem categoria</v-tab>
-          <v-tab 
-            v-for="category in getTicketCategories" 
-            :key="category.value"
-            :disabled="!categoryHasTickets(category.value)">
-            {{ category.text }}
-          </v-tab>
-        </v-tabs>
+        <div class="template-title">Lista de ingressos</div>
         <SplitButton
-          text="Adicionar ingresso"
-          icon="mdi-plus"
+          text="Adicionar"
           :items="[
-            { text: 'Nova categoria', icon: 'mdi-tag-plus', action: 'new-category' }
+            { text: 'Nova categoria', action: 'new-category' }
           ]"
           @click="openAddTicketModal"
           @item-click="handleSplitButtonActions" />
+      </div>
+
+      <div class="mt-6">
+        <FilterButtons
+          :filters="getFilterList"
+          :selected="selectedFilter"
+          @filter-selected="handleFilterChange" />
       </div>
 
       <v-tabs-items v-model="selectedCategoryTab" class="bg-transparent">
@@ -189,7 +181,8 @@ export default {
           );
           return !categoryExists || 'Esta categoria já existe';
         }
-      ]
+      ],
+      selectedFilter: { name: 'Todos os ingressos' },
     };
   },
 
@@ -206,6 +199,14 @@ export default {
       return eventTickets.$tickets;
     },
 
+    getFilterList() {
+      return [
+        { name: 'Todos os ingressos', value: 'all' },
+        { name: 'Ingressos sem categoria', value: 'uncategorized' },
+        ...this.getTicketCategories.map(category => ({ name: category.text, value: category.value }))
+      ];
+    },
+
     getTicketCategories() {
       return eventTickets.$ticketCategories || [];
     },
@@ -215,7 +216,6 @@ export default {
       return this.getTickets.filter(ticket => !ticket.category || !ticket.category.value);
     },
 
-    // Título para estatísticas
     getStatisticsTitle() {
       if (this.selectedCategoryTab === 0) {
         return 'Ingressos';
@@ -230,7 +230,6 @@ export default {
       }
     },
 
-    // Estatísticas para exibir com base na aba selecionada
     getCurrentStatistics() {
       if (!this.getEvent || !this.getTickets) return [];
 
@@ -257,7 +256,6 @@ export default {
   },
 
   methods: {
-    // Estatísticas gerais
     getGeneralStatistics() {
       if (!this.getEvent || !this.getTickets) return [];
 
@@ -275,7 +273,6 @@ export default {
         (ticket) => Number(ticket.total_sold) > 0
       ).length;
 
-      // Dados para estatísticas por categoria
       const categoryCount = this.getTicketCategories.length;
       const uncategorizedCount = this.getUncategorizedTickets.length;
 
@@ -295,7 +292,11 @@ export default {
       ];
     },
 
-    // Estatísticas para ingressos sem categoria
+    handleFilterChange(filter) {
+      this.selectedFilter = filter;
+      this.selectedCategoryTab = this.getFilterList.findIndex(f => f.name === filter.name);
+    },
+    
     getUncategorizedStatistics() {
       return this.$refs.categoryStats.calculateUncategorizedStats(this.getUncategorizedTickets);
     },

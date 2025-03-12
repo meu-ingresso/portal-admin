@@ -129,9 +129,9 @@ export default class EventPdv extends VuexModule {
 
       const [pdvsResponse, pdvUsersResponse, pdvTicketsResponse] = await Promise.all(promises);
       
-      const resultPdv = handleGetResponse(pdvsResponse, 'PDVs não encontrados');
-      const resultPdvUsers = handleGetResponse(pdvUsersResponse, 'Usuários não encontrados');
-      const resultPdvTickets = handleGetResponse(pdvTicketsResponse, 'Ingressos não encontrados');
+      const resultPdv = handleGetResponse(pdvsResponse, 'PDVs não encontrados', eventId, true);
+      const resultPdvUsers = handleGetResponse(pdvUsersResponse, 'Usuários não encontrados', eventId, true);
+      const resultPdvTickets = handleGetResponse(pdvTicketsResponse, 'Ingressos não encontrados', eventId, true);
 
       if (resultPdv && resultPdv.data) {
         
