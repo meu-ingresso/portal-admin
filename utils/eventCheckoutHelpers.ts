@@ -42,8 +42,6 @@
     }
   }
 
-
-
   /**
    * Prepara o payload para criação dos registros na tabela ticket-field
    * @param {Array} customerTicketsResponse - Resposta da API com os customer tickets criados
@@ -117,10 +115,15 @@
  * @param {Array} customerTicketsResponse - Resposta da API com os tickets criados
  * @param {Array} ticketFormGroups - Grupos de formulário com dados preenchidos
  * @param {Array} checkoutFields - Campos de checkout disponíveis
+ * @param {Array} checkoutFieldOptions - Opções de campos de checkout disponíveis
  * @returns {Object} Payload para a API ticket-field
  */
 export const prepareTicketFieldsPayloadWithMappedValues = (
-  customerTicketsResponse: CustomerTicketApiResponse[], ticketFormGroups: any, checkoutFields: any) => {
+  customerTicketsResponse: CustomerTicketApiResponse[], 
+  ticketFormGroups: any, 
+  checkoutFields: any,
+  checkoutFieldOptions: any
+) => {
   
   const ticketFields = [];
     
@@ -160,13 +163,15 @@ export const prepareTicketFieldsPayloadWithMappedValues = (
               
               // Tratar valores de acordo com o tipo de campo
               if (fieldInfo && ['MENU_DROPDOWN', 'MULTI_CHECKBOX'].includes(fieldInfo.type)) {
-                // Para campos de seleção, usar o valor diretamente, pois pode ser o valor real ou um ID
+                
+
                 if (Array.isArray(fieldValue)) {
                   // Para múltiplas seleções, concatenar os valores
                   value = fieldValue.join(',');
                 } else {
-                  // Para seleção única, usar o valor como está
-                  value = fieldValue.toString();
+                  // Para seleção única, usar o valor como está e buscar o nome da opção
+                  const option = checkoutFieldOptions[fieldId].find(option => option.id === fieldValue);
+                  value = option.name;
                 }
               } else {
                 // Para campos de texto, usar o valor como está

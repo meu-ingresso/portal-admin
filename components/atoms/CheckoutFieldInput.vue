@@ -23,8 +23,10 @@
       type="email"
       outlined
       dense
-      :rules="field.required ? [required, emailRule] : [emailRule]"
-      @input="handleInput"
+      :error-messages="emailError"
+      :rules="field.required ? [required] : []"
+      @input="handleEmailInput"
+      @blur="validateEmail"
     ></v-text-field>
     
     <!-- CPF Field -->
@@ -102,9 +104,9 @@
 
 <script>
 import { mask } from 'vue-the-mask';
+import Debounce from '@/utils/Debounce';
 
 export default {
-  name: 'CheckoutFieldInput',
   directives: {
     mask
   },
@@ -122,7 +124,9 @@ export default {
     return {
       fieldValue: this.value || '',
       selectedOptions: this.field.type === 'MULTI_CHECKBOX' ? (this.value || []) : [],
-      showCheckboxError: false
+      showCheckboxError: false,
+      emailError: '',
+      debouncedEmailValidation: null
     };
   },
   computed: {
@@ -229,15 +233,35 @@ export default {
       }
     }
   },
+  created() {
+    this.debouncedEmailValidation = new Debounce(() => {
+      this.validateEmail();
+    }, 500);
+  },
   methods: {
     handleInput(value) {
       this.$emit('input', value);
     },
+    handleEmailInput(value) {
+      this.$emit('input', value);
+      this.debouncedEmailValidation.execute();
+    },
+    validateEmail() {
+      if (this.fieldValue && this.field.type === 'EMAIL') {
+        const validationResult = this.emailRule(this.fieldValue);
+        if (validationResult !== true) {
+          this.emailError = validationResult;
+        } else {
+          this.emailError = '';
+        }
+      } else {
+        this.emailError = '';
+      }
+    },
     handleDropdownInput(selectedValue) {
-      // Encontrar a opção selecionada para obter o valor real
       const selectedOption = this.fieldOptions.find(option => option.value === selectedValue);
+
       if (selectedOption) {
-        // Emitir o valor real (value) da opção, não o ID
         this.$emit('input', selectedOption.value);
       } else {
         this.$emit('input', selectedValue);
@@ -260,6 +284,7 @@ export default {
       
       switch (this.field.type) {
         case 'EMAIL':
+          this.validateEmail();
           return !this.fieldValue || this.emailRule(this.fieldValue) === true;
         case 'CPF':
           return !this.fieldValue || this.cpfRule(this.fieldValue) === true;

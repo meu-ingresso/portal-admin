@@ -559,14 +559,23 @@ export default {
         const ticketFieldsPayload = prepareTicketFieldsPayloadWithMappedValues(
           customerTicketsResponse, 
           this.ticketFormGroups, 
-          this.checkoutFields
+          this.checkoutFields,
+          this.checkoutFieldOptions
         );
         
         // Enviar os dados para a API ticket-field
         if (ticketFieldsPayload.data.length > 0) {
-          console.log('Payload de campos de ticket:', ticketFieldsPayload);
-          // await eventCheckout.createTicketFields(ticketFieldsPayload);
+            console.log('Payload de campos de ticket:', ticketFieldsPayload);
+            await eventCheckout.createTicketFields(ticketFieldsPayload);
         }
+
+        // Atualizar a quantidade de ingressos vendidos
+        const ticketsSoldPayload = this.selectedTickets.map(ticket => ({
+          ticketId: ticket.id,
+          total_sold: ticket.quantity
+        }));
+        
+        await eventCheckout.updateEventTicketsTotalSold(ticketsSoldPayload);
 
         toast.setToast({ text: 'Pedido PDV realizado com sucesso!', type: 'success', time: 3000 });
         this.close();
