@@ -612,7 +612,6 @@ export default class EventGeneralInfo extends VuexModule {
             availability: this.info.availability,
             is_featured: this.info.is_featured,
             absorb_service_fee: this.info.absorb_service_fee || false,
-            group_id: this.info.group_id,
           },
         ],
       });
@@ -624,9 +623,6 @@ export default class EventGeneralInfo extends VuexModule {
       // Atualiza ou deleta banner
       await this.handleEventBanner([eventId]);
 
-      // Gerenciar outras datas (eventos do grupo)
-      await this.handleOtherEventDates(eventId);
-
       return eventResponse.body.result;
     } catch (error) {
       console.error('Erro ao atualizar evento base:', error);
@@ -634,113 +630,6 @@ export default class EventGeneralInfo extends VuexModule {
     }
   }
 
-  @Action
-  private async handleOtherEventDates(mainEventId: string): Promise<void> {
-    try {
-      // Obter o ID do grupo (se existir)
-      const groupId = this.info.group_id;
-      
-      // Se não tiver grupo e tiver apenas uma data, não há nada a fazer
-      if (!groupId && this.info.event_dates.length <= 1) {
-        return;
-      }
-      
-      // Obter eventos atuais do grupo
-      const currentGroupEvents = await this.getGroupEvents(groupId);
-      const currentEventIds = currentGroupEvents.map(event => event.id);
-      
-      // Filtrar eventos que não são o evento principal
-      const otherDates = this.info.event_dates.filter(date => date.id !== mainEventId);
-      
-      // Eventos a serem atualizados (já existem)
-      const eventsToUpdate = otherDates.filter(date => date.id && currentEventIds.includes(date.id));
-      
-      // Eventos a serem criados (novas datas)
-      const eventsToCreate = otherDates.filter(date => !date.id);
-      
-      // Eventos a serem removidos (datas removidas)
-      const eventsToDelete = currentGroupEvents.filter(
-        event => event.id !== mainEventId && !otherDates.some(date => date.id === event.id)
-      );
-      
-      // 1. Atualizar eventos existentes
-      for (const date of eventsToUpdate) {
-        const startDateTime = `${date.start_date}T${date.start_time}:00.000Z`;
-        const endDateTime = `${date.end_date}T${date.end_time}:00.000Z`;
-
-        const startDate = new Date(startDateTime);
-        const endDate = new Date(endDateTime);
-        
-        await $axios.$patch('event', {
-          data: [
-            {
-              id: date.id,
-              name: this.info.name,
-              description: this.info.description,
-              general_information: this.info.general_information,
-              category_id: this.info.category?.value,
-              rating_id: this.info.rating?.value,
-              event_type: this.info.event_type,
-              start_date: startDate.toISOString().replace('Z', '-0300'),
-              end_date: endDate.toISOString().replace('Z', '-0300'),
-              address_id: this.info.address?.id,
-              link_online: this.info.link_online,
-              location_name: this.info.address?.location_name,
-              sale_type: this.info.sale_type,
-              availability: this.info.availability,
-              is_featured: this.info.is_featured,
-              absorb_service_fee: this.info.absorb_service_fee || false,
-              group_id: groupId,
-            },
-          ],
-        });
-      }
-      
-      // 2. Criar novos eventos
-      for (const date of eventsToCreate) {
-        const startDateTime = `${date.start_date}T${date.start_time}:00.000Z`;
-        const endDateTime = `${date.end_date}T${date.end_time}:00.000Z`;
-
-        const startDate = new Date(startDateTime);
-        const endDate = new Date(endDateTime);
-        
-        await $axios.$post('event', {
-          data: [
-            {
-              alias: `${this.info.alias}-${Date.now()}`,
-              name: this.info.name,
-              description: this.info.description,
-              general_information: this.info.general_information,
-              category_id: this.info.category?.value,
-              rating_id: this.info.rating?.value,
-              event_type: this.info.event_type,
-              start_date: startDate.toISOString().replace('Z', '-0300'),
-              end_date: endDate.toISOString().replace('Z', '-0300'),
-              address_id: this.info.address?.id,
-              status_id: this.info.status?.id,
-              link_online: this.info.link_online,
-              location_name: this.info.address?.location_name,
-              promoter_id: this.info.promoter_id,
-              sale_type: this.info.sale_type,
-              availability: this.info.availability,
-              is_featured: this.info.is_featured,
-              absorb_service_fee: this.info.absorb_service_fee || false,
-              group_id: groupId,
-            },
-          ],
-        });
-      }
-      
-      // 3. Remover eventos
-      for (const event of eventsToDelete) {
-        await $axios.$delete(`event/${event.id}`);
-      }
-      
-    } catch (error) {
-      console.error('Erro ao gerenciar datas do evento:', error);
-      throw error;
-    }
-  }
 
   @Action
   public reset() {

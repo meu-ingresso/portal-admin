@@ -523,12 +523,14 @@ export default class EventCustomFields extends VuexModule {
       );
 
       for (const field of this.fieldList) {
+
         if (field.is_default) continue;
 
         const personTypeChanges = getPersonTypeChanges(field);
         operations.fieldsToDelete.push(...personTypeChanges.toDelete);
 
         for (const personType of field.person_types) {
+
           const fieldId = field.field_ids?.[personType];
           const existingField = existingFields.find((f: CustomFieldApiResponse) => f.id === fieldId);
 
