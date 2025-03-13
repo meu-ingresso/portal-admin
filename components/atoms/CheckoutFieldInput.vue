@@ -62,13 +62,13 @@
       :label="field.name"
       :hint="field.help_text"
       :required="field.required"
-      :items="field.options || []"
+      :items="fieldOptions"
       item-text="label"
       item-value="value"
       outlined
       dense
       :rules="field.required ? [required] : []"
-      @input="handleInput"
+      @input="handleDropdownInput"
     ></v-select>
     
     <!-- Multi Checkbox Field -->
@@ -78,8 +78,8 @@
         <small v-if="field.help_text" class="help-text ml-2">{{ field.help_text }}</small>
       </p>
       <v-checkbox
-        v-for="option in field.options || []"
-        :key="option.id"
+        v-for="option in fieldOptions || []"
+        :key="option.value"
         v-model="selectedOptions"
         :label="option.label"
         :value="option.value"
@@ -210,6 +210,14 @@ export default {
         
         return true;
       };
+    },
+
+    fieldOptions() {
+      return this.field?.options ? this.field.options.map(option => ({
+        ...option,
+        label: option.name,
+        value: option.id,
+      })) : [];
     }
   },
   watch: {
@@ -224,6 +232,16 @@ export default {
   methods: {
     handleInput(value) {
       this.$emit('input', value);
+    },
+    handleDropdownInput(selectedValue) {
+      // Encontrar a opção selecionada para obter o valor real
+      const selectedOption = this.fieldOptions.find(option => option.value === selectedValue);
+      if (selectedOption) {
+        // Emitir o valor real (value) da opção, não o ID
+        this.$emit('input', selectedOption.value);
+      } else {
+        this.$emit('input', selectedValue);
+      }
     },
     handleCheckboxChange() {
       this.showCheckboxError = this.field.required && this.selectedOptions.length === 0;

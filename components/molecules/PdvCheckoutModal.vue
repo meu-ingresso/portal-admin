@@ -105,15 +105,13 @@
                         <span class="font-weight-bold">Total</span>
                         <span class="total-value">{{ formatRealValue(netAmount) }}</span>
                       </div>
-                      
-                      <v-btn 
-                        block 
-                        color="primary" 
+
+                      <DefaultButton
                         :disabled="selectedTickets.length === 0"
+                        text="Próximo"
+                        block
                         @click="nextStep"
-                      >
-                        Próximo
-                      </v-btn>
+                      />
                     </template>
                   </v-card>
                 </v-col>
@@ -206,21 +204,17 @@
                     </div>
                     
                     <div class="d-flex">
-                      <v-btn 
+                      <DefaultButton
+                        text="Voltar"
                         outlined
                         class="mr-2"
                         @click="previousStep"
-                      >
-                        Voltar
-                      </v-btn>
-                      <v-btn 
-                        color="primary" 
-                        class="flex-grow-1"
+                      />
+                      <DefaultButton
                         :disabled="!validateCheckoutFields()"
+                        text="Próximo"
                         @click="nextStep"
-                      >
-                        Próximo
-                      </v-btn>
+                      />
                     </div>
                   </v-card>
                 </v-col>
@@ -284,11 +278,12 @@
 import { mask } from 'vue-the-mask';
 import { eventTickets, eventGeneralInfo, status, toast, payment, user, eventCheckout } from '@/store';
 import { formatRealValue } from '@/utils/formatters';
-
+import { prepareCustomTicketsPayload, prepareTicketFieldsPayloadWithMappedValues } from '@/utils/eventCheckoutHelpers';
 export default {
   directives: {
     mask
   },
+
   props: {
     show: {
       type: Boolean,
@@ -362,7 +357,7 @@ export default {
       return this.selectedTickets.reduce((sum, item) => sum + item.total, 0);
     },
     calculateFee() {
-      return (this.totalAmount * this.eventFeePercentage) / 100;
+      return 0;
     },
     netAmount() {
       return this.totalAmount - this.calculateFee;
@@ -548,14 +543,30 @@ export default {
         const userResponse = await user.get(this.$cookies.get('user_id'));
         
         // Preparar e enviar os tickets com campos customizados usando o serviço
-        const customerTicketsPayload = eventCheckout.prepareCustomTicketsPayload(
-          this.ticketFormGroups,
+        const customerTicketsPayload = prepareCustomTicketsPayload({
+          ticketFormGroups: this.ticketFormGroups,
           paymentId,
-          userResponse.people.id,
-          ticketAvailableStatus.id
+          ownerId: userResponse.people.id,
+          statusId: ticketAvailableStatus.id
+        });
+
+        console.log(customerTicketsPayload);
+        
+        // Criar os customer tickets e obter o retorno com os IDs
+        const customerTicketsResponse = await eventCheckout.createCustomerTicket(customerTicketsPayload);
+        
+        // Preparar os dados para a tabela ticket-field com valores mapeados
+        const ticketFieldsPayload = prepareTicketFieldsPayloadWithMappedValues(
+          customerTicketsResponse, 
+          this.ticketFormGroups, 
+          this.checkoutFields
         );
         
-        await payment.createCustomerTicket(customerTicketsPayload);
+        // Enviar os dados para a API ticket-field
+        if (ticketFieldsPayload.data.length > 0) {
+          console.log('Payload de campos de ticket:', ticketFieldsPayload);
+          // await eventCheckout.createTicketFields(ticketFieldsPayload);
+        }
 
         toast.setToast({ text: 'Pedido PDV realizado com sucesso!', type: 'success', time: 3000 });
         this.close();
@@ -566,7 +577,8 @@ export default {
       } finally {
         this.isProcessing = false;
       }
-    }
+    },
+    
   }
 };
 </script>

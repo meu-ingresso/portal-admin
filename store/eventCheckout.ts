@@ -1,7 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { handleGetResponse } from '~/utils/responseHelpers';
-import { CustomFieldOptionApiResponse, CustomFieldTicketApiResponse } from '~/models/event';
+import { handleCreateResponse, handleGetResponse } from '~/utils/responseHelpers';
+import { CreateCustomerTicketPayload, CustomerTicketApiResponse, CustomFieldOptionApiResponse, CustomFieldTicketApiResponse } from '~/models/event';
 
 @Module({
   name: 'eventCheckout',
@@ -63,6 +63,9 @@ export default class EventCheckout extends VuexModule {
     
       const resultCheckoutFieldOptions = handleGetResponse(response, 'Opções de campo não encontradas', null, true);
 
+      // Log para entender a estrutura
+      console.log('Opções retornadas da API:', resultCheckoutFieldOptions.data);
+
       return resultCheckoutFieldOptions.data;
 
     } catch (error) {
@@ -73,37 +76,26 @@ export default class EventCheckout extends VuexModule {
     }
   }
 
-  /**
- * Cria o payload para salvar os tickets customizados
- * @param {Array} ticketFormGroups - Grupos de formulários de tickets
- * @param {string} paymentId - ID do pagamento
- * @param {string} ownerId - ID do proprietário
- * @param {string} statusId - ID do status
- * @returns {Object} - Payload para criar os tickets customizados
-   */
   @Action
-  public prepareCustomTicketsPayload(payload: {
-    ticketFormGroups: any[],
-    paymentId: string,
-    ownerId: string,
-    statusId: string
-  }): any {
-    const customerTickets = [];
-    
-    for (const group of payload.ticketFormGroups) {
-      const ticketId = group.ticketId;
-      
-    for (const instance of group.instances) {
-      customerTickets.push({
-        ticket_id: ticketId,
-        current_owner_id: payload.ownerId,
-        payment_id: payload.paymentId,
-        status_id: payload.statusId,
-        custom_fields: instance.fields
-      });
-      }
+  public async createCustomerTicket(customerTicketData: CreateCustomerTicketPayload): Promise<CustomerTicketApiResponse> {
+    try {
+      const response = await $axios.$post('/customer-ticket', customerTicketData);
+      const data = handleCreateResponse(response, 'Erro ao criar ingresso');
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar ingresso:', error);
+      throw error;
     }
-    
-    return { data: customerTickets };
+  }
+
+  @Action
+  public async createTicketFields(payload: any): Promise<any> {
+    try {
+      const response = await $axios.$post(`${process.env.VUE_APP_API_URL}/ticket-field`, payload);
+      return response.data.result;
+  } catch (error) {
+      console.error('Erro ao criar campos de ticket:', error);
+      throw error;
+    }
   }
 }

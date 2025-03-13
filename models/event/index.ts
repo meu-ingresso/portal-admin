@@ -512,3 +512,10 @@ export interface CouponPayload {
   start_date: string;
   end_date: string;
 }
+
+export interface CreateCustomerTicketPayload {
+  ticket_id: string;
+  current_owner_id: string;
+  payment_id: string;
+  status_id: string;
+}
