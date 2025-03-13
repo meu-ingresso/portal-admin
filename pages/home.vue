@@ -47,6 +47,7 @@ export default {
       await event.fetchEvents({
         sortBy: ['name'],
         sortDesc: [false],
+        filterDeleted: true,
       });
       
       // Executar diagnóstico apenas uma vez em ambiente de desenvolvimento

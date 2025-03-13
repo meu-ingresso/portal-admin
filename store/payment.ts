@@ -37,13 +37,6 @@ interface CreatePaymentData {
   paid_at?: string;
 }
 
-interface CreateCustomerTicketData {
-  ticket_id: string;
-  current_owner_id: string;
-  payment_id: string;
-  status_id: string;
-}
-
 @Module({
   name: 'payment',
   stateFactory: true,
@@ -322,18 +315,6 @@ export default class Payment extends VuexModule {
       return data;
     } catch (error) {
       console.error('Erro ao criar pagamento:', error);
-      throw error;
-    }
-  }
-
-  @Action
-  public async createCustomerTicket(customerTicketData: CreateCustomerTicketData): Promise<CustomerTicketApiResponse> {
-    try {
-      const response = await $axios.$post('/customer-ticket', customerTicketData);
-      const data = handleCreateResponse(response, 'Erro ao criar ingresso');
-      return data;
-    } catch (error) {
-      console.error('Erro ao criar ingresso:', error);
       throw error;
     }
   }

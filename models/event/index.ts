@@ -292,6 +292,7 @@ export interface ValidationResult {
 
 export interface CustomFieldApiResponse {
   id: string;
+  event_id: string;
   name: string;
   type: FieldType;
   person_type: PersonType;
@@ -307,6 +308,7 @@ export interface CustomFieldOptionApiResponse {
   id: string;
   event_checkout_field_id: string;
   name: string;
+  eventCheckoutField?: CustomFieldApiResponse;
 }
 
 export interface EventApiResponse {
@@ -454,7 +456,8 @@ export interface CustomFieldTicketApiResponse {
   id: string;
   event_checkout_field_id: string;
   ticket_id: string;
-  ticket: TicketApiResponse;
+  ticket?: TicketApiResponse;
+  eventCheckoutField?: CustomFieldApiResponse;
 }
 
 export interface CouponApiResponse {
@@ -508,4 +511,11 @@ export interface CouponPayload {
   max_uses: number;
   start_date: string;
   end_date: string;
+}
+
+export interface CreateCustomerTicketPayload {
+  ticket_id: string;
+  current_owner_id: string;
+  payment_id: string;
+  status_id: string;
 }
