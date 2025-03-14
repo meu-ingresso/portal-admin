@@ -279,6 +279,7 @@ import { mask } from 'vue-the-mask';
 import { eventTickets, eventGeneralInfo, status, toast, payment, user, eventCheckout } from '@/store';
 import { formatRealValue } from '@/utils/formatters';
 import { prepareCustomTicketsPayload, prepareTicketFieldsPayloadWithMappedValues } from '@/utils/eventCheckoutHelpers';
+import { isMultiOptionField } from '@/utils/customFieldsHelpers';
 export default {
   directives: {
     mask
@@ -454,9 +455,7 @@ export default {
     },
     async fetchFieldOptions() {
       // Encontrar campos do tipo MENU_DROPDOWN ou MULTI_CHECKBOX
-      const specialFields = this.checkoutFields.filter(field => 
-        ['MENU_DROPDOWN', 'MULTI_CHECKBOX'].includes(field.eventCheckoutField.type)
-      );
+      const specialFields = this.checkoutFields.filter(field =>  isMultiOptionField(field.eventCheckoutField.type));
       
       // Buscar opções para cada campo especial
       for (const field of specialFields) {

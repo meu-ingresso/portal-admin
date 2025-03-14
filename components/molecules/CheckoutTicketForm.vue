@@ -30,6 +30,7 @@
 </template>
 
 <script>
+import { isMultiOptionField } from '~/utils/customFieldsHelpers';
 export default {
   props: {
     ticketId: {
@@ -123,7 +124,7 @@ export default {
         };
         
         // Adicionar opções para campos especiais
-        if (['MENU_DROPDOWN', 'MULTI_CHECKBOX'].includes(fieldType)) {
+        if (isMultiOptionField(fieldType)) {
           result.options = this.checkoutFieldOptions[field.eventCheckoutField.id] || [];
         }
         
