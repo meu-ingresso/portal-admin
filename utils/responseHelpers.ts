@@ -73,3 +73,9 @@ export const handleDeleteResponse = (response: any, errorMessage: string, eventI
 
   return response.body.result;
 };
+
+export const handleUpdateResponse = (response: any, errorMessage: string, eventId?: string) => {
+  if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+    throw new Error(`${errorMessage} para o evento ${eventId}`);
+  }
+};

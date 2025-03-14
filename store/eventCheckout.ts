@@ -1,6 +1,6 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { handleCreateResponse, handleGetResponse } from '~/utils/responseHelpers';
+import { handleCreateResponse, handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 import { CreateCustomerTicketPayload, CustomerTicketApiResponse, CustomFieldOptionApiResponse, CustomFieldTicketApiResponse } from '~/models/event';
 
 @Module({
@@ -30,12 +30,11 @@ export default class EventCheckout extends VuexModule {
         {
           params: {
             'preloads[]': ['eventCheckoutField', 'ticket'],
-            'whereHas[eventCheckoutField][event_id][v]': eventId
+            'whereHas[eventCheckoutField][event_id][v]': eventId,
+            'limit': 9999
           } 
         }
       );
-
-      console.log(response);
       
       const resultCheckoutFields = handleGetResponse(response, 'Campos de checkout não encontrados', eventId, true);
     
@@ -91,10 +90,28 @@ export default class EventCheckout extends VuexModule {
   @Action
   public async createTicketFields(payload: any): Promise<any> {
     try {
-      const response = await $axios.$post(`${process.env.VUE_APP_API_URL}/ticket-field`, payload);
-      return response.data.result;
+      const response = await $axios.$post(`/ticket-field`, payload);
+      const data = handleCreateResponse(response, 'Erro ao criar valores de campos de ticket');
+      return data;
   } catch (error) {
       console.error('Erro ao criar campos de ticket:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async updateEventTicketsTotalSold(payload: Array<{ticketId: string, total_sold: number}>): Promise<any> {
+    try {
+      const response = await $axios.$put(`/ticket`, {
+        data: payload.map(item => ({
+          id: item.ticketId,
+          total_sold: item.total_sold
+        }))
+      });
+      const data = handleUpdateResponse(response, 'Erro ao atualizar quantidade de ingressos vendidos');
+      return data;
+    } catch (error) {
+      console.error('Erro ao atualizar quantidade de ingressos vendidos:', error);
       throw error;
     }
   }
