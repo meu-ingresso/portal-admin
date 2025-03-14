@@ -57,6 +57,91 @@
       @input="handleInput"
     ></v-text-field>
     
+    <!-- Date Field (Novo) -->
+    <div v-else-if="field.type === 'DATA'">
+      <v-menu
+        v-model="dateMenu"
+        :close-on-content-click="false"
+        :nudge-right="40"
+        transition="scale-transition"
+        offset-y
+        min-width="auto"
+      >
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            v-model="formattedDate"
+            :label="field.name"
+            :hint="field.help_text"
+            :required="field.required"
+            outlined
+            dense
+            readonly
+            v-bind="attrs"
+            :rules="field.required ? [required] : []"
+            prepend-icon="mdi-calendar"
+            v-on="on"
+          ></v-text-field>
+        </template>
+        <v-date-picker
+          v-model="fieldValue"
+          locale="pt-br"
+          :first-day-of-week="0"
+          @input="handleDateInput"
+        ></v-date-picker>
+      </v-menu>
+    </div>
+    
+    <!-- Phone Field (Novo) -->
+    <v-text-field
+      v-else-if="field.type === 'TELEFONE'"
+      v-model="fieldValue"
+      v-mask="getPhoneMask(fieldValue)"
+      :label="field.name"
+      :hint="field.help_text || 'Formato: (00) 00000-0000'"
+      :required="field.required"
+      outlined
+      dense
+      :rules="field.required ? [required, phoneRule] : [phoneRule]"
+      @input="handleInput"
+    ></v-text-field>
+    
+    <!-- Texto Livre Field (Novo) -->
+    <v-textarea
+      v-else-if="field.type === 'TEXTO_LIVRE'"
+      v-model="fieldValue"
+      :label="field.name"
+      :hint="field.help_text"
+      :required="field.required"
+      outlined
+      auto-grow
+      rows="3"
+      counter
+      :rules="field.required ? [required] : []"
+      @input="handleInput"
+    ></v-textarea>
+    
+    <!-- Termo Field (Novo) -->
+    <div v-else-if="field.type === 'TERMO'" class="termo-field">
+      <p class="field-label mb-2">
+        {{ field.name }} <span v-if="field.required" class="required">*</span>
+      </p>
+      
+      <v-card outlined class="mb-3 termo-content pa-3">
+        <div v-if="termoContent" class="termo-text" v-html="termoContent"></div>
+        <div v-else class="text-center py-2">
+          <span class="grey--text">Termo não disponível</span>
+        </div>
+      </v-card>
+      
+      <v-checkbox
+        v-model="fieldValue"
+        :rules="field.required ? [v => !!v || 'É necessário aceitar os termos para continuar'] : []"
+        :label="`Eu li e aceito os termos acima`"
+        :required="field.required"
+        @change="handleInput($event)"
+      ></v-checkbox>
+    </div>
+    
     <!-- Dropdown Menu Field -->
     <v-select
       v-else-if="field.type === 'MENU_DROPDOWN'"
@@ -105,6 +190,7 @@
 <script>
 import { mask } from 'vue-the-mask';
 import Debounce from '@/utils/Debounce';
+import { formatDateToBr, formatDateToUs } from '@/utils/formatters';
 
 export default {
   directives: {
@@ -126,7 +212,9 @@ export default {
       selectedOptions: this.field.type === 'MULTI_CHECKBOX' ? (this.value || []) : [],
       showCheckboxError: false,
       emailError: '',
-      debouncedEmailValidation: null
+      debouncedEmailValidation: null,
+      dateMenu: false,
+      termoContent: ''
     };
   },
   computed: {
@@ -135,6 +223,19 @@ export default {
     },
     emailRule() {
       return v => !v || /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'Email inválido';
+    },
+    phoneRule() {
+      return v => {
+        if (!v) return true;
+        
+        // Remove caracteres não numéricos
+        const phone = v.replace(/\D/g, '');
+        
+        // Verifica se tem pelo menos 10 dígitos (DDD + número)
+        if (phone.length < 10) return 'Telefone inválido';
+        
+        return true;
+      };
     },
     cpfRule() {
       return v => {
@@ -215,13 +316,17 @@ export default {
         return true;
       };
     },
-
     fieldOptions() {
       return this.field?.options ? this.field.options.map(option => ({
         ...option,
         label: option.name,
         value: option.id,
       })) : [];
+    },
+    formattedDate() {
+      if (!this.fieldValue) return '';
+      // Usar o formatador de datas do sistema
+      return formatDateToBr(this.fieldValue);
     }
   },
   watch: {
@@ -237,6 +342,11 @@ export default {
     this.debouncedEmailValidation = new Debounce(() => {
       this.validateEmail();
     }, 500);
+    
+    // Carregar o conteúdo do termo se o campo for do tipo TERMO
+    if (this.field.type === 'TERMO') {
+      this.loadTermoContent();
+    }
   },
   methods: {
     handleInput(value) {
@@ -257,6 +367,26 @@ export default {
       } else {
         this.emailError = '';
       }
+    },
+    handleDateInput(date) {
+      this.dateMenu = false;
+      // Garantir que a data seja formatada corretamente antes de emitir
+      const formattedDate = formatDateToUs(date);
+      this.$emit('input', formattedDate);
+    },
+    getPhoneMask(value) {
+      if (!value) return '(##) #####-####';
+      
+      // Remove todos os caracteres não numéricos
+      const numbers = value.replace(/\D/g, '');
+      
+      // Se o número já tem mais de 10 dígitos, provavelmente é celular (11 dígitos)
+      if (numbers.length >= 11) {
+        return '(##) #####-####';
+      }
+      
+      // Se não, consideramos como telefone fixo (10 dígitos)
+      return '(##) ####-####';
     },
     handleDropdownInput(selectedValue) {
       const selectedOption = this.fieldOptions.find(option => option.value === selectedValue);
@@ -290,8 +420,26 @@ export default {
           return !this.fieldValue || this.cpfRule(this.fieldValue) === true;
         case 'CNPJ':
           return !this.fieldValue || this.cnpjRule(this.fieldValue) === true;
+        case 'TELEFONE':
+          return !this.fieldValue || this.phoneRule(this.fieldValue) === true;
         default:
           return true;
+      }
+    },
+    loadTermoContent() {
+      if (!this.field?.options || this.field.options.length === 0) {
+        this.termoContent = this.field.help_text || '';
+        return;
+      }
+      
+      // Agora que o campo é TEXT, podemos usar diretamente a primeira opção
+      // que contém o texto completo do termo
+      const termoOption = this.field.options[0];
+      if (termoOption && termoOption.name) {
+        // Usar o texto da primeira opção como conteúdo do termo
+        this.termoContent = termoOption.name;
+      } else {
+        this.termoContent = this.field.help_text || '';
       }
     }
   }
@@ -322,5 +470,14 @@ export default {
   padding: 12px;
   border-radius: 4px;
   color: #777;
+}
+.termo-content {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+}
+.termo-text {
+  font-size: 14px;
+  white-space: pre-line;
 }
 </style> 
