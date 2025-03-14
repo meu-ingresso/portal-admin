@@ -105,7 +105,7 @@ export const shouldUpdateField = (
 };
 
 export const isMultiOptionField = (type: string): boolean => {
-  return type === 'MULTI_CHECKBOX' || type === 'MENU_DROPDOWN';
+  return type === 'MULTI_CHECKBOX' || type === 'MENU_DROPDOWN' || type === 'TERMO';
 };
 
 export const getPersonTypeChanges = (

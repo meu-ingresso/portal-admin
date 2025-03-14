@@ -311,12 +311,7 @@ export default {
       }
 
       if (this.localField.type === 'TERMO') {
-        this.$set(this.localField, 'options', [
-          {
-            text: 'Obrigatório',
-            value: 'required',
-          },
-        ]);
+        this.$set(this.localField, 'options', ['required']);
       } else {
         this.$set(this.localField, 'options', []);
         this.$set(this.localField, 'terms_content', '');

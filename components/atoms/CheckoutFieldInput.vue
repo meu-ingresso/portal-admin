@@ -105,21 +105,6 @@
       @input="handleInput"
     ></v-text-field>
     
-    <!-- Texto Livre Field (Novo) -->
-    <v-textarea
-      v-else-if="field.type === 'TEXTO_LIVRE'"
-      v-model="fieldValue"
-      :label="field.name"
-      :hint="field.help_text"
-      :required="field.required"
-      outlined
-      auto-grow
-      rows="3"
-      counter
-      :rules="field.required ? [required] : []"
-      @input="handleInput"
-    ></v-textarea>
-    
     <!-- Termo Field (Novo) -->
     <div v-else-if="field.type === 'TERMO'" class="termo-field">
       <p class="field-label mb-2">
