@@ -260,7 +260,8 @@ export default class EventCustomFields extends VuexModule {
           )
           
           let selectedOptions: FieldSelectedOption[] = [];
-          
+          let termsContent: string = '';
+
           if (isMultiOptionField(field.type)) {
             const responseFieldOptions = await $axios.$get(
               `event-checkout-field-options?where[event_checkout_field_id][v]=${field.id}`
@@ -269,14 +270,18 @@ export default class EventCustomFields extends VuexModule {
             // Trata o retorno e filtra por não deletados
             const { data: fieldOptionsResult } = handleGetResponse(responseFieldOptions, 'Opções não encontradas', null, true)
 
-            selectedOptions = fieldOptionsResult.map(
-              (option: FieldSelectedOption) => {
-                return {
+            if (field.type === 'TERMO') {
+              termsContent = fieldOptionsResult[0].name;
+            } else {
+              selectedOptions = fieldOptionsResult.map(
+                (option: FieldSelectedOption) => {
+                  return {
                   id: option.id,
-                  name: option.name,
+                    name: option.name,
+                  }
                 }
-              }
-            );
+              );
+            }
           }
 
           groupedFields.set(field.name, {
@@ -287,6 +292,7 @@ export default class EventCustomFields extends VuexModule {
             person_types: [field.person_type],
             tickets: customFieldTickets,
             selected_options: selectedOptions,
+            terms_content: termsContent,
             help_text: field.help_text || '',
             display_order: field.display_order,
             field_ids: fieldIds
@@ -723,25 +729,49 @@ export default class EventCustomFields extends VuexModule {
     fieldId: string, 
     operations: BatchOperations
   }): Promise<void> {
-    if (!isMultiOptionField(payload.field.type) || payload.field._deleted) return;
 
-    const optionsResponse = await $axios.$get(`event-checkout-field-options?where[event_checkout_field_id][v]=${payload.fieldId}`);
+    try {
+      
+      if (!isMultiOptionField(payload.field.type) || payload.field._deleted) return;
 
-    const { data: existingOptions } = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true);
+      const optionsResponse = await $axios.$get(`event-checkout-field-options?where[event_checkout_field_id][v]=${payload.fieldId}`);
 
-    const optionChanges = getFieldOptionChanges(existingOptions, payload.field.selected_options);
-    
-    payload.operations.optionsToCreate.push(...optionChanges.toCreate.map(name => ({
-      event_checkout_field_id: payload.fieldId,
-      name
-    })));
+      const { data: existingOptions } = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true);
 
-    payload.operations.optionsToUpdate.push(...optionChanges.toUpdate.map(opt => ({
-      id: opt.id,
-      name: opt.name
-    })));
+      if (payload.field.type === 'TERMO') {
 
-    payload.operations.optionsToDelete.push(...optionChanges.toDelete);
+        if (!existingOptions.length) {
+          payload.operations.optionsToCreate.push({
+            event_checkout_field_id: payload.fieldId,
+            name: payload.field.terms_content
+          });
+        } else if (payload.field.terms_content !== existingOptions[0].name) {
+          payload.operations.optionsToUpdate.push({
+            id: existingOptions[0].id,
+            name: payload.field.terms_content
+          });
+        }
+
+      } else {
+
+        const optionChanges = getFieldOptionChanges(existingOptions, payload.field.selected_options);
+        
+        payload.operations.optionsToCreate.push(...optionChanges.toCreate.map(name => ({
+          event_checkout_field_id: payload.fieldId,
+          name
+        })));
+
+        payload.operations.optionsToUpdate.push(...optionChanges.toUpdate.map(opt => ({
+          id: opt.id,
+          name: opt.name
+        })));
+
+        payload.operations.optionsToDelete.push(...optionChanges.toDelete);
+      }
+    } catch (error) {
+      console.error('Erro ao processar opções do campo:', error);
+      throw new Error(`Falha ao processar opções do campo: ${error.message}`);
+    }
   }
 
   @Action

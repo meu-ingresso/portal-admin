@@ -27,26 +27,28 @@
       <p class="event-location">{{ event.location }}</p>
     </v-col>
 
-    <v-col sm="12" md="2" class="text-right">
-      <p class="event-revenue">{{ formatToMoney(event.totalizers.totalSalesAmount) }}</p>
-
-      <p class="event-revenue-today">
-        {{ formatToMoney(event.totalizers.totalSalesAmountToday) }} hoje
-      </p>
+    <v-col sm="12" md="2" class="text-right d-flex">
+      <div class="d-flex flex-column justify-center">
+        <p class="event-revenue">{{ formatToMoney(event.totalizers.totalSalesAmount) }}</p>
+        <p class="event-revenue-today">
+          {{ formatToMoney(event.totalizers.totalSalesAmountToday) }} hoje
+        </p>
+      </div>
     </v-col>
 
-    <v-col sm="12" md="1" class="text-right">
-      <p class="event-tickets">{{ event.totalizers.totalSales }}</p>
-
-      <p class="event-tickets-today">{{ event.totalizers.totalSalesToday }} hoje</p>
+    <v-col sm="12" md="1" class="text-right d-flex">
+      <div class="d-flex flex-column justify-center">
+        <p class="event-tickets">{{ event.totalizers.totalSales }}</p>
+        <p class="event-tickets-today">{{ event.totalizers.totalSalesToday }} hoje</p>
+      </div>
     </v-col>
 
-    <v-col sm="12" md="2" class="text-right">
+    <v-col sm="12" md="2" class="d-flex justify-end">
       <template v-if="isChangingStatus">
         <v-progress-circular indeterminate color="primary" size="24" />
       </template>
 
-      <template v-else>
+      <div v-else class="d-flex justify-center align-center">
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -91,7 +93,7 @@
           </template>
           <span>Deletar evento</span>
         </v-tooltip>
-      </template>
+      </div>
     </v-col>
 
     <ConfirmDialog
