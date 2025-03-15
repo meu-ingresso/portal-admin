@@ -341,8 +341,8 @@ export default {
 
 .sessions-chip {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 8px;
+  left: 8px;
   z-index: 1;
 }
 </style>
