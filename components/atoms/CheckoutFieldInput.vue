@@ -78,7 +78,6 @@
             readonly
             v-bind="attrs"
             :rules="field.required ? [required] : []"
-            prepend-icon="mdi-calendar"
             v-on="on"
           ></v-text-field>
         </template>
@@ -104,7 +103,7 @@
       :rules="field.required ? [required, phoneRule] : [phoneRule]"
       @input="handleInput"
     ></v-text-field>
-    
+
     <!-- Termo Field (Novo) -->
     <div v-else-if="field.type === 'TERMO'" class="termo-field">
       <p class="field-label mb-2">

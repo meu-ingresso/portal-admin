@@ -300,7 +300,7 @@ export default class EventCustomFields extends VuexModule {
         }
       };
       
-      const fields = Array.from(groupedFields.values());
+      const fields = Array.from(groupedFields.values()).sort((a, b) => a.display_order - b.display_order);
       this.context.commit('SET_FIELDS', fields);
       
     } catch (error) {
@@ -774,48 +774,115 @@ export default class EventCustomFields extends VuexModule {
     }
   }
 
+  // Função para trocar a ordem dos campos com base em milhares ou centenas
   @Action
   public swapFieldsOrder(payload: { 
     removedIndex: number; 
     addedIndex: number;
   }) {
-    const { removedIndex, addedIndex } = payload;
-    
-    const movedField = this.fieldList[removedIndex];
-    const targetField = this.fieldList[addedIndex];
-    
-    // Encontra os índices reais
-    const movedRealIndex = this.fieldList.findIndex(f => 
-      f.id === movedField.id || 
-      (f.name === movedField.name && !f.id)
-    );
-    
-    const targetRealIndex = this.fieldList.findIndex(f => 
-      f.id === targetField.id || 
-      (f.name === targetField.name && !f.id)
-    );
 
-    // Troca os display_orders
-    const movedDisplayOrder = movedField.display_order;
-    const targetDisplayOrder = targetField.display_order;
-
-    this.context.commit('UPDATE_FIELD', { 
-      index: movedRealIndex, 
-      field: {
-        ...movedField,
-        display_order: targetDisplayOrder
+    this.context.commit('SWAP_FIELDS', payload);
+    
+    const sortedFields = [...this.fieldList];
+    
+    let useThousandsScale = true;
+    
+    const fieldsInTensScale = sortedFields.filter(f => 
+      !f._deleted && f.display_order !== undefined && f.display_order < 1000
+    ).length;
+    
+    const fieldsInThousandsScale = sortedFields.filter(f => 
+      !f._deleted && f.display_order !== undefined && f.display_order >= 1000
+    ).length;
+    
+    if (fieldsInThousandsScale > fieldsInTensScale) {
+      useThousandsScale = false;
+    }
+    
+    const baseOffset = useThousandsScale ? 1000 : 10;
+    
+    const newOrderValues = sortedFields
+      .filter(f => !f._deleted)
+      .map((_, index) => baseOffset + (index * 10));
+    
+    const ordersByPersonType = new Map<string, Map<number, number>>();
+    
+    ['PF', 'PJ', 'ESTRANGEIRO'].forEach(personType => {
+      ordersByPersonType.set(personType, new Map<number, number>());
+    });
+      
+    sortedFields.forEach((field, index) => {
+      if (!field._deleted) {
+        const newOrder = newOrderValues[index];
+        
+        if (field.display_order !== newOrder) {
+          this.context.commit('UPDATE_FIELD', { 
+            index, 
+            field: {
+              ...field,
+              display_order: newOrder
+            }
+          });
+        }
       }
     });
-
-    this.context.commit('UPDATE_FIELD', { 
-      index: targetRealIndex, 
-      field: {
-        ...targetField,
-        display_order: movedDisplayOrder
+    
+    const usedDisplayOrdersByPersonType = new Map<string, Set<number>>();
+    
+    ['PF', 'PJ', 'ESTRANGEIRO'].forEach(personType => {
+      usedDisplayOrdersByPersonType.set(personType, new Set<number>());
+    });
+    
+    const fieldsWithDuplicateOrders = new Set<number>();
+    
+    sortedFields.forEach((field, index) => {
+      if (!field._deleted && field.display_order !== undefined) {
+        field.person_types.forEach(personType => {
+          const usedOrders = usedDisplayOrdersByPersonType.get(personType);
+          if (usedOrders) {
+            if (usedOrders.has(field.display_order)) {
+              fieldsWithDuplicateOrders.add(index);
+            } else {
+              usedOrders.add(field.display_order);
+            }
+          }
+        });
       }
     });
-
-    this.context.commit('SWAP_FIELDS', { removedIndex, addedIndex });
+    
+    fieldsWithDuplicateOrders.forEach(index => {
+      const field = sortedFields[index];
+      let newOrder = field.display_order;
+      let isDuplicate = true;
+      
+      while (isDuplicate) {
+        newOrder += 1;
+        isDuplicate = false;
+        
+        for (const personType of field.person_types) {
+          const usedOrders = usedDisplayOrdersByPersonType.get(personType);
+          if (usedOrders && usedOrders.has(newOrder)) {
+            isDuplicate = true;
+            break;
+          }
+        }
+      }
+      
+      this.context.commit('UPDATE_FIELD', { 
+        index, 
+        field: {
+          ...field,
+          display_order: newOrder
+        }
+      });
+      
+      field.person_types.forEach(personType => {
+        const usedOrders = usedDisplayOrdersByPersonType.get(personType);
+        if (usedOrders) {
+          usedOrders.add(newOrder);
+        }
+      });
+    });
   }
 
 
