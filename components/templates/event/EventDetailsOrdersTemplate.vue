@@ -14,6 +14,7 @@
 
     <!-- Modal de PDV -->
     <PdvCheckoutModal 
+      v-if="showPdvModal"
       :show.sync="showPdvModal" 
       :event-id="$route.params.id"
       @order-created="refreshOrders" />
