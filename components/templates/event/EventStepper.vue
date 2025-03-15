@@ -321,7 +321,7 @@ export default {
     },
     previousStep() {
       if (this.currentStep === 1) {
-        this.$router.replace('/events');
+        this.$router.replace(this.isEditing ? `/events/${this.eventId}` : '/events');
       } else if (this.currentStep > 1) {
         if (this.currentStep === 4 && this.getTickets.length === 0) {
           this.currentStep = 2;

@@ -8,265 +8,74 @@
         </v-btn>
       </v-card-title>
 
-      <v-stepper v-model="currentStep" class="pdv-stepper">
-        <v-stepper-header>
-          <v-stepper-step :complete="currentStep > 1" step="1">Seleção de Ingressos</v-stepper-step>
-          <v-divider></v-divider>
-          <v-stepper-step :complete="currentStep > 2" step="2">Informações do Comprador</v-stepper-step>
-          <v-divider></v-divider>
-          <v-stepper-step step="3">Pagamento</v-stepper-step>
+      <v-stepper v-model="currentStep" flat class="bg-beige">
+        <v-stepper-header class="bg-white no-box-shadow">
+          <template v-for="(step) in checkoutSteps">
+            <v-stepper-step 
+              :key="step.step" 
+              :complete="currentStep > step.step" 
+              :step="step.step">
+              {{ step.title }}
+            </v-stepper-step>
+          </template>
         </v-stepper-header>
 
         <v-stepper-items>
           <!-- Etapa 1: Seleção de Ingressos -->
-          <v-stepper-content step="1">
-            <v-card-text class="pt-4">
-              <v-row>
-                <v-col cols="12" md="8">
-                  <v-card outlined class="pa-4 mb-4">
-                    <div v-if="isLoading" class="text-center py-4">
-                      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                      <p class="mt-2">Carregando ingressos...</p>
-                    </div>
-                    
-                    <div v-else-if="Object.keys(groupedTickets).length === 0" class="text-center py-4">
-                      <p class="empty-tickets-message">Não há ingressos disponíveis para venda.</p>
-                    </div>
-                    
-                    <div v-else>
-                      <v-expansion-panels
-                        v-model="expandedPanels"
-                        multiple
-                        class="ticket-category-panels"
-                      >
-                        <v-expansion-panel
-                          v-for="(category, categoryId) in groupedTickets"
-                          :key="categoryId"
-                          class="ticket-category-panel"
-                        >
-                          <v-expansion-panel-header class="group-header">
-                            <div class="d-flex align-center justify-space-between w-100">
-                              <span class="ticket-category-name">{{ category.name }}</span>
-                              <span class="ticket-category-count grey--text">{{ category.tickets.length }} {{ category.tickets.length === 1 ? 'ingresso' : 'ingressos' }}</span>
-                            </div>
-                          </v-expansion-panel-header>
-
-                          <v-expansion-panel-content>
-                            <CheckoutTicketRow
-                              v-for="ticket in category.tickets"
-                              :key="ticket.id"
-                              :ticket="ticket"
-                              :selected-quantity="getTicketQuantity(ticket.id)"
-                              @increment="incrementTicket(ticket.id)"
-                              @decrement="decrementTicket(ticket.id)"
-                            />
-                          </v-expansion-panel-content>
-                        </v-expansion-panel>
-                      </v-expansion-panels>
-                    </div>
-                  </v-card>
-                </v-col>
-
-                <v-col cols="12" md="4">
-                  <v-card outlined class="pa-4">
-                    <h3 class="ticket-section-title mb-4">Resumo do Pedido</h3>
-                    
-                    <div v-if="selectedTickets.length === 0" class="text-center py-4">
-                      <p class="empty-cart-message">Seu carrinho está vazio</p>
-                      <p class="empty-cart-description">Selecione pelo menos um ingresso para continuar</p>
-                    </div>
-                    
-                    <template v-else>
-                      <div class="selected-tickets-list mb-4">
-                        <div v-for="(item, index) in selectedTickets" :key="index" class="selected-ticket-item mb-2">
-                          <div class="d-flex justify-space-between">
-                            <div>
-                              <div class="ticket-name">{{ item.name }}</div>
-                              <div class="ticket-quantity">{{ item.quantity }}x {{ formatRealValue(item.price) }}</div>
-                            </div>
-                            <div class="ticket-total">{{ formatRealValue(item.total) }}</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <v-divider class="mb-4"></v-divider>
-                      
-                      <div class="d-flex justify-space-between mb-2">
-                        <span>Subtotal</span>
-                        <span class="font-weight-bold">{{ formatRealValue(totalAmount) }}</span>
-                      </div>
-                      
-                      <div class="d-flex justify-space-between mb-2">
-                        <span>Taxa plataforma ({{ eventFeePercentage }}%)</span>
-                        <span>{{ formatRealValue(calculateFee) }}</span>
-                      </div>
-                      
-                      <div class="d-flex justify-space-between mb-4">
-                        <span class="font-weight-bold">Total</span>
-                        <span class="total-value">{{ formatRealValue(netAmount) }}</span>
-                      </div>
-
-                      <DefaultButton
-                        :disabled="selectedTickets.length === 0"
-                        text="Próximo"
-                        block
-                        @click="nextStep"
-                      />
-                    </template>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </v-card-text>
+          <v-stepper-content step="1" class="bg-transparent px-0 py-0">
+            <TicketSelectionStep
+              :grouped-tickets="groupedTickets"
+              :selected-quantities="selectedQuantities"
+              :selected-tickets="selectedTickets"
+              :total-amount="totalAmount"
+              :calculate-fee="calculateFee"
+              :net-amount="netAmount"
+              :event-fee-percentage="eventFeePercentage"
+              :is-loading="isLoading"
+              :is-processing="isProcessing"
+              @increment-ticket="incrementTicket"
+              @decrement-ticket="decrementTicket"
+              @next-step="nextStep"
+            />
           </v-stepper-content>
 
           <!-- Etapa 2: Informações do Comprador -->
-          <v-stepper-content step="2">
-            <v-card-text class="pt-4">
-              <v-row>
-                <v-col cols="12" md="8">
-                  <v-card outlined class="pa-4 mb-4">
-                    <h3 class="ticket-section-title mb-4">Informações do Comprador</h3>
-                    
-                    <div v-if="isLoadingFields" class="text-center py-4">
-                      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                      <p class="mt-2">Carregando campos customizados...</p>
-                    </div>
-                    
-                    <template v-else>
-                      <v-expansion-panels
-                        v-model="expandedFormPanels"
-                        multiple
-                        class="ticket-forms-panels"
-                      >
-                        <v-expansion-panel
-                          v-for="(ticketGroup, index) in ticketFormGroups"
-                          :key="index"
-                          class="ticket-form-panel"
-                        >
-                          <v-expansion-panel-header class="group-header">
-                            <div class="d-flex align-center justify-space-between w-100">
-                              <span class="ticket-name">{{ ticketGroup.ticketName }}</span>
-                              <span class="ticket-quantity grey--text">{{ ticketGroup.quantity }} {{ ticketGroup.quantity === 1 ? 'ingresso' : 'ingressos' }}</span>
-                            </div>
-                          </v-expansion-panel-header>
-
-                          <v-expansion-panel-content>
-                            <CheckoutTicketForm
-                              v-for="(instance, instanceIndex) in ticketGroup.instances"
-                              :key="instanceIndex"
-                              ref="ticketForms"
-                              v-model="ticketGroup.instances[instanceIndex]"
-                              :ticket-id="ticketGroup.ticketId"
-                              :ticket-name="ticketGroup.ticketName"
-                              :instance-index="instanceIndex"
-                              :checkout-fields="checkoutFields"
-                              :checkout-field-options="checkoutFieldOptions"
-                              :person-type-options="personTypeOptions"
-                            ></CheckoutTicketForm>
-                          </v-expansion-panel-content>
-                        </v-expansion-panel>
-                      </v-expansion-panels>
-                    </template>
-                  </v-card>
-                </v-col>
-                
-                <v-col cols="12" md="4">
-                  <v-card outlined class="pa-4">
-                    <h3 class="ticket-section-title mb-4">Resumo do Pedido</h3>
-                    
-                    <div class="selected-tickets-list mb-4">
-                      <div v-for="(item, index) in selectedTickets" :key="index" class="selected-ticket-item mb-2">
-                        <div class="d-flex justify-space-between">
-                          <div>
-                            <div class="ticket-name">{{ item.name }}</div>
-                            <div class="ticket-quantity">{{ item.quantity }}x {{ formatRealValue(item.price) }}</div>
-                          </div>
-                          <div class="ticket-total">{{ formatRealValue(item.total) }}</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <v-divider class="mb-4"></v-divider>
-                    
-                    <div class="d-flex justify-space-between mb-2">
-                      <span>Subtotal</span>
-                      <span class="font-weight-bold">{{ formatRealValue(totalAmount) }}</span>
-                    </div>
-                    
-                    <div class="d-flex justify-space-between mb-2">
-                      <span>Taxa plataforma ({{ eventFeePercentage }}%)</span>
-                      <span>{{ formatRealValue(calculateFee) }}</span>
-                    </div>
-                    
-                    <div class="d-flex justify-space-between mb-4">
-                      <span class="font-weight-bold">Total</span>
-                      <span class="total-value">{{ formatRealValue(netAmount) }}</span>
-                    </div>
-                    
-                    <div class="d-flex">
-                      <DefaultButton
-                        text="Voltar"
-                        outlined
-                        class="mr-2"
-                        @click="previousStep"
-                      />
-                      <DefaultButton
-                        :disabled="!validateCheckoutFields()"
-                        text="Próximo"
-                        @click="nextStep"
-                      />
-                    </div>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </v-card-text>
+          <v-stepper-content step="2" class="bg-transparent px-0 py-0">
+            <BuyerInfoStep
+              ref="buyerInfoStep"
+              :selected-tickets="selectedTickets"
+              :ticket-form-groups="ticketFormGroups"
+              :checkout-fields="checkoutFields"
+              :checkout-field-options="checkoutFieldOptions"
+              :person-type-options="personTypeOptions"
+              :expanded-form-panels="expandedFormPanels"
+              :total-amount="totalAmount"
+              :calculate-fee="calculateFee"
+              :net-amount="netAmount"
+              :event-fee-percentage="eventFeePercentage"
+              :is-loading-fields="isLoadingFields"
+              :is-processing="isProcessing"
+              @update:expanded-form-panels="expandedFormPanels = $event"
+              @update:ticket-form-groups="ticketFormGroups = $event"
+              @previous-step="previousStep"
+              @next-step="nextStep"
+            />
           </v-stepper-content>
 
           <!-- Etapa 3: Pagamento -->
-          <v-stepper-content step="3">
-            <v-card-text class="pt-4">
-              <v-row>
-                <v-col cols="12" md="8">
-                  <v-card outlined class="pa-4 mb-4">
-                    <h3 class="ticket-section-title mb-4">Método de Pagamento</h3>
-                    <v-radio-group v-model="paymentMethod" class="mt-0">
-                      <v-radio value="PDV" label="Ponto de Venda (PDV)"></v-radio>
-                    </v-radio-group>
-                  </v-card>
-                </v-col>
-                
-                <v-col cols="12" md="4">
-                  <CheckoutSummary
-                    :selected-tickets="selectedTickets"
-                    :total-amount="totalAmount"
-                    :calculate-fee="calculateFee"
-                    :net-amount="netAmount"
-                    :is-processing="isProcessing"
-                    :event-fee-percentage="eventFeePercentage"
-                    @process-payment="processPdvPayment"
-                  >
-                    <template #actions>
-                      <v-btn 
-                        outlined
-                        class="mr-2"
-                        @click="previousStep"
-                      >
-                        Voltar
-                      </v-btn>
-                      <v-btn 
-                        color="primary" 
-                        class="flex-grow-1"
-                        :loading="isProcessing"
-                        :disabled="isProcessing"
-                        @click="processPdvPayment"
-                      >
-                        Concluir Pedido
-                      </v-btn>
-                    </template>
-                  </CheckoutSummary>
-                </v-col>
-              </v-row>
-            </v-card-text>
+          <v-stepper-content step="3" class="bg-transparent px-0 py-0 fixed-height-content">
+            <PaymentStep
+              :selected-tickets="selectedTickets"
+              :total-amount="totalAmount"
+              :calculate-fee="calculateFee"
+              :net-amount="netAmount"
+              :event-fee-percentage="eventFeePercentage"
+              :payment-method="paymentMethod"
+              :is-processing="isProcessing"
+              @update:payment-method="paymentMethod = $event"
+              @previous-step="previousStep"
+              @process-payment="processPdvPayment"
+            />
           </v-stepper-content>
         </v-stepper-items>
       </v-stepper>
@@ -275,15 +84,12 @@
 </template>
 
 <script>
-import { mask } from 'vue-the-mask';
-import { eventTickets, eventGeneralInfo, status, toast, payment, user, eventCheckout } from '@/store';
+import { eventTickets, eventGeneralInfo, eventCheckout, toast } from '@/store';
 import { formatRealValue } from '@/utils/formatters';
-import { prepareCustomTicketsPayload, prepareTicketFieldsPayloadWithMappedValues } from '@/utils/eventCheckoutHelpers';
 import { isMultiOptionField } from '@/utils/customFieldsHelpers';
+import checkoutService from '@/services/checkout/checkoutService';
+
 export default {
-  directives: {
-    mask
-  },
 
   props: {
     show: {
@@ -295,6 +101,7 @@ export default {
       required: true
     }
   },
+  
   data() {
     return {
       selectedQuantities: {},
@@ -312,9 +119,15 @@ export default {
         { text: 'Pessoa Física', value: 'PF' },
         { text: 'Pessoa Jurídica', value: 'PJ' },
         { text: 'Estrangeiro', value: 'ESTRANGEIRO' }
+      ],
+      checkoutSteps: [
+        { step: 1, title: 'Seleção de Ingressos' },
+        { step: 2, title: 'Informações do Comprador' },
+        { step: 3, title: 'Pagamento' }
       ]
     };
   },
+  
   computed: {
     tickets() {
       return eventTickets.$tickets.filter(ticket => 
@@ -323,8 +136,9 @@ export default {
         (ticket.total_quantity - ticket.total_sold) > 0
       );
     },
+
     groupedTickets() {
-      return this.tickets.reduce((acc, ticket) => {
+      const grouped = this.tickets.reduce((acc, ticket) => {
         const categoryId = ticket.category?.id || 'uncategorized';
         const categoryName = ticket.category?.text || 'Sem Categoria';
         if (!acc[categoryId]) {
@@ -333,13 +147,27 @@ export default {
         acc[categoryId].tickets.push(ticket);
         return acc;
       }, {});
+      
+      // Ordenar ingressos pelo display_order em cada categoria
+      Object.keys(grouped).forEach(categoryId => {
+        grouped[categoryId].tickets.sort((a, b) => {
+          const orderA = a.display_order !== undefined ? a.display_order : Number.MAX_SAFE_INTEGER;
+          const orderB = b.display_order !== undefined ? b.display_order : Number.MAX_SAFE_INTEGER;
+          return orderA - orderB;
+        });
+      });
+      
+      return grouped;
     },
+    
     currentEvent() {
       return eventGeneralInfo.$info;
     },
+    
     eventFeePercentage() {
       return parseFloat(this.currentEvent?.fees?.platform_fee) || 0;
     },
+    
     selectedTickets() {
       return Object.keys(this.selectedQuantities)
         .filter(id => this.selectedQuantities[id] > 0)
@@ -354,24 +182,21 @@ export default {
           };
         });
     },
+    
     totalAmount() {
       return this.selectedTickets.reduce((sum, item) => sum + item.total, 0);
     },
+    
     calculateFee() {
       return 0;
     },
+    
     netAmount() {
       return this.totalAmount - this.calculateFee;
     }
   },
-  watch: {
-    show(newVal) {
-      if (newVal) {
-        this.loadData();
-      } else {
-        this.resetData();
-      }
-    },
+  
+  watch: {    
     selectedTickets: {
       handler(newVal) {
         if (newVal.length > 0 && this.currentStep === 2) {
@@ -381,8 +206,18 @@ export default {
       deep: true
     }
   },
+
+  mounted() {
+    this.loadData();
+  },
+  
+  beforeDestroy() {
+    this.resetData();
+  },
+  
   methods: {
     formatRealValue,
+    
     async loadData() {
       try {
         this.isLoading = true;
@@ -398,7 +233,9 @@ export default {
         this.isLoading = false;
       }
     },
+    
     resetData() {
+      console.log('resetData');
       this.selectedQuantities = {};
       this.expandedPanels = [];
       this.expandedFormPanels = [];
@@ -406,14 +243,26 @@ export default {
       this.checkoutFields = [];
       this.checkoutFieldOptions = {};
       this.ticketFormGroups = [];
+      this.paymentMethod = 'PDV';
+      
+      this.isLoading = false;
+      this.isLoadingFields = false;
+      this.isProcessing = false;
     },
+    
     close() {
-      this.resetData();
+      console.log('close');
+      this.isLoading = false;
+      this.isLoadingFields = false;
+      this.isProcessing = false;
+      
       this.$emit('update:show', false);
     },
+    
     getTicketQuantity(ticketId) {
       return this.selectedQuantities[ticketId] || 0;
     },
+    
     incrementTicket(ticketId) {
       const currentQty = this.selectedQuantities[ticketId] || 0;
       const ticket = this.tickets.find(t => t.id === ticketId);
@@ -422,11 +271,13 @@ export default {
         this.$set(this.selectedQuantities, ticketId, currentQty + 1);
       }
     },
+    
     decrementTicket(ticketId) {
       if (this.selectedQuantities[ticketId] > 0) {
         this.$set(this.selectedQuantities, ticketId, this.selectedQuantities[ticketId] - 1);
       }
     },
+    
     nextStep() {
       if (this.currentStep === 1) {
         this.fetchCheckoutFields();
@@ -435,15 +286,27 @@ export default {
         this.currentStep++;
       }
     },
+    
     previousStep() {
       if (this.currentStep > 1) {
         this.currentStep--;
       }
     },
+    
     async fetchCheckoutFields() {
       try {
         this.isLoadingFields = true;
-        this.checkoutFields = await eventCheckout.fetchCheckoutFields(this.eventId);
+        const checkoutFieldsResponse = await eventCheckout.fetchCheckoutFields(this.eventId);
+        
+        if (!checkoutFieldsResponse || checkoutFieldsResponse.length === 0) {
+          this.checkoutFields = [];
+          this.isLoadingFields = false;
+          return;
+        }
+
+        // Ordena os campos de checkout pelo display_order
+        this.checkoutFields = checkoutFieldsResponse.sort((a, b) => a.eventCheckoutField.display_order - b.eventCheckoutField.display_order);
+        
         await this.fetchFieldOptions();
         this.generateTicketForms();
         this.isLoadingFields = false;
@@ -451,37 +314,48 @@ export default {
         console.error('Erro ao carregar campos de checkout:', error);
         toast.setToast({ text: 'Erro ao carregar campos de checkout.', type: 'error', time: 3000 });
         this.isLoadingFields = false;
+        this.checkoutFields = [];
       }
     },
+    
     async fetchFieldOptions() {
-      // Encontrar campos do tipo MENU_DROPDOWN ou MULTI_CHECKBOX
-      const specialFields = this.checkoutFields.filter(field =>  isMultiOptionField(field.eventCheckoutField.type));
-      
-      // Buscar opções para cada campo especial
-      for (const field of specialFields) {
-        try {
-          const fieldId = field.eventCheckoutField.id;
-          if (!this.checkoutFieldOptions[fieldId]) {
-            this.checkoutFieldOptions[fieldId] = await eventCheckout.fetchCheckoutFieldOptions(fieldId);
-          }
-        } catch (error) {
-          console.error('Erro ao carregar opções de campo:', error);
+      try {
+        const specialFields = this.checkoutFields.filter(field => 
+          field.eventCheckoutField && isMultiOptionField(field.eventCheckoutField.type)
+        );
+        
+        if (!specialFields || specialFields.length === 0) {
+          return;
         }
+        
+        for (const field of specialFields) {
+          try {
+            const fieldId = field.eventCheckoutField.id;
+            if (!this.checkoutFieldOptions[fieldId]) {
+              this.checkoutFieldOptions[fieldId] = await eventCheckout.fetchCheckoutFieldOptions(fieldId);
+            }
+          } catch (error) {
+            console.error(`Erro ao carregar opções para o campo ${field.eventCheckoutField.id}:`, error);
+            this.checkoutFieldOptions[field.eventCheckoutField.id] = [];
+          }
+        }
+      } catch (error) {
+        console.error('Erro geral ao carregar opções de campos:', error);
+        this.checkoutFieldOptions = {};
       }
     },
+    
     generateTicketForms() {
       this.ticketFormGroups = [];
       this.expandedFormPanels = [];
       
       let panelIndex = 0;
       
-      // Para cada tipo de ingresso selecionado
       this.selectedTickets.forEach(selectedTicket => {
         const ticket = this.tickets.find(t => t.id === selectedTicket.id);
         if (!ticket) return;
         
         const instances = [];
-        // Para cada unidade desse ingresso
         for (let i = 0; i < selectedTicket.quantity; i++) {
           instances.push({
             personType: 'PF',
@@ -496,23 +370,22 @@ export default {
           instances
         });
         
-        // Expandir o primeiro painel por padrão
         this.expandedFormPanels.push(panelIndex);
         panelIndex++;
       });
     },
+    
     validateCheckoutFields() {
-      if (!this.$refs.ticketForms) return false;
-      
-      return this.$refs.ticketForms.every(form => form.validate());
+      if (!this.$refs.buyerInfoStep) return true;
+      return this.$refs.buyerInfoStep.validateFields();
     },
+    
     async processPdvPayment() {
       if (this.selectedTickets.length === 0) {
         toast.setToast({ text: 'Selecione pelo menos um ingresso para continuar.', type: 'error', time: 3000 });
         return;
       }
       
-      // Validar campos antes de processar
       if (!this.validateCheckoutFields()) {
         toast.setToast({ text: 'Por favor, preencha todos os campos obrigatórios.', type: 'error', time: 3000 });
         return;
@@ -520,61 +393,15 @@ export default {
       
       try {
         this.isProcessing = true;
-        const paymentApprovedStatus = await status.fetchStatusByModuleAndName({ module: 'payment', name: 'Aprovado' });
-        if (!paymentApprovedStatus) throw new Error('Status de pagamento aprovado não encontrado');
         
-        const paymentPayload = {
-          data: [{
-            user_id: this.$cookies.get('user_id'),
-            status_id: paymentApprovedStatus.id,
-            payment_method: 'PDV',
-            gross_value: this.totalAmount,
-            net_value: this.netAmount,
-            paid_at: new Date().toISOString()
-          }]
-        };
-        const paymentResponse = await payment.createPayment(paymentPayload);
-        const paymentId = paymentResponse[0].id;
-
-        const ticketAvailableStatus = await status.fetchStatusByModuleAndName({ module: 'customer-ticket', name: 'Disponível' });
-        if (!ticketAvailableStatus) throw new Error('Status de ingresso disponível não encontrado');
-
-        const userResponse = await user.get(this.$cookies.get('user_id'));
-        
-        // Preparar e enviar os tickets com campos customizados usando o serviço
-        const customerTicketsPayload = prepareCustomTicketsPayload({
+        await checkoutService.processPdvPayment(this, {
+          tickets: this.selectedTickets,
           ticketFormGroups: this.ticketFormGroups,
-          paymentId,
-          ownerId: userResponse.people.id,
-          statusId: ticketAvailableStatus.id
+          checkoutFields: this.checkoutFields,
+          checkoutFieldOptions: this.checkoutFieldOptions,
+          totalAmount: this.totalAmount,
+          netAmount: this.netAmount
         });
-
-        console.log(customerTicketsPayload);
-        
-        // Criar os customer tickets e obter o retorno com os IDs
-        const customerTicketsResponse = await eventCheckout.createCustomerTicket(customerTicketsPayload);
-        
-        // Preparar os dados para a tabela ticket-field com valores mapeados
-        const ticketFieldsPayload = prepareTicketFieldsPayloadWithMappedValues(
-          customerTicketsResponse, 
-          this.ticketFormGroups, 
-          this.checkoutFields,
-          this.checkoutFieldOptions
-        );
-        
-        // Enviar os dados para a API ticket-field
-        if (ticketFieldsPayload.data.length > 0) {
-            console.log('Payload de campos de ticket:', ticketFieldsPayload);
-            await eventCheckout.createTicketFields(ticketFieldsPayload);
-        }
-
-        // Atualizar a quantidade de ingressos vendidos
-        const ticketsSoldPayload = this.selectedTickets.map(ticket => ({
-          ticketId: ticket.id,
-          total_sold: ticket.quantity
-        }));
-        
-        await eventCheckout.updateEventTicketsTotalSold(ticketsSoldPayload);
 
         toast.setToast({ text: 'Pedido PDV realizado com sucesso!', type: 'success', time: 3000 });
         this.close();
@@ -585,30 +412,12 @@ export default {
       } finally {
         this.isProcessing = false;
       }
-    },
-    
+    }
   }
 };
 </script>
 
 <style scoped>
 .ticket-section-title { font-size: 18px; font-weight: 700; color: var(--black-text); font-family: var(--font-family-inter-bold); }
-.ticket-category-panels { border-radius: 0;}
-.ticket-category-panel { margin-bottom: 8px; border: none !important; border-radius: 8px !important; overflow: hidden;background-color: #f5f5f5 !important; }
-::v-deep .v-expansion-panel-content__wrap { padding: 18px 14px; }
-::v-deep .v-expansion-panel::before { box-shadow: none; }
 .ticket-category-name { font-size: 16px; font-weight: 700; color: var(--primary); font-family: var(--font-family-inter-bold); }
-.ticket-category-count { font-size: 14px; }
-.empty-tickets-message { color: var(--black-text); font-size: 14px; text-align: center; padding: 20px 0; }
-.empty-cart-message { font-size: 16px; font-weight: 700; color: var(--black-text); margin-bottom: 8px; }
-.empty-cart-description { font-size: 14px; color: var(--grey-text); }
-.ticket-name { font-weight: 500; }
-.ticket-quantity { font-size: 13px; color: var(--grey-text); }
-.total-value { font-weight: 700; color: var(--primary); font-size: 18px; }
-.pdv-stepper { box-shadow: none; }
-.ticket-instance-title { font-size: 16px; font-weight: 500; color: var(--black-text); }
-.ticket-forms-panels { border-radius: 0;}
-.ticket-form-panel { margin-bottom: 8px; border: none !important; border-radius: 8px !important; overflow: hidden;background-color: #f5f5f5 !important; }
-.field-label { font-size: 14px; }
-.required { color: red; }
 </style>

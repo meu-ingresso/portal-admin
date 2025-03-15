@@ -7,7 +7,7 @@
     </div>
     <div class="second-ticket-column">
       <div class="ticket-status">
-        <v-chip small color="success" text-color="white" class="ticket-status-chip">
+        <v-chip small color="primary" text-color="white" class="ticket-status-chip">
           Disponível: {{ ticket.total_quantity - ticket.total_sold }}
         </v-chip>
       </div>

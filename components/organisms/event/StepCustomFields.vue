@@ -249,9 +249,22 @@ export default {
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
+        const movedField = this.getNonDeletedCustomFields[removedIndex];
+        const targetField = this.getNonDeletedCustomFields[addedIndex];
+        
+        if (movedField.is_default || targetField.is_default) {
+          return;
+        }
+        
         eventCustomFields.swapFieldsOrder({
           removedIndex,
           addedIndex,
+        });
+        
+        toast.setToast({
+          text: 'Ordem dos campos atualizada com sucesso.',
+          type: 'success',
+          time: 3000,
         });
       }
     },
