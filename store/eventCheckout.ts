@@ -1,7 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleCreateResponse, handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
-import { CreateCustomerTicketPayload, CustomerTicketApiResponse, CustomFieldOptionApiResponse, CustomFieldTicketApiResponse } from '~/models/event';
+import { CreateCustomerTicketPayload, CustomerTicketApiResponse, CustomFieldOptionApiResponse, CustomFieldTicketApiResponse, TicketFieldApiResponse } from '~/models/event';
 
 @Module({
   name: 'eventCheckout',
@@ -48,6 +48,26 @@ export default class EventCheckout extends VuexModule {
   }
 
   @Action
+  public async getTicketFields(customerTicketId: string): Promise<TicketFieldApiResponse[]> {
+    try {
+      const response = await $axios.$get('/ticket-fields', {
+        params: {
+          'preloads[]': ['customerTicket', 'checkoutField'],
+          'whereHas[customerTicket][id][v]': customerTicketId,
+          'limit': 9999
+        }
+      });
+
+      const resultTicketFields = handleGetResponse(response, 'Campos de ticket não encontrados', customerTicketId, true);
+      
+      return resultTicketFields.data;
+    } catch (error) {
+      console.error('Erro ao buscar campos do ingresso:', error);
+      throw error;
+    }
+  }
+
+  @Action
   public async fetchCheckoutFieldOptions(fieldId: string): Promise<CustomFieldOptionApiResponse[]> {
     try {
       this.context.commit('SET_LOADING', true);
@@ -61,9 +81,6 @@ export default class EventCheckout extends VuexModule {
       );
     
       const resultCheckoutFieldOptions = handleGetResponse(response, 'Opções de campo não encontradas', null, true);
-
-      // Log para entender a estrutura
-      console.log('Opções retornadas da API:', resultCheckoutFieldOptions.data);
 
       return resultCheckoutFieldOptions.data;
 
@@ -100,9 +117,21 @@ export default class EventCheckout extends VuexModule {
   }
 
   @Action
+  public async updateTicketFields(payload: any): Promise<any> {
+    try {
+      const response = await $axios.$patch(`/ticket-field`, payload);
+      const data = handleUpdateResponse(response, 'Erro ao atualizar valores de campos de ticket');
+      return data;
+  } catch (error) {
+      console.error('Erro ao atualizar campos de ticket:', error);
+      throw error;
+    }
+  }
+
+  @Action
   public async updateEventTicketsTotalSold(payload: Array<{ticketId: string, total_sold: number}>): Promise<any> {
     try {
-      const response = await $axios.$put(`/ticket`, {
+      const response = await $axios.$patch(`/ticket`, {
         data: payload.map(item => ({
           id: item.ticketId,
           total_sold: item.total_sold

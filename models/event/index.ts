@@ -460,6 +460,15 @@ export interface CustomFieldTicketApiResponse {
   eventCheckoutField?: CustomFieldApiResponse;
 }
 
+export interface TicketFieldApiResponse {
+  id: string;
+  customer_ticket_id: string;
+  field_id: string;
+  value: string;
+  customerTicket?: CustomerTicketApiResponse;
+  checkoutField?: CustomFieldApiResponse;
+}
+
 export interface CouponApiResponse {
   id: string;
   event_id: string;
