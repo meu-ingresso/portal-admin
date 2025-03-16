@@ -18,13 +18,13 @@
     </div>
     
     <template v-else>
-      <checkout-field-input
+      <CheckoutFieldInput
         v-for="field in fields"
         :key="field.id"
         ref="fieldInputs"
         v-model="fieldValues[field.id]"
         :field="field"
-      ></checkout-field-input>
+      />
     </template>
   </v-card>
 </template>

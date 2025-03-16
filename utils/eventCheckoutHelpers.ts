@@ -170,8 +170,8 @@ export const prepareTicketFieldsPayloadWithMappedValues = (
                   value = fieldValue.join(',');
                 } else {
                   // Para seleção única, usar o valor como está e buscar o nome da opção
-                  const option = checkoutFieldOptions[fieldId].find(option => option.id === fieldValue);
-                  value = option.name;
+                  // const option = checkoutFieldOptions[fieldId].find(option => option.id === fieldValue);
+                  value = fieldValue
                 }
               } else {
                 // Para campos de texto, usar o valor como está

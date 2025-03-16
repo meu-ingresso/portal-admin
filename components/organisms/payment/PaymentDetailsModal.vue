@@ -130,6 +130,7 @@
                     <th>Identificador</th>
                     <th>Status</th>
                     <th>Data. Check-in</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -146,6 +147,22 @@
                     </td>
                     <td>
                       {{ ticket.validated ? formatDateTimeWithTimezone(ticket.validated_at) : '-' }}
+                    </td>
+                    <td>
+                      <v-tooltip bottom>
+                        <template #activator="{ on, attrs }">
+                          <v-btn
+                            v-bind="attrs"
+                            x-small
+                            icon
+                            color="primary"
+                            v-on="on"
+                            @click="openTicketEditModal(ticket)">
+                            <v-icon small>mdi-pencil</v-icon>
+                          </v-btn>
+                        </template>
+                        Editar participante
+                      </v-tooltip>
                     </td>
                   </tr>
                 </tbody>
@@ -185,6 +202,25 @@
         </template>
       </v-card-text>
     </v-card>
+    
+    <!-- Modal de Edição de Campos do Ingresso -->
+    <TicketFieldsEditModal
+      :show="showTicketFieldsEditModal"
+      :customer-ticket-id="selectedTicketId"
+      @update:show="showTicketFieldsEditModal = $event"
+      @fields-updated="handleTicketFieldsUpdated" />
+      
+    <!-- Modal de Confirmação de Cancelamento -->
+    <ConfirmDialog
+      v-model="showCancelDialog"
+      title="Cancelar Pedido"
+      message="Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita."
+      confirm-text="Sim, cancelar"
+      cancel-text="Não, voltar"
+      confirm-color="error"
+      :loading="isCancelling"
+      @cancel="showCancelDialog = $event"
+      @confirm="cancelOrder" />
   </v-dialog>
 </template>
 
@@ -193,7 +229,9 @@ import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
 import { payment, eventCustomerTickets, toast } from '@/store';
 import { isMobileDevice, getPaymentMethod } from '@/utils/utils';
+
 export default {
+
   props: {
     show: {
       type: Boolean,
@@ -211,6 +249,8 @@ export default {
       isResending: false,
       isCancelling: false,
       showCancelDialog: false,
+      showTicketFieldsEditModal: false,
+      selectedTicketId: null,
     };
   },
 
@@ -333,6 +373,21 @@ export default {
       } finally {
         this.isPrinting = false;
       }
+    },
+
+    openTicketEditModal(ticket) {
+      this.selectedTicketId = ticket.id;
+      this.showTicketFieldsEditModal = true;
+    },
+    
+    handleTicketFieldsUpdated() {
+      // Recarregar os dados do pagamento para refletir as alterações
+      payment.fetchPaymentDetails(this.paymentId);
+      toast.setToast({
+        text: 'Dados do ingresso atualizados com sucesso!',
+        type: 'success',
+        time: 5000,
+      });
     },
   },
 };
