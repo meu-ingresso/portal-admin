@@ -24,15 +24,15 @@
                 <!-- Informações do Pagamento -->
                 <div class="payment-info mb-6">
                   <h3 class="subtitle-1 font-weight-bold mb-3">Informações Gerais</h3>
-                  <v-row dense>
+                  <v-row>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Pedido</div>
+                      <div class="info-label font-weight-bold">Pedido</div>
                       <div class="info-value primary--text font-weight-bold">
                         {{ payment.id }}
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Status</div>
+                      <div class="info-label font-weight-bold">Status</div>
                       <div class="info-value">
                         <v-chip
                           small
@@ -42,43 +42,51 @@
                         </v-chip>
                       </div>
                     </v-col>
+                  </v-row>
+                  <v-row>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Titular da compra</div>
+                      <div class="info-label font-weight-bold">Titular da compra</div>
                       <div class="info-value">
                         {{ payment.user?.people?.first_name }}
                         {{ payment.user?.people?.last_name }}
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Email</div>
+                      <div class="info-label font-weight-bold">Email</div>
                       <div class="info-value">
                         {{ payment.user?.people?.email }}
                       </div>
                     </v-col>
+                  </v-row>
+                  <v-row>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Método</div>
+                      <div class="info-label font-weight-bold">Método</div>
                       <div class="info-value text-capitalize">
                         {{ getPaymentMethod(payment.payment_method) }}
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Data do pedido</div>
+                      <div class="info-label font-weight-bold">Data do pedido</div>
                       <div class="info-value">
                         {{ formatDateTimeWithTimezone(payment.created_at) }}
                       </div>
                     </v-col>
+                  </v-row>
+                  <v-row>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Valor bruto</div>
+                      <div class="info-label font-weight-bold">Valor bruto</div>
                       <div class="info-value">{{ formatRealValue(payment.gross_value) }}</div>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Desconto</div>
+                      <div class="info-label font-weight-bold">Desconto</div>
                       <div class="info-value">
-                        {{ formatRealValue(payment.discount_value) }}
+                        {{ formatRealValue(getDiscountValue) }}
                       </div>
                     </v-col>
+                  </v-row>
+                  <v-row>
                     <v-col cols="12" md="6">
-                      <div class="info-label">
+                      <div class="info-label font-weight-bold">
                         Valor total
 
                         <v-tooltip bottom>
@@ -91,15 +99,17 @@
                         </v-tooltip>
                       </div>
                       <div class="info-value">
-                        {{ formatRealValue(payment.gross_value) }}
+                        {{ formatRealValue(getTotalValue) }}
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <div class="info-label">Taxa</div>
-                      <div class="info-value">{{ formatRealValue(payment.fee_value) }}</div>
+                      <div class="info-label font-weight-bold">Taxa</div>
+                      <div class="info-value">{{ getEventFee }}%</div>
                     </v-col>
+                  </v-row>
+                  <v-row>
                     <v-col cols="12" md="6">
-                      <div class="info-label">
+                      <div class="info-label font-weight-bold">
                         Valor líquido
 
                         <v-tooltip bottom>
@@ -121,21 +131,27 @@
                   <h3 class="subtitle-1 font-weight-bold mb-3">Ingressos da Compra</h3>
                   
                   <!-- Versão Desktop da tabela -->
-                  <v-simple-table v-if="$vuetify.breakpoint.mdAndUp">
+                  <v-simple-table v-if="$vuetify.breakpoint.mdAndUp" fixed-header >
                     <template #default>
                       <thead>
                         <tr>
-                          <th>Tipo</th>
                           <th>Identificador</th>
-                          <th>Status</th>
+                          <th>Nome completo / Email</th>
+                          <th>Tipo</th>
+                          <th>Valor</th>
+                          <th>Total</th>
                           <th>Data. Check-in</th>
+                          <th>Status</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr v-for="ticket in relatedTickets" :key="ticket.id">
-                          <td>{{ ticket.ticket?.name }}</td>
                           <td>{{ ticket.ticket_identifier }}</td>
+                          <td>{{ defaultFields?.[ticket.id]?.[0]?.value }} <br> {{ defaultFields?.[ticket.id]?.[1]?.value }}</td>
+                          <td>{{ ticket.ticket?.name }}</td>
+                          <td>{{ formatRealValue(ticket.ticket?.price) }}</td>
+                          <td>{{ formatRealValue(ticket.ticket?.price - (ticket.ticket?.price * (getEventFee || 0) / 100)) }}</td>
                           <td>
                             <v-chip
                               x-small
@@ -292,7 +308,7 @@
 <script>
 import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
-import { payment, eventCustomerTickets, toast } from '@/store';
+import { payment, toast, eventCheckout } from '@/store';
 import { getPaymentMethod } from '@/utils/utils';
 
 export default {
@@ -306,16 +322,25 @@ export default {
       showCancelDialog: false,
       showTicketFieldsEditModal: false,
       selectedTicketId: null,
+      defaultFields: {},
     };
   },
 
   computed: {
     getEvent() {
-      const filteredCustomerTicket = eventCustomerTickets.$customerTickets.find(
-        (customerTicket) => customerTicket.payment_id === this.$route.params.id
+
+      if (!this.relatedTickets) return null;
+
+      const firstEventFromRelatedTickets = this.relatedTickets.find(
+        (ticket) => ticket.ticket?.event
       );
 
-      return filteredCustomerTicket?.ticket?.event;
+      return firstEventFromRelatedTickets?.ticket?.event;
+    },
+
+    getEventFee() {
+      if (!this.getEvent) return null;
+      return this.payment.payment_method !== 'PDV' ? this.getEvent?.fees?.platform_fee : 0;
     },
 
     isLoading() {
@@ -325,13 +350,22 @@ export default {
       return payment.$payment || {};
     },
     relatedTickets() {
-      return payment.$relatedTickets;
+      return payment.$relatedTickets || [];
+    },
+    getDiscountValue() {
+      if (!this.payment) return 0;
+      return parseFloat(this.payment.gross_value) - parseFloat(this.payment.net_value);
+    },
+    getTotalValue() {
+      if (!this.payment) return 0;
+      return parseFloat(this.payment.net_value);
     },
   },
 
-  mounted() {
+  async mounted() {
     if (this.$route.params.id) {
-      payment.fetchPaymentDetails(this.$route.params.id);
+      await payment.fetchPaymentDetails(this.$route.params.id);
+      await this.getDefaultFields();
     }
   },
 
@@ -343,6 +377,15 @@ export default {
     formatDateTimeWithTimezone,
     formatRealValue,
     getPaymentMethod,
+
+    async getDefaultFields() {
+      const promises = this.relatedTickets.map(async (ticket) => {
+        const fields = await eventCheckout.getTicketFields(ticket.id);
+        this.$set(this.defaultFields, ticket.id, fields.filter(field => field.checkoutField.name === 'Nome Completo' || field.checkoutField.name === 'Email'));
+      });
+
+      await Promise.all(promises);
+    },
 
     getStatusColor(status) {
       const colors = {
@@ -430,6 +473,7 @@ export default {
     handleTicketFieldsUpdated() {
       // Recarregar os dados do pagamento para refletir as alterações
       payment.fetchPaymentDetails(this.$route.params.id);
+      this.getDefaultFields();
       toast.setToast({
         text: 'Dados do ingresso atualizados com sucesso!',
         type: 'success',
@@ -446,8 +490,9 @@ export default {
 }
 
 .info-label {
-  font-size: 12px;
-  color: var(--grey-dark);
+  font-family: var(--font-family);
+  color: var(--black-text);
+  font-size: 14px;
   margin-bottom: 4px;
 }
 
