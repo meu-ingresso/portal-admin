@@ -1,5 +1,11 @@
 <template>
   <div class="ticket-sidebar-wrapper">
+    
+    <div 
+      v-if="show" 
+      class="sidebar-overlay"
+    ></div>
+
     <v-navigation-drawer
       :value="show"
       fixed
@@ -38,13 +44,24 @@
             </v-form>
           </template>
         </v-card-text>
-        <v-card-actions v-if="!isLoading" class="d-flex align-center justify-space-between py-4 px-4 sidebar-actions">
+        <v-card-actions
+          v-if="!isLoading" 
+          class="py-4 px-4 sidebar-actions"
+          :class="{
+            'd-flex align-center justify-space-between': $vuetify.breakpoint.mdAndUp,
+            'mobile-actions': $vuetify.breakpoint.smAndDown
+          }"
+        >
           <ButtonWithIcon
             text="Cancelar"
             outlined
             color="grey darken-1"
             icon="mdi-close"
-            class="mr-2"
+            :class="{
+              'mr-2': $vuetify.breakpoint.mdAndUp,
+              'mb-3': $vuetify.breakpoint.smAndDown,
+              'full-width-mobile': $vuetify.breakpoint.smAndDown
+            }"
             @click="close" />
 
           <ButtonWithIcon
@@ -53,6 +70,10 @@
             icon="mdi-content-save"
             :loading="isSaving"
             :disabled="!valid"
+            :class="{
+              'mb-3': $vuetify.breakpoint.smAndDown,
+              'full-width-mobile': $vuetify.breakpoint.smAndDown
+            }"
             @click="saveChanges" />
         </v-card-actions>
       </v-card>
@@ -152,7 +173,8 @@ export default {
 
         if (!response || response.length === 0) return;
 
-        this.ticketFields = response;
+        // Ordenar os campos de acordo com a ordem de exibição
+        this.ticketFields = response.sort((a, b) => a?.eventCheckoutField?.display_order - b?.eventCheckoutField?.display_order);
 
         // Inicializar formData com os valores atuais
         this.formData = {};
@@ -277,8 +299,12 @@ export default {
   position: relative;
 }
 
+.ticket-sidebar-wrapper .v-card{
+  background-color: #fff !important;
+}
+
 .ticket-fields-sidebar {
-  z-index: 1001; /* Aumentado para ficar acima do overlay */
+  z-index: 1001;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -297,8 +323,17 @@ export default {
   border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 
+.full-width-mobile {
+  width: 100%;
+}
+
 .mobile-sidebar {
   width: 100% !important;
+}
+
+.mobile-actions {
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-overlay {
@@ -308,7 +343,7 @@ export default {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000; /* Menor que a sidebar */
-  pointer-events: auto; /* Garantir que eventos de clique funcionem */
+  z-index: 1000;
+  pointer-events: auto;
 }
 </style> 

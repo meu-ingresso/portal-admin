@@ -432,7 +432,7 @@ export default {
 
 <style scoped>
 .checkout-field-wrapper {
-  margin-bottom: 16px;
+
 }
 .field-label {
   font-size: 14px;

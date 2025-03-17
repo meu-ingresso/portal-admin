@@ -235,10 +235,6 @@
       :show.sync="showPaymentDetails"
       :payment-id="selectedPaymentId" />
 
-    <PdvOrderDetailsModal
-      :show.sync="showPdvOrderDetails"
-      :payment-id="selectedPaymentId" />
-
   </div>
 </template>
 
@@ -448,16 +444,7 @@ export default {
 
     showDetails(order) {
       this.selectedPaymentId = order.id;
-
-      this.showPaymentDetails = true;
-      
-/*       // Se o método de pagamento for PDV, exibimos a modal específica para PDV
-      if (order.payment_method === 'PDV') {
-        this.showPdvOrderDetails = true;
-      } else {
-        // Para outros métodos de pagamento, usamos a modal padrão
-        this.showPaymentDetails = true;
-      } */
+      this.$router.push(`/payment/details/${order.id}`);
     },
 
     isQueryDifferent(newQuery, force = false) {
