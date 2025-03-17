@@ -52,11 +52,9 @@
             'mobile-actions': $vuetify.breakpoint.smAndDown
           }"
         >
-          <ButtonWithIcon
+          <DefaultButton
             text="Cancelar"
             outlined
-            color="grey darken-1"
-            icon="mdi-close"
             :class="{
               'mr-2': $vuetify.breakpoint.mdAndUp,
               'mb-3': $vuetify.breakpoint.smAndDown,
@@ -64,10 +62,9 @@
             }"
             @click="close" />
 
-          <ButtonWithIcon
-            text="Salvar Alterações"
+          <DefaultButton
+            text="Salvar"
             color="primary"
-            icon="mdi-content-save"
             :loading="isSaving"
             :disabled="!valid"
             :class="{
@@ -174,7 +171,7 @@ export default {
         if (!response || response.length === 0) return;
 
         // Ordenar os campos de acordo com a ordem de exibição
-        this.ticketFields = response.sort((a, b) => a?.eventCheckoutField?.display_order - b?.eventCheckoutField?.display_order);
+        this.ticketFields = response.sort((a, b) => a?.checkoutField?.display_order - b?.checkoutField?.display_order);
 
         // Inicializar formData com os valores atuais
         this.formData = {};

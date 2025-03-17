@@ -134,7 +134,7 @@ export default class Payment extends VuexModule {
   public async fetchPaymentDetails(paymentId: string): Promise<void> {
     try {
       const response = await $axios.$get(
-        `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people`
+        `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people&limit=9999`
       );
       const { data } = handleGetResponse(response, 'Pagamento não encontrado');
 
@@ -152,7 +152,8 @@ export default class Payment extends VuexModule {
       const response = await $axios.$get('/customer-tickets', {
         params: {
           'where[payment_id][v]': paymentId,
-          'preloads[]=': 'ticket',
+          'preloads[]': ['ticket', 'ticket:event:fees'],
+          'limit': 9999,
         },
       });
       const { data } = handleGetResponse(response, 'Ingressos não encontrados');
