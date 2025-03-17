@@ -139,6 +139,7 @@
                           <th>Nome completo / Email</th>
                           <th>Tipo</th>
                           <th>Valor</th>
+                          <th>Taxa</th>
                           <th>Total</th>
                           <th>Data. Check-in</th>
                           <th>Status</th>
@@ -151,6 +152,7 @@
                           <td>{{ defaultFields?.[ticket.id]?.[0]?.value }} <br> {{ defaultFields?.[ticket.id]?.[1]?.value }}</td>
                           <td>{{ ticket.ticket?.name }}</td>
                           <td>{{ formatRealValue(ticket.ticket?.price) }}</td>
+                          <td>{{ getEventFee }}%</td>
                           <td>{{ formatRealValue(ticket.ticket?.price - (ticket.ticket?.price * (getEventFee || 0) / 100)) }}</td>
                           <td>
                             <v-chip
