@@ -21,9 +21,13 @@
           @click="$emit('submit', 'draft')" />
 
         <DefaultButton
-          :text="isEditing ? 'Salvar Alterações' : 'Publicar Evento'"
+          :text="buttonText"
           :disabled="isSaving"
           @click="$emit('submit', 'pending')" />
+
+        <small v-if="!hasSubmittedDocuments && !isEditing" class="d-block text-caption mt-1 text-right">
+          Seu evento ficará com status "Aguardando" até o envio de documentos
+        </small>
       </div>
     </v-col>
   </v-row>
@@ -47,6 +51,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    hasSubmittedDocuments: {
+      type: Boolean,
+      default: true,
+    },
   },
 
   computed: {
@@ -56,6 +64,18 @@ export default {
 
     isSaving() {
       return eventPrincipal.$isSaving;
+    },
+
+    buttonText() {
+      if (this.isEditing) {
+        return 'Salvar Alterações';
+      }
+      
+      if (!this.hasSubmittedDocuments) {
+        return 'Enviar para análise';
+      }
+      
+      return 'Publicar Evento';
     },
   },
 };
