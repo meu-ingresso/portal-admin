@@ -1,62 +1,85 @@
 <template>
-  <v-dialog
-    :value="show"
-    max-width="960px"
-    :fullscreen="isMobile"
-    persistent
-    content-class="secondary-dialog"
-    @input="$emit('update:show', $event)">
-    <v-card :tile="isMobile">
-      <v-card-title class="d-flex justify-space-between align-center">
-        <h3 class="modalTitle">Editar Dados do Ingresso</h3>
-        <v-btn icon @click="close">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-card-title>
+  <div class="ticket-sidebar-wrapper">
+    
+    <div 
+      v-if="show" 
+      class="sidebar-overlay"
+    ></div>
 
-      <v-card-text class="pt-4">
-        <Lottie
-          v-if="isLoading"
-          path="./animations/loading_default.json"
-          height="300"
-          width="300" />
+    <v-navigation-drawer
+      :value="show"
+      fixed
+      right
+      width="500"
+      class="ticket-fields-sidebar"
+      :class="{'mobile-sidebar': isMobile}"
+      @input="$emit('update:show', $event)">
+      
+      <v-card flat class="full-height" :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <h3 class="modalTitle">Editar Dados do Ingresso</h3>
+          <v-btn icon @click="close">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
 
-        <template v-else>
-          <v-form ref="ticketFieldsForm" v-model="valid">
-            <v-row>
-              <v-col v-for="field in processedTicketFields" :key="field.id" cols="12" sm="6">
-                <CheckoutFieldInput
-                  ref="fieldInputs"
-                  v-model="formData[field.id]"
-                  :field="field"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
+        <v-card-text class="pt-4 sidebar-content">
+          <Lottie
+            v-if="isLoading"
+            path="./animations/loading_default.json"
+            height="300"
+            width="300" />
 
-          <v-divider class="my-4" />
+          <template v-else>
+            <v-form ref="ticketFieldsForm" v-model="valid">
+              <v-row>
+                <v-col v-for="field in processedTicketFields" :key="field.id" cols="12">
+                  <CheckoutFieldInput
+                    ref="fieldInputs"
+                    v-model="formData[field.id]"
+                    :field="field"
+                  />
+                </v-col>
+              </v-row>
+            </v-form>
+          </template>
+        </v-card-text>
+        <v-card-actions
+          v-if="!isLoading" 
+          class="py-4 px-4 sidebar-actions"
+          :class="{
+            'd-flex align-center justify-space-between': $vuetify.breakpoint.mdAndUp,
+            'mobile-actions': $vuetify.breakpoint.smAndDown
+          }"
+        >
+          <ButtonWithIcon
+            text="Cancelar"
+            outlined
+            color="grey darken-1"
+            icon="mdi-close"
+            :class="{
+              'mr-2': $vuetify.breakpoint.mdAndUp,
+              'mb-3': $vuetify.breakpoint.smAndDown,
+              'full-width-mobile': $vuetify.breakpoint.smAndDown
+            }"
+            @click="close" />
 
-          <div class="d-flex justify-end">
-            <ButtonWithIcon
-              text="Cancelar"
-              outlined
-              color="grey darken-1"
-              icon="mdi-close"
-              class="mr-2"
-              @click="close" />
-
-            <ButtonWithIcon
-              text="Salvar Alterações"
-              color="primary"
-              icon="mdi-content-save"
-              :loading="isSaving"
-              :disabled="!valid"
-              @click="saveChanges" />
-          </div>
-        </template>
-      </v-card-text>
-    </v-card>
-  </v-dialog>
+          <ButtonWithIcon
+            text="Salvar Alterações"
+            color="primary"
+            icon="mdi-content-save"
+            :loading="isSaving"
+            :disabled="!valid"
+            :class="{
+              'mb-3': $vuetify.breakpoint.smAndDown,
+              'full-width-mobile': $vuetify.breakpoint.smAndDown
+            }"
+            @click="saveChanges" />
+        </v-card-actions>
+      </v-card>
+    </v-navigation-drawer>
+    
+  </div>
 </template>
 
 <script>
@@ -150,7 +173,8 @@ export default {
 
         if (!response || response.length === 0) return;
 
-        this.ticketFields = response;
+        // Ordenar os campos de acordo com a ordem de exibição
+        this.ticketFields = response.sort((a, b) => a?.eventCheckoutField?.display_order - b?.eventCheckoutField?.display_order);
 
         // Inicializar formData com os valores atuais
         this.formData = {};
@@ -271,8 +295,55 @@ export default {
 </script>
 
 <style scoped>
-.fixed-height-content {
-  max-height: 70vh;
+.ticket-sidebar-wrapper {
+  position: relative;
+}
+
+.ticket-sidebar-wrapper .v-card{
+  background-color: #fff !important;
+}
+
+.ticket-fields-sidebar {
+  z-index: 1001;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.full-height {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-content {
+  flex-grow: 1;
   overflow-y: auto;
+}
+
+.sidebar-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.full-width-mobile {
+  width: 100%;
+}
+
+.mobile-sidebar {
+  width: 100% !important;
+}
+
+.mobile-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  pointer-events: auto;
 }
 </style> 
