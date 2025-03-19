@@ -7,7 +7,7 @@ interface UserAttachment {
   id: string;
   name: string;
   type: string;
-  url: string | null;
+  value: string | null;
 }
 
 interface BankInfo {
@@ -19,6 +19,12 @@ interface BankInfo {
   pixKey: string;
 }
 
+interface DocumentInfo {
+  hasSubmittedDocuments: boolean;
+  personType: string;
+  bankInfo: BankInfo;
+}
+
 @Module({
   name: 'userDocuments',
   stateFactory: true,
@@ -27,7 +33,7 @@ interface BankInfo {
 export default class UserDocuments extends VuexModule {
   private isLoading: boolean = false;
   private userAttachments: UserAttachment[] = [];
-  private documentInfo = {
+  private documentInfo: DocumentInfo = {
     hasSubmittedDocuments: false,
     personType: 'PF',
     bankInfo: {
@@ -53,24 +59,24 @@ export default class UserDocuments extends VuexModule {
   }
 
   public get $hasRequiredDocuments() {
-    // Check if user has the required documents based on personType
     if (this.documentInfo.personType === 'PJ') {
-      // For PJ: CNPJ card or Social Contract
       return this.userAttachments.some(
-        att => att.type === 'cnpj_card' || att.type === 'social_contract'
+        att => att.type === 'document_cnpj' || att.type === 'cnpj'
       );
     } else {
-      // For PF: CNH, Passport or RG
       return this.userAttachments.some(
-        att => att.type === 'cnh' || att.type === 'passport' || att.type === 'rg'
+        att => att.type === 'document_identification' || 
+               att.type.includes('document') ||
+               att.type === 'cnh' || 
+               att.type === 'rg' || 
+               att.type === 'passport'
       );
     }
   }
 
   public get $hasBankInfo() {
-    // Check if all required bank fields are filled
-    const { bank, agency, account, ownerDocument, pixKey } = this.documentInfo.bankInfo;
-    return bank && agency && account && ownerDocument && pixKey;
+    const { bank, agency, account, accountType, ownerDocument, pixKey } = this.documentInfo.bankInfo;
+    return Boolean(bank && agency && account && accountType && ownerDocument && pixKey);
   }
 
   @Mutation
@@ -97,22 +103,22 @@ export default class UserDocuments extends VuexModule {
   }
 
   @Mutation
-  private UPDATE_DOCUMENT_INFO(payload: Partial<typeof this.documentInfo>) {
+  private UPDATE_DOCUMENT_INFO(payload: Partial<DocumentInfo>) {
     this.documentInfo = { ...this.documentInfo, ...payload };
   }
 
   @Mutation
-  private UPDATE_BANK_INFO(payload: Partial<typeof this.documentInfo.bankInfo>) {
+  private UPDATE_BANK_INFO(payload: Partial<BankInfo>) {
     this.documentInfo.bankInfo = { ...this.documentInfo.bankInfo, ...payload };
   }
 
   @Action
-  public updateDocumentInfo(payload: Partial<typeof this.documentInfo>) {
+  public updateDocumentInfo(payload: Partial<DocumentInfo>) {
     this.context.commit('UPDATE_DOCUMENT_INFO', payload);
   }
 
   @Action
-  public updateBankInfo(payload: Partial<typeof this.documentInfo.bankInfo>) {
+  public updateBankInfo(payload: Partial<BankInfo>) {
     this.context.commit('UPDATE_BANK_INFO', payload);
   }
 
@@ -142,7 +148,7 @@ export default class UserDocuments extends VuexModule {
         data.forEach(attachment => {
           if (attachment.type === 'bank_info') {
             try {
-              const bankData = JSON.parse(attachment.url || '{}');
+              const bankData = JSON.parse(attachment.value || '{}');
               
               if (bankData.account_type) {
                 bankData.accountType = bankData.account_type;
@@ -206,7 +212,7 @@ export default class UserDocuments extends VuexModule {
           user_id: userId,
           name: payload.name,
           type: payload.type,
-          url: null,
+          value: null,
         }]
       });
       
@@ -241,12 +247,11 @@ export default class UserDocuments extends VuexModule {
         throw new Error('Falha ao fazer upload do documento');
       }
       
-      // Update the attachment with the new URL
       const fileUrl = uploadResponse.body.result[0].s3_url;
       
       await this.context.dispatch('updateUserAttachment', {
         id: payload.attachmentId,
-        url: fileUrl
+        value: fileUrl
       });
       
       return fileUrl;
@@ -289,19 +294,21 @@ export default class UserDocuments extends VuexModule {
       
       let bankAttachment = this.userAttachments.find(att => att.type === 'bank_info');
       
+      const { bank, agency, account, accountType, ownerDocument, pixKey } = this.documentInfo.bankInfo;
+      
       const bankData = JSON.stringify({
-        bank: this.documentInfo.bankInfo.bank,
-        agency: this.documentInfo.bankInfo.agency,
-        account: this.documentInfo.bankInfo.account,
-        account_type: this.documentInfo.bankInfo.accountType,
-        owner_document: this.documentInfo.bankInfo.ownerDocument,
-        pix_key: this.documentInfo.bankInfo.pixKey,
+        bank,
+        agency,
+        account,
+        account_type: accountType,
+        owner_document: ownerDocument,
+        pix_key: pixKey,
       });
       
       if (bankAttachment) {
         await this.context.dispatch('updateUserAttachment', {
           id: bankAttachment.id,
-          url: bankData
+          value: bankData
         });
       } else {
         const response = await $axios.$post('user-attachment', {
@@ -309,7 +316,7 @@ export default class UserDocuments extends VuexModule {
             user_id: userId,
             name: 'Informações Bancárias',
             type: 'bank_info',
-            url: bankData
+            value: bankData
           }]
         });
         

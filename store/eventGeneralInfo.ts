@@ -479,7 +479,7 @@ export default class EventGeneralInfo extends VuexModule {
         this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
         status.fetchStatusByModuleAndName({
           module: 'event',
-          name: this.selectedStatus === 'draft' ? 'Rascunho' : 'Em análise',
+          name: this.selectedStatus,
         }),
       ]);
 

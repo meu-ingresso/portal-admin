@@ -1,5 +1,4 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-
 import { $axios, $cookies } from '@/utils/nuxt-instance';
 
 interface LoginPayload {
@@ -31,6 +30,8 @@ export default class Auth extends VuexModule {
     email: '',
     password: '',
   };
+
+  private age = 60 * 60 * 24 * 7;
 
   private token: Token = null;
 
@@ -78,54 +79,61 @@ export default class Auth extends VuexModule {
 
   @Action
   public async login(payload: LoginPayload) {
-    return await $axios
-      .$post('login', payload)
-      .then((response) => {
-        const { body } = response;
 
-        if (body.code !== 'LOGIN_SUCCESS') throw new Error('Login failed');
+    try {
+      const response = await $axios.$post('login', payload);
 
-        const age = 60 * 60 * 24 * 7;
+      if (!response || !response.body || response.body.code !== 'LOGIN_SUCCESS') {
+        throw new Error('Erro ao fazer login');
+      }
 
-        $cookies.set('token', body.result.token, {
-          path: '/',
-          maxAge: age,
-        });
+      const { body } = response;
 
-        $cookies.set('user_id', body.result.auth.id, {
-          path: '/',
-          maxAge: age,
-        });
-
-        const fullName = `${body.result.auth.people.first_name} ${body.result.auth.people.last_name}`;
-
-        $cookies.set('username', fullName, {
-          path: '/',
-          maxAge: age,
-        });
-
-        $cookies.set('user_email', body.result.auth.email, {
-          path: '/',
-          maxAge: age,
-        });
-
-        $cookies.set('user_role', body.result.auth.role, {
-          path: '/',
-          maxAge: age,
-        });
-
-        $cookies.set('user_logged', true, {
-          path: '/',
-          maxAge: age,
-        });
-
-        this.context.commit('UPDATE_TOKEN', body.result);
-
-        return response;
-      })
-      .catch((error) => {
-        return error;
+      $cookies.set('token', body.result.token, {
+        path: '/',
+        maxAge: this.age,
       });
+
+      $cookies.set('user_id', body.result.auth.id, {
+        path: '/',
+        maxAge: this.age,
+      });
+
+      const fullName = `${body.result.auth.people.first_name} ${body.result.auth.people.last_name}`;
+
+      $cookies.set('username', fullName, {
+        path: '/',
+        maxAge: this.age,
+      });
+
+      $cookies.set('user_email', body.result.auth.email, {
+        path: '/',
+        maxAge: this.age,
+      });
+
+      $cookies.set('user_role', body.result.auth.role, {
+        path: '/',
+        maxAge: this.age,
+      });
+
+      $cookies.set('user_logged', true, {
+        path: '/',
+        maxAge: this.age,
+      });
+
+      $cookies.set('people_id', body.result.auth.people_id, {
+        path: '/',
+        maxAge: this.age,
+      });
+
+      this.context.commit('UPDATE_TOKEN', body.result);
+
+      return response;
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      throw error;
+    }
+    
   }
 
   @Action

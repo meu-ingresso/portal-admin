@@ -9,47 +9,13 @@
         @update-filter="handleFilterChange"
         @load-more="handleLoadMore" />
 
-      <!-- Document completion dialog -->
-      <v-dialog v-model="showDocumentDialog" persistent max-width="600">
-        <v-card>
-          <v-card-title class="headline primary white--text">
-            Quase lá! Só falta +1 passo para começar a vender!
-          </v-card-title>
-          <v-card-text class="pt-4">
-            <p>Para que possamos processar seu pagamento e transferir os valores das vendas, precisamos das seguintes informações:</p>
-            
-            <div v-if="userDocuments.personType === 'PJ'" class="mt-4">
-              <p><strong>Documento necessário:</strong> Cartão CNPJ ou Contrato Social</p>
-            </div>
-            <div v-else class="mt-4">
-              <p><strong>Documento necessário:</strong> CNH, Passaporte ou RG</p>
-            </div>
-
-            <div class="mt-4">
-              <p><strong>Dados bancários:</strong></p>
-              <ul>
-                <li>Banco</li>
-                <li>Agência</li>
-                <li>Conta</li>
-                <li>CPF/CNPJ do titular</li>
-                <li>Chave PIX</li>
-              </ul>
-            </div>
-          </v-card-text>
-          <v-card-actions class="pb-4 px-4">
-            <v-spacer></v-spacer>
-            <DefaultButton 
-              text="Completar depois" 
-              outlined
-              @click="closeDocumentDialog" 
-            />
-            <DefaultButton 
-              text="Completar agora" 
-              @click="goToCompleteCadastro" 
-            />
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+      <RequiredUserDocModal
+        :show-document-dialog="showDocumentDialog"
+        @complete-now="goToCompleteCadastro"
+        @close-document-dialog="closeDocumentDialog"
+        @update:show-document-dialog="showDocumentDialog = $event"
+      />
+      <Toast />
     </div>
 </template>
 
@@ -69,6 +35,11 @@ export default {
   },
 
   computed: {
+
+    userId() {
+      return this.$cookies.get('user_id');
+    },
+
     events() {
       return event.$eventList || [];
     },
@@ -87,9 +58,21 @@ export default {
     hasMorePages() {
       return this.paginationMeta.current_page < this.paginationMeta.last_page;
     },
-    
-    userDocuments() {
+
+    hasDocumentInfo() {
       return userDocuments.$documentInfo;
+    },
+    
+    hasRequiredIdentityDocs() {
+      return userDocuments.$hasRequiredDocuments;
+    },
+
+    hasBankInfo() {
+      return userDocuments.$hasBankInfo;
+    },
+
+    hasRequiredDocsAndBankInfo() {
+      return this.hasRequiredIdentityDocs && this.hasBankInfo;
     },
   },
 
@@ -102,7 +85,7 @@ export default {
     }
 
     // Check if we should show the document dialog
-    await this.checkDocumentStatus();
+    await this.checkDocumentStatus();         
   },
 
   methods: {
@@ -180,24 +163,23 @@ export default {
     },
 
     async checkDocumentStatus() {
-      // Check if the flag was set in localStorage from EventStepper.vue
-      const showDocumentDialog = localStorage.getItem('showDocumentDialog') === 'true';
-      
-      if (showDocumentDialog) {
-        try {
-          // Get user document status
-          await userDocuments.fetchDocumentStatus();
-          
-          // Only show dialog if documents haven't been submitted
-          if (!this.userDocuments.hasSubmittedDocuments) {
+      try {
+        if (this.userId) {
+
+          const { hasRequiredDocuments, hasBankInfo } = await userDocuments.fetchDocumentStatus(this.userId);
+          if (!hasRequiredDocuments || !hasBankInfo) {
             this.showDocumentDialog = true;
           }
-        } catch (error) {
-          console.error('Error checking document status:', error);
-        } finally {
-          // Clear the flag regardless of the result
-          localStorage.removeItem('showDocumentDialog');
+        } else {
+          console.warn('Usuário não encontrado para verificar status de documentação');
         }
+      } catch (error) {
+        console.error('Erro ao verificar status de documentação:', error);
+        toast.setToast({
+          text: 'Não foi possível verificar seu status de documentação',
+          type: 'danger',
+          time: 5000,
+        });
       }
     },
 
@@ -212,7 +194,12 @@ export default {
 
     goToCompleteCadastro() {
       this.showDocumentDialog = false;
-      this.$router.push({ name: 'CompletarCadastro' });
+      this.$router.push({
+        name: 'CompletarCadastro',
+        query: {
+          personType: this.hasDocumentInfo?.personType || 'PF'
+        }
+      });
     },
   },
 };

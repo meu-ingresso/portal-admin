@@ -18,12 +18,12 @@
           text="Salvar em rascunho"
           :disabled="isSaving"
           class="mr-2"
-          @click="$emit('submit', 'draft')" />
+          @click="$emit('submit', 'Rascunho')" />
 
         <DefaultButton
           :text="buttonText"
           :disabled="isSaving"
-          @click="$emit('submit', 'pending')" />
+          @click="$emit('submit', 'Em análise')" />
 
         <small v-if="!hasSubmittedDocuments && !isEditing" class="d-block text-caption mt-1 text-right">
           Seu evento ficará com status "Aguardando" até o envio de documentos

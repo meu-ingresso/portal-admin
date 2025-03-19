@@ -398,10 +398,9 @@ export default {
             });
           }, 500);
         } else {
-          // Create new event
+
           if (status !== 'draft' && !this.hasRequiredDocsAndBankInfo) {
-            // Set status to "Aguardando" if trying to publish but missing docs
-            eventGeneralInfo.setEventStatus('aguardando');
+            eventGeneralInfo.setEventStatus('Aguardando');
           } else {
             eventGeneralInfo.setEventStatus(status);
           }

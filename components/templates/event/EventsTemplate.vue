@@ -94,6 +94,8 @@ export default {
     };
   },
   computed: {
+
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -126,6 +128,7 @@ export default {
         ? 'Ver mais...' 
         : 'Não há mais eventos para carregar';
     },
+
   },
 
   async mounted() {
@@ -133,6 +136,7 @@ export default {
   },
 
   methods: {
+
     handleFilterChange(filter) {
       this.selectedFilter = filter;
       this.$emit('update-filter', filter);
