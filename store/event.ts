@@ -529,12 +529,10 @@ export default class Event extends VuexModule {
   }
 
   @Action
-  public async updateEvent(payload) {
+  public async updateEvent(payload: any[]) {
     try {
       const response = await $axios.$patch('event', {
-        data: [
-          { ...payload }
-        ]
+        data: payload
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -558,10 +556,9 @@ export default class Event extends VuexModule {
         throw new Error('Status de exclusão não encontrado.');
       }
 
-      const updateEventStatus = await this.updateEvent({
-        id: eventId,
-        status_id: deleteStatus.id,
-      });
+      const updateEventStatus = await this.updateEvent([
+        { id: eventId, status_id: deleteStatus.id },
+      ]);
 
       if (!updateEventStatus.success) {
         throw new Error('Falha ao atualizar o status do evento.');
@@ -641,9 +638,7 @@ export default class Event extends VuexModule {
         status_id: updateStatus.id,
       }));
 
-      const updateEvents = await this.updateEvent({
-        data: eventsToUpdate,
-      });
+      const updateEvents = await this.updateEvent(eventsToUpdate);
 
       if (!updateEvents.success) {
         throw new Error('Falha ao atualizar o status dos eventos.');

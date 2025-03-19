@@ -23,7 +23,9 @@ interface CreatePayload {
 
 interface PeoplePayload {
   id: string;
-  person_type: 'PF' | 'PJ';
+  person_type?: 'PF' | 'PJ';
+  first_name?: string;
+  last_name?: string;
 }
 
 interface ExtendedSearchPayload extends BaseSearchPayload {
@@ -302,8 +304,7 @@ export default class User extends VuexModule {
     return await $axios.$patch('people', {
       data: [
         {
-          id: payload.id,
-          person_type: payload.person_type,
+          ...payload,
         },
       ],
     });

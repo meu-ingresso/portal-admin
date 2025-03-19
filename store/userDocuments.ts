@@ -11,12 +11,8 @@ interface UserAttachment {
 }
 
 interface BankInfo {
-  bank: string;
-  agency: string;
-  account: string;
-  accountType: string;
-  ownerDocument: string;
   pixKey: string;
+  pixKeyType: string;
 }
 
 interface DocumentInfo {
@@ -37,11 +33,7 @@ export default class UserDocuments extends VuexModule {
     hasSubmittedDocuments: false,
     personType: 'PF',
     bankInfo: {
-      bank: '',
-      agency: '',
-      account: '',
-      accountType: '',
-      ownerDocument: '',
+      pixKeyType: '',
       pixKey: '',
     }
   };
@@ -60,23 +52,15 @@ export default class UserDocuments extends VuexModule {
 
   public get $hasRequiredDocuments() {
     if (this.documentInfo.personType === 'PJ') {
-      return this.userAttachments.some(
-        att => att.type === 'document_cnpj' || att.type === 'cnpj'
-      );
+      return this.userAttachments.some(att => att.type === 'document_cnpj');
     } else {
-      return this.userAttachments.some(
-        att => att.type === 'document_identification' || 
-               att.type.includes('document') ||
-               att.type === 'cnh' || 
-               att.type === 'rg' || 
-               att.type === 'passport'
-      );
+      return this.userAttachments.some(att => att.type.includes('document_identification'));
     }
   }
 
   public get $hasBankInfo() {
-    const { bank, agency, account, accountType, ownerDocument, pixKey } = this.documentInfo.bankInfo;
-    return Boolean(bank && agency && account && accountType && ownerDocument && pixKey);
+    const { pixKey, pixKeyType } = this.documentInfo.bankInfo;
+    return Boolean(pixKey && pixKeyType);
   }
 
   @Mutation
@@ -150,14 +134,9 @@ export default class UserDocuments extends VuexModule {
             try {
               const bankData = JSON.parse(attachment.value || '{}');
               
-              if (bankData.account_type) {
-                bankData.accountType = bankData.account_type;
-                delete bankData.account_type;
-              }
-              
-              if (bankData.owner_document) {
-                bankData.ownerDocument = bankData.owner_document;
-                delete bankData.owner_document;
+              if (bankData.pix_key_type) {
+                bankData.pixKeyType = bankData.pix_key_type;
+                delete bankData.pix_key_type;
               }
               
               if (bankData.pix_key) {
@@ -294,15 +273,11 @@ export default class UserDocuments extends VuexModule {
       
       let bankAttachment = this.userAttachments.find(att => att.type === 'bank_info');
       
-      const { bank, agency, account, accountType, ownerDocument, pixKey } = this.documentInfo.bankInfo;
+      const { pixKey, pixKeyType } = this.documentInfo.bankInfo;
       
       const bankData = JSON.stringify({
-        bank,
-        agency,
-        account,
-        account_type: accountType,
-        owner_document: ownerDocument,
         pix_key: pixKey,
+        pix_key_type: pixKeyType,
       });
       
       if (bankAttachment) {

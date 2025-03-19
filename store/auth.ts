@@ -31,6 +31,8 @@ export default class Auth extends VuexModule {
     password: '',
   };
 
+  private isUpdatingUserName = false;
+
   private age = 60 * 60 * 24 * 7;
 
   private token: Token = null;
@@ -45,6 +47,15 @@ export default class Auth extends VuexModule {
 
   public get $statusError() {
     return this.isError;
+  }
+
+  public get $isUpdatingUserName() {
+    return this.isUpdatingUserName;
+  }
+
+  @Mutation
+  private SET_IS_UPDATING_USER_NAME(value: boolean) {
+    this.isUpdatingUserName = value;
   }
 
   @Mutation
@@ -141,6 +152,27 @@ export default class Auth extends VuexModule {
     const token = payload?.token ? payload.token : $cookies.get('token');
 
     this.context.commit('UPDATE_TOKEN', token || null);
+  }
+
+  @Action
+  public  updateUserName(payload: { first_name: string, last_name: string }) {
+    try {
+      this.context.commit('SET_IS_UPDATING_USER_NAME', true);
+
+      $cookies.set('username', `${payload.first_name} ${payload.last_name}`, {
+        path: '/',
+        maxAge: this.age,
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar o nome do usuário:', error);
+      throw error;
+    } finally {
+
+      setTimeout(() => {
+        this.context.commit('SET_IS_UPDATING_USER_NAME', false);
+      }, 1500);
+    }
   }
 
   @Action

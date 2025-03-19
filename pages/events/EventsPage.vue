@@ -11,9 +11,8 @@
 
       <RequiredUserDocModal
         :show-document-dialog="showDocumentDialog"
-        @complete-now="goToCompleteCadastro"
+        @saved-user-data="handleSavedUserData"
         @close-document-dialog="closeDocumentDialog"
-        @update:show-document-dialog="showDocumentDialog = $event"
       />
       <Toast />
     </div>
@@ -188,6 +187,17 @@ export default {
       toast.setToast({
         text: 'Você pode completar seu cadastro a qualquer momento pelo menu de perfil.',
         type: 'info',
+        time: 5000,
+      });
+    },
+
+    handleSavedUserData() {
+      // Atualiza os dados dos eventos pois foram alterados os status de "Aguardando" para "Em análise"
+      this.getData();
+      this.showDocumentDialog = false;
+      toast.setToast({
+        text: 'Informações salvas com sucesso!',
+        type: 'success',
         time: 5000,
       });
     },
