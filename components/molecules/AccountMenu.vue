@@ -4,7 +4,14 @@
       <span v-bind="attrs" v-on="on">
         <div :class="isMobile ? '' : 'avatar'">
           <v-avatar color="grey" :size="isMobile ? '32' : '48'">
-            <div class="white--text">{{ getInitials(getUsername) }}</div>
+            <div class="white--text">
+              <template v-if="!isUpdatingUserName">
+                {{ getInitials(getUsername) }}
+              </template>
+              <template v-else>
+                <v-skeleton-loader type="avatar-circle" />
+              </template>
+            </div>
           </v-avatar>
           <v-icon class="chevronDown"> mdi-chevron-down </v-icon>
         </div>

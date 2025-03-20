@@ -13,6 +13,7 @@ interface UserAttachment {
 interface BankInfo {
   pixKey: string;
   pixKeyType: string;
+  document: string;
 }
 
 interface DocumentInfo {
@@ -35,6 +36,7 @@ export default class UserDocuments extends VuexModule {
     bankInfo: {
       pixKeyType: '',
       pixKey: '',
+      document: '',
     }
   };
 
@@ -59,8 +61,8 @@ export default class UserDocuments extends VuexModule {
   }
 
   public get $hasBankInfo() {
-    const { pixKey, pixKeyType } = this.documentInfo.bankInfo;
-    return Boolean(pixKey && pixKeyType);
+    const { pixKey, pixKeyType, document } = this.documentInfo.bankInfo;
+    return Boolean(pixKey && pixKeyType && document);
   }
 
   @Mutation
@@ -273,11 +275,12 @@ export default class UserDocuments extends VuexModule {
       
       let bankAttachment = this.userAttachments.find(att => att.type === 'bank_info');
       
-      const { pixKey, pixKeyType } = this.documentInfo.bankInfo;
+      const { pixKey, pixKeyType, document } = this.documentInfo.bankInfo;
       
       const bankData = JSON.stringify({
         pix_key: pixKey,
         pix_key_type: pixKeyType,
+        document,
       });
       
       if (bankAttachment) {
