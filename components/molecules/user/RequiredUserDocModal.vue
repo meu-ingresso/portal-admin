@@ -1,33 +1,38 @@
 <template>
   <v-dialog :value="showDocumentDialog" persistent max-width="960" :fullscreen="isMobile" @input="$emit('update:showDocumentDialog', $event)">
-    <v-card>
+    <v-card class="d-flex flex-column">
       <v-row no-gutters>
-        <v-col cols="5" class="pa-8 d-flex flex-column">
-          <div class="text-center mb-10">
-            <v-icon size="150" color="primary">mdi-fingerprint</v-icon>
+        <v-col cols="12" md="5" class="d-flex flex-column py-8 px-8" :class="{'justify-space-between': !isMobile}">
+          <div class="text-center mb-6 mb-md-10">
+            <img :src="fingerPrintIcon" alt="Fingerprint Icon" class="fingerprint-icon">
           </div>
-          <h1 class="primary--text display-1 mb-6">Quase lá! 🎉</h1>
-          <h2 class="black--text text-h4 mb-10">Para quem devemos enviar o dinheiro das vendas?</h2>
-          <p class="black--text">
-            Atenção: Esses dados são essenciais para processar seus pagamentos, transferir valores das vendas e emitir nota fiscal dos próximos eventos.
-          </p>
+          <div>
+            <div class="d-flex align-center">
+              <div class="template-title primary--text font-weight-bold mr-2">Quase lá!</div>
+              <img :src="blueCheckIcon" alt="Blue Check Icon" class="blue-check-icon">
+            </div>
+            <div class="template-title black--text mb-4">Para quem devemos enviar o dinheiro das vendas?</div>
+            <p class="black--text">
+              Atenção: Esses dados são essenciais para processar seus pagamentos, transferir valores das vendas e emitir nota fiscal dos próximos eventos.
+            </p>
+          </div>
         </v-col>
         
-        <v-col cols="7" class="bg-tertiary pa-8">
-          <v-row justify="end">
+        <v-col cols="12" md="7" class="bg-tertiary py-8 px-8">
+          <div class="d-flex justify-end">
             <v-btn icon @click="closeDocumentDialog">
               <v-icon>mdi-close</v-icon>
             </v-btn>
-          </v-row>
+          </div>
           
-          <div class="py-4 user-doc-form">
+          <div class="py-2 py-md-4 user-doc-form">
             <!-- Step 1: Informações pessoais -->
             <div v-if="currentStep === 1">
-              <div class="d-flex mb-6 align-center">
+              <div class="d-flex flex-column flex-sm-row mb-6 align-center">
                 <v-checkbox
                   v-model="personType"
                   value="PF"
-                  class="mr-8"
+                  class="mr-0 mr-sm-8 mb-2 mb-sm-0"
                   hide-details
                 >
                   <template #label>
@@ -46,7 +51,7 @@
                 </v-checkbox>
               </div>
               
-              <p class="text-subtitle-1 grey--text mb-8">
+              <p class="text-subtitle-1 grey--text mb-6 mb-md-8">
                 Os dados devem ser de acordo com seu documento oficial, sem abreviatura.
               </p>
               
@@ -225,99 +230,37 @@
               <p class="text-subtitle-1 grey--text mb-4">
                 Envie os documentos necessários para validação da sua conta:
               </p>
-              <p class="text-subtitle-1 grey--text mb-4">
-                <span v-if="personType === 'PJ'">Cartão CNPJ ou Contrato Social</span>
-                <span v-else>CNH, RG (frente e verso) ou Passaporte</span>
-              </p>
 
               <!-- Documentos para PJ -->
               <div v-if="personType === 'PJ'">
-                <p class="text-caption mb-4">
-                  Apenas arquivo em formato PDF é aceito.
-                </p>
-
-                <v-file-input
+                <FileUploader
                   v-model="documentFiles.pj"
-                  label="Upload do documento"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  class="mb-4"
-                  accept=".pdf"
-                  :error-messages="documentPjErrors"
-                  :rules="[
-                    v => !!v || 'Documento obrigatório',
-                    v => validatePjDocumentType(v) || 'Apenas arquivos PDF são permitidos'
-                  ]"
-                  validate-on-blur
-                  required
-                  show-size
-                  prepend-icon="mdi-file-document-outline"
+                  :max-files="1"
+                  accepted-formats=".pdf"
+                  title="Anexar documento"
+                  helper-text="Cartão CNPJ ou Contrato Social"
+                  :error="documentPjInvalid"
+                  :error-message="documentPjErrors.length ? documentPjErrors[0] : ''"
+                  @error="handlePjUploadError"
                   @change="onPjDocumentChange"
-                ></v-file-input>
-
-                <v-alert
-                  v-if="documentPjInvalid"
-                  dense
-                  type="error"
-                  class="mt-2"
                 >
-                  Apenas arquivos PDF são permitidos para pessoa jurídica.
-                </v-alert>
+                </FileUploader>
               </div>
 
               <!-- Documentos para PF -->
               <div v-else>
-                <p class="text-caption mb-4">
-                  São aceitos arquivos nos formatos PDF, JPG, JPEG ou PNG.
-                </p>
-
-                <v-file-input
-                  v-model="documentFiles.pfFront"
-                  label="Frente do documento"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  class="mb-4"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  :error-messages="documentPfFrontErrors"
-                  :rules="[
-                    v => !!v || 'Frente do documento obrigatória',
-                    v => validatePfDocumentType(v) || 'Apenas arquivos PDF, JPG, JPEG ou PNG são permitidos'
-                  ]"
-                  validate-on-blur
-                  required
-                  show-size
-                  prepend-icon="mdi-file-document-outline"
+                <FileUploader
+                  v-model="pfDocuments"
+                  :max-files="2"
+                  accepted-formats=".pdf,.jpg,.jpeg,.png"
+                  title="Anexar documento(s)"
+                  helper-text="CNH ou RG frente e verso"
+                  :error="documentPfInvalid"
+                  :error-message="documentPfErrors.length ? documentPfErrors[0] : ''"
+                  @error="handlePfUploadError"
                   @change="onPfDocumentChange"
-                ></v-file-input>
-
-                <v-file-input
-                  v-model="documentFiles.pfBack"
-                  label="Verso do documento (se necessário)"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  class="mb-4"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  :error-messages="documentPfBackErrors"
-                  :rules="[
-                    v => validatePfDocumentType(v) || 'Apenas arquivos PDF, JPG, JPEG ou PNG são permitidos'
-                  ]"
-                  validate-on-blur
-                  show-size
-                  prepend-icon="mdi-file-document-outline"
-                  @change="onPfDocumentChange"
-                ></v-file-input>
-
-                <v-alert
-                  v-if="documentPfInvalid"
-                  dense
-                  type="error"
-                  class="mt-2"
                 >
-                  Apenas arquivos PDF, JPG, JPEG ou PNG são permitidos.
-                </v-alert>
+                </FileUploader>
               </div>
             </div>
           </div>
@@ -383,11 +326,12 @@ export default {
       ],
       documentFiles: {
         pj: null,
-        pfFront: null,
-        pfBack: null
       },
+      pfDocuments: [],
       documentPjInvalid: false,
       documentPfInvalid: false,
+      documentPjErrors: [],
+      documentPfErrors: [],
       isUploading: false,
       uploadedDocuments: {
         pfFront: null,
@@ -397,6 +341,15 @@ export default {
     };
   },
   computed: {
+
+    fingerPrintIcon() {
+      return require(`~/assets/images/fingerprint_icon.svg`);
+    },
+
+    blueCheckIcon() {
+      return require(`~/assets/images/blue_check_icon.svg`);
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -453,11 +406,10 @@ export default {
 
     isStep3Valid() {
       if (this.personType === 'PJ') {
-        return this.documentFiles.pj && this.validatePjDocumentType(this.documentFiles.pj);
+        return this.documentFiles.pj && this.documentFiles.pj.length > 0 && this.validatePjDocumentType(this.documentFiles.pj[0]);
       } else {
-        return this.documentFiles.pfFront && 
-               this.validatePfDocumentType(this.documentFiles.pfFront) && 
-               (this.documentFiles.pfBack ? this.validatePfDocumentType(this.documentFiles.pfBack) : true);
+        return this.pfDocuments && this.pfDocuments.length > 0 && 
+               this.validatePfDocumentType(this.pfDocuments[0]);
       }
     },
 
@@ -557,28 +509,6 @@ export default {
       return [];
     },
 
-    documentPjErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.documentFiles.pj) return ['Documento obrigatório'];
-      if (!this.validatePjDocumentType(this.documentFiles.pj)) return ['Apenas arquivos PDF são permitidos'];
-      return [];
-    },
-
-    documentPfFrontErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.documentFiles.pfFront) return ['Frente do documento obrigatória'];
-      if (!this.validatePfDocumentType(this.documentFiles.pfFront)) return ['Apenas arquivos PDF, JPG, JPEG ou PNG são permitidos'];
-      return [];
-    },
-
-    documentPfBackErrors() {
-      if (!this.formSubmitted) return [];
-      if (this.documentFiles.pfBack && !this.validatePfDocumentType(this.documentFiles.pfBack)) {
-        return ['Apenas arquivos PDF, JPG, JPEG ou PNG são permitidos'];
-      }
-      return [];
-    },
-
     documentTypeKey() {
       return this.personType === 'PJ' ? 'document_cnpj' : 'document_identification';
     }
@@ -587,11 +517,12 @@ export default {
     personType() {
       this.documentFiles = {
         pj: null,
-        pfFront: null,
-        pfBack: null
       };
+      this.pfDocuments = [];
       this.documentPjInvalid = false;
       this.documentPfInvalid = false;
+      this.documentPjErrors = [];
+      this.documentPfErrors = [];
       this.uploadedDocuments = {
         pfFront: null,
         pfBack: null,
@@ -680,21 +611,49 @@ export default {
       }
     },
 
-    onPjDocumentChange(file) {
-      if (!file) {
+    handlePjUploadError(message) {
+      this.documentPjErrors = [message];
+      this.documentPjInvalid = true;
+    },
+    
+    handlePfUploadError(message) {
+      this.documentPfErrors = [message];
+      this.documentPfInvalid = true;
+    },
+
+    onPjDocumentChange(files) {
+      if (!files || files.length === 0) {
         this.documentPjInvalid = false;
+        this.documentPjErrors = [];
         return;
       }
       
+      const file = files[0];
       this.documentPjInvalid = !this.validatePjDocumentType(file);
+      if (this.documentPjInvalid) {
+        this.documentPjErrors = ['Apenas arquivos PDF são permitidos para pessoa jurídica.'];
+      } else {
+        this.documentPjErrors = [];
+      }
     },
 
-    onPfDocumentChange() {
-      const frontFile = this.documentFiles.pfFront;
-      const backFile = this.documentFiles.pfBack;
-
-      this.documentPfInvalid = (frontFile && !this.validatePfDocumentType(frontFile)) || 
-                               (backFile && !this.validatePfDocumentType(backFile));
+    onPfDocumentChange(files) {
+      if (!files || files.length === 0) {
+        this.documentPfInvalid = false;
+        this.documentPfErrors = [];
+        return;
+      }
+      
+      this.documentPfInvalid = false;
+      this.documentPfErrors = [];
+      
+      for (const file of files) {
+        if (!this.validatePfDocumentType(file)) {
+          this.documentPfInvalid = true;
+          this.documentPfErrors = ['Apenas arquivos PDF, JPG, JPEG ou PNG são permitidos.'];
+          break;
+        }
+      }
     },
 
     validatePjDocumentType(file) {
@@ -752,25 +711,24 @@ export default {
         await this.uploadDocuments();
 
         userDocuments.updateDocumentInfo({ personType: this.personType });
-        userDocuments.updateBankInfo({ ...documentInfo.bankInfo });
+        userDocuments.updateBankInfo({ ...documentInfo.bankInfo, document: documentInfo.cpf || documentInfo.cnpj });
 
         await userDocuments.saveBankInformation(this.userId);
 
         await event.fetchAndUpdateEventsAfterUserDocuments(this.userId);
-    
 
-        // 3. Atualiza tipo de pessoa e nome completo da base
+        // 3. Atualiza o nome do usuário no cookie
+        auth.updateUserName({
+          first_name: this.personType === 'PF' ? this.firstName : this.companyName,
+          last_name: this.personType === 'PF' ? this.lastName : this.tradeName,
+        });
+    
+        // 4. Atualiza tipo de pessoa e nome completo da base
         await user.updatePeople({
           id: this.peopleId,
           person_type: this.personType,
-          first_name: this.firstName,
-          last_name: this.lastName,
-        });
-
-        // 4. Atualiza o nome do usuário no cookie
-        auth.updateUserName({
-          first_name: this.firstName,
-          last_name: this.lastName,
+          first_name: this.personType === 'PF' ? this.firstName : this.companyName,
+          last_name: this.personType === 'PF' ? this.lastName : this.tradeName,
         });
         
         // 5. Mostra a mensagem de sucesso
@@ -826,8 +784,7 @@ export default {
 
     async uploadDocuments() {
       try {
-        if (this.personType === 'PJ' && this.documentFiles.pj) {
-
+        if (this.personType === 'PJ' && this.documentFiles.pj && this.documentFiles.pj.length > 0) {
           const attachmentData = {
             name: 'Documento PJ',
             type: 'document_cnpj',
@@ -837,29 +794,26 @@ export default {
           const document = await userDocuments.createUserDocument(attachmentData);
           
           this.uploadedDocuments.pj = await userDocuments.uploadUserDocument({
-            documentFile: this.documentFiles.pj,
+            documentFile: this.documentFiles.pj[0],
             attachmentId: document.id,
           });
-
-        } else if (this.personType === 'PF') {
-
-          if (this.documentFiles.pfFront) {
-            const frontAttachmentData = {
-              name: 'Documento PF - Frente',
-              type: 'document_identification_front',
-              userId: this.userId
-            };
-            
-            const frontDocument = await userDocuments.createUserDocument(frontAttachmentData);
-
-            this.uploadedDocuments.pfFront = await userDocuments.uploadUserDocument({
-              documentFile: this.documentFiles.pfFront,
-              attachmentId: frontDocument.id,
-            });
-          }
+        } else if (this.personType === 'PF' && this.pfDocuments.length > 0) {
+          // Upload do primeiro documento (frente)
+          const frontAttachmentData = {
+            name: 'Documento PF - Frente',
+            type: 'document_identification_front',
+            userId: this.userId
+          };
           
+          const frontDocument = await userDocuments.createUserDocument(frontAttachmentData);
 
-          if (this.documentFiles.pfBack) {
+          this.uploadedDocuments.pfFront = await userDocuments.uploadUserDocument({
+            documentFile: this.pfDocuments[0],
+            attachmentId: frontDocument.id,
+          });
+          
+          // Upload do segundo documento (verso), se existir
+          if (this.pfDocuments.length > 1) {
             const backAttachmentData = {
               name: 'Documento PF - Verso',
               type: 'document_identification_back',
@@ -867,8 +821,9 @@ export default {
             };
             
             const backDocument = await userDocuments.createUserDocument(backAttachmentData);
+            
             this.uploadedDocuments.pfBack = await userDocuments.uploadUserDocument({
-              documentFile: this.documentFiles.pfBack,
+              documentFile: this.pfDocuments[1],
               attachmentId: backDocument.id,
             });
           }
@@ -956,34 +911,22 @@ export default {
 .user-doc-form {
   display: flex;
   flex-direction: column;
-  height: 84%;
+  min-height: 465px;
 }
 
 .step-indicator {
   align-items: center;
 }
 
-.step-dot {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #e0e0e0;
-  color: #757575;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+.fingerprint-icon {
+  width: 120px;
+  height: 120px;
+  max-width: 100%;
 }
 
-.step-dot.active {
-  background-color: var(--primary);
-  color: white;
-}
-
-.step-line {
-  height: 2px;
-  width: 60px;
-  background-color: #e0e0e0;
-  margin: 0 8px;
+.blue-check-icon {
+  width: 28px;
+  height: 28px;
+  max-width: 100%;
 }
 </style>
