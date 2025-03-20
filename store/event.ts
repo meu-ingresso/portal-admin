@@ -627,6 +627,10 @@ export default class Event extends VuexModule {
 
       const events = handleGetResponse(response, 'Falha ao buscar eventos com status Aguardando.', null, false);
 
+      if (!events.data.length) {
+        return;
+      }
+
       const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Em análise' });
 
       if (!updateStatus) {
