@@ -529,12 +529,10 @@ export default class Event extends VuexModule {
   }
 
   @Action
-  public async updateEvent(payload) {
+  public async updateEvent(payload: any[]) {
     try {
       const response = await $axios.$patch('event', {
-        data: [
-          { ...payload }
-        ]
+        data: payload
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
@@ -558,10 +556,9 @@ export default class Event extends VuexModule {
         throw new Error('Status de exclusão não encontrado.');
       }
 
-      const updateEventStatus = await this.updateEvent({
-        id: eventId,
-        status_id: deleteStatus.id,
-      });
+      const updateEventStatus = await this.updateEvent([
+        { id: eventId, status_id: deleteStatus.id },
+      ]);
 
       if (!updateEventStatus.success) {
         throw new Error('Falha ao atualizar o status do evento.');
@@ -619,6 +616,39 @@ export default class Event extends VuexModule {
       throw error;
     } finally {
       this.context.commit('SET_IS_LOADING', false);
+    }
+  }
+
+  @Action
+  public async fetchAndUpdateEventsAfterUserDocuments(userId: string) {
+
+    try {
+      const response = await $axios.$get(`events?preloads[]=status&where[promoter_id][v]=${userId}&whereHas[status][name]=Aguardando&limit=9999`);
+
+      const events = handleGetResponse(response, 'Falha ao buscar eventos com status Aguardando.', null, false);
+
+      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Em análise' });
+
+      if (!updateStatus) {
+        throw new Error('Status de análise não encontrado.');
+      }
+
+      const eventsToUpdate = events.data.map((event: any) => ({
+        id: event.id,
+        status_id: updateStatus.id,
+      }));
+
+      const updateEvents = await this.updateEvent(eventsToUpdate);
+
+      if (!updateEvents.success) {
+        throw new Error('Falha ao atualizar o status dos eventos.');
+      }
+
+      return { success: true, data: updateEvents.data };
+
+    } catch (error) {
+      console.error('Erro ao buscar eventos:', error);
+      throw error;
     }
   }
 }

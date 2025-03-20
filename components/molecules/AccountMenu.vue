@@ -16,8 +16,17 @@
         <v-list-item-title
           class="account-menu-items cursor-pointer"
           @click="userEdit(getUserId)">
-          <v-icon> mdi-account </v-icon>
-          {{ getUsername }}
+
+          <template v-if="!isUpdatingUserName">
+            <v-icon> mdi-account </v-icon>
+            {{ getUsername }}
+          </template>
+
+          <template v-else>
+            <v-skeleton-loader type="avatar-circle" />
+          </template>
+
+   
         </v-list-item-title>
       </v-list-item>
       <v-list-item>
@@ -51,6 +60,10 @@ export default Vue.extend({
 
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+
+    isUpdatingUserName() {
+      return auth.$isUpdatingUserName;
     },
   },
 

@@ -3,6 +3,7 @@ import Reports from './reports';
 import LoginPage from '@/pages/LoginPage.vue';
 import UserEditPage from '@/pages/user/edit/_id.vue';
 import PaymentDetailsPage from '@/pages/payment/details/_id.vue';
+import CompletarCadastroPage from '@/pages/user/CompletarCadastro.vue';
 
 export default [
   {
@@ -22,6 +23,14 @@ export default [
     path: '/payment/details/:id',
     name: 'PaymentDetails',
     component: PaymentDetailsPage,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/user/completar-cadastro',
+    name: 'CompletarCadastro',
+    component: CompletarCadastroPage,
     meta: {
       requiresAuth: true
     }

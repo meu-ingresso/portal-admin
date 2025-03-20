@@ -21,7 +21,13 @@ interface CreatePayload {
   sellers: Array<String>;
 }
 
-// Extend the base SearchPayload to include preloads
+interface PeoplePayload {
+  id: string;
+  person_type?: 'PF' | 'PJ';
+  first_name?: string;
+  last_name?: string;
+}
+
 interface ExtendedSearchPayload extends BaseSearchPayload {
   preloads?: string[];
 }
@@ -291,6 +297,17 @@ export default class User extends VuexModule {
           total: 0,
         };
       });
+  }
+
+  @Action
+  public async updatePeople(payload: PeoplePayload) {
+    return await $axios.$patch('people', {
+      data: [
+        {
+          ...payload,
+        },
+      ],
+    });
   }
 
   @Action
