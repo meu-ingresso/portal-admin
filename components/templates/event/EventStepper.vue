@@ -122,6 +122,7 @@
             <StepActions
               :is-last-step="true"
               :is-editing="isEditing"
+              :has-submitted-documents="hasRequiredDocsAndBankInfo"
               @previous="previousStep"
               @submit="submitData" />
           </template>
@@ -146,6 +147,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
   </v-container>
 </template>
 
@@ -161,6 +163,7 @@ import {
   eventPrincipal,
   eventGeneralInfo,
   eventCoupons,
+  userDocuments,
 } from '@/store';
 
 export default {
@@ -183,6 +186,11 @@ export default {
   },
 
   computed: {
+
+    userId() {
+      return this.$cookies.get('user_id');
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -245,22 +253,32 @@ export default {
     hasOnlyDefaultCustomFields() {
       return eventCustomFields.$customFields.every((field) => field.is_default);
     },
+    
+    hasRequiredIdentityDocs() {
+      return userDocuments.$hasRequiredDocuments;
+    },
+
+    hasBankInfo() {
+      return userDocuments.$hasBankInfo;
+    },
+
+    hasRequiredDocsAndBankInfo() {
+      return this.hasRequiredIdentityDocs && this.hasBankInfo;
+    },
   },
 
   created() {
-    console.log('[EventStepper] created');
     this.resetStores();
   },
 
   async mounted() {
-    console.log('[EventStepper] mounted');
-
     await this.fetchCategoriesAndRatings();
 
     if (this.isEditing && this.eventId) {
-      console.log('[EventStepper] isEditing && eventId');
       await this.loadEventData();
     }
+
+    await this.checkDocumentStatus();
   },
 
   methods: {
@@ -330,6 +348,24 @@ export default {
         }
       }
     },
+    async checkDocumentStatus() {
+      try {
+        if (this.userId) {
+          await userDocuments.fetchDocumentStatus(this.userId);
+        } else {
+          console.warn('Usuário não encontrado para verificar status de documentação');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar status de documentação:', error);
+        toast.setToast({
+          text: 'Não foi possível verificar seu status de documentação',
+          type: 'danger',
+          time: 5000,
+        });
+      }
+    },
+
+
     async submitData(status) {
       this.showProgressDialog = true;
 
@@ -362,14 +398,23 @@ export default {
             });
           }, 500);
         } else {
-          eventGeneralInfo.setEventStatus(status);
+
+          if (status !== 'draft' && !this.hasRequiredDocsAndBankInfo) {
+            eventGeneralInfo.setEventStatus('Aguardando');
+          } else {
+            eventGeneralInfo.setEventStatus(status);
+          }
 
           await eventPrincipal.createEvent();
 
-          const message =
-            status === 'draft'
-              ? 'Evento salvo em rascunho com sucesso!'
-              : 'Evento enviado para aprovação!';
+          let message = 'Evento salvo com sucesso!';
+          if (status === 'draft') {
+            message = 'Evento salvo em rascunho com sucesso!';
+          } else if (!this.hasRequiredDocsAndBankInfo) {
+            message = 'Evento salvo com status "Aguardando". Complete sua documentação para publicação.';
+          } else {
+            message = 'Evento enviado para aprovação!';
+          }
 
           toast.setToast({
             text: message,

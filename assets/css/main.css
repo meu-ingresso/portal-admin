@@ -121,6 +121,10 @@ header {
   background-color: var(--beige) !important;
 }
 
+.bg-tertiary {
+  background-color: var(--tertiary) !important;
+}
+
 .bg-transparent {
   background-color: transparent !important;
 }
