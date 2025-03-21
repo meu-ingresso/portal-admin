@@ -180,27 +180,27 @@ export default {
 
 .upload-area {
   position: relative;
-  border: 2px dashed var(--v-secondary-base);
+  border: 2px dashed var(--border);
   border-radius: 8px;
   padding: 32px 16px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background-color: rgba(var(--v-secondary-base), 0.05);
+  background-color: #f5f5f5;
 }
 
 .upload-area:hover {
-  background-color: rgba(var(--v-secondary-base), 0.1);
+  background-color: rgba(var(--border), 0.1);
 }
 
 .upload-area.is-dragging {
-  background-color: rgba(var(--v-secondary-base), 0.15);
+  background-color: rgba(var(--border), 0.15);
   border-color: var(--v-secondary-darken1);
 }
 
 .upload-area.has-error {
-  border-color: var(--v-error-base);
-  background-color: rgba(var(--v-error-base), 0.05);
+  border-color: var(--error-color);
+  background-color: rgba(var(--error-color), 0.05);
 }
 
 .hidden-input {

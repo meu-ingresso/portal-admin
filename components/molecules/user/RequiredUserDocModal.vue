@@ -11,8 +11,8 @@
               <div class="template-title primary--text font-weight-bold mr-2">Quase lá!</div>
               <img :src="blueCheckIcon" alt="Blue Check Icon" class="blue-check-icon">
             </div>
-            <div class="template-title black--text mb-4">Para quem devemos enviar o dinheiro das vendas?</div>
-            <p class="black--text">
+            <p class="template-title black--text mb-4 custom-line-height">Para quem devemos enviar o dinheiro das vendas?</p>
+            <p class="black--text custom-line-height">
               Atenção: Esses dados são essenciais para processar seus pagamentos, transferir valores das vendas e emitir nota fiscal dos próximos eventos.
             </p>
           </div>
@@ -928,5 +928,9 @@ export default {
   width: 28px;
   height: 28px;
   max-width: 100%;
+}
+
+.custom-line-height {
+  line-height: 1.2;
 }
 </style>
