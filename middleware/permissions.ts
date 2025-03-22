@@ -7,6 +7,12 @@ import { $axios } from '@/utils/nuxt-instance';
  * com base em meta.permissions e verificações específicas para promotores e colaboradores
  */
 const permissions: Middleware = async ({ route, redirect, app }) => {
+
+  // Se a rota é a de login, não é necessário verificar permissões
+  if (route.path === '/login') {
+    return;
+  }
+
   // Se a rota não tem configuração de permissões, permite o acesso
   if (!route.meta || (!route.meta[0]?.permissions && !route.meta[0]?.requiresAuth)) {
     return;

@@ -630,7 +630,7 @@ export default class Event extends VuexModule {
     try {
       const response = await $axios.$get(`events?where[promoter_id][v]=${promoterId}&preloads[]=status&limit=9999`);
 
-      const events = handleGetResponse(response, 'Falha ao buscar eventos com status Aguardando.', null, true);
+      const events = handleGetResponse(response, 'Falha ao buscar eventos do promotor.', null, true);
 
       return events.data;
 
@@ -647,13 +647,13 @@ export default class Event extends VuexModule {
     try {
       const response = await $axios.$get(`events?preloads[]=status&where[promoter_id][v]=${userId}&whereHas[status][name]=Aguardando&limit=9999`);
 
-      const events = handleGetResponse(response, 'Falha ao buscar eventos com status Aguardando.', null, true);
+      const events = handleGetResponse(response, 'Falha ao buscar eventos do promotor com status Aguardando.', null, true);
 
       if (!events.data.length) {
         return;
       }
 
-      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Em análise' });
+      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Em Análise' });
 
       if (!updateStatus) {
         throw new Error('Status de análise não encontrado.');

@@ -173,8 +173,6 @@ export default {
           const events = await event.fetchEventsByPromoterId(this.userId);
           if (events) {
 
-            console.log(events);
-
             // Verifica se possui eventos com status Aguardando
             const hasWaitingEvents = events.some(event => event?.status?.name === 'Aguardando');
 

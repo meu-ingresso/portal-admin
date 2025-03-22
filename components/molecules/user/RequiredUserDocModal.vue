@@ -28,240 +28,61 @@
           <div class="py-2 py-md-4 user-doc-form">
             <!-- Step 1: Informações pessoais -->
             <div v-if="currentStep === 1">
-              <div class="d-flex flex-column flex-sm-row mb-6 align-center">
-                <v-checkbox
-                  v-model="personType"
-                  value="PF"
-                  class="mr-0 mr-sm-8 mb-2 mb-sm-0"
-                  hide-details
-                >
-                  <template #label>
-                    <span class="text-h6">Pessoa Física</span>
-                  </template>
-                </v-checkbox>
-                
-                <v-checkbox
-                  v-model="personType"
-                  value="PJ"
-                  hide-details
-                >
-                  <template #label>
-                    <span class="text-h6">Pessoa Jurídica</span>
-                  </template>
-                </v-checkbox>
-              </div>
+              <PersonTypeSelector 
+                :model-value="personType" 
+                @update:modelValue="personType = $event" 
+              />
               
               <p class="text-subtitle-1 grey--text mb-6 mb-md-8">
                 Os dados devem ser de acordo com seu documento oficial, sem abreviatura.
               </p>
               
-              <div v-if="personType === 'PF'">
-                <v-text-field
-                  v-model="cpf"
-                  label="CPF"
-                  outlined
-                  hide-details="auto"
-                  aria-autocomplete="off"
-                  dense
-                  class="mb-6"
-                  maxlength="14"
-                  :error-messages="cpfErrors"
-                  :rules="[
-                    v => !!v || 'CPF obrigatório',
-                    v => validateCpf(v) || 'CPF inválido (ex: 123.456.789-01)'
-                  ]"
-                  validate-on-blur
-                  required
-                  placeholder="123.456.789-01"
-                  :append-icon="cpfValid ? 'mdi-check' : ''"
-                  :append-icon-color="cpfValid ? 'success' : ''"
-                  @input="formatCPF"
-                ></v-text-field>
-                
-                <v-text-field
-                  v-model="firstName"
-                  label="Nome"
-                  outlined
-                  hide-details="auto"
-                  dense 
-                  class="mb-6"
-                  maxlength="50"
-                  :error-messages="firstNameErrors"
-                  :rules="[
-                    v => !!v || 'Nome obrigatório',
-                    v => v.length >= 2 || 'Nome deve ter pelo menos 2 caracteres'
-                  ]"
-                  validate-on-blur
-                  required
-                  :append-icon="firstNameValid ? 'mdi-check' : ''"
-                  :append-icon-color="firstNameValid ? 'success' : ''"
-                ></v-text-field>
+              <PhysicalPersonForm
+                v-if="personType === 'PF'"
+                :cpf="cpf"
+                :first-name="firstName"
+                :last-name="lastName"
+                :form-submitted="formSubmitted"
+                @update:cpf="cpf = $event"
+                @update:firstName="firstName = $event"
+                @update:lastName="lastName = $event"
+              />
 
-                <v-text-field
-                  v-model="lastName"
-                  label="Sobrenome"
-                  outlined
-                  hide-details="auto"
-                  dense 
-                  class="mb-6"
-                  maxlength="50"
-                  :error-messages="lastNameErrors"
-                  :rules="[
-                    v => !!v || 'Sobrenome obrigatório',
-                    v => v.length >= 2 || 'Sobrenome deve ter pelo menos 2 caracteres'
-                  ]"
-                  validate-on-blur
-                  required
-                  :append-icon="lastNameValid ? 'mdi-check' : ''"
-                  :append-icon-color="lastNameValid ? 'success' : ''"
-                ></v-text-field>
-              </div>
-              
-              <div v-else>
-                <v-text-field
-                  v-model="cnpj"
-                  label="CNPJ"
-                  outlined
-                  hide-details="auto"
-                  aria-autocomplete="off"
-                  dense
-                  class="mb-6"
-                  maxlength="18"
-                  :error-messages="cnpjErrors"
-                  :rules="[
-                    v => !!v || 'CNPJ obrigatório',
-                    v => validateCnpj(v) || 'CNPJ inválido (ex: 12.345.678/0001-90)'
-                  ]"
-                  validate-on-blur
-                  required
-                  placeholder="12.345.678/0001-90"
-                  :append-icon="cnpjValid ? 'mdi-check' : ''"
-                  :append-icon-color="cnpjValid ? 'success' : ''"
-                  @input="formatCNPJ"
-                ></v-text-field>
-                
-                <v-text-field
-                  v-model="companyName"
-                  label="Razão Social"
-                  outlined
-                  hide-details="auto"
-                  aria-autocomplete="off"
-                  dense
-                  class="mb-6"
-                  maxlength="100"
-                  :error-messages="companyNameErrors"
-                  :rules="[
-                    v => !!v || 'Razão Social obrigatória',
-                    v => v.length >= 3 || 'Razão Social deve ter pelo menos 3 caracteres'
-                  ]"
-                  validate-on-blur
-                  required
-                  :append-icon="companyNameValid ? 'mdi-check' : ''"
-                  :append-icon-color="companyNameValid ? 'success' : ''"
-                ></v-text-field>
-                
-                <v-text-field
-                  v-model="tradeName"
-                  label="Nome Fantasia"
-                  outlined
-                  hide-details="auto"
-                  aria-autocomplete="off"
-                  dense
-                  class="mb-6"
-                  maxlength="100"
-                  :error-messages="tradeNameErrors"
-                  :rules="[
-                    v => !!v || 'Nome Fantasia obrigatório',
-                    v => v.length >= 2 || 'Nome Fantasia deve ter pelo menos 2 caracteres'
-                  ]"
-                  validate-on-blur
-                  required
-                  :append-icon="tradeNameValid ? 'mdi-check' : ''"
-                  :append-icon-color="tradeNameValid ? 'success' : ''"
-                ></v-text-field>
-              </div>
+              <LegalPersonForm
+                v-else
+                :cnpj="cnpj"
+                :company-name="companyName"
+                :trade-name="tradeName"
+                :form-submitted="formSubmitted"
+                @update:cnpj="cnpj = $event"
+                @update:companyName="companyName = $event"
+                @update:tradeName="tradeName = $event"
+              />
             </div>
 
-            <!-- Step 2: Informações para recebimento -->
+            <!-- Step 2: Informações de endereço -->
             <div v-else-if="currentStep === 2">
-              <p class="text-subtitle-1 grey--text mb-8">
-                Informe sua chave PIX para receber os valores das vendas.
-              </p>
-              
-              <v-select
-                v-model="pixKeyType"
-                label="Tipo de chave PIX"
-                outlined
-                dense
-                hide-details="auto"
-                class="mb-6"
-                :items="pixKeyTypeOptions"
-                :error-messages="pixKeyTypeErrors"
-                :rules="[v => !!v || 'Tipo de chave PIX obrigatório']"
-                validate-on-blur
-                required
-              ></v-select>
-              
-              <v-text-field
-                v-model="bankInfo.pixKey"
-                label="Chave PIX"
-                outlined
-                aria-autocomplete="off"
-                dense
-                hide-details="auto"
-                class="mb-6"
-                :error-messages="pixKeyErrors"
-                :rules="[
-                  v => !!v || 'Chave PIX obrigatória',
-                  v => validatePixKey(v) || getPixKeyErrorMessage()
-                ]"
-                :maxlength="pixKeyMaxLength"
-                validate-on-blur
-                required
-                :placeholder="getPixKeyPlaceholder()"
-                :append-icon="pixKeyValid ? 'mdi-check' : ''"
-                :append-icon-color="pixKeyValid ? 'success' : ''"
-                @input="formatPixKey"
-              ></v-text-field>
+              <UserAddressForm />
             </div>
 
-            <!-- Step 3: Upload de documentos -->
+            <!-- Step 3: Informações para recebimento -->
+            <div v-else-if="currentStep === 3">
+              <PixKeyForm
+                :pix-key-type="pixKeyType"
+                :pix-key="bankInfo.pixKey"
+                :form-submitted="formSubmitted"
+                @update:pixKeyType="pixKeyType = $event"
+                @update:pixKey="bankInfo.pixKey = $event"
+              />
+            </div>
+
+            <!-- Step 4: Upload de documentos -->
             <div v-else>
-              <p class="text-subtitle-1 grey--text mb-4">
-                Envie os documentos necessários para validação da sua conta:
-              </p>
-
-              <!-- Documentos para PJ -->
-              <div v-if="personType === 'PJ'">
-                <FileUploader
-                  v-model="documentFiles.pj"
-                  :max-files="1"
-                  accepted-formats=".pdf"
-                  title="Anexar documento"
-                  helper-text="Cartão CNPJ ou Contrato Social"
-                  :error="documentPjInvalid"
-                  :error-message="documentPjErrors.length ? documentPjErrors[0] : ''"
-                  @error="handlePjUploadError"
-                  @change="onPjDocumentChange"
-                >
-                </FileUploader>
-              </div>
-
-              <!-- Documentos para PF -->
-              <div v-else>
-                <FileUploader
-                  v-model="pfDocuments"
-                  :max-files="2"
-                  accepted-formats=".pdf,.jpg,.jpeg,.png"
-                  title="Anexar documento(s)"
-                  helper-text="CNH ou RG frente e verso"
-                  :error="documentPfInvalid"
-                  :error-message="documentPfErrors.length ? documentPfErrors[0] : ''"
-                  @error="handlePfUploadError"
-                  @change="onPfDocumentChange"
-                >
-                </FileUploader>
-              </div>
+              <DocumentUploadForm
+                v-model="documentUploadData"
+                :person-type="personType"
+                @error="handleDocumentError"
+              />
             </div>
           </div>
 
@@ -273,7 +94,7 @@
               @click="previousStep" 
             />
             <DefaultButton 
-              :text="currentStep === 3 ? 'Concluir' : 'Continuar'" 
+              :text="currentStep === 4 ? 'Concluir' : 'Continuar'" 
               color="primary"
               :disabled="!isStepValid || isUploading"
               :is-loading="isUploading"
@@ -288,8 +109,7 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { onFormatCPF, onFormatCNPJ } from '@/utils/formatters';
-import { toast, userDocuments, event, user, auth } from '@/store';
+import { toast, userDocuments, event, user, auth, userAddress } from '@/store';
 
 export default {
   props: {
@@ -304,7 +124,7 @@ export default {
   },
   data() {
     return {
-      currentStep: 1,
+      currentStep: 4,
       personType: 'PF',
       cpf: '',
       firstName: '',
@@ -317,31 +137,17 @@ export default {
       bankInfo: {
         pixKey: ''
       },
-      pixKeyTypeOptions: [
-        { value: 'cpf', text: 'CPF' },
-        { value: 'cnpj', text: 'CNPJ' },
-        { value: 'email', text: 'E-mail' },
-        { value: 'phone', text: 'Telefone' },
-        { value: 'random', text: 'Chave aleatória' }
-      ],
-      documentFiles: {
-        pj: null,
+      documentUploadData: {
+        pfDocuments: [],
+        pjDocument: null,
+        documentType: null,
+        isValid: false
       },
-      pfDocuments: [],
-      documentPjInvalid: false,
-      documentPfInvalid: false,
-      documentPjErrors: [],
-      documentPfErrors: [],
       isUploading: false,
-      uploadedDocuments: {
-        pfFront: null,
-        pfBack: null,
-        pj: null
-      }
+      documentError: false
     };
   },
   computed: {
-
     fingerPrintIcon() {
       return require(`~/assets/images/fingerprint_icon.svg`);
     },
@@ -362,30 +168,15 @@ export default {
       return this.$cookies.get('people_id');
     },
 
-    pixKeyMaxLength() {
-      switch (this.pixKeyType) {
-        case 'phone':
-          return 15;
-        case 'cpf':
-          return 14;
-        case 'cnpj':
-          return 18;
-        case 'email':
-          return 255;
-        case 'random':
-          return 255;
-        default:
-          return 0;
-      }
-    },
-
     stepTitle() {
       switch (this.currentStep) {
         case 1:
           return 'Informações pessoais';
         case 2:
-          return 'Informações de pagamento';
+          return 'Informações de endereço';
         case 3:
+          return 'Informações de pagamento';
+        case 4:
           return 'Documentos';
         default:
           return '';
@@ -394,23 +185,27 @@ export default {
 
     isStep1Valid() {
       if (this.personType === 'PF') {
-        return this.cpfValid && this.firstNameValid && this.lastNameValid;
+        return this.cpf && /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(this.cpf) && 
+               this.firstName && this.firstName.length >= 2 &&
+               this.lastName && this.lastName.length >= 2;
       } else {
-        return this.cnpjValid && this.companyNameValid && this.tradeNameValid;
+        return this.cnpj && /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(this.cnpj) &&
+               this.companyName && this.companyName.length >= 3 &&
+               this.tradeName && this.tradeName.length >= 2;
       }
     },
 
     isStep2Valid() {
-      return this.pixKeyType && this.bankInfo.pixKey && this.validatePixKey(this.bankInfo.pixKey);
+      return userAddress.$addressIsValid;
     },
 
     isStep3Valid() {
-      if (this.personType === 'PJ') {
-        return this.documentFiles.pj && this.documentFiles.pj.length > 0 && this.validatePjDocumentType(this.documentFiles.pj[0]);
-      } else {
-        return this.pfDocuments && this.pfDocuments.length > 0 && 
-               this.validatePfDocumentType(this.pfDocuments[0]);
-      }
+      const pixKeyValid = this.validatePixKey(this.bankInfo.pixKey);
+      return this.pixKeyType && this.bankInfo.pixKey && pixKeyValid;
+    },
+
+    isStep4Valid() {
+      return this.documentUploadData && this.documentUploadData.isValid && !this.documentError;
     },
 
     isStepValid() {
@@ -421,116 +216,43 @@ export default {
           return this.isStep2Valid;
         case 3:
           return this.isStep3Valid;
+        case 4:
+          return this.isStep4Valid;
         default:
           return false;
       }
     },
-    
-    cpfValid() {
-      return this.cpf && this.validateCpf(this.cpf);
-    },
-    
-    firstNameValid() {
-      return this.firstName && this.firstName.length >= 2;
-    },
-    
-    lastNameValid() {
-      return this.lastName && this.lastName.length >= 2;
-    },
-    
-    cnpjValid() {
-      return this.cnpj && this.validateCnpj(this.cnpj);
-    },
-    
-    companyNameValid() {
-      return this.companyName && this.companyName.length >= 3;
-    },
-    
-    tradeNameValid() {
-      return this.tradeName && this.tradeName.length >= 2;
-    },
-
-    pixKeyValid() {
-      return this.bankInfo.pixKey && this.validatePixKey(this.bankInfo.pixKey);
-    },
-    
-    cpfErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.cpf) return ['CPF obrigatório'];
-      if (!this.validateCpf(this.cpf)) return ['CPF inválido (ex: 123.456.789-01)'];
-      return [];
-    },
-    
-    firstNameErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.firstName) return ['Nome obrigatório'];
-      if (this.firstName.length < 2) return ['Nome deve ter pelo menos 2 caracteres'];
-      return [];
-    },
-    
-    lastNameErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.lastName) return ['Sobrenome obrigatório'];
-      if (this.lastName.length < 2) return ['Sobrenome deve ter pelo menos 2 caracteres'];
-      return [];
-    },
-    
-    cnpjErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.cnpj) return ['CNPJ obrigatório'];
-      if (!this.validateCnpj(this.cnpj)) return ['CNPJ inválido (ex: 12.345.678/0001-90)'];
-      return [];
-    },
-    
-    companyNameErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.companyName) return ['Razão Social obrigatória'];
-      if (this.companyName.length < 3) return ['Razão Social deve ter pelo menos 3 caracteres'];
-      return [];
-    },
-    
-    tradeNameErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.tradeName) return ['Nome Fantasia obrigatório'];
-      if (this.tradeName.length < 2) return ['Nome Fantasia deve ter pelo menos 2 caracteres'];
-      return [];
-    },
-
-    pixKeyTypeErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.pixKeyType) return ['Tipo de chave PIX obrigatório'];
-      return [];
-    },
-
-    pixKeyErrors() {
-      if (!this.formSubmitted) return [];
-      if (!this.bankInfo.pixKey) return ['Chave PIX obrigatória'];
-      if (!this.validatePixKey(this.bankInfo.pixKey)) return [this.getPixKeyErrorMessage()];
-      return [];
-    },
 
     documentTypeKey() {
-      return this.personType === 'PJ' ? 'document_cnpj' : 'document_identification';
+      if (!this.documentUploadData || !this.documentUploadData.documentType) {
+        return this.personType === 'PJ' ? 'document_cnpj' : 'document_identification';
+      }
+      
+      // Mapeamento do tipo de documento para chave de tipo usada na API
+      const typeMapping = {
+        'CNH': 'document_cnh',
+        'RG': 'document_rg',
+        'CNPJ': 'document_cnpj',
+        'ContratoSocial': 'document_social_contract'
+      };
+      
+      return typeMapping[this.documentUploadData.documentType] || 'document_identification';
+    },
+
+    currentAddress() {
+      return userAddress.$address;
     }
   },
   watch: {
     personType() {
-      this.documentFiles = {
-        pj: null,
+      // Reset document upload data when person type changes
+      this.documentUploadData = {
+        pfDocuments: [],
+        pjDocument: null,
+        documentType: null,
+        isValid: false
       };
-      this.pfDocuments = [];
-      this.documentPjInvalid = false;
-      this.documentPfInvalid = false;
-      this.documentPjErrors = [];
-      this.documentPfErrors = [];
-      this.uploadedDocuments = {
-        pfFront: null,
-        pfBack: null,
-        pj: null
-      };
-    },
-    pixKeyType() {
-      this.bankInfo.pixKey = '';
+      this.documentError = false;
     }
   },
   created() {
@@ -551,128 +273,15 @@ export default {
         this.lastName = nameParts.slice(1).join(' ');
       }
     }
+
+    // Carrega os dados de endereço do usuário se disponível
+    if (this.peopleId) {
+      // userAddress.fetchUserAddress(this.peopleId);
+    }
   },
   methods: {
-    formatCPF(value) {
-      this.cpf = onFormatCPF(value);
-    },
-    
-    formatCNPJ(value) {
-      this.cnpj = onFormatCNPJ(value);
-    },
-
-    formatPixKey(value) {
-      if (!value) return;
-
-      switch (this.pixKeyType) {
-        case 'cpf':
-          this.bankInfo.pixKey = onFormatCPF(value);
-          break;
-        case 'cnpj':
-          this.bankInfo.pixKey = onFormatCNPJ(value);
-          break;
-        case 'phone':
-          this.bankInfo.pixKey = this.formatPhone(value);
-          break;
-        default:
-          this.bankInfo.pixKey = value;
-      }
-    },
-
-    formatPhone(value) {
-      if (!value) return '';
-      
-      let cleaned = value.replace(/\D/g, '');
-
-      if (cleaned.length > 2) {
-        cleaned = `(${cleaned.substring(0, 2)}) ${cleaned.substring(2)}`;
-      }
-      if (cleaned.length > 10) {
-        cleaned = `${cleaned.substring(0, 10)}-${cleaned.substring(10)}`;
-      }
-      
-      return cleaned;
-    },
-
-    detectPixKeyType() {
-      const pixKey = this.bankInfo.pixKey;
-      if (!pixKey) return;
-      
-      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(pixKey)) {
-        this.pixKeyType = 'cpf';
-      } else if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(pixKey)) {
-        this.pixKeyType = 'cnpj';
-      } else if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pixKey)) {
-        this.pixKeyType = 'email';
-      } else if (/^\+55\d{2}\d{9}$/.test(pixKey) || /^\(\d{2}\)\s\d{5}-\d{4}$/.test(pixKey)) {
-        this.pixKeyType = 'phone';
-      } else {
-        this.pixKeyType = 'random';
-      }
-    },
-
-    handlePjUploadError(message) {
-      this.documentPjErrors = [message];
-      this.documentPjInvalid = true;
-    },
-    
-    handlePfUploadError(message) {
-      this.documentPfErrors = [message];
-      this.documentPfInvalid = true;
-    },
-
-    onPjDocumentChange(files) {
-      if (!files || files.length === 0) {
-        this.documentPjInvalid = false;
-        this.documentPjErrors = [];
-        return;
-      }
-      
-      const file = files[0];
-      this.documentPjInvalid = !this.validatePjDocumentType(file);
-      if (this.documentPjInvalid) {
-        this.documentPjErrors = ['Apenas arquivos PDF são permitidos para pessoa jurídica.'];
-      } else {
-        this.documentPjErrors = [];
-      }
-    },
-
-    onPfDocumentChange(files) {
-      if (!files || files.length === 0) {
-        this.documentPfInvalid = false;
-        this.documentPfErrors = [];
-        return;
-      }
-      
-      this.documentPfInvalid = false;
-      this.documentPfErrors = [];
-      
-      for (const file of files) {
-        if (!this.validatePfDocumentType(file)) {
-          this.documentPfInvalid = true;
-          this.documentPfErrors = ['Apenas arquivos PDF, JPG, JPEG ou PNG são permitidos.'];
-          break;
-        }
-      }
-    },
-
-    validatePjDocumentType(file) {
-      if (!file) return true;
-      
-      const fileName = file.name || '';
-      const fileExtension = fileName.split('.').pop().toLowerCase();
-      
-      return fileExtension === 'pdf';
-    },
-
-    validatePfDocumentType(file) {
-      if (!file) return true;
-      
-      const fileName = file.name || '';
-      const fileExtension = fileName.split('.').pop().toLowerCase();
-      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-      
-      return allowedExtensions.includes(fileExtension);
+    handleDocumentError(_message) {
+      this.documentError = true;
     },
     
     nextStep() {
@@ -682,7 +291,7 @@ export default {
         return;
       }
       
-      if (this.currentStep < 3) {
+      if (this.currentStep < 4) {
         this.currentStep += 1;
         this.formSubmitted = false;
         
@@ -704,32 +313,76 @@ export default {
       try {
         this.isUploading = true;
 
-        // 1. Cria o objeto de informações do documento
-        const documentInfo = this.createDocumentInfo();
-        
-        // 2. Faz o upload dos documentos
+        // Faz o upload dos documentos
         await this.uploadDocuments();
 
         userDocuments.updateDocumentInfo({ personType: this.personType });
-        userDocuments.updateBankInfo({ ...documentInfo.bankInfo, document: documentInfo.cpf || documentInfo.cnpj });
+        
+        // Atualizada a forma de salvar as informações de PIX
+        await userDocuments.savePixInformation({
+          userId: this.userId,
+          pixKey: this.bankInfo.pixKey,
+          pixKeyType: this.pixKeyType
+        });
 
-        await userDocuments.saveBankInformation(this.userId);
+        // Salva os dados de endereço do usuário
+        if (this.currentAddress && this.currentAddress.id) {
+          // Atualiza endereço existente
+          await userAddress.updateUserAddress(this.currentAddress.id, {
+            ...this.currentAddress,
+            // Garantir que o status do CEP seja preservado
+            isApiZipcode: this.currentAddress.isApiZipcode
+          });
+        } else {
+          // Cria um novo endereço
+          await userAddress.createUserAddress({
+            ...this.currentAddress,
+            // Garantir que o status do CEP seja preservado
+            isApiZipcode: this.currentAddress.isApiZipcode
+          });
+        }
+        
 
         await event.fetchAndUpdateEventsAfterUserDocuments(this.userId);
 
         // 3. Atualiza o nome do usuário no cookie
-        auth.updateUserName({
-          first_name: this.personType === 'PF' ? this.firstName : this.companyName,
-          last_name: this.personType === 'PF' ? this.lastName : this.tradeName,
-        });
+
+        if (this.personType === 'PF') {
+          auth.updateUserName({
+            first: this.firstName,
+            last: this.lastName,
+          });
+        } else {
+          auth.updateUserName({
+            first: this.companyName,
+            last: this.tradeName,
+          });
+        }
     
         // 4. Atualiza tipo de pessoa e nome completo da base
-        await user.updatePeople({
+        const peopleData = {
           id: this.peopleId,
           person_type: this.personType,
-          first_name: this.personType === 'PF' ? this.firstName : this.companyName,
-          last_name: this.personType === 'PF' ? this.lastName : this.tradeName,
-        });
+          address_id: this.currentAddress.id
+        };
+        
+        if (this.personType === 'PF') {
+          // Para PF continua usando first_name e last_name
+          Object.assign(peopleData, {
+            tax: this.cpf,
+            first_name: this.firstName,
+            last_name: this.lastName
+          });
+        } else {
+          // Para PJ usa os novos campos social_name e fantasy_name
+          Object.assign(peopleData, {
+            tax: this.cnpj,
+            social_name: this.companyName,
+            fantasy_name: this.tradeName
+          });
+        }
+        
+        await user.updatePeople(peopleData);
         
         // 5. Mostra a mensagem de sucesso
         toast.setToast({
@@ -754,77 +407,75 @@ export default {
       }
     },
 
-    createDocumentInfo() {
-      // Cria o objeto de informações do documento com base nos dados do formulário
-      const documentInfo = {
-        personType: this.personType,
-        bankInfo: {
-          pixKey: this.bankInfo.pixKey,
-          pixKeyType: this.pixKeyType
-        }
-      };
-
-      // Adiciona as informações específicas da pessoa
-      if (this.personType === 'PF') {
-        documentInfo.cpf = this.cpf;
-        documentInfo.firstName = this.firstName;
-        documentInfo.lastName = this.lastName;
-        // Garante que sempre tenhamos um nome completo formado pelos dois campos
-        documentInfo.fullName = this.lastName ? 
-          `${this.firstName} ${this.lastName}` : 
-          this.firstName;
-      } else {
-        documentInfo.cnpj = this.cnpj;
-        documentInfo.companyName = this.companyName;
-        documentInfo.tradeName = this.tradeName;
-      }
-
-      return documentInfo;
-    },
-
     async uploadDocuments() {
       try {
-        if (this.personType === 'PJ' && this.documentFiles.pj && this.documentFiles.pj.length > 0) {
-          const attachmentData = {
-            name: 'Documento PJ',
-            type: 'document_cnpj',
-            userId: this.userId
-          };
-          
-          const document = await userDocuments.createUserDocument(attachmentData);
-          
-          this.uploadedDocuments.pj = await userDocuments.uploadUserDocument({
-            documentFile: this.documentFiles.pj[0],
-            attachmentId: document.id,
-          });
-        } else if (this.personType === 'PF' && this.pfDocuments.length > 0) {
-          // Upload do primeiro documento (frente)
-          const frontAttachmentData = {
-            name: 'Documento PF - Frente',
-            type: 'document_identification_front',
-            userId: this.userId
-          };
-          
-          const frontDocument = await userDocuments.createUserDocument(frontAttachmentData);
-
-          this.uploadedDocuments.pfFront = await userDocuments.uploadUserDocument({
-            documentFile: this.pfDocuments[0],
-            attachmentId: frontDocument.id,
-          });
-          
-          // Upload do segundo documento (verso), se existir
-          if (this.pfDocuments.length > 1) {
-            const backAttachmentData = {
-              name: 'Documento PF - Verso',
-              type: 'document_identification_back',
+        if (this.personType === 'PF') {
+          // Upload de documentos para pessoa física
+          if (this.documentUploadData.documentType === 'CNH' && this.documentUploadData.pfDocuments.length > 0) {
+            // Upload da CNH (documento único)
+            const attachmentData = {
+              name: 'CNH',
+              type: 'document_cnh',
               userId: this.userId
             };
             
-            const backDocument = await userDocuments.createUserDocument(backAttachmentData);
+            const document = await userDocuments.createUserDocument(attachmentData);
             
-            this.uploadedDocuments.pfBack = await userDocuments.uploadUserDocument({
-              documentFile: this.pfDocuments[1],
-              attachmentId: backDocument.id,
+            await userDocuments.uploadUserDocument({
+              documentFile: this.documentUploadData.pfDocuments[0],
+              attachmentId: document.id,
+            });
+          } else if (this.documentUploadData.documentType === 'RG' && this.documentUploadData.pfDocuments.length > 0) {
+            // Upload do RG frente
+            if (this.documentUploadData.pfDocuments.length > 0) {
+              const frontAttachmentData = {
+                name: 'RG - Frente',
+                type: 'document_rg_front',
+                userId: this.userId
+              };
+              
+              const frontDocument = await userDocuments.createUserDocument(frontAttachmentData);
+    
+              await userDocuments.uploadUserDocument({
+                documentFile: this.documentUploadData.pfDocuments[0],
+                attachmentId: frontDocument.id,
+              });
+            }
+            
+            // Upload do RG verso
+            if (this.documentUploadData.pfDocuments.length > 1) {
+              const backAttachmentData = {
+                name: 'RG - Verso',
+                type: 'document_rg_back',
+                userId: this.userId
+              };
+              
+              const backDocument = await userDocuments.createUserDocument(backAttachmentData);
+              
+              await userDocuments.uploadUserDocument({
+                documentFile: this.documentUploadData.pfDocuments[1],
+                attachmentId: backDocument.id,
+              });
+            }
+          }
+        } else {
+          // Upload de documento para pessoa jurídica
+          const pjDocument = this.documentUploadData.pjDocument;
+          if (pjDocument) {
+            const docType = this.documentUploadData.documentType === 'CNPJ' ? 'document_cnpj' : 'document_social_contract';
+            const docName = this.documentUploadData.documentType === 'CNPJ' ? 'Cartão CNPJ' : 'Contrato Social';
+            
+            const attachmentData = {
+              name: docName,
+              type: docType,
+              userId: this.userId
+            };
+            
+            const document = await userDocuments.createUserDocument(attachmentData);
+            
+            await userDocuments.uploadUserDocument({
+              documentFile: pjDocument,
+              attachmentId: document.id,
             });
           }
         }
@@ -838,12 +489,21 @@ export default {
       this.$emit('close-document-dialog', false);
     },
 
-    validateCpf(cpf) {
-      return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf);
-    },
-
-    validateCnpj(cnpj) {
-      return /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(cnpj);
+    detectPixKeyType() {
+      const pixKey = this.bankInfo.pixKey;
+      if (!pixKey) return;
+      
+      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(pixKey)) {
+        this.pixKeyType = 'cpf';
+      } else if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(pixKey)) {
+        this.pixKeyType = 'cnpj';
+      } else if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pixKey)) {
+        this.pixKeyType = 'email';
+      } else if (/^\+55\d{2}\d{9}$/.test(pixKey) || /^\(\d{2}\)\s\d{5}-\d{4}$/.test(pixKey)) {
+        this.pixKeyType = 'phone';
+      } else {
+        this.pixKeyType = 'random';
+      }
     },
 
     validatePixKey(pixKey) {
@@ -851,9 +511,9 @@ export default {
       
       switch (this.pixKeyType) {
         case 'cpf':
-          return this.validateCpf(pixKey);
+          return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(pixKey);
         case 'cnpj':
-          return this.validateCnpj(pixKey);
+          return /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(pixKey);
         case 'email':
           return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pixKey);
         case 'phone':
@@ -862,40 +522,6 @@ export default {
           return pixKey.length > 0;
         default:
           return false;
-      }
-    },
-
-    getPixKeyErrorMessage() {
-      switch (this.pixKeyType) {
-        case 'cpf':
-          return 'CPF inválido (ex: 123.456.789-01)';
-        case 'cnpj':
-          return 'CNPJ inválido (ex: 12.345.678/0001-90)';
-        case 'email':
-          return 'E-mail inválido (ex: nome@exemplo.com)';
-        case 'phone':
-          return 'Telefone inválido (ex: (11) 98765-4321)';
-        case 'random':
-          return 'Chave PIX obrigatória';
-        default:
-          return 'Chave PIX inválida';
-      }
-    },
-
-    getPixKeyPlaceholder() {
-      switch (this.pixKeyType) {
-        case 'cpf':
-          return '123.456.789-01';
-        case 'cnpj':
-          return '12.345.678/0001-90';
-        case 'email':
-          return 'nome@exemplo.com';
-        case 'phone':
-          return '(11) 98765-4321';
-        case 'random':
-          return 'Chave PIX aleatória';
-        default:
-          return '';
       }
     }
   }
