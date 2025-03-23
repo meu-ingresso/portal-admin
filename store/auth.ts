@@ -98,31 +98,49 @@ export default class Auth extends VuexModule {
         throw new Error('Erro ao fazer login');
       }
 
-      const { body } = response;
+      const { auth, token } = response.body.result;
 
-      $cookies.set('token', body.result.token, {
+      const people = auth.people;
+      const personType = people.person_type;
+
+      $cookies.set('token', token, {
         path: '/',
         maxAge: this.age,
       });
 
-      $cookies.set('user_id', body.result.auth.id, {
+      $cookies.set('user_id', auth.id, {
         path: '/',
         maxAge: this.age,
       });
 
-      const fullName = `${body.result.auth.people.first_name} ${body.result.auth.people.last_name}`;
-
-      $cookies.set('username', fullName, {
+      $cookies.set('person_type', personType, {
         path: '/',
         maxAge: this.age,
       });
 
-      $cookies.set('user_email', body.result.auth.email, {
+      if (personType === 'PF') {
+        const fullName = `${people.first_name} ${people.last_name}`;
+
+        $cookies.set('username', fullName !== 'null null' ? fullName : 'Sem nome', {
+          path: '/',
+          maxAge: this.age,
+        });
+
+      } else {
+        const fullName = `${people.social_name} ${people.fantasy_name}`; 
+
+        $cookies.set('username', fullName !== 'null null' ? fullName : 'Sem nome', {
+          path: '/',
+          maxAge: this.age,
+        });
+      }
+
+      $cookies.set('user_email', auth.email, {
         path: '/',
         maxAge: this.age,
       });
 
-      $cookies.set('user_role', body.result.auth.role, {
+      $cookies.set('user_role', auth.role, {
         path: '/',
         maxAge: this.age,
       });
@@ -132,12 +150,15 @@ export default class Auth extends VuexModule {
         maxAge: this.age,
       });
 
-      $cookies.set('people_id', body.result.auth.people_id, {
+      $cookies.set('people_id', people.id, {
         path: '/',
         maxAge: this.age,
       });
 
-      this.context.commit('UPDATE_TOKEN', body.result);
+      $cookies.set('people_address_id', people.address_id || '', {
+        path: '/',
+        maxAge: this.age,
+      });
 
       return response;
     } catch (error) {
@@ -155,11 +176,11 @@ export default class Auth extends VuexModule {
   }
 
   @Action
-  public  updateUserName(payload: { first_name: string, last_name: string }) {
+  public  updateUserName(payload: { first: string, last: string }) {
     try {
       this.context.commit('SET_IS_UPDATING_USER_NAME', true);
 
-      $cookies.set('username', `${payload.first_name} ${payload.last_name}`, {
+      $cookies.set('username', `${payload.first} ${payload.last}`, {
         path: '/',
         maxAge: this.age,
       });

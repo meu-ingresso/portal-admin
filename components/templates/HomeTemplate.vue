@@ -12,7 +12,17 @@
       </v-row>
       <v-row v-else>
         <v-col cols="12" class="d-flex justify-center">
-          <p>Nenhum evento cadastrado</p>
+          <EmptyState
+            title="Nenhum evento cadastrado"
+            subtitle="Quando criados, eles vão aparecer aqui">
+            <template v-if="userHasPermission" #action>
+              <DefaultButton
+                text="Criar evento"
+                icon="mdi-plus"
+                class="mt-6"
+                @click="handleCreateEvent" />
+            </template>
+          </EmptyState>
         </v-col>
       </v-row>
     </template>
@@ -47,6 +57,20 @@ export default {
 
     getTitle() {
       return 'Bem-vindo, ' + this.$cookies.get('username');
+    },
+
+    userRole() {
+      return this.$cookies.get('user_role');
+    },
+
+    userHasPermission() {
+      return this.userRole && (this.userRole.name === 'Admin' || this.userRole.name === 'Gerente');
+    },
+  },
+
+  methods: {
+    handleCreateEvent() {
+      this.$router.push('/events/create');
     },
   },
 };

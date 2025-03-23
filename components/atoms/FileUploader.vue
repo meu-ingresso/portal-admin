@@ -2,6 +2,7 @@
   <div class="file-uploader">
     <!-- Área de upload quadriculada -->
     <div 
+      v-if="!isComplete || !$slots.completeState"
       class="upload-area" 
       :class="{'is-dragging': isDragging, 'has-error': hasError}" 
       @click="triggerFileInput"
@@ -24,21 +25,36 @@
       </div>
     </div>
 
-    <!-- Lista de arquivos selecionados -->
-    <div v-if="selectedFiles.length > 0" class="selected-files mt-4">
-      <div v-for="(file, index) in selectedFiles" :key="index" class="selected-file pa-3 mb-2">
-        <div class="d-flex align-center">
-          <v-icon color="secondary" class="mr-2">mdi-file-document-outline</v-icon>
-          <div class="file-details flex-grow-1">
-            <div class="text-truncate">{{ file.name }}</div>
-            <div class="text-caption grey--text">{{ formatFileSize(file.size) }}</div>
+    <!-- Estado de completo quando todos os arquivos foram enviados -->
+    <slot 
+      v-if="isComplete"
+      name="completeState"
+    >
+    </slot>
+
+    <!-- Lista de arquivos selecionados com slot customizado -->
+    <slot 
+      name="selectedFiles" 
+      :files="selectedFiles"
+      :remove-file="removeFile"
+      :format-file-size="formatFileSize"
+    >
+      <!-- Lista padrão de arquivos selecionados -->
+      <div v-if="selectedFiles.length > 0" class="selected-files mt-4">
+        <div v-for="(file, index) in selectedFiles" :key="index" class="selected-file pa-3 mb-2">
+          <div class="d-flex align-center">
+            <v-icon color="secondary" class="mr-2">mdi-file-document-outline</v-icon>
+            <div class="file-details flex-grow-1">
+              <div class="text-truncate">{{ file.name }}</div>
+              <div class="text-caption grey--text">{{ formatFileSize(file.size) }}</div>
+            </div>
+            <v-btn icon small @click="removeFile(index)">
+              <v-icon color="grey">mdi-trash-can-outline</v-icon>
+            </v-btn>
           </div>
-          <v-btn icon small @click="removeFile(index)">
-            <v-icon color="grey">mdi-trash-can-outline</v-icon>
-          </v-btn>
         </div>
       </div>
-    </div>
+    </slot>
 
     <!-- Mensagem de erro -->
     <div v-if="errorMessage" class="error-message mt-2 text-caption error--text">
@@ -78,6 +94,10 @@ export default {
     title: {
       type: String,
       default: 'Buscar arquivos para upload'
+    },
+    isComplete: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -180,27 +200,27 @@ export default {
 
 .upload-area {
   position: relative;
-  border: 2px dashed var(--v-secondary-base);
+  border: 2px dashed var(--border);
   border-radius: 8px;
   padding: 32px 16px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background-color: rgba(var(--v-secondary-base), 0.05);
+  background-color: #f5f5f5;
 }
 
 .upload-area:hover {
-  background-color: rgba(var(--v-secondary-base), 0.1);
+  background-color: rgba(var(--border), 0.1);
 }
 
 .upload-area.is-dragging {
-  background-color: rgba(var(--v-secondary-base), 0.15);
+  background-color: rgba(var(--border), 0.15);
   border-color: var(--v-secondary-darken1);
 }
 
 .upload-area.has-error {
-  border-color: var(--v-error-base);
-  background-color: rgba(var(--v-error-base), 0.05);
+  border-color: var(--error-color);
+  background-color: rgba(var(--error-color), 0.05);
 }
 
 .hidden-input {

@@ -138,7 +138,12 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   public get $formattedLocation() {
-    return `${this.info.address.street}, ${this.info.address.number} - ${this.info.address.neighborhood}, ${this.info.address.city} - ${this.info.address.state}`;
+
+    if (this.info.address && this.info.address.deleted_at === null) {
+      return `${this.info.address.street}, ${this.info.address.number} - ${this.info.address.neighborhood}, ${this.info.address.city} - ${this.info.address.state}`;
+    }
+
+    return null;
   }
 
   public get $isLoading() {
@@ -390,26 +395,28 @@ export default class EventGeneralInfo extends VuexModule {
         is_featured: event.is_featured,
         absorb_service_fee: event.absorb_service_fee,
         address:
-          event.address && event.address.deleted_at === null
+          event?.address && event?.address?.deleted_at === null
             ? {
-                id: event.address.id,
-                street: event.address.street,
-                number: event.address.number,
-                complement: event.address.complement || '',
-                neighborhood: event.address.neighborhood,
-                city: event.address.city,
-                state: event.address.state,
-                zipcode: event.address.zipcode,
-                location_name: event.location_name || '',
-                latitude: event.address.latitude ? Number(event.address.latitude) : null,
-                longitude: event.address.longitude
-                  ? Number(event.address.longitude)
+                id: event?.address?.id,
+                street: event?.address?.street,
+                number: event?.address?.number,
+                complement: event?.address?.complement || '',
+                neighborhood: event?.address?.neighborhood,
+                city: event?.address?.city,
+                state: event?.address?.state,
+                zipcode: event?.address?.zipcode,
+                location_name: event?.location_name || '',
+                latitude: event?.address?.latitude ? Number(event?.address?.latitude) : null,
+                longitude: event?.address?.longitude
+                  ? Number(event?.address?.longitude)
                   : null,
               }
-            : {
-                id: event.address.id,
-                deleted_at: event.address.deleted_at,
-              },
+            : event?.address && event?.address?.deleted_at !== null ?
+              {
+                id: event?.address?.id,
+                deleted_at: event?.address?.deleted_at,
+              }
+            : null,
         link_online: linkOnlineUrl || '',
         link_online_id: linkOnlineId || '',
         promoter_id: event.promoter_id,
@@ -418,8 +425,8 @@ export default class EventGeneralInfo extends VuexModule {
         totalizers: event.totalizers,
         status: event.status,
         fees: {
-          id: event.fees.id,
-          platform_fee: event.fees.platform_fee,
+          id: event?.fees?.id,
+          platform_fee: event?.fees?.platform_fee,
         },
         groups: event?.groups,
         event_dates: eventDates,
