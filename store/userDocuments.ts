@@ -10,16 +10,9 @@ interface UserAttachment {
   value: string | null;
 }
 
-interface BankInfo {
-  pixKey: string;
-  pixKeyType: string;
-  document: string;
-}
-
 interface DocumentInfo {
   hasSubmittedDocuments: boolean;
   personType: string;
-  bankInfo: BankInfo;
 }
 
 @Module({
@@ -33,11 +26,6 @@ export default class UserDocuments extends VuexModule {
   private documentInfo: DocumentInfo = {
     hasSubmittedDocuments: false,
     personType: 'PF',
-    bankInfo: {
-      pixKeyType: '',
-      pixKey: '',
-      document: '',
-    }
   };
 
   public get $isLoading() {
@@ -60,9 +48,10 @@ export default class UserDocuments extends VuexModule {
     }
   }
 
-  public get $hasBankInfo() {
-    const { pixKey, pixKeyType, document } = this.documentInfo.bankInfo;
-    return Boolean(pixKey && pixKeyType && document);
+  public get $hasPixInfo() {
+    // Verifica se há algum anexo que seja um tipo de chave PIX
+    const pixAttachmentTypes = ['cpf', 'cnpj', 'email', 'phone', 'random'];
+    return this.userAttachments.some(att => pixAttachmentTypes.includes(att.type) && att.name === 'Pix Key');
   }
 
   @Mutation
@@ -93,19 +82,9 @@ export default class UserDocuments extends VuexModule {
     this.documentInfo = { ...this.documentInfo, ...payload };
   }
 
-  @Mutation
-  private UPDATE_BANK_INFO(payload: Partial<BankInfo>) {
-    this.documentInfo.bankInfo = { ...this.documentInfo.bankInfo, ...payload };
-  }
-
   @Action
   public updateDocumentInfo(payload: Partial<DocumentInfo>) {
     this.context.commit('UPDATE_DOCUMENT_INFO', payload);
-  }
-
-  @Action
-  public updateBankInfo(payload: Partial<BankInfo>) {
-    this.context.commit('UPDATE_BANK_INFO', payload);
   }
 
   @Action
@@ -129,46 +108,18 @@ export default class UserDocuments extends VuexModule {
       if (data && Array.isArray(data)) {
         this.context.commit('SET_USER_ATTACHMENTS', data);
         
-        const bankInfo: Partial<BankInfo> = {};
-        
-        data.forEach(attachment => {
-          if (attachment.type === 'bank_info') {
-            try {
-              const bankData = JSON.parse(attachment.value || '{}');
-              
-              if (bankData.pix_key_type) {
-                bankData.pixKeyType = bankData.pix_key_type;
-                delete bankData.pix_key_type;
-              }
-              
-              if (bankData.pix_key) {
-                bankData.pixKey = bankData.pix_key;
-                delete bankData.pix_key;
-              }
-              
-              Object.assign(bankInfo, bankData);
-            } catch (e) {
-               console.error('Erro ao processar informações bancárias:', e);
-            }
-          }
-        });
-        
-        if (Object.keys(bankInfo).length > 0) {
-          this.context.commit('UPDATE_BANK_INFO', bankInfo);
-        }
-        
         const hasRequiredDocuments = this.$hasRequiredDocuments;
-        const hasBankInfo = this.$hasBankInfo;
+        const hasPixInfo = this.$hasPixInfo;
         
         this.context.commit('UPDATE_DOCUMENT_INFO', {
-          hasSubmittedDocuments: hasRequiredDocuments && hasBankInfo
+          hasSubmittedDocuments: hasRequiredDocuments && hasPixInfo
         });
       }
       
       return {
         attachments: this.userAttachments,
         hasRequiredDocuments: this.$hasRequiredDocuments,
-        hasBankInfo: this.$hasBankInfo,
+        hasPixInfo: this.$hasPixInfo,
         personType
       };
     } catch (error) {
@@ -266,55 +217,54 @@ export default class UserDocuments extends VuexModule {
   }
 
   @Action
-  public async saveBankInformation(userId: string) {
+  public async savePixInformation(payload: { userId: string, pixKey: string, pixKeyType: string }) {
     try {
+      const { userId, pixKey, pixKeyType } = payload;
       
       if (!userId) {
         throw new Error('Usuário não encontrado. Por favor, faça login novamente.');
       }
       
-      let bankAttachment = this.userAttachments.find(att => att.type === 'bank_info');
+      // Verifica se já existe um attachment para PIX
+      let pixAttachment = this.userAttachments.find(
+        att => att.name === 'Pix Key' && ['cpf', 'cnpj', 'email', 'phone', 'random'].includes(att.type)
+      );
       
-      const { pixKey, pixKeyType, document } = this.documentInfo.bankInfo;
-      
-      const bankData = JSON.stringify({
-        pix_key: pixKey,
-        pix_key_type: pixKeyType,
-        document,
-      });
-      
-      if (bankAttachment) {
+      // Se existir, atualizamos com os novos valores
+      if (pixAttachment) {
         await this.context.dispatch('updateUserAttachment', {
-          id: bankAttachment.id,
-          value: bankData
+          id: pixAttachment.id,
+          type: pixKeyType,  // Atualizamos o tipo para o novo pixKeyType
+          value: pixKey      // Armazenamos o valor da chave PIX diretamente
         });
       } else {
+        // Se não existir, criamos um novo
         const response = await $axios.$post('user-attachment', {
           data: [{
             user_id: userId,
-            name: 'Informações Bancárias',
-            type: 'bank_info',
-            value: bankData
+            name: 'Pix Key',
+            type: pixKeyType,
+            value: pixKey
           }]
         });
         
         if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
-          throw new Error('Falha ao salvar informações bancárias');
+          throw new Error('Falha ao salvar informações de PIX');
         }
         
-        bankAttachment = response.body.result[0];
-        this.context.commit('ADD_USER_ATTACHMENT', bankAttachment);
+        pixAttachment = response.body.result[0];
+        this.context.commit('ADD_USER_ATTACHMENT', pixAttachment);
       }
       
-      if (this.$hasRequiredDocuments && this.$hasBankInfo) {
+      if (this.$hasRequiredDocuments && this.$hasPixInfo) {
         this.context.commit('UPDATE_DOCUMENT_INFO', {
           hasSubmittedDocuments: true
         });
       }
       
-      return bankAttachment;
+      return pixAttachment;
     } catch (error) {
-      console.error('Erro ao salvar informações bancárias:', error);
+      console.error('Erro ao salvar informações de PIX:', error);
       throw error;
     }
   }

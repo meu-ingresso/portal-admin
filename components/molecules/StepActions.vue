@@ -24,10 +24,6 @@
           :text="buttonText"
           :disabled="isSaving"
           @click="$emit('submit', 'Em análise')" />
-
-        <small v-if="!hasSubmittedDocuments && !isEditing" class="d-block text-caption mt-1 text-right">
-          Seu evento ficará com status "Aguardando" até o envio de documentos
-        </small>
       </div>
     </v-col>
   </v-row>

@@ -5,7 +5,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 
 import { SearchPayload as BaseSearchPayload } from '@/models';
-import { handleGetResponse } from '~/utils/responseHelpers';
+import { handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 import { RoleApiResponse, UserApiResponse } from '~/models/event';
 
 interface CreatePayload {
@@ -26,6 +26,9 @@ interface PeoplePayload {
   person_type?: 'PF' | 'PJ';
   first_name?: string;
   last_name?: string;
+  tax?: string;
+  social_name?: string;
+  fantasy_name?: string;
 }
 
 interface ExtendedSearchPayload extends BaseSearchPayload {
@@ -301,13 +304,22 @@ export default class User extends VuexModule {
 
   @Action
   public async updatePeople(payload: PeoplePayload) {
-    return await $axios.$patch('people', {
-      data: [
-        {
-          ...payload,
-        },
-      ],
-    });
+
+    try {
+      const updatedPeople = await $axios.$patch('people', {
+        data: [
+          {
+            ...payload,
+          },
+        ],
+      });
+
+      const result = handleUpdateResponse(updatedPeople, 'Pessoa não encontrada', null);
+
+      return result;
+    } catch (error) {
+      return error;
+    }
   }
 
   @Action

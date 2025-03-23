@@ -49,6 +49,7 @@ import {
   eventCollaborators, 
   user,
   loading,
+  toast,
 } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
@@ -57,6 +58,7 @@ export default {
     return {
       eventInvalid: false,
       drawer: true,
+      attemptedTemplate: null
     };
   },
 
@@ -148,7 +150,7 @@ export default {
 
       return (
         this.getEvent.collaborators?.some(
-          (collaborator) => collaborator.id === this.userId
+          (collaborator) => collaborator?.user?.id === this.userId
         ) ||
         this.getEvent.promoter_id === this.userId ||
         this.isAdmin
@@ -162,6 +164,7 @@ export default {
       handler(newId) {
         if (newId) {
           this.fetchEventData();
+          this.checkUrlParams();
         }
       },
     },
@@ -173,6 +176,13 @@ export default {
         }
       },
     },
+    
+    '$route.query': {
+      immediate: true,
+      handler() {
+        this.checkUrlParams();
+      }
+    }
   },
 
   methods: {
@@ -224,6 +234,46 @@ export default {
         loading.setIsLoading(false);
       }
     },
+    
+    checkUrlParams() {
+      const { noPermission, template } = this.$route.query;
+      
+      if (noPermission === 'true' && template) {
+
+        toast.setToast({
+          text: 'Você não possui permissão para acessar a seção de ' + this.getTemplateLabel(),
+          type: 'error',
+          time: 5000
+        });
+        
+        this.attemptedTemplate = template;
+        
+        // Remover os parâmetros da URL sem recarregar a página
+        const query = { ...this.$route.query };
+        delete query.noPermission;
+        delete query.template;
+        
+        this.$router.replace({ 
+          path: this.$route.path,
+          query 
+        });
+      }
+    },
+    
+    
+    getTemplateLabel() {
+      const templateMap = {
+        'tickets': 'Ingressos',
+        'coupons': 'Cupons',
+        'checkin': 'Check-in',
+        'orders': 'Pedidos',
+        'guestlists': 'Listas de Convidados',
+        'collaborators': 'Colaboradores',
+        'pdv': 'PDV'
+      };
+      
+      return templateMap[this.attemptedTemplate] || this.attemptedTemplate;
+    }
   },
 };
 </script>
