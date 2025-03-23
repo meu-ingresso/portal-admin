@@ -39,6 +39,10 @@ export default {
       return this.$cookies.get('user_id');
     },
 
+    userRole() {
+      return this.$cookies.get('user_role');
+    },
+
     events() {
       return event.$eventList || [];
     },
@@ -165,10 +169,23 @@ export default {
       try {
         if (this.userId) {
 
-          const { hasRequiredDocuments, hasBankInfo } = await userDocuments.fetchDocumentStatus(this.userId);
-          if (!hasRequiredDocuments || !hasBankInfo) {
-            this.showDocumentDialog = true;
+          // Verifica se o usuário é dono de algum evento
+          const events = await event.fetchEventsByPromoterId(this.userId);
+          if (events) {
+
+            // Verifica se possui eventos com status Aguardando
+            const hasWaitingEvents = events.some(event => event?.status?.name === 'Aguardando');
+
+            if (hasWaitingEvents) {
+
+              const { hasRequiredDocuments, hasBankInfo } = await userDocuments.fetchDocumentStatus(this.userId);
+
+              if (!hasRequiredDocuments || !hasBankInfo) {
+                this.showDocumentDialog = true;
+              }
+            }
           }
+
         } else {
           console.warn('Usuário não encontrado para verificar status de documentação');
         }

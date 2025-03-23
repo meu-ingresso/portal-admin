@@ -8,6 +8,7 @@ import { handleGetResponse } from '~/utils/responseHelpers';
 // Extend SearchPayload interface to include status
 interface EventSearchPayload extends SearchPayload {
   status?: string;
+  promoterId?: string;
 }
 
 @Module({
@@ -390,7 +391,8 @@ export default class Event extends VuexModule {
     status,
     append = false,
     filterDeleted = false,
-  }: EventSearchPayload & { append?: boolean, filterDeleted?: boolean }) {
+    promoterId,
+  }: EventSearchPayload & { append?: boolean, filterDeleted?: boolean, promoterId?: string }) {
     this.setLoading(true);
 
     const preloads = [
@@ -422,6 +424,10 @@ export default class Event extends VuexModule {
 
     if (status && status !== 'Todos') {
       params.append('whereHas[status][name]', status);
+    }
+
+    if (promoterId) {
+      params.append('where[promoter_id][v]', promoterId);
     }
 
     preloads.forEach((preload) => params.append('preloads[]', preload));
@@ -620,18 +626,34 @@ export default class Event extends VuexModule {
   }
 
   @Action
+  public async fetchEventsByPromoterId(promoterId: string) {
+    try {
+      const response = await $axios.$get(`events?where[promoter_id][v]=${promoterId}&preloads[]=status&limit=9999`);
+
+      const events = handleGetResponse(response, 'Falha ao buscar eventos do promotor.', null, true);
+
+      return events.data;
+
+    } catch (error) {
+      console.error('Erro ao buscar status de eventos:', error);
+      throw error;
+    }
+  }
+
+
+  @Action
   public async fetchAndUpdateEventsAfterUserDocuments(userId: string) {
 
     try {
       const response = await $axios.$get(`events?preloads[]=status&where[promoter_id][v]=${userId}&whereHas[status][name]=Aguardando&limit=9999`);
 
-      const events = handleGetResponse(response, 'Falha ao buscar eventos com status Aguardando.', null, false);
+      const events = handleGetResponse(response, 'Falha ao buscar eventos do promotor com status Aguardando.', null, true);
 
       if (!events.data.length) {
         return;
       }
 
-      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Em análise' });
+      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Em Análise' });
 
       if (!updateStatus) {
         throw new Error('Status de análise não encontrado.');

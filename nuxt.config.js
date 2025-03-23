@@ -80,7 +80,7 @@ export default {
 
   router: {
     base: process.env.ROUTE || '/',
-    middleware: 'event',
+    middleware: ['event', 'permissions'],
   },
 
   build: {

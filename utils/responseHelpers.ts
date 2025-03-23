@@ -78,4 +78,6 @@ export const handleUpdateResponse = (response: any, errorMessage: string, eventI
   if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
     throw new Error(`${errorMessage} para o evento ${eventId}`);
   }
+
+  return response.body.result;
 };
