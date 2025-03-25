@@ -81,6 +81,7 @@
               <DocumentUploadForm
                 v-model="documentUploadData"
                 :person-type="personType"
+                @update:modelValue="updateDocumentUploadData"
                 @error="handleDocumentError"
               />
             </div>
@@ -124,7 +125,7 @@ export default {
   },
   data() {
     return {
-      currentStep: 4,
+      currentStep: 1,
       personType: 'PF',
       cpf: '',
       firstName: '',
@@ -280,6 +281,11 @@ export default {
     }
   },
   methods: {
+    updateDocumentUploadData(data) {
+      console.log('updateDocumentUploadData', data);
+      this.documentUploadData = data;
+    },
+
     handleDocumentError(_message) {
       this.documentError = true;
     },

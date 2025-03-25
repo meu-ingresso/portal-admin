@@ -309,9 +309,11 @@ export default class Payment extends VuexModule {
   }
 
   @Action
-  public async createPayment(paymentData: CreatePaymentData): Promise<PaymentApiResponse> {
+  public async createPayment(paymentData: CreatePaymentData[]): Promise<PaymentApiResponse> {
     try {
-      const response = await $axios.$post('/payment', paymentData);
+      const response = await $axios.$post('/payment', {
+        data: paymentData
+      });
       const data = handleCreateResponse(response, 'Erro ao criar pagamento');
       return data;
     } catch (error) {

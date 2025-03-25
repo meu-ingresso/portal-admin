@@ -4,7 +4,7 @@
       <v-col cols="12">
         <div class="d-flex justify-space-between">
           <div class="template-title">Pedidos</div>
-          <DefaultButton v-if="isCollaborator || isAdmin" text="Adicionar (PDV)" @click="handleAddPdv" />
+          <DefaultButton v-if="canCreatePaymentPDV" text="Adicionar (PDV)" @click="handleAddPdv" />
         </div>
       </v-col>
       <v-col cols="12">
@@ -25,6 +25,8 @@
 import {
   eventCollaborators, 
 } from '@/store';
+import { PDV_ROLE } from '@/utils/permissions-config';
+import { isUserAdmin, isUserManager } from '@/utils/utils';
 export default {
   data() {
     return {
@@ -45,13 +47,16 @@ export default {
       return this.$cookies.get('user_id');
     },
 
-    isAdmin() {
-      const role = this.userRole;
-      return role && role.name === 'Admin';
+    isAdminOrManager() {
+      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+    },
+
+    canCreatePaymentPDV() {
+      return this.isAdminOrManager || this.isCollaborator;
     },
 
     isCollaborator() {
-      return this.getCollaborators.some(collaborator => collaborator.user_id === this.userId);
+      return this.getCollaborators.some(collaborator => collaborator.user_id === this.userId && collaborator.role.name === PDV_ROLE);
     },
   },
 

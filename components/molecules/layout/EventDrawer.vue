@@ -150,6 +150,7 @@
 import { loading, eventGeneralInfo, toast } from '@/store';
 import { eventsSideBar } from '@/utils/events-sidebar';
 import { isMobileDevice } from '@/utils/utils';
+import { checkMenuItemsPermissions } from '@/utils/permissions-util';
 
 export default {
   props: {
@@ -177,6 +178,7 @@ export default {
         message: '',
       },
       isChangingStatus: false,
+      filteredSidebar: [],
     };
   },
 
@@ -229,7 +231,7 @@ export default {
 
     getSelectItems() {
       if (this.isLoading) return null;
-      return this.getSidebar.map((item) => {
+      return this.filteredSidebar.map((item) => {
         return {
           text: item.title,
           value: item.to,
@@ -239,15 +241,7 @@ export default {
 
     getSidebar() {
       if (this.isLoading) return null;
-
-      const eventId = this.routerParams.id;
-
-      return eventsSideBar.map((item) => {
-        return {
-          ...item,
-          to: item.to.replace(':id', eventId),
-        };
-      });
+      return this.filteredSidebar;
     },
 
     getUsername() {
@@ -317,11 +311,45 @@ export default {
             url: this.selectedEventBanner,
           };
         }
+        
+        this.updateSidebar();
       },
     },
   },
 
+  async mounted() {
+    await this.updateSidebar();
+  },
+
   methods: {
+    async updateSidebar() {
+      const eventId = this.routerParams.id;
+      const userId = this.$cookies.get('user_id');
+      const userRole = this.$cookies.get('user_role');
+
+      if (!eventId || !userId || !userRole) {
+        this.filteredSidebar = [];
+        return;
+      }
+
+      // Mapear os itens do sidebar com os caminhos atualizados
+      const items = eventsSideBar.map((item) => ({
+        ...item,
+        to: item.to.replace(':id', eventId),
+      }));
+
+      // Verificar todas as permissões de uma vez
+      const permissionsResults = await checkMenuItemsPermissions(
+        userRole,
+        userId,
+        items,
+        eventId
+      );
+
+      // Filtrar os itens baseado nos resultados das permissões
+      this.filteredSidebar = items.filter((_, index) => permissionsResults[index]);
+    },
+
     async requestPublication() {
       const response = await eventGeneralInfo.updateEventStatus({
         eventId: this.getEvent.id,

@@ -1,5 +1,5 @@
 import { Middleware } from '@nuxt/types';
-import { $axios } from '@/utils/nuxt-instance';
+import { checkUserPermissions } from '@/utils/permissions-util';
 
 /**
  * Middleware para verificar permissões de acesso a rotas
@@ -58,9 +58,7 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
     return;
   }
   
-  // Verificar permissões específicas do usuário através do sistema de role_permissions
   try {
-
     // Verificar se a rota é uma rota filha de /events/:id
     const eventIdMatch = route.path.match(/^\/events\/([^/]+)\/([^/]+)/);
     let eventId = null;
@@ -68,7 +66,6 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
     if (eventIdMatch) {
       eventId = eventIdMatch[1]; // ID do evento
     }
-
 
     const hasPermission = requiredPermissions.length === 0 || 
                           await checkUserPermissions(userRole.id, requiredPermissions, userId, eventId);
@@ -98,105 +95,5 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
     return redirect('/');
   }
 };
-
-/**
- * Verifica se o role do usuário tem as permissões específicas necessárias
- * usando o sistema de role_permissions da API
- */
-async function checkUserPermissions(roleId: string, requiredPermissionNames: string[], userId: string, eventId?: string): Promise<boolean> {
-  try {
-    if (!roleId || !requiredPermissionNames.length) {
-      return false;
-    }
-
-    if (eventId) {
-      
-      // Verificar se o usuário é promotor do evento
-      const eventResponse = await $axios.$get(`events?where[promoter_id][v]=${userId}&where[id][v]=${eventId}`);
-      
-      // Se o evento não for encontrado ou o promotor não for o usuário, verificar os colaboradores do evento
-      if (!eventResponse?.body?.result?.data?.promoter?.id) {
-        
-
-        // Buscar o usuário como colaborador do evento
-        const collaboratorsResponse = await $axios.$get(`event-collaborators?preloads[]=user:people&preloads[]=role&preloads[]=event&whereHas[event][event_id][v]=${eventId}&where[user_id][v]=${userId}`);
-
-        if (!collaboratorsResponse?.body?.result?.data) {
-          return false;
-        }
-
-        // Verificar se o usuário é promotor, gerente ou admin do evento
-        const collaborator = collaboratorsResponse.body.result.data[0];
-
-        if (collaborator?.role?.name === 'Promoter' || collaborator?.role?.name === 'Gerente' || collaborator?.role?.name === 'Admin') {
-          console.log('Usuário é colaborador do evento e tem permissão para acessar a rota (Promoter, Gerente ou Admin)');
-          return true;
-        }
-
-        // Buscar as permissões associadas ao role do usuário
-        const rolePermissionsResponse = await $axios.$get(`role-permissions?where[role_id][v]=${collaborator.role_id}&limit=9999`);
-
-        if (!rolePermissionsResponse?.body?.result?.data) {
-          return false;
-        }
-
-        const rolePermissions = rolePermissionsResponse.body.result.data;
-
-        // Criar um mapa de nome para id para facilitar a busca
-        const permissionMap = rolePermissions.reduce((map, permission) => {
-          map[permission.name] = permission.id;
-          return map;
-        }, {});
-
-        // Verificar se todas as permissões necessárias estão presentes
-        return requiredPermissionNames.every(name => permissionMap[name]);
-
-      } else {
-        return true;
-      }
-
-    }
-
-    // 1. Buscar todas as permissões para mapear nome -> id
-    const permissionsResponse = await $axios.$get(
-      requiredPermissionNames.length === 1 ?
-        `permissions?where[name][o]=_LIKE_&where[name][v]=${requiredPermissionNames[0]}` : 'permissions?limit=9999');
-    
-    if (!permissionsResponse?.body?.result?.data) {
-      return false;
-    }
-    
-    const permissions = permissionsResponse.body.result.data;
-    
-    // Criar um mapa de nome para id para facilitar a busca
-    const permissionMap = permissions.reduce((map, permission) => {
-      map[permission.name] = permission.id;
-      return map;
-    }, {});
-
-
-    if (!Object.keys(permissionMap).length) {
-      return false;
-    }
-    
-    // 3. Buscar as permissões associadas ao role do usuário
-    const rolePermissionsResponse = await $axios.$get(`role-permissions?where[role_id][v]=${roleId}&limit=9999`);
-    
-    if (!rolePermissionsResponse?.body?.result?.data) {
-      return false;
-    }
-    
-    const rolePermissions = rolePermissionsResponse.body.result.data;
-    
-    // 4. Extrair os IDs de permissão do role
-    const userPermissionIds = rolePermissions.map(rp => rp.permission_id);
-    
-    // 5. Verificar se todas as permissões necessárias estão presentes
-    return requiredPermissionNames.every(name => userPermissionIds.includes(permissionMap[name]));
-  } catch (error) {
-    console.error('Erro ao verificar permissões do usuário:', error);
-    return false;
-  }
-}
 
 export default permissions; 

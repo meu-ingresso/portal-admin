@@ -456,7 +456,7 @@ export default class EventTickets extends VuexModule {
 
       const promises = [      
         $axios.$get(
-          `tickets?where[event_id][v]=${eventId}&preloads[]=category&preloads[]=status`
+          `tickets?where[event_id][v]=${eventId}&preloads[]=category&preloads[]=status&limit=9999`
         ),
         $axios.$get(`ticket-event-categories?where[event_id][v]=${eventId}`)
       ];
@@ -483,40 +483,42 @@ export default class EventTickets extends VuexModule {
       
       this.context.commit('SET_TICKET_CATEGORIES', categoriesResult.data);
 
-      this.context.commit(
-        'SET_TICKETS',
-        orderedTickets.map((ticket: any) => {
-          const category = {
-            id: ticket?.category?.id,
-            value: ticket?.category?.name,
-            text: ticket?.category?.name,
-            _deleted: ticket?.category?.deleted_at,
-          };
+      const ticketsToCommit = orderedTickets.map((ticket: any) => {
+        const category = {
+          id: ticket?.category?.id,
+          value: ticket?.category?.name,
+          text: ticket?.category?.name,
+          _deleted: ticket?.category?.deleted_at,
+        };
 
-          // Separar data e hora
-          const startDateTime = splitDateTime(ticket.start_date);
-          const endDateTime = splitDateTime(ticket.end_date);
+        // Separar data e hora
+        const startDateTime = splitDateTime(ticket.start_date);
+        const endDateTime = splitDateTime(ticket.end_date);
 
-          return {
-            id: ticket.id,
-            name: ticket.name,
-            price: ticket.price,
-            total_quantity: ticket.total_quantity,
-            total_sold: ticket.total_sold,
-            min_purchase: ticket.min_quantity_per_user,
-            max_purchase: ticket.max_quantity_per_user,
-            availability: ticket.availability,
-            display_order: ticket.display_order,
-            category: ticket.category ? category : null,
-            start_date: startDateTime.date,
-            start_time: startDateTime.time,
-            end_date: endDateTime.date,
-            end_time: endDateTime.time,
-            _deleted: ticket.deleted_at,
-            status: ticket.status,
-          };
-        })
-      );
+        return {
+          id: ticket.id,
+          name: ticket.name,
+          price: ticket.price,
+          total_quantity: ticket.total_quantity,
+          total_sold: ticket.total_sold,
+          min_purchase: ticket.min_quantity_per_user,
+          max_purchase: ticket.max_quantity_per_user,
+          availability: ticket.availability,
+          display_order: ticket.display_order,
+          category: ticket.category ? category : null,
+          start_date: startDateTime.date,
+          start_time: startDateTime.time,
+          end_date: endDateTime.date,
+          end_time: endDateTime.time,
+          _deleted: ticket.deleted_at,
+          status: ticket.status,
+        };
+      });
+
+      this.context.commit('SET_TICKETS', ticketsToCommit);
+
+      return { success: true, data: ticketsToCommit };
+
     } catch (error) {
       console.error('Erro ao buscar ingressos:', error);
       throw error;
