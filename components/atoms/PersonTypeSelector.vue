@@ -14,7 +14,7 @@
         :color="localValue === 'PF' ? 'primary' : ''"
       >
         <div class="d-flex flex-column align-center">
-          <v-icon size="24" class="mb-2" :color="localValue === 'PF' ? 'white' : 'primary'">mdi-account</v-icon>
+          <v-icon size="24" :color="localValue === 'PF' ? 'white' : 'primary'">mdi-account</v-icon>
           <span class="text-h6" :class="{'white--text': localValue === 'PF'}">Pessoa Física</span>
         </div>
       </v-btn>
@@ -27,7 +27,7 @@
         :color="localValue === 'PJ' ? 'primary' : ''"
       >
         <div class="d-flex flex-column align-center">
-          <v-icon size="24" class="mb-2" :color="localValue === 'PJ' ? 'white' : 'primary'">mdi-domain</v-icon>
+          <v-icon size="24" :color="localValue === 'PJ' ? 'white' : 'primary'">mdi-domain</v-icon>
           <span class="text-h6" :class="{'white--text': localValue === 'PJ'}">Pessoa Jurídica</span>
         </div>
       </v-btn>
