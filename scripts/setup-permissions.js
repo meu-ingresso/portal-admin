@@ -18,6 +18,7 @@ const EVENT_PERMISSIONS = {
   MANAGE_GUESTLIST: 'manage_event_guestlist',
   VIEW_ORDERS: 'view_event_orders',
   MANAGE_ORDERS: 'manage_event_orders',
+  MANAGE_ORDERS_PDV: 'manage_event_orders_pdv',
   MANAGE_CHECKIN: 'manage_event_checkin',
   MANAGE_PDV: 'manage_event_pdv',
 };
@@ -57,7 +58,7 @@ const ALL_PERMISSIONS = [
   { name: EVENT_PERMISSIONS.MANAGE_ORDERS, description: 'Gerenciar pedidos de eventos' },
   { name: EVENT_PERMISSIONS.MANAGE_CHECKIN, description: 'Gerenciar check-in de eventos' },
   { name: EVENT_PERMISSIONS.MANAGE_PDV, description: 'Gerenciar PDV de eventos' },
-  
+  { name: EVENT_PERMISSIONS.MANAGE_ORDERS_PDV, description: 'Gerenciar pedidos de eventos como PDV' },
   // Permissões de usuários
   { name: USER_PERMISSIONS.VIEW, description: 'Visualizar usuários' },
   { name: USER_PERMISSIONS.CREATE, description: 'Criar usuários' },
@@ -90,6 +91,7 @@ const ROLE_DEFAULT_PERMISSIONS = {
     EVENT_PERMISSIONS.VIEW_ORDERS,
     EVENT_PERMISSIONS.MANAGE_CHECKIN,
     EVENT_PERMISSIONS.MANAGE_PDV,
+    EVENT_PERMISSIONS.MANAGE_ORDERS_PDV,
     USER_PERMISSIONS.VIEW,
     REPORT_PERMISSIONS.VIEW_SALES,
     REPORT_PERMISSIONS.VIEW_CHECKIN,
@@ -106,7 +108,7 @@ const ROLE_DEFAULT_PERMISSIONS = {
   ],
   'PDV (Ponto de venda)': [
     EVENT_PERMISSIONS.VIEW,
-    EVENT_PERMISSIONS.MANAGE_PDV,
+    EVENT_PERMISSIONS.MANAGE_ORDERS_PDV,
   ],
   'Visualização': [
     EVENT_PERMISSIONS.VIEW,

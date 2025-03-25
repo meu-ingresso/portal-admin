@@ -45,24 +45,42 @@
 
       <template #item="{ item }">
         <v-list-item
-          :class="{ 'selected-item': isSelected(item) }"
-          :disabled="isDisabled(item)"
+          :class="{ 'selected-item': isSelected(item), 'disabled-item': isDisabled(item) }"
           @click.stop="toggleItem(item)"
         >
           <v-list-item-action class="mr-2">
             <v-checkbox
               :input-value="isSelected(item)"
               color="primary"
+              :disabled="isDisabled(item)"
               @click.stop="onCheckboxClick($event, item)"
             ></v-checkbox>
           </v-list-item-action>
           <v-list-item-content>
-            <v-list-item-title :class="{ 'font-weight-medium': isSelected(item) }">
-              {{ getItemText(item) }}
-            </v-list-item-title>
-            <v-list-item-subtitle v-if="getItemSubtitle(item)">
-              {{ getItemSubtitle(item) }}
-            </v-list-item-subtitle>
+            <!-- Item desabilitado -->
+            <template v-if="isDisabled(item)">
+              <v-list-item-title :class="{ 'font-weight-medium': isSelected(item) }">
+                {{ getItemText(item) }}
+                <v-tooltip bottom>
+                  <template #activator="{ on, attrs }">
+                    <v-icon v-bind="attrs" small v-on="on">mdi-information</v-icon>
+                  </template>
+                  {{ disabledTooltipText }}
+                </v-tooltip>
+              </v-list-item-title>
+              <v-list-item-subtitle v-if="getItemSubtitle(item)">
+                {{ getItemSubtitle(item) }}
+              </v-list-item-subtitle>
+            </template>
+            <!-- Não desabilitado -->
+            <template v-else>
+              <v-list-item-title :class="{ 'font-weight-medium': isSelected(item) }">
+                {{ getItemText(item) }}
+              </v-list-item-title>
+              <v-list-item-subtitle v-if="getItemSubtitle(item)">
+                {{ getItemSubtitle(item) }}
+              </v-list-item-subtitle>
+            </template>
           </v-list-item-content>
         </v-list-item>
       </template>
@@ -109,9 +127,9 @@ export default {
       type: String,
       default: "Selecionar Todos"
     },
-    disabledItems: {
-      type: Array,
-      default: () => []
+    disabledTooltipText: {
+      type: String,
+      default: "Este item não pode ser selecionado"
     }
   },
 
@@ -124,7 +142,11 @@ export default {
 
   computed: {
     areAllSelected() {
-      return this.items.length > 0 && this.selectedItems.length === this.items.length;
+      return this.items.length > 0 && this.selectedItems.length === this.nonDisabledItems.length;
+    },
+
+    nonDisabledItems() {
+      return this.items.filter(item => !this.isDisabled(item));
     },
 
     isIndeterminate() {
@@ -195,9 +217,7 @@ export default {
     },
 
     isDisabled(item) {
-      return this.disabledItems.some(
-        disabled => disabled[this.itemValue] === item[this.itemValue]
-      );
+      return item._disabled === true;
     },
 
     getItemText(item) {
@@ -249,5 +269,10 @@ export default {
 
 :deep(.v-input__slot) {
   cursor: text;
+}
+
+:deep(.disabled-item) {
+  opacity: 0.6;
+  cursor: default;
 }
 </style>

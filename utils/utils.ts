@@ -150,3 +150,9 @@ export const isUserAdmin = (cookies: any): boolean => {
 
   return role && role.name === 'Admin';
 };
+
+export const isUserManager = (cookies: any): boolean => {
+  const role = getUserRole(cookies);
+
+  return role && role.name === 'Gerente';
+};

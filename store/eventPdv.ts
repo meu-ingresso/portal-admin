@@ -340,6 +340,44 @@ export default class EventPdv extends VuexModule {
   }
 
   @Action
+  public async fetchPdvFromEventAndUserId(payload: { eventId: string; userId: string }) {
+    const { eventId, userId } = payload;
+
+    const filterStatus = 'Disponível';
+
+    const preloads = [
+      'event',
+      'status',
+      'pdvTickets:ticket:status',
+      'pdvUsers'
+    ];
+
+    const params = new URLSearchParams();
+
+    params.append('where[event_id][v]', eventId);
+    params.append('whereHas[status][name][v]', filterStatus);
+    params.append('whereHas[pdvUsers][user_id][v]', userId);
+    params.append('limit', '9999');
+
+    preloads.forEach(preload => params.append('preloads[]', preload));
+
+    try {
+      const response = await $axios.$get(`/pdvs?${params.toString()}`);
+
+      const result = handleGetResponse(response, 'PDVs não encontrados', eventId, true);
+
+      if (result && result.data) {
+        return { success: true, data: result.data };
+      }
+
+      return { success: false, error: 'Falha ao buscar PDV' };
+    } catch (error) {
+      console.error('[PDV] Error fetching PDV from event and user:', error);
+      return { success: false, error };
+    }
+  }
+
+  @Action
   public reset() {
     this.context.commit('SET_PDVS', []);
     this.context.commit('SET_SELECTED_PDV', null);

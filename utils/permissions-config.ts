@@ -4,6 +4,13 @@
  * e serve como referência para configuração de rotas e verificações de acesso
  */
 
+export const PDV_ROLE = 'PDV (Ponto de venda)';
+export const OPERATOR_CHECKIN_ROLE = 'Operador de Check-in';
+export const COLLABORATOR_ROLE = 'Colaborador';
+export const PROMOTOR_ROLE = 'Promotor';
+export const ADMIN_ROLE = 'Admin';
+export const MANAGER_ROLE = 'Gerente';
+
 export interface Permission {
   name: string;
   description: string;
@@ -25,6 +32,7 @@ export const EVENT_PERMISSIONS = {
   MANAGE_ORDERS: 'manage_event_orders',
   MANAGE_CHECKIN: 'manage_event_checkin',
   MANAGE_PDV: 'manage_event_pdv',
+  MANAGE_ORDERS_PDV: 'manage_event_orders_pdv',
 };
 
 /**
@@ -74,7 +82,7 @@ export const ALL_PERMISSIONS: Permission[] = [
   { name: EVENT_PERMISSIONS.MANAGE_ORDERS, description: 'Gerenciar pedidos de eventos' },
   { name: EVENT_PERMISSIONS.MANAGE_CHECKIN, description: 'Gerenciar check-in de eventos' },
   { name: EVENT_PERMISSIONS.MANAGE_PDV, description: 'Gerenciar PDV de eventos' },
-  
+  { name: EVENT_PERMISSIONS.MANAGE_ORDERS_PDV, description: 'Gerenciar pedidos de eventos como PDV' },
   // Permissões de usuários
   { name: USER_PERMISSIONS.VIEW, description: 'Visualizar usuários' },
   { name: USER_PERMISSIONS.CREATE, description: 'Criar usuários' },
@@ -107,8 +115,8 @@ export function requirePermissions(...permissions: string[]): string[] {
  * Define quais permissões cada papel possui por padrão
  */
 export const ROLE_DEFAULT_PERMISSIONS = {
-  'Admin': ALL_PERMISSIONS.map(p => p.name),
-  'Gerente': [
+  [ADMIN_ROLE]: ALL_PERMISSIONS.map(p => p.name),
+  [MANAGER_ROLE]: [
     EVENT_PERMISSIONS.VIEW,
     EVENT_PERMISSIONS.CREATE,
     EVENT_PERMISSIONS.EDIT,
@@ -117,6 +125,7 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     EVENT_PERMISSIONS.MANAGE_COLLABORATORS,
     EVENT_PERMISSIONS.MANAGE_GUESTLIST,
     EVENT_PERMISSIONS.VIEW_ORDERS,
+    EVENT_PERMISSIONS.MANAGE_ORDERS_PDV,
     EVENT_PERMISSIONS.MANAGE_CHECKIN,
     EVENT_PERMISSIONS.MANAGE_PDV,
     USER_PERMISSIONS.VIEW,
@@ -125,7 +134,7 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     REPORT_PERMISSIONS.VIEW_FINANCIAL,
     REPORT_PERMISSIONS.EXPORT,
   ],
-  'Promotor': [
+  [PROMOTOR_ROLE]: [
     EVENT_PERMISSIONS.VIEW,
     EVENT_PERMISSIONS.CREATE,
     EVENT_PERMISSIONS.EDIT,
@@ -134,21 +143,22 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     EVENT_PERMISSIONS.MANAGE_COLLABORATORS,
     EVENT_PERMISSIONS.MANAGE_GUESTLIST,
     EVENT_PERMISSIONS.VIEW_ORDERS,
+    EVENT_PERMISSIONS.MANAGE_ORDERS_PDV,
     EVENT_PERMISSIONS.MANAGE_CHECKIN,
     EVENT_PERMISSIONS.MANAGE_PDV,
     REPORT_PERMISSIONS.VIEW_SALES,
     REPORT_PERMISSIONS.VIEW_CHECKIN,
     REPORT_PERMISSIONS.VIEW_FINANCIAL,
   ],
-  'Operador de Check-in': [
+  [OPERATOR_CHECKIN_ROLE]: [
     EVENT_PERMISSIONS.VIEW,
     EVENT_PERMISSIONS.MANAGE_CHECKIN,
   ],
-  'PDV (Ponto de venda)': [
+  [PDV_ROLE]: [
     EVENT_PERMISSIONS.VIEW,
-    EVENT_PERMISSIONS.MANAGE_PDV,
+    EVENT_PERMISSIONS.MANAGE_ORDERS_PDV,
   ],
-  'Colaborador': [
+  [COLLABORATOR_ROLE]: [
     EVENT_PERMISSIONS.VIEW,
   ],
 }; 

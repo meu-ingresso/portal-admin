@@ -16,12 +16,13 @@ export default {
       checkoutFields, 
       checkoutFieldOptions,
       totalAmount,
-      netAmount 
+      netAmount,
+      pdvId
     } = payload;
     
     try {
       // 1. Criar pagamento
-      const paymentData = await this.createPayment(context, totalAmount, netAmount);
+      const paymentData = await this.createPayment(context, totalAmount, netAmount, pdvId);
       if (!paymentData || !paymentData[0] || !paymentData[0].id) {
         throw new Error('Falha ao criar registro de pagamento');
       }
@@ -92,7 +93,7 @@ export default {
    * @param {Number} netAmount - Valor líquido
    * @returns {Promise<Object>}
    */
-  async createPayment(context, totalAmount, netAmount) {
+  async createPayment(context, totalAmount, netAmount, pdvId = null) {
     try {
       const paymentApprovedStatus = await status.fetchStatusByModuleAndName({ 
         module: 'payment', 
@@ -102,19 +103,21 @@ export default {
       
       const userId = context.$cookies.get('user_id');
       if (!userId) throw new Error('ID do usuário não encontrado');
-      
+
       const paymentPayload = {
-        data: [{
-          user_id: userId,
-          status_id: paymentApprovedStatus.id,
-          payment_method: 'PDV',
-          gross_value: totalAmount,
-          net_value: netAmount,
-          paid_at: new Date().toISOString()
-        }]
-      };
-      
-      return payment.createPayment(paymentPayload);
+        user_id: userId,
+        status_id: paymentApprovedStatus.id,
+        payment_method: 'PDV',
+        gross_value: totalAmount,
+        net_value: netAmount,
+        paid_at: new Date().toISOString(),
+      }
+
+      if (pdvId) {
+        paymentPayload.pdv_id = pdvId;
+      } 
+
+      return payment.createPayment([paymentPayload]);
     } catch (error) {
       console.error('Erro ao criar pagamento:', error);
       throw error;
