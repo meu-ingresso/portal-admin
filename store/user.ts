@@ -4,7 +4,9 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 
 import { $axios } from '@/utils/nuxt-instance';
 
-import { SearchPayload } from '@/models';
+import { SearchPayload as BaseSearchPayload } from '@/models';
+import { handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
+import { RoleApiResponse, UserApiResponse } from '~/models/event';
 
 interface CreatePayload {
   first_name: String;
@@ -19,34 +21,76 @@ interface CreatePayload {
   sellers: Array<String>;
 }
 
+interface PeoplePayload {
+  id: string;
+  person_type?: 'PF' | 'PJ';
+  first_name?: string;
+  last_name?: string;
+  tax?: string;
+  social_name?: string;
+  fantasy_name?: string;
+}
+
+interface ExtendedSearchPayload extends BaseSearchPayload {
+  preloads?: string[];
+}
+
 @Module({ name: 'user', stateFactory: true, namespaced: true })
 export default class User extends VuexModule {
-  private user: any = {
+  private user: UserApiResponse = {
     id: '',
-    first_name: '',
-    last_name: '',
-    cellphone: '',
-    email: undefined,
-    password: '',
-    id_erp: '',
-    hiring_mode: '',
+    people_id: '',
+    email: '',
+    alias: '',
     role_id: '',
-    is_active: true,
-    sellers: [],
+    account_verified: false,
+    created_at: '',
+    updated_at: '',
+    deleted_at: '',
+    people: {
+      id: '',
+      first_name: '',
+      last_name: '',
+      person_type: 'PF',
+      tax: '',
+      phone: '',
+      email: '',
+      created_at: '',
+      updated_at: '',
+    },
+    role: {
+      id: '',
+      name: '',
+      description: '',
+    },
   };
 
-  private copyUser: any = {
+  private copyUser: UserApiResponse = {
     id: '',
-    first_name: '',
-    last_name: '',
-    cellphone: '',
-    email: undefined,
-    password: '',
-    id_erp: '',
-    hiring_mode: '',
+    people_id: '',
+    email: '',
+    alias: '',
     role_id: '',
-    is_active: true,
-    sellers: [],
+    account_verified: false,
+    created_at: '',
+    updated_at: '',
+    deleted_at: '',
+    people: {
+      id: '',
+      first_name: '',
+      last_name: '',
+      person_type: 'PF',
+      tax: '',
+      phone: '',
+      email: '',
+      created_at: '',
+      updated_at: '',
+    },
+    role: {
+      id: '',
+      name: '',
+      description: '',
+    },
   };
 
   private userList = [];
@@ -66,35 +110,49 @@ export default class User extends VuexModule {
   }
 
   @Mutation
-  private SET_USER(payload: any) {
+  private SET_USER(payload: UserApiResponse) {
     this.user = payload;
     this.copyUser = { ...this.user };
   }
 
   @Mutation
-  private SET_USER_LIST(data: any) {
+  private SET_USER_LIST(data: UserApiResponse[]) {
     this.userList = data;
   }
 
   @Mutation
-  private SET_ROLE_LIST(data: any) {
+  private SET_ROLE_LIST(data: RoleApiResponse[]) {
     this.roleList = data;
   }
 
   @Mutation
   private RESET() {
     this.user = {
-      id: undefined,
-      first_name: '',
-      last_name: '',
-      cellphone: '',
-      email: undefined,
-      password: '',
-      id_erp: '',
-      hiring_mode: '',
+      id: '',
+      people_id: '',
+      email: '',
+      alias: '',
       role_id: '',
-      is_active: true,
-      sellers: [],
+      account_verified: false,
+      created_at: '',
+      updated_at: '',
+      deleted_at: '',
+      people: {
+        id: '',
+        first_name: '',
+        last_name: '',
+        person_type: 'PF',
+        tax: '',
+        phone: '',
+        email: '',
+        created_at: '',
+        updated_at: '',
+      },
+      role: {
+        id: '',
+        name: '',
+        description: '',
+      },
     };
     this.copyUser = { ...this.user };
   }
@@ -116,23 +174,19 @@ export default class User extends VuexModule {
 
   @Action
   public async update() {
-    const payload: any = {
+    const payload: UserApiResponse = {
       id: this.user.id,
-      first_name: this.user.first_name,
-      last_name: this.user.last_name,
-      cellphone: this.user.cellphone,
+      people_id: this.user.people_id,
       email: this.user.email,
-      password: this.user.password,
-      id_erp: this.user.id_erp,
-      hiring_mode: this.user.hiring_mode,
+      alias: this.user.alias,
       role_id: this.user.role_id,
-      is_active: this.user.is_active,
-      sellers: this.user.sellers,
+      account_verified: this.user.account_verified,
+      created_at: this.user.created_at,
+      updated_at: this.user.updated_at,
+      deleted_at: this.user.deleted_at,
+      people: this.user.people,
+      role: this.user.role,
     };
-
-    if (this.user.password !== this.copyUser.password) {
-      payload.password = this.user.password;
-    }
 
     return await $axios
       .$patch('user', payload)
@@ -149,33 +203,49 @@ export default class User extends VuexModule {
 
   @Action
   public async get(user_id: string) {
-    return await $axios
-      .$get(`users?where[id][v]=${user_id}&preloads[]=groupMainUser`)
-      .then((response) => {
-        if (response.body && response.body.code !== 'SEARCH_SUCCESS')
-          throw new Error(response);
 
-        this.context.commit('SET_USER', response.body.result.data[0]);
+    const response = await $axios.$get(`users?where[id][v]=${user_id}&preloads[]=people&preloads[]=role`);
+    
+    const result = handleGetResponse(response, 'Usuário não encontrado', null, true);
 
-        return response;
-      })
-      .catch(() => {
-        return {
-          data: 'Error',
-          code: 'FIND_NOTFOUND',
-          total: 0,
-        };
-      });
+    if (result && result.data) {
+      this.context.commit('SET_USER', result.data[0]);
+    }
+
+    return result.data[0];
   }
 
   @Action
-  public async getUsers({ page, limit, search, sortBy, sortDesc }: SearchPayload) {
+  public async getAllUsers() {
+    const response = await $axios
+      .$get('users?preloads[]=people&preloads[]=role');
+    
+    const responseResult = handleGetResponse(response, 'Usuários não encontrados', null, true);
+
+    if (responseResult && responseResult.data) {
+      this.context.commit('SET_USER_LIST', responseResult.data);
+    }
+
+    return response;
+  }
+
+  @Action
+  public async getUsers({ page, limit, search, sortBy, sortDesc, preloads = ['people'] }: ExtendedSearchPayload) {
     let filter = '';
     let filter2 = '';
     let orderAux = '';
+    let preloadsStr = '';
 
     filter += page ? `page=${page}&` : '';
     filter += limit ? `limit=${limit}&` : '';
+    
+    // Add preloads if provided
+    if (preloads && preloads.length > 0) {
+      preloadsStr = preloads.map(preload => `preloads[]=${preload}`).join('&');
+      if (preloadsStr) {
+        preloadsStr = `&${preloadsStr}`;
+      }
+    }
 
     for (let i = 0; i < sortBy.length; i++) {
       const sortDescAux = sortDesc[i] ? 'desc' : 'asc';
@@ -184,11 +254,11 @@ export default class User extends VuexModule {
 
     if (search) {
       const newString = encodeURIComponent(`${search}`);
-      filter2 += `&search[first_name][o]=_LIKE_&search[first_name][v]=${newString}&search[last_name][o]=_LIKE_&search[last_name][v]=${newString}&search[email][o]=_LIKE_&search[email][v]=${newString}`;
+      filter2 += `&search[people][first_name:last_name][o]=LIKE&search[people][first_name:last_name][v]=${newString}&search[email][o]=LIKE&search[email][v]=${newString}`;
     }
 
     const status = await $axios
-      .$get(`users?${filter}${filter2}&preloads[]=role${orderAux}`)
+      .$get(`users?${filter}${filter2}&preloads[]=role${preloadsStr}${orderAux}`)
       .then((response) => {
         if (response.body && response.body.code !== 'SEARCH_SUCCESS')
           throw new Error(response);
@@ -230,6 +300,26 @@ export default class User extends VuexModule {
           total: 0,
         };
       });
+  }
+
+  @Action
+  public async updatePeople(payload: PeoplePayload) {
+
+    try {
+      const updatedPeople = await $axios.$patch('people', {
+        data: [
+          {
+            ...payload,
+          },
+        ],
+      });
+
+      const result = handleUpdateResponse(updatedPeople, 'Pessoa não encontrada', null);
+
+      return result;
+    } catch (error) {
+      return error;
+    }
   }
 
   @Action

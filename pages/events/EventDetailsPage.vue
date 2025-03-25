@@ -17,7 +17,13 @@
         <ValueNoExists text="Você não possui acesso à esse evento" />
       </div>
 
-      <div v-else-if="getEvent">
+      <div v-else-if="getEvent" class="event-details-page">
+
+        <div class="d-flex justify-space-between" :class="{ 'flex-column': isMobile }">
+          <EventDetailsHeader />
+          <EventSessionSelector />
+        </div>
+
         <EventDetailsTemplate v-if="isPanel" />
         <EventDetailsTicketsTemplate v-if="isTickets" />
         <EventDetailsCouponsTemplate v-if="isCoupons" />
@@ -25,6 +31,7 @@
         <EventDetailsCheckinTemplate v-if="isCheckin" />
         <EventDetailsOrdersTemplate v-if="isOrders" />
         <EventDetailsCollaboratorsTemplate v-if="isCollaborators" />
+        <EventDetailsPdvTemplate v-if="isPdv" />
       </div>
     </v-container>
     <Toast />
@@ -38,18 +45,29 @@ import {
   eventCoupons,
   eventCustomFields,
   eventGuests,
+  eventPdv,
+  eventCollaborators, 
+  user,
   loading,
+  toast,
 } from '@/store';
+import { isMobileDevice } from '@/utils/utils';
 
 export default {
   data() {
     return {
       eventInvalid: false,
       drawer: true,
+      attemptedTemplate: null
     };
   },
 
   computed: {
+
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
+
     isLoading() {
       return loading.$isLoading;
     },
@@ -109,6 +127,10 @@ export default {
     isCollaborators() {
       return this.$route.meta.template === 'collaborators';
     },
+    
+    isPdv() {
+      return this.$route.meta.template === 'pdv';
+    },
 
     userRole() {
       return this.$cookies.get('user_role');
@@ -128,7 +150,7 @@ export default {
 
       return (
         this.getEvent.collaborators?.some(
-          (collaborator) => collaborator.id === this.userId
+          (collaborator) => collaborator?.user?.id === this.userId
         ) ||
         this.getEvent.promoter_id === this.userId ||
         this.isAdmin
@@ -142,6 +164,7 @@ export default {
       handler(newId) {
         if (newId) {
           this.fetchEventData();
+          this.checkUrlParams();
         }
       },
     },
@@ -153,6 +176,13 @@ export default {
         }
       },
     },
+    
+    '$route.query': {
+      immediate: true,
+      handler() {
+        this.checkUrlParams();
+      }
+    }
   },
 
   methods: {
@@ -165,23 +195,93 @@ export default {
 
         loading.setIsLoading(true);
 
+        // Primeiro, busca o evento específico para obter o ID do grupo
+        await eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id);
+
+        const currentEvent = eventGeneralInfo.$info;
+        const groupId = currentEvent?.groups?.[0]?.id;
+
+        // Se o evento pertence a um grupo, busca todos os eventos relacionados
+        if (groupId) {
+          await eventGeneralInfo.fetchEvents({
+            whereHas: {
+              groups: {
+                id: groupId
+              }
+            },
+            preloads: ['rating', 'coupons', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups', 'tickets']
+          });
+        }
+
         const promises = [
-          eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id),
           eventTickets.fetchAndPopulateByEventId(this.$route.params.id),
           eventCustomFields.fetchAndPopulateByEventId(this.$route.params.id),
           eventCoupons.fetchAndPopulateByEventId(this.$route.params.id),
           eventGuests.fetchGuestListAndPopulateByQuery(
             `where[event_id][v]=${this.$route.params.id}&preloads[]=members`
           ),
+          eventPdv.fetchAndPopulateByEventId(this.$route.params.id),
+          user.getAllUsers(),
+          user.getRoles(),
+          eventCollaborators.fetchCollaborators({ eventId: this.$route.params.id }),
         ];
 
         await Promise.all(promises);
       } catch (error) {
+        console.error('Erro ao buscar dados do evento:', error);
         this.eventInvalid = true;
       } finally {
         loading.setIsLoading(false);
       }
     },
+    
+    checkUrlParams() {
+      const { noPermission, template } = this.$route.query;
+      
+      if (noPermission === 'true' && template) {
+
+        toast.setToast({
+          text: 'Você não possui permissão para acessar a seção de ' + this.getTemplateLabel(),
+          type: 'error',
+          time: 5000
+        });
+        
+        this.attemptedTemplate = template;
+        
+        // Remover os parâmetros da URL sem recarregar a página
+        const query = { ...this.$route.query };
+        delete query.noPermission;
+        delete query.template;
+        
+        this.$router.replace({ 
+          path: this.$route.path,
+          query 
+        });
+      }
+    },
+    
+    
+    getTemplateLabel() {
+      const templateMap = {
+        'tickets': 'Ingressos',
+        'coupons': 'Cupons',
+        'checkin': 'Check-in',
+        'orders': 'Pedidos',
+        'guestlists': 'Listas de Convidados',
+        'collaborators': 'Colaboradores',
+        'pdv': 'PDV'
+      };
+      
+      return templateMap[this.attemptedTemplate] || this.attemptedTemplate;
+    }
   },
 };
 </script>
+
+<style scoped>
+.event-details-page {
+  padding-top: 16px;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+</style>

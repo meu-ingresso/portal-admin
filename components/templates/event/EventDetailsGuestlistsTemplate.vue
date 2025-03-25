@@ -1,6 +1,5 @@
 <template>
   <div class="event-details-guestlists">
-    <EventDetailsHeader />
     <!-- Breadcrumb para navegação -->
     <div v-if="isShowingMembers" class="breadcrumb-container mb-6">
       <!-- Versão Mobile -->
@@ -58,12 +57,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details-guestlists {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
-
 /* Estilos compartilhados */
 .cursor-pointer {
   cursor: pointer;

@@ -216,11 +216,20 @@ export interface EventTotalizer {
   totalViews: string;
 }
 
+
 export interface GroupEvent {
   id: string;
   name: string;
   description: string;
   created_at: string;
+}
+
+export interface EventDate {
+  id?: string;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
 }
 
 export interface Event {
@@ -237,10 +246,6 @@ export interface Event {
   banner_id?: string;
   link_online?: string;
   link_online_id?: string;
-  start_date: string;
-  start_time: string;
-  end_date: string;
-  end_time: string;
   address?: EventAddress;
   sale_type: string;
   availability: 'Publico' | 'Privado';
@@ -260,6 +265,8 @@ export interface Event {
     platform_fee: number;
   };
   groups: GroupEvent[];
+  event_dates: EventDate[];
+  group_id?: string;
 }
 
 export interface EventFormState {
@@ -277,11 +284,6 @@ export interface CreateEventPayload extends Omit<Event, 'id'> {}
 export interface UpdateEventPayload extends Partial<Event> {
   id: string;
 }
-export interface EventResponse {
-  success: boolean;
-  data?: Event;
-  message?: string;
-}
 
 export interface ValidationResult {
   isValid: boolean;
@@ -290,6 +292,7 @@ export interface ValidationResult {
 
 export interface CustomFieldApiResponse {
   id: string;
+  event_id: string;
   name: string;
   type: FieldType;
   person_type: PersonType;
@@ -305,6 +308,7 @@ export interface CustomFieldOptionApiResponse {
   id: string;
   event_checkout_field_id: string;
   name: string;
+  eventCheckoutField?: CustomFieldApiResponse;
 }
 
 export interface EventApiResponse {
@@ -313,6 +317,12 @@ export interface EventApiResponse {
   alias: string;
   description: string;
   general_information: string;
+  groups: GroupEvent[];
+  status_id: string;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
 }
 
 export interface TicketApiResponse {
@@ -356,6 +366,12 @@ export interface PeopleApiResponse {
   deleted_at?: string;
 }
 
+export interface RoleApiResponse {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface UserApiResponse {
   id: string;
   people_id: string;
@@ -367,7 +383,34 @@ export interface UserApiResponse {
   updated_at: string;
   deleted_at?: string;
   people?: PeopleApiResponse;
+  role?: RoleApiResponse;
 }
+
+export interface PDVUserApiResponse {
+  id: string;
+  user_id: string;
+  pdv_id: string;
+  user?: UserApiResponse;
+}
+
+export interface PDVTicketApiResponse {
+  id: string;
+  ticket_id: string;
+  pdv_id: string;
+  ticket?: TicketApiResponse;
+}
+export interface PDVApiResponse {
+  id?: string;
+  event_id: string;
+  name: string;
+  status_id: string;
+  status?: StatusApiResponse;
+  created_at?: string;
+  updated_at?: string;
+  users?: PDVUserApiResponse[];
+  tickets?: PDVTicketApiResponse[];
+}
+
 
 export interface PaymentApiResponse {
   id: string;
@@ -413,7 +456,17 @@ export interface CustomFieldTicketApiResponse {
   id: string;
   event_checkout_field_id: string;
   ticket_id: string;
-  ticket: TicketApiResponse;
+  ticket?: TicketApiResponse;
+  eventCheckoutField?: CustomFieldApiResponse;
+}
+
+export interface TicketFieldApiResponse {
+  id: string;
+  customer_ticket_id: string;
+  field_id: string;
+  value: string;
+  customerTicket?: CustomerTicketApiResponse;
+  checkoutField?: CustomFieldApiResponse;
 }
 
 export interface CouponApiResponse {
@@ -434,6 +487,15 @@ export interface CouponTicketApiResponse {
   ticket_id: string;
   ticket: TicketApiResponse;
   deleted_at?: string;
+}
+
+export interface EventCollaboratorApiResponse {
+  id: string;
+  event_id: string;
+  user_id: string;
+  role_id: string;
+  event?: EventApiResponse;
+  user?: UserApiResponse;
 }
 
 export interface FieldPayload {
@@ -458,4 +520,11 @@ export interface CouponPayload {
   max_uses: number;
   start_date: string;
   end_date: string;
+}
+
+export interface CreateCustomerTicketPayload {
+  ticket_id: string;
+  current_owner_id: string;
+  payment_id: string;
+  status_id: string;
 }

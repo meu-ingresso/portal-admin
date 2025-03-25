@@ -6,7 +6,9 @@
         :title="event.name"
         :date="event.start_date"
         :location="event.location_name || 'Local não definido'"
-        :image="getImage(event)" />
+        :image="getImage(event)"
+        :has-multiple-sessions="event.hasSessions"
+        :sessions-count="event.sessionsCount" />
     </v-col>
   </v-row>
 </template>

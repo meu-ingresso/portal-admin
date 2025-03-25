@@ -18,12 +18,12 @@
           text="Salvar em rascunho"
           :disabled="isSaving"
           class="mr-2"
-          @click="$emit('submit', 'draft')" />
+          @click="$emit('submit', 'Rascunho')" />
 
         <DefaultButton
-          :text="isEditing ? 'Salvar Alterações' : 'Publicar Evento'"
+          :text="buttonText"
           :disabled="isSaving"
-          @click="$emit('submit', 'pending')" />
+          @click="$emit('submit', 'Em análise')" />
       </div>
     </v-col>
   </v-row>
@@ -47,6 +47,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    hasSubmittedDocuments: {
+      type: Boolean,
+      default: true,
+    },
   },
 
   computed: {
@@ -56,6 +60,18 @@ export default {
 
     isSaving() {
       return eventPrincipal.$isSaving;
+    },
+
+    buttonText() {
+      if (this.isEditing) {
+        return 'Salvar Alterações';
+      }
+      
+      if (!this.hasSubmittedDocuments) {
+        return 'Enviar para análise';
+      }
+      
+      return 'Publicar Evento';
     },
   },
 };

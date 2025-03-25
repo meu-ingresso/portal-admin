@@ -1,6 +1,7 @@
 <template>
   <div>
-    <template v-if="!collaborators.length">
+
+    <template v-if="showEmptyState">
       <EmptyState
         title="Sem colaboradores"
         subtitle="Após o convite, os colaboradores vão aparecer aqui">
@@ -17,7 +18,7 @@
     <v-row v-else>
       <v-col cols="12">
         <div class="d-flex justify-space-between">
-          <div class="event-collaborators-title">Colaboradores</div>
+          <div class="template-title">Colaboradores</div>
           <DefaultButton text="Adicionar" @click="handleShowModal" />
         </div>
       </v-col>
@@ -26,6 +27,9 @@
         <v-data-table
           :headers="headers"
           :items="collaborators"
+          :loading="isLoading"
+          :server-items-length="meta.total"
+          :options.sync="options"
           :footer-props="{
             itemsPerPageOptions: [10, 25, 50],
             itemsPerPageText: 'Colaboradores por página',
@@ -33,7 +37,29 @@
           }"
           :no-data-text="'Nenhum colaborador encontrado'"
           :no-results-text="'Nenhum colaborador encontrado'"
-          :loading-text="'Carregando...'">
+          :loading-text="'Carregando...'"
+          @update:options="handleTableUpdate"
+          >
+
+          <!-- Slot para filtros -->
+          <template #top>
+            <v-toolbar flat>
+              <v-row>
+                <v-col cols="6">
+                  <!-- Campo de busca -->
+                  <v-text-field
+                    v-model="filters.search"
+                    label="Buscar por nome ou email"
+                    prepend-inner-icon="mdi-magnify"
+                    clearable
+                    hide-details="auto"
+                    class="mr-4"
+                    @input="handleFiltersChange" />
+                </v-col>
+              </v-row>
+            </v-toolbar>
+          </template>
+
           <template #[`item.name`]="{ item }">
             {{ item.user.people.first_name }} {{ item.user.people.last_name }}
           </template>
@@ -43,25 +69,10 @@
           </template>
 
           <template #[`item.role`]="{ item }">
-            {{ item.role.name }}
+            {{ item?.role?.name }}
           </template>
 
           <template #[`item.actions`]="{ item }">
-            <v-tooltip bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  class="mr-2"
-                  color="primary"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="handleEditCollaborator(item)">
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
-              </template>
-              <span>Editar</span>
-            </v-tooltip>
             <v-tooltip bottom>
               <template #activator="{ on, attrs }">
                 <v-btn
@@ -84,11 +95,9 @@
     <CollaboratorModal
       :show="showDialog"
       :event-id="eventId"
-      :collaborator="selectedCollaborator"
       @update:show="showDialog = $event"
       @close="handleCloseModal"
-      @added="$emit('added')"
-      @updated="$emit('updated')" />
+      @added="handleAddedCollaborator" />
 
     <ConfirmDialog
       v-model="showConfirmDialog"
@@ -102,7 +111,7 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { toast, user } from '@/store';
+import { toast, eventCollaborators } from '@/store';
 
 export default {
   name: 'EventCollaborator',
@@ -134,20 +143,113 @@ export default {
           width: '10%',
         },
       ],
+      filters: {
+        search: '',
+      },
+      options: {
+        page: 1,
+        itemsPerPage: 10,
+        sortBy: ['created_at'],
+        sortDesc: [true],
+      },
+      currentQuery: null,
+      searchTimeout: null,
+      isClearingFilters: false,
     };
   },
 
   computed: {
+
+    showEmptyState() {
+      return !this.collaborators.length && this.activeFiltersCount === 0 && !this.isClearingFilters && !this.isLoading;
+    },
+
+    activeFiltersCount() {
+      let count = 0;
+      if (this.filters.search) count++;
+      return count;
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
+    meta() {
+      return eventCollaborators.$meta;
+    },
   },
 
-  async mounted() {
-    await user.getRoles();
+  watch: {
+    options: {
+      handler() {
+        this.loadItems();
+      },
+      deep: true,
+    },
+  },
+
+  mounted() {
+    this.loadItems();
   },
 
   methods: {
+
+    handleAddedCollaborator() {
+      this.handleCloseModal();
+      this.loadItems(true);
+    },
+
+    buildQueryParams() {
+      const { page, itemsPerPage, sortBy, sortDesc } = this.options;
+      
+      const sort = sortBy.length
+        ? sortBy.map((field, index) => (sortDesc[index] ? '-' : '') + field).join(',')
+        : '-created_at';
+
+      return {
+        eventId: this.$route.params.id,
+        page,
+        limit: itemsPerPage,
+        sort,
+        search: this.filters.search || undefined,
+      };
+    },
+
+    async loadItems(force = false) {
+      try {
+        const query = this.buildQueryParams();
+        if (this.isQueryDifferent(query, force)) {
+          this.isLoading = true;
+          await eventCollaborators.fetchCollaborators(query);
+          this.isLoading = false;
+        }
+      } catch (error) {
+        console.error('Erro ao buscar colaboradores:', error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    isQueryDifferent(newQuery, force = false) {
+      // Se forceUpdate está ativo ou não há query atual, permite a atualização
+      if (force || !this.currentQuery) {
+        this.currentQuery = JSON.stringify(newQuery);
+        return true;
+      }
+
+      const stringifiedNewQuery = JSON.stringify(newQuery);
+      if (this.currentQuery !== stringifiedNewQuery) {
+        this.currentQuery = stringifiedNewQuery;
+        return true;
+      }
+
+      return false;
+    },
+
+
+    handleTableUpdate(options) {
+      this.options = options;
+    },
+
     handleShowModal() {
       this.showDialog = true;
     },
@@ -155,11 +257,6 @@ export default {
     handleCloseModal() {
       this.showDialog = false;
       this.selectedCollaborator = null;
-    },
-
-    handleEditCollaborator(collaborator) {
-      this.selectedCollaborator = collaborator;
-      this.showDialog = true;
     },
 
     handleDeleteCollaborator(collaborator) {
@@ -172,13 +269,21 @@ export default {
 
       try {
         this.isLoading = true;
-        await this.$emit('deleted', this.selectedCollaborator.id);
-
-        toast.setToast({
-          text: `Colaborador "${this.selectedCollaborator.user.email}" removido com sucesso!`,
-          type: 'success',
-          time: 5000,
+        
+        const success = await eventCollaborators.deleteCollaborator({
+          id: this.selectedCollaborator.id,
+          eventId: this.eventId,
         });
+
+        if (success) {
+          toast.setToast({
+            text: `Colaborador "${this.selectedCollaborator.user.email}" removido com sucesso!`,
+            type: 'success',
+            time: 5000,
+          });
+          
+          this.loadItems(true);
+        }
       } catch (error) {
         console.error('Erro ao remover colaborador:', error);
         toast.setToast({
@@ -192,16 +297,20 @@ export default {
         this.selectedCollaborator = null;
       }
     },
+
+    handleFiltersChange() {
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+      }
+
+      this.isClearingFilters = true;
+      this.searchTimeout = setTimeout(() => {
+        this.options.page = 1;
+        this.isClearingFilters = false;
+        this.loadItems();
+      }, 500);
+    },
+
   },
 };
 </script>
-
-<style scoped>
-.event-collaborators-title {
-  font-weight: 600;
-  text-align: left;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-  font-size: 26px;
-}
-</style>

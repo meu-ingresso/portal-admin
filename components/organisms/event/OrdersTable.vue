@@ -267,6 +267,7 @@ export default {
         sortDesc: [true],
       },
       showPaymentDetails: false,
+      showPdvOrderDetails: false,
       selectedPaymentId: null,
       filters: {
         search: '',
@@ -286,6 +287,7 @@ export default {
         { text: 'Cartão de Crédito', value: 'credit_card' },
         { text: 'PIX', value: 'pix' },
         { text: 'Boleto', value: 'bank_slip' },
+        { text: 'PDV', value: 'PDV' },
       ],
       debounceTimer: null,
       showFilters: false,
@@ -442,7 +444,7 @@ export default {
 
     showDetails(order) {
       this.selectedPaymentId = order.id;
-      this.showPaymentDetails = true;
+      this.$router.push(`/payment/details/${order.id}`);
     },
 
     isQueryDifferent(newQuery, force = false) {

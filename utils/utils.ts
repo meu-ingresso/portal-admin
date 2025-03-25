@@ -134,6 +134,8 @@ export const getPaymentMethod = (payment: string): string => {
       return 'Cartão de Crédito';
     case 'debit':
       return 'Cartão de Débito';
+    case 'PDV':
+      return 'PDV (Ponto de Venda)';
     default:
       return payment;
   }
@@ -147,4 +149,10 @@ export const isUserAdmin = (cookies: any): boolean => {
   const role = getUserRole(cookies);
 
   return role && role.name === 'Admin';
+};
+
+export const isUserManager = (cookies: any): boolean => {
+  const role = getUserRole(cookies);
+
+  return role && role.name === 'Gerente';
 };

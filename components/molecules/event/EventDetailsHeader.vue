@@ -52,10 +52,10 @@
         <v-icon class="mr-2 details-icon">mdi-calendar</v-icon>
 
         <div class="d-flex align-center">
-          <p>{{ formatDateToCustomString(getEvent.start_date) }}</p>
+          <p>{{ formatDateToCustomString(getEvent?.event_dates[0]?.start_date) }}</p>
           <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-          <p>{{ getEvent.start_time }}</p>
+          <p>{{ getEvent?.event_dates[0]?.start_time }}</p>
         </div>
 
         <div class="mr-2 ml-2">
@@ -63,16 +63,16 @@
         </div>
 
         <div class="d-flex align-center">
-          <p>{{ formatDateToCustomString(getEvent.end_date) }}</p>
+          <p>{{ formatDateToCustomString(getEvent?.event_dates[0]?.end_date) }}</p>
 
           <v-icon class="details-icon">mdi-circle-small</v-icon>
 
-          <p>{{ getEvent.end_time }}</p>
+          <p>{{ getEvent?.event_dates[0]?.end_time }}</p>
         </div>
       </div>
 
       <!-- Informações de Localização/Link -->
-      <template v-if="isOnlineOrHybridEvent">
+      <template v-if="isHybridEvent">
         <div class="location d-flex align-center mb-2 cursor-pointer">
           <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
@@ -212,7 +212,7 @@
         <div class="event-title is-mobile">{{ getEvent.name }}</div>
 
         <!-- Informações de Localização/Link Mobile -->
-        <template v-if="isOnlineOrHybridEvent">
+        <template v-if="isHybridEvent">
           <div class="online-event d-flex align-center mb-2">
             <v-icon class="mr-2 details-icon is-mobile">mdi-web</v-icon>
             <p class="online-link is-mobile">{{ onlineLink }}</p>
@@ -242,11 +242,11 @@
           <v-icon class="mr-2 details-icon is-mobile">mdi-calendar</v-icon>
 
           <div class="d-flex align-center">
-            <p>{{ formatDateToCustomString(getEvent.start_date) }}</p>
+            <p>{{ formatDateToCustomString(getEvent?.event_dates[0]?.start_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ getEvent.start_time }}</p>
+            <p>{{ getEvent?.event_dates[0]?.start_time }}</p>
           </div>
 
           <div class="mr-2 ml-2">
@@ -254,11 +254,11 @@
           </div>
 
           <div class="d-flex align-center">
-            <p>{{ formatDateToCustomString(getEvent.end_date) }}</p>
+            <p>{{ formatDateToCustomString(getEvent?.event_dates[0]?.end_date) }}</p>
 
             <v-icon class="details-icon is-mobile">mdi-circle-small</v-icon>
 
-            <p>{{ getEvent.end_time }}</p>
+            <p>{{ getEvent?.event_dates[0]?.end_time }}</p>
           </div>
         </div>
 
@@ -358,7 +358,7 @@ export default {
     },
 
     onlineLink() {
-      if (!this.isOnlineOrHybridEvent) return '';
+      if (!this.isHybridEvent && !this.isOnlineEvent) return '';
 
       const linkOnline = this.getEvent?.attachments?.find(
         (attachment) => attachment.name === 'link_online'
@@ -383,8 +383,8 @@ export default {
       return this.getEvent?.status?.name;
     },
 
-    isOnlineOrHybridEvent() {
-      return this.currentEventType === 'Online' || this.currentEventType === 'Híbrido';
+    isHybridEvent() {
+      return this.currentEventType === 'Híbrido';
     },
 
     isOnlineEvent() {

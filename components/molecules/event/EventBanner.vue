@@ -1,6 +1,15 @@
 <template>
   <v-card class="event-card" @click="goToEventDetail">
-    <v-img :src="getImage" class="event-image" alt="Event Image" />
+    <v-img :src="getImage" class="event-image" alt="Event Image">
+      <v-chip
+        v-if="hasMultipleSessions"
+        color="primary"
+        small
+        class="ma-2"
+        dark>
+        {{ sessionsCount }} datas disponíveis
+      </v-chip>
+    </v-img>
 
     <v-card-text>
       <h3 class="event-title">{{ title }}</h3>
@@ -21,6 +30,8 @@ export default {
     date: { type: String, required: true },
     location: { type: String, required: true },
     image: { type: String, required: false, default: null },
+    hasMultipleSessions: { type: Boolean, required: false, default: false },
+    sessionsCount: { type: Number, required: false, default: 0 },
   },
 
   computed: {
@@ -65,6 +76,7 @@ export default {
 .event-image {
   height: 200px !important;
   object-fit: cover;
+  position: relative;
 }
 
 .event-title {
@@ -83,7 +95,5 @@ export default {
   color: var(--black-text);
   font-weight: 400;
   font-size: 14px;
-}
-.event-image {
 }
 </style>

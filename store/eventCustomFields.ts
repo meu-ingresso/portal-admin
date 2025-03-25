@@ -195,8 +195,6 @@ export default class EventCustomFields extends VuexModule {
           // Trata o retorno e filtra por não deletados
           const { data: checkoutFieldsTicketsResult } = handleGetResponse(responseCheckoutFieldsTickets, 'Relação de tickets não encontrados', null, true)
 
-          console.log('checkoutFieldsTicketsResult', checkoutFieldsTicketsResult);
-
           const customFieldTickets = checkoutFieldsTicketsResult.map(
             (customFieldTicket: CustomFieldTicketApiResponse) => ({
               id: customFieldTicket.ticket.id,
@@ -262,7 +260,8 @@ export default class EventCustomFields extends VuexModule {
           )
           
           let selectedOptions: FieldSelectedOption[] = [];
-          
+          let termsContent: string = '';
+
           if (isMultiOptionField(field.type)) {
             const responseFieldOptions = await $axios.$get(
               `event-checkout-field-options?where[event_checkout_field_id][v]=${field.id}`
@@ -271,14 +270,18 @@ export default class EventCustomFields extends VuexModule {
             // Trata o retorno e filtra por não deletados
             const { data: fieldOptionsResult } = handleGetResponse(responseFieldOptions, 'Opções não encontradas', null, true)
 
-            selectedOptions = fieldOptionsResult.map(
-              (option: FieldSelectedOption) => {
-                return {
+            if (field.type === 'TERMO') {
+              termsContent = fieldOptionsResult[0].name;
+            } else {
+              selectedOptions = fieldOptionsResult.map(
+                (option: FieldSelectedOption) => {
+                  return {
                   id: option.id,
-                  name: option.name,
+                    name: option.name,
+                  }
                 }
-              }
-            );
+              );
+            }
           }
 
           groupedFields.set(field.name, {
@@ -289,6 +292,7 @@ export default class EventCustomFields extends VuexModule {
             person_types: [field.person_type],
             tickets: customFieldTickets,
             selected_options: selectedOptions,
+            terms_content: termsContent,
             help_text: field.help_text || '',
             display_order: field.display_order,
             field_ids: fieldIds
@@ -296,7 +300,7 @@ export default class EventCustomFields extends VuexModule {
         }
       };
       
-      const fields = Array.from(groupedFields.values());
+      const fields = Array.from(groupedFields.values()).sort((a, b) => a.display_order - b.display_order);
       this.context.commit('SET_FIELDS', fields);
       
     } catch (error) {
@@ -308,102 +312,103 @@ export default class EventCustomFields extends VuexModule {
   }
 
   @Action
-  public async createCustomFields(eventId: string): Promise<void> {
+  public async createCustomFields(eventIds: string[]): Promise<void> {
     try {
+      // Para cada evento, teremos um conjunto de operações em lote
+      for (const eventId of eventIds) {
+        // 1. Preparar arrays para operações em lote
+        const operations: BatchOperations = {
+          fieldsToCreate: [],
+          fieldsToUpdate: [],
+          fieldsToDelete: [],
+          optionsToCreate: [],
+          optionsToUpdate: [],
+          optionsToDelete: [],
+          ticketRelationsToCreate: [],
+          ticketRelationsToDelete: []
+        };
 
-      // 1. Preparar arrays para operações em lote
-      const operations: BatchOperations = {
-        fieldsToCreate: [],
-        fieldsToUpdate: [],
-        fieldsToDelete: [],
-        optionsToCreate: [],
-        optionsToUpdate: [],
-        optionsToDelete: [],
-        ticketRelationsToCreate: [],
-        ticketRelationsToDelete: []
-      };
+        const fieldMap = new Map<string, string>(); 
 
-      const fieldMap = new Map<string, string>(); 
+        const tickets = await this.getEventTickets(eventId);
 
-      const tickets = await this.getEventTickets(eventId);
+        // 2. Processar campos
+        this.fieldList.forEach((field, index) => {
+          
+          if (field.is_default) {
+            field.tickets = tickets;
+          }
 
-      // 2. Processar campos
-      this.fieldList.forEach((field, index) => {
-        
-        if (field.is_default) {
-          field.tickets = tickets;
-        }
-
-        // Para cada tipo de pessoa, criar um campo
-        field.person_types.forEach((personType) => {
-          operations.fieldsToCreate.push({
-            event_id: eventId,
-            name: field.name,
-            type: field.type,
-            person_type: personType,
-            required: field.options.includes('required'),
-            visible_on_ticket: field.options.includes('visible_on_ticket'),
-            is_unique: field.options.includes('is_unique'),
-            help_text: field.help_text || '',
-            display_order: field.display_order || index
+          // Para cada tipo de pessoa, criar um campo
+          field.person_types.forEach((personType) => {
+            operations.fieldsToCreate.push({
+              event_id: eventId,
+              name: field.name,
+              type: field.type,
+              person_type: personType,
+              required: field.options.includes('required'),
+              visible_on_ticket: field.options.includes('visible_on_ticket'),
+              is_unique: field.options.includes('is_unique'),
+              help_text: field.help_text || '',
+              display_order: field.display_order || index
+            });
           });
         });
-      });
 
-      // 3. Criar todos os campos de uma vez
-      const fieldsResponse = await $axios.$post('event-checkout-field', {
-        data: operations.fieldsToCreate
-      });
+        // 3. Criar todos os campos de uma vez
+        const fieldsResponse = await $axios.$post('event-checkout-field', {
+          data: operations.fieldsToCreate
+        });
 
-      // Limpa o array de campos a serem criados
-      operations.fieldsToCreate = [];
+        // Limpa o array de campos a serem criados
+        operations.fieldsToCreate = [];
 
-      if (!fieldsResponse.body || fieldsResponse.body.code !== 'CREATE_SUCCESS') {
-        throw new Error('Falha ao criar campos personalizados');
-      }
+        if (!fieldsResponse.body || fieldsResponse.body.code !== 'CREATE_SUCCESS') {
+          throw new Error(`Falha ao criar campos personalizados para o evento ${eventId}`);
+        }
 
-      // 4. Mapear campos criados
-      fieldsResponse.body.result.forEach((createdField: any) => {
-        fieldMap.set(`${createdField.name}-${createdField.person_type}`, createdField.id);
-      });
+        // 4. Mapear campos criados
+        fieldsResponse.body.result.forEach((createdField: any) => {
+          fieldMap.set(`${createdField.name}-${createdField.person_type}`, createdField.id);
+        });
 
-      // 5. Preparar criação de opções e relações com tickets
-      this.fieldList.forEach((field) => {
-        // Se é campo de múltipla escolha, criar opções
-        if (isMultiOptionField(field.type)) {
+        // 5. Preparar criação de opções e relações com tickets
+        this.fieldList.forEach((field) => {
+          // Se é campo de múltipla escolha, criar opções
+          if (isMultiOptionField(field.type)) {
+            field.person_types.forEach((personType) => {
+              const fieldId = fieldMap.get(`${field.name}-${personType}`);
+              if (fieldId) {
+                field.selected_options.forEach((option) => {
+                  operations.optionsToCreate.push({
+                    event_checkout_field_id: fieldId,
+                    name: option.name
+                  });
+                });
+              }
+            });
+          }
+
+          // Criar relações com tickets
           field.person_types.forEach((personType) => {
             const fieldId = fieldMap.get(`${field.name}-${personType}`);
             if (fieldId) {
-              field.selected_options.forEach((option) => {
-                operations.optionsToCreate.push({
+              field.tickets.forEach((ticket) => {
+
+                const ticketId = tickets.find((t: TicketApiResponse) => t.name === ticket.name)?.id;
+
+                operations.ticketRelationsToCreate.push({
                   event_checkout_field_id: fieldId,
-                  name: option.name
+                  ticket_id: ticketId
                 });
               });
             }
           });
-        }
-
-        // Criar relações com tickets
-        field.person_types.forEach((personType) => {
-          const fieldId = fieldMap.get(`${field.name}-${personType}`);
-          if (fieldId) {
-            field.tickets.forEach((ticket) => {
-
-              const ticketId = tickets.find((t: TicketApiResponse) => t.name === ticket.name)?.id;
-
-              operations.ticketRelationsToCreate.push({
-                event_checkout_field_id: fieldId,
-                ticket_id: ticketId
-              });
-            });
-          }
         });
-      });
 
-      // 6. Executar operações em lote para opções e relações
-      await this.executeBatchOperations(operations);
-
+        // 6. Executar operações em lote para opções e relações
+        await this.executeBatchOperations(operations);
+      }
     } catch (error) {
       console.error('Erro ao criar campos personalizados:', error);
       throw error;
@@ -524,12 +529,14 @@ export default class EventCustomFields extends VuexModule {
       );
 
       for (const field of this.fieldList) {
+
         if (field.is_default) continue;
 
         const personTypeChanges = getPersonTypeChanges(field);
         operations.fieldsToDelete.push(...personTypeChanges.toDelete);
 
         for (const personType of field.person_types) {
+
           const fieldId = field.field_ids?.[personType];
           const existingField = existingFields.find((f: CustomFieldApiResponse) => f.id === fieldId);
 
@@ -722,69 +729,160 @@ export default class EventCustomFields extends VuexModule {
     fieldId: string, 
     operations: BatchOperations
   }): Promise<void> {
-    if (!isMultiOptionField(payload.field.type) || payload.field._deleted) return;
 
-    const optionsResponse = await $axios.$get(`event-checkout-field-options?where[event_checkout_field_id][v]=${payload.fieldId}`);
+    try {
+      
+      if (!isMultiOptionField(payload.field.type) || payload.field._deleted) return;
 
-    const { data: existingOptions } = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true);
+      const optionsResponse = await $axios.$get(`event-checkout-field-options?where[event_checkout_field_id][v]=${payload.fieldId}`);
 
-    const optionChanges = getFieldOptionChanges(existingOptions, payload.field.selected_options);
-    
-    payload.operations.optionsToCreate.push(...optionChanges.toCreate.map(name => ({
-      event_checkout_field_id: payload.fieldId,
-      name
-    })));
+      const { data: existingOptions } = handleGetResponse(optionsResponse, 'Opções não encontradas', null, true);
 
-    payload.operations.optionsToUpdate.push(...optionChanges.toUpdate.map(opt => ({
-      id: opt.id,
-      name: opt.name
-    })));
+      if (payload.field.type === 'TERMO') {
 
-    payload.operations.optionsToDelete.push(...optionChanges.toDelete);
+        if (!existingOptions.length) {
+          payload.operations.optionsToCreate.push({
+            event_checkout_field_id: payload.fieldId,
+            name: payload.field.terms_content
+          });
+        } else if (payload.field.terms_content !== existingOptions[0].name) {
+          payload.operations.optionsToUpdate.push({
+            id: existingOptions[0].id,
+            name: payload.field.terms_content
+          });
+        }
+
+      } else {
+
+        const optionChanges = getFieldOptionChanges(existingOptions, payload.field.selected_options);
+        
+        payload.operations.optionsToCreate.push(...optionChanges.toCreate.map(name => ({
+          event_checkout_field_id: payload.fieldId,
+          name
+        })));
+
+        payload.operations.optionsToUpdate.push(...optionChanges.toUpdate.map(opt => ({
+          id: opt.id,
+          name: opt.name
+        })));
+
+        payload.operations.optionsToDelete.push(...optionChanges.toDelete);
+      }
+    } catch (error) {
+      console.error('Erro ao processar opções do campo:', error);
+      throw new Error(`Falha ao processar opções do campo: ${error.message}`);
+    }
   }
 
+  // Função para trocar a ordem dos campos com base em milhares ou centenas
   @Action
   public swapFieldsOrder(payload: { 
     removedIndex: number; 
     addedIndex: number;
   }) {
-    const { removedIndex, addedIndex } = payload;
-    
-    const movedField = this.fieldList[removedIndex];
-    const targetField = this.fieldList[addedIndex];
-    
-    // Encontra os índices reais
-    const movedRealIndex = this.fieldList.findIndex(f => 
-      f.id === movedField.id || 
-      (f.name === movedField.name && !f.id)
-    );
-    
-    const targetRealIndex = this.fieldList.findIndex(f => 
-      f.id === targetField.id || 
-      (f.name === targetField.name && !f.id)
-    );
 
-    // Troca os display_orders
-    const movedDisplayOrder = movedField.display_order;
-    const targetDisplayOrder = targetField.display_order;
-
-    this.context.commit('UPDATE_FIELD', { 
-      index: movedRealIndex, 
-      field: {
-        ...movedField,
-        display_order: targetDisplayOrder
+    this.context.commit('SWAP_FIELDS', payload);
+    
+    const sortedFields = [...this.fieldList];
+    
+    let useThousandsScale = true;
+    
+    const fieldsInTensScale = sortedFields.filter(f => 
+      !f._deleted && f.display_order !== undefined && f.display_order < 1000
+    ).length;
+    
+    const fieldsInThousandsScale = sortedFields.filter(f => 
+      !f._deleted && f.display_order !== undefined && f.display_order >= 1000
+    ).length;
+    
+    if (fieldsInThousandsScale > fieldsInTensScale) {
+      useThousandsScale = false;
+    }
+    
+    const baseOffset = useThousandsScale ? 1000 : 10;
+    
+    const newOrderValues = sortedFields
+      .filter(f => !f._deleted)
+      .map((_, index) => baseOffset + (index * 10));
+    
+    const ordersByPersonType = new Map<string, Map<number, number>>();
+    
+    ['PF', 'PJ', 'ESTRANGEIRO'].forEach(personType => {
+      ordersByPersonType.set(personType, new Map<number, number>());
+    });
+      
+    sortedFields.forEach((field, index) => {
+      if (!field._deleted) {
+        const newOrder = newOrderValues[index];
+        
+        if (field.display_order !== newOrder) {
+          this.context.commit('UPDATE_FIELD', { 
+            index, 
+            field: {
+              ...field,
+              display_order: newOrder
+            }
+          });
+        }
       }
     });
-
-    this.context.commit('UPDATE_FIELD', { 
-      index: targetRealIndex, 
-      field: {
-        ...targetField,
-        display_order: movedDisplayOrder
+    
+    const usedDisplayOrdersByPersonType = new Map<string, Set<number>>();
+    
+    ['PF', 'PJ', 'ESTRANGEIRO'].forEach(personType => {
+      usedDisplayOrdersByPersonType.set(personType, new Set<number>());
+    });
+    
+    const fieldsWithDuplicateOrders = new Set<number>();
+    
+    sortedFields.forEach((field, index) => {
+      if (!field._deleted && field.display_order !== undefined) {
+        field.person_types.forEach(personType => {
+          const usedOrders = usedDisplayOrdersByPersonType.get(personType);
+          if (usedOrders) {
+            if (usedOrders.has(field.display_order)) {
+              fieldsWithDuplicateOrders.add(index);
+            } else {
+              usedOrders.add(field.display_order);
+            }
+          }
+        });
       }
     });
-
-    this.context.commit('SWAP_FIELDS', { removedIndex, addedIndex });
+    
+    fieldsWithDuplicateOrders.forEach(index => {
+      const field = sortedFields[index];
+      let newOrder = field.display_order;
+      let isDuplicate = true;
+      
+      while (isDuplicate) {
+        newOrder += 1;
+        isDuplicate = false;
+        
+        for (const personType of field.person_types) {
+          const usedOrders = usedDisplayOrdersByPersonType.get(personType);
+          if (usedOrders && usedOrders.has(newOrder)) {
+            isDuplicate = true;
+            break;
+          }
+        }
+      }
+      
+      this.context.commit('UPDATE_FIELD', { 
+        index, 
+        field: {
+          ...field,
+          display_order: newOrder
+        }
+      });
+      
+      field.person_types.forEach(personType => {
+        const usedOrders = usedDisplayOrdersByPersonType.get(personType);
+        if (usedOrders) {
+          usedOrders.add(newOrder);
+        }
+      });
+    });
   }
 
 

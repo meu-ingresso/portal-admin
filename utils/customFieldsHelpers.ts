@@ -105,7 +105,7 @@ export const shouldUpdateField = (
 };
 
 export const isMultiOptionField = (type: string): boolean => {
-  return type === 'MULTI_CHECKBOX' || type === 'MENU_DROPDOWN';
+  return type === 'MULTI_CHECKBOX' || type === 'MENU_DROPDOWN' || type === 'TERMO';
 };
 
 export const getPersonTypeChanges = (
@@ -172,7 +172,7 @@ export const getNextDisplayOrder = (fields: CustomField[]): number[] => {
 
 export const prepareFieldPayload = (field: CustomField, eventId: string, personType: PersonType, displayOrder: number): FieldPayload => {
   return {
-    id: field.field_ids[personType] ? field.field_ids[personType] : undefined,
+    id: field?.field_ids?.[personType] ? field.field_ids[personType] : undefined,
     event_id: eventId,
     name: field.name,
     type: field.type,

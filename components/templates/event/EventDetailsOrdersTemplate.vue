@@ -1,33 +1,76 @@
 <template>
   <div class="event-details-orders">
-    <EventDetailsHeader />
     <v-row>
       <v-col cols="12">
-        <div class="event-details-orders-title">Pedidos</div>
+        <div class="d-flex justify-space-between">
+          <div class="template-title">Pedidos</div>
+          <DefaultButton v-if="canCreatePaymentPDV" text="Adicionar (PDV)" @click="handleAddPdv" />
+        </div>
       </v-col>
       <v-col cols="12">
-        <OrdersTable />
+        <OrdersTable ref="ordersTable" />
       </v-col>
     </v-row>
+
+    <!-- Modal de PDV -->
+    <PdvCheckoutModal 
+      v-if="showPdvModal"
+      :show.sync="showPdvModal" 
+      :event-id="$route.params.id"
+      @order-created="refreshOrders" />
   </div>
 </template>
 
 <script>
-export default {};
+import {
+  eventCollaborators, 
+} from '@/store';
+import { PDV_ROLE } from '@/utils/permissions-config';
+import { isUserAdmin, isUserManager } from '@/utils/utils';
+export default {
+  data() {
+    return {
+      showPdvModal: false
+    };
+  },
+
+  computed: {
+    getCollaborators() {
+      return eventCollaborators.$collaborators;
+    },
+
+    userRole() {
+      return this.$cookies.get('user_role');
+    },
+
+    userId() {
+      return this.$cookies.get('user_id');
+    },
+
+    isAdminOrManager() {
+      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+    },
+
+    canCreatePaymentPDV() {
+      return this.isAdminOrManager || this.isCollaborator;
+    },
+
+    isCollaborator() {
+      return this.getCollaborators.some(collaborator => collaborator.user_id === this.userId && collaborator.role.name === PDV_ROLE);
+    },
+  },
+
+  methods: {
+    handleAddPdv() {
+      this.showPdvModal = true;
+    },
+
+    refreshOrders() {
+      // Atualizar a tabela de pedidos após criar um novo
+      if (this.$refs.ordersTable) {
+        this.$refs.ordersTable.fetchOrders(1, 10, true);
+      }
+    }
+  },
+};
 </script>
-
-<style scoped>
-.event-details-orders {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
-
-.event-details-orders-title {
-  font-weight: 600;
-  text-align: left;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-  font-size: 26px;
-}
-</style> 

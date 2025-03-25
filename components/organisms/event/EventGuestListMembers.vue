@@ -6,7 +6,7 @@
     <template v-else>
       <v-col v-if="members.length > 0 && !isMobile" cols="12">
         <div class="d-flex justify-space-between">
-          <div class="members-title">Convidados - {{ currentGuestList.name }}</div>
+          <div class="template-title">Convidados - {{ currentGuestList.name }}</div>
           <DefaultButton text="Adicionar" icon="mdi-plus" @click="openMemberForm" />
         </div>
       </v-col>
@@ -429,19 +429,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.members-title {
-  font-weight: 600;
-  font-size: 26px;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-}
-
-@media (max-width: 600px) {
-  .members-title {
-    font-size: 20px;
-  }
-}
-
 .form-card {
   height: 100%;
   display: flex;

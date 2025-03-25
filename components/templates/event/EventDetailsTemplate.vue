@@ -1,17 +1,7 @@
 <template>
-  <div v-if="getEvent" class="event-details">
-    <EventDetailsHeader />
-
-    <div class="event-details-wrapper">
-      <StatisticList :statistics="getStatistics" title="Visão geral" />
-
-      <EventTickets
-        v-if="hasTickets"
-        disable-menu
-        disable-hover
-        title="Detalhamento das vendas"
-        :event-id="getEvent.id" />
-    </div>
+  <div class="event-details-wrapper">
+    <StatisticList :statistics="getStatistics" title="Visão geral" />
+    <EventSessionsTable :sessions="getSessions" />
   </div>
 </template>
 
@@ -20,9 +10,14 @@ import { eventGeneralInfo, eventTickets, eventCoupons } from '@/store';
 import { formatRealValue } from '~/utils/formatters';
 
 export default {
+
   computed: {
     getEvent() {
       return eventGeneralInfo.$info;
+    },
+
+    getSessions() {
+      return eventGeneralInfo.$eventList;
     },
 
     getStatistics() {
@@ -88,15 +83,11 @@ export default {
       return this.getTickets.length > 0;
     },
   },
+
 };
 </script>
 
 <style scoped>
-.event-details {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
 .event-details-wrapper {
   max-width: 1480px;
 }

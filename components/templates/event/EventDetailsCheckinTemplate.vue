@@ -1,9 +1,8 @@
 <template>
   <div class="event-details-checkin">
-    <EventDetailsHeader />
     <v-row class="mb-4">
       <v-col cols="12">
-        <div class="event-details-checkin-title">Check-in</div>
+        <div class="template-title">Check-in</div>
       </v-col>
       <v-col cols="12" md="12" sm="12">
         <v-tabs v-model="activeTab" background-color="white" grow class="custom-tabs">
@@ -33,20 +32,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details-checkin {
-  padding-top: 16px;
-  max-width: 72rem;
-  margin: 0 auto;
-}
-
-.event-details-checkin-title {
-  font-weight: 600;
-  text-align: left;
-  color: var(--black-text);
-  font-family: var(--font-family-inter-bold);
-  font-size: 26px;
-}
-
 .custom-tabs {
   margin-bottom: 16px;
 }

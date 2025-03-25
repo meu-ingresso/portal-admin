@@ -185,7 +185,7 @@
                 <v-list-item-title> Todos </v-list-item-title>
               </v-list-item-content>
             </v-list-item>
-            <v-divider class="mt-2"></v-divider>
+            <v-divider></v-divider>
           </template>
         </v-select>
       </v-col>

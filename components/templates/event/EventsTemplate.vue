@@ -5,6 +5,21 @@
         <div class="events-template-title">Lista de Eventos</div>
       </v-col>
       <v-col cols="12" md="6" sm="12" class="d-flex justify-md-end justify-sm-start">
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              color="primary"
+              class="mr-4"
+              text
+              icon
+              v-bind="attrs"
+              v-on="on"
+              @click="showCalendar = true">
+              <v-icon>mdi-calendar</v-icon>
+            </v-btn>
+          </template>
+          <span>Ver calendário de eventos</span>
+        </v-tooltip>
         <DefaultButton text="Criar um evento" :block="isMobile" to="/events/create" />
       </v-col>
     </v-row>
@@ -23,32 +38,70 @@
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
-    <EventList :events="filteredEvents" />
+    <EventList :events="groupedEvents" :show-sessions-indicator="showSessionsIndicator" />
 
-    <v-row v-if="filteredEvents.length > 0">
+    <!-- Estado vazio -->
+    <template v-if="groupedEvents.length === 0 && !isLoadingEvents">
+      <EmptyState
+        title="Ainda não há eventos para esta busca"
+        subtitle="Uma vez criados, seus eventos aparecerão aqui"
+        icon="mdi-calendar-outline" />
+    </template>
+
+    <v-row v-if="groupedEvents.length > 0 && !isLoadingEvents">
       <v-col cols="12" class="text-center">
-        <v-btn color="primary" text>Ver mais...</v-btn>
+        <v-btn 
+          v-if="hasEvents" 
+          color="primary" 
+          text 
+          :disabled="!hasMorePages"
+          @click="loadMore">
+          {{ loadMoreButtonText }}
+        </v-btn>
       </v-col>
     </v-row>
+
+    <EventCalendarModal
+      v-model="showCalendar"
+      :events="events"
+    />
   </v-container>
 </template>
 
 <script>
-import { status } from '@/store';
+import { event, status } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 export default {
   props: {
+    groupedEvents: { type: Array, required: true },
     events: { type: Array, required: true },
+    showSessionsIndicator: { type: Boolean, default: false },
+    paginationMeta: { 
+      type: Object, 
+      default: () => ({
+        current_page: 1,
+        last_page: 1,
+        per_page: 12,
+        total: 0
+      }) 
+    },
   },
   data() {
     return {
       search: '',
       selectedFilter: { name: 'Todos' },
+      showCalendar: false,
     };
   },
   computed: {
+
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+
+    isLoadingEvents() {
+      return event.$isLoading;
     },
 
     isLoadingStatus() {
@@ -59,29 +112,23 @@ export default {
       return [
         { name: 'Todos' },
         ...status.$getStatusByModule('event'),
-        { name: 'Excluído' },
       ];
     },
 
-    selectedAll() {
-      return this.selectedFilter.name === 'Todos';
+    hasEvents() {
+      return this.groupedEvents.length > 0;
     },
 
-    selectedDeleted() {
-      return this.selectedFilter.name === 'Excluído';
+    hasMorePages() {
+      return this.paginationMeta.current_page < this.paginationMeta.last_page;
     },
 
-    filteredEvents() {
-      if (this.selectedDeleted) {
-        return this.events.filter((event) => event.deleted_at !== null);
-      }
-
-      return this.events.filter(
-        (event) =>
-          (this.selectedAll || event.status.name === this.selectedFilter.name) &&
-          event.name.toLowerCase().includes(this.search.toLowerCase())
-      );
+    loadMoreButtonText() {
+      return this.hasMorePages 
+        ? 'Ver mais...' 
+        : 'Não há mais eventos para carregar';
     },
+
   },
 
   async mounted() {
@@ -89,12 +136,19 @@ export default {
   },
 
   methods: {
+
     handleFilterChange(filter) {
       this.selectedFilter = filter;
+      this.$emit('update-filter', filter);
     },
     handleSearch(search) {
       this.search = search;
       this.$emit('update-search', search);
+    },
+    loadMore() {
+      if (this.hasMorePages) {
+        this.$emit('load-more');
+      }
     },
     async handleFetchFilterStatus() {
       try {

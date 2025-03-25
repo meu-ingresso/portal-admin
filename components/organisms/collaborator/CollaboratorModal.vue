@@ -7,22 +7,21 @@
     @input="$emit('update:show', $event)">
     <v-card :tile="isMobile" class="form-card">
       <v-card-title class="d-flex justify-space-between align-center form-header">
-        <h3>{{ isEditing ? 'Editar Colaborador' : getAddTitle }}</h3>
+        <h3>{{ getAddTitle }}</h3>
         <v-btn icon :disabled="isLoading" @click="handleClose">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
 
-      <v-card-subtitle v-if="!isEditing">
+      <v-card-subtitle>
         Colaborador é outro produtor de evento com quem você pode compartilhar um evento.
       </v-card-subtitle>
 
       <v-card-text class="form-content px-4">
         <CollaboratorForm
+          v-if="show"
           ref="collaboratorForm"
           :event-id="eventId"
-          :collaborator="collaborator"
-          :edit-mode="isEditing"
           @count-changed="collaboratorCount = $event" />
       </v-card-text>
 
@@ -35,7 +34,7 @@
             @click="handleClose" />
 
           <DefaultButton
-            :text="isEditing ? 'Salvar' : 'Adicionar'"
+            text="Adicionar"
             :is-loading="isLoading"
             :disabled="isLoading || collaboratorCount === 0"
             @click="handleSubmit" />
@@ -50,8 +49,6 @@ import { isMobileDevice } from '@/utils/utils';
 import { toast } from '@/store';
 
 export default {
-  name: 'CollaboratorModal',
-
   props: {
     show: {
       type: Boolean,
@@ -60,14 +57,6 @@ export default {
     eventId: {
       type: String,
       required: true,
-    },
-    collaborator: {
-      type: Object,
-      default: null,
-    },
-    quantity: {
-      type: Number,
-      default: 1,
     },
   },
 
@@ -82,9 +71,6 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
-    isEditing() {
-      return !!this.collaborator;
-    },
     getAddTitle() {
       return `Adicionar ${this.collaboratorCount} ${
         this.collaboratorCount === 1 ? 'Colaborador' : 'Colaboradores'
@@ -92,11 +78,30 @@ export default {
     },
   },
 
+  watch: {
+    show(val) {
+      if (val) {
+        // Reset form when modal is opened
+        this.$nextTick(() => {
+          if (this.$refs.collaboratorForm) {
+            this.$refs.collaboratorForm.resetForm();
+          }
+        });
+      }
+    }
+  },
+
   methods: {
     handleClose() {
       if (!this.isLoading) {
         this.$emit('update:show', false);
         this.$emit('close');
+        // Reset form on next tick after closing
+        this.$nextTick(() => {
+          if (this.$refs.collaboratorForm) {
+            this.$refs.collaboratorForm.resetForm();
+          }
+        });
       }
     },
 
@@ -111,18 +116,29 @@ export default {
         if (success) {
           this.handleClose();
           toast.setToast({
-            text: `Colaborador ${
-              this.isEditing ? 'atualizado' : 'adicionado'
-            } com sucesso!`,
+            text: `Colaborador adicionado com sucesso!`,
             type: 'success',
             time: 5000,
           });
-          this.$emit(this.isEditing ? 'updated' : 'added');
+          this.$emit('added');
+        } else {
+          // Check if we have email validation errors
+          const hasInvalidEmails = collaboratorForm.collaborators.some(
+            c => c.errorMessages?.email === 'Usuário com este e-mail não encontrado no sistema'
+          );
+          
+          if (hasInvalidEmails) {
+            toast.setToast({
+              text: 'Um ou mais e-mails não foram encontrados no sistema',
+              type: 'error',
+              time: 5000,
+            });
+          }
         }
       } catch (error) {
         console.error('Erro ao salvar colaborador:', error);
         toast.setToast({
-          text: `Erro ao ${this.isEditing ? 'atualizar' : 'adicionar'} colaborador`,
+          text: `Erro ao adicionar colaborador`,
           type: 'error',
         });
       } finally {
