@@ -73,7 +73,7 @@ export default {
         // Calcular totais por sessão
         const totalSold = session.totalizers?.totalSales || 0;
         const totalRevenue = session.totalizers?.totalSalesAmount || 0;
-        const totalCapacity = session.tickets.reduce((acc, ticket) => acc + ticket.total_quantity, 0);
+        const totalCapacity = session?.tickets?.reduce((acc, ticket) => acc + ticket.total_quantity, 0) || 0;
         const percentSold = Math.min(100, Math.round((totalSold / totalCapacity) * 100));
         
         return {

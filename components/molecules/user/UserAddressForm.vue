@@ -39,13 +39,9 @@
             </v-list-item>
           </v-list>
         </v-col>
-      </v-row>
 
-      <!-- Campos adicionais e mapa (em duas colunas) -->
-      <v-row>
-        <!-- Lado esquerdo: Campos adicionais -->
-        <v-col cols="12" md="6" sm="12">
-          <template v-if="isAddressFilled">
+        <template v-if="isAddressFilled">
+          <v-col cols="12" sm="6">
             <v-text-field
               v-model="localZipcode"
               label="CEP*"
@@ -59,7 +55,9 @@
               :rules="rules.zipcode"
               @input="formatZipcode"
             ></v-text-field>
-            
+          </v-col>
+          
+          <v-col cols="12" sm="6">
             <v-text-field
               ref="number"
               v-model="localNumber"
@@ -72,9 +70,10 @@
               required
               placeholder="Digite o número"
               :rules="rules.number"
-              class="mt-4"
             ></v-text-field>
-            
+          </v-col>
+          
+          <v-col cols="12" sm="12">
             <v-text-field
               v-model="localComplement"
               label="Complemento"
@@ -82,21 +81,25 @@
               dense
               hide-details="auto"
               placeholder="Digite o complemento"
-              class="mt-4"
             ></v-text-field>
-          </template>
-        </v-col>
+          </v-col>
+        </template>
+      </v-row>
 
-        <!-- Lado direito: Exibição do endereço encontrado -->
-        <v-col cols="12" md="6" sm="12" class="d-flex">
-          <!-- Loading state -->
-          <div v-if="isFetchingAddress" class="d-flex align-center justify-center py-3 flex-grow-1">
+      <!-- Loading state -->
+      <v-row v-if="isFetchingAddress">
+        <v-col cols="12">
+          <div class="d-flex align-center justify-center py-3">
             <v-progress-circular indeterminate color="primary" class="mr-2" size="20" width="2" />
             <p class="mb-0">Buscando endereço...</p>
           </div>
+        </v-col>
+      </v-row>
 
-          <!-- Error state -->
-          <v-card v-else-if="addressError" outlined class="status-card error-card flex-grow-1">
+      <!-- Error state -->
+      <v-row v-else-if="addressError">
+        <v-col cols="12">
+          <v-card outlined class="status-card error-card">
             <v-card-text class="py-3">
               <div class="d-flex align-center mb-2">
                 <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
@@ -104,33 +107,6 @@
               </div>
             </v-card-text>
           </v-card>
-
-          <!-- Address info state -->
-          <div v-else-if="isAddressFilled" class="map-wrapper flex-grow-1">
-            <!-- Mapa do Google -->
-            <div class="map-container-clean">
-              <div id="google-map" class="google-map"></div>
-              <div class="map-actions-clean">
-                <v-btn
-                  x-small
-                  color="primary"
-                  :href="googleMapsUrl"
-                  target="_blank"
-                >
-                  <v-icon left small>mdi-open-in-new</v-icon>
-                  Ver no Google Maps
-                </v-btn>
-              </div>
-            </div>
-          </div>
-
-          <!-- Estado vazio (sem endereço) -->
-          <div v-else class="empty-address-placeholder d-flex flex-column justify-center align-center flex-grow-1">
-            <v-icon color="grey lighten-1" size="48">mdi-map-marker-outline</v-icon>
-            <p class="caption text-center grey--text mt-2">
-              Comece a digitar o endereço para buscar
-            </p>
-          </div>
         </v-col>
       </v-row>
     </v-form>
@@ -152,9 +128,6 @@ export default {
       isApiZipcode: false,
       isFormValid: false,
       googleSearchQuery: '',
-      showMap: false,
-      googleMap: null,
-      googleMapMarker: null,
       googleApiLoaded: false,
       googleAutocomplete: null,
       autocompleteResults: [],
@@ -197,16 +170,6 @@ export default {
       
       return fullAddress;
     },
-
-    googleMapsUrl() {
-      if (!this.isAddressFilled) return '';
-      
-      const address = userAddress.$address;
-      const { latitude, longitude } = address;
-      if (!latitude || !longitude) return '';
-      
-      return `https://www.google.com/maps?q=${latitude},${longitude}`;
-    },
   },
   watch: {
     localNumber: {
@@ -236,12 +199,6 @@ export default {
     'userAddress.$address': {
       deep: true,
       handler(newData) {
-        if (this.isAddressFilled && this.googleApiLoaded && newData.latitude && newData.longitude) {
-          this.$nextTick(() => {
-            this.updateGoogleMap();
-          });
-        }
-
         // Atualizar campos locais se o endereço mudar externamente
         this.localNumber = newData.number || '';
         this.localComplement = newData.complement || '';
@@ -255,22 +212,10 @@ export default {
         }
       }
     },
-    isAddressFilled: {
-      immediate: true,
-      handler(filled) {
-        if (filled && this.googleApiLoaded) {
-          this.$nextTick(() => {
-            this.initGoogleMap();
-          });
-        }
-      }
-    },
   },
   created() {
     this.loadGoogleMapsApi();
-
     this.loadAddress();
-    
   },
   mounted() {
     document.addEventListener('click', this.handleClickOutside);
@@ -324,9 +269,6 @@ export default {
       if (window.google && window.google.maps) {
         this.googleApiLoaded = true;
         this.initGoogleAutocomplete();
-        if (this.isAddressFilled) {
-          this.initGoogleMap();
-        }
         return;
       }
 
@@ -338,9 +280,6 @@ export default {
       script.onload = () => {
         this.googleApiLoaded = true;
         this.initGoogleAutocomplete();
-        if (this.isAddressFilled) {
-          this.initGoogleMap();
-        }
       };
       document.head.appendChild(script);
     },
@@ -352,53 +291,6 @@ export default {
 
       this.googleAutocomplete = new google.maps.places.AutocompleteService();
       this.placesService = new google.maps.places.PlacesService(document.createElement('div'));
-    },
-
-    initGoogleMap() {
-      if (!this.googleApiLoaded || !this.isAddressFilled) return;
-
-      // Delay para garantir que o elemento DOM esteja pronto
-      setTimeout(() => {
-        const mapElement = document.getElementById('google-map');
-        if (!mapElement) return;
-
-        const address = userAddress.$address;
-        const position = {
-          lat: address.latitude || -23.5505,
-          lng: address.longitude || -46.6333
-        };
-
-        this.googleMap = new google.maps.Map(mapElement, {
-          center: position,
-          zoom: 15,
-          fullscreenControl: false,
-          mapTypeControl: false,
-          streetViewControl: false,
-          zoomControl: true
-        });
-
-        this.googleMapMarker = new google.maps.Marker({
-          position,
-          map: this.googleMap,
-          title: this.fullAddressText
-        });
-
-        this.showMap = true;
-      }, 100);
-    },
-
-    updateGoogleMap() {
-      if (!this.googleMap || !this.googleMapMarker) return;
-
-      const address = userAddress.$address;
-      const position = {
-        lat: address.latitude,
-        lng: address.longitude
-      };
-
-      this.googleMap.setCenter(position);
-      this.googleMapMarker.setPosition(position);
-      this.googleMapMarker.setTitle(this.fullAddressText);
     },
 
     onAddressInputChange(value) {
@@ -496,13 +388,6 @@ export default {
         if (addressComponents.number) {
           this.localNumber = addressComponents.number;
         }
-        
-        // Forçar a atualização do mapa
-        this.showMap = false;
-        this.$nextTick(() => {
-          this.showMap = true;
-          this.initGoogleMap();
-        });
       } catch (error) {
         console.error('Erro ao buscar detalhes do endereço:', error);
         this.addressError = 'Não foi possível obter detalhes do endereço selecionado.';
@@ -609,6 +494,32 @@ export default {
 .status-card {
   width: 100%;
   height: 200px;
+}
+
+.error-card {
+  background-color: #ffebee;
+}
+
+.autocomplete-results .v-list-item-title {
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+}
+
+.map-container-clean,
+.map-actions-clean,
+.google-map,
+.map-wrapper {
+  display: none;
+}
+
+.empty-address-placeholder {
+  display: none;
+}
+
+.status-card {
+  width: 100%;
 }
 
 .error-card {

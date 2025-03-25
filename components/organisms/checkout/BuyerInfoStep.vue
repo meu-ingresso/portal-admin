@@ -199,22 +199,18 @@ export default {
     
     validateFields() {
       if (!this.$refs.ticketForms) {
-        console.log('$refs.ticketForms não existe ainda');
         return false;
       }
 
       if (this.$refs.ticketForms.length === 0) {
-        console.log('Não há formulários para validar');
         return true;
       }
       
       const isValid = this.$refs.ticketForms.every(form => {
         const result = form.validate();
-        console.log('Validação do formulário:', result);
         return result;
       });
       
-      console.log('Resultado final da validação:', isValid);
       return isValid;
     }
   }

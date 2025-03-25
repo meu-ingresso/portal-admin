@@ -84,8 +84,9 @@
 </template>
 
 <script>
-import { eventTickets, eventGeneralInfo, eventCheckout, toast } from '@/store';
+import { eventGeneralInfo, eventCheckout, eventPdv, eventTickets, toast } from '@/store';
 import { formatRealValue } from '@/utils/formatters';
+import { isUserAdmin, isUserManager } from '@/utils/utils';
 import { isMultiOptionField } from '@/utils/customFieldsHelpers';
 import checkoutService from '@/services/checkout/checkoutService';
 
@@ -104,10 +105,12 @@ export default {
   
   data() {
     return {
+      pdvId: null,
       selectedQuantities: {},
       isLoading: false,
       isLoadingFields: false,
       isProcessing: false,
+      pdvTickets: [],
       expandedPanels: [],
       expandedFormPanels: [],
       currentStep: 1,
@@ -129,8 +132,17 @@ export default {
   },
   
   computed: {
+
+    userId() {
+      return this.$cookies.get('user_id');
+    },
+
+    isAdminOrManager() {
+      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+    },
+
     tickets() {
-      return eventTickets.$tickets.filter(ticket => 
+      return this.pdvTickets.filter(ticket => 
         !ticket._deleted && 
         ticket.status?.name !== 'Indisponível' &&
         (ticket.total_quantity - ticket.total_sold) > 0
@@ -220,22 +232,67 @@ export default {
     
     async loadData() {
       try {
-        this.isLoading = true;
-        await eventTickets.fetchAndPopulateByEventId(this.eventId);
+
+        if (this.isAdminOrManager) {
+          console.log('Carregando ingressos para admins');
+          await this.loadTicketsForAdmins();
+        } else {
+          console.log('Carregando ingressos para usuários disponíveis para PDV');
+          await this.loadTicketsForAvailableUsers();
+        }
+      
         const categoryCount = Object.keys(this.groupedTickets).length;
         if (categoryCount > 0) {
           this.expandedPanels = [...Array(categoryCount).keys()];
         }
-        this.isLoading = false;
+
       } catch (error) {
         console.error('Erro ao carregar ingressos:', error);
         toast.setToast({ text: 'Erro ao carregar ingressos.', type: 'error', time: 3000 });
+      }
+    },
+
+    async loadTicketsForAdmins() {
+      try {
+        this.isLoading = true;
+        const response = await eventTickets.fetchAndPopulateByEventId(this.eventId);
+
+        if (response.success && response.data) {
+          this.pdvTickets = response.data;
+        }
+      } catch (error) {
+        console.error('Erro ao carregar ingressos:', error);
+        toast.setToast({ text: 'Erro ao carregar ingressos.', type: 'error', time: 3000 });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async loadTicketsForAvailableUsers() {
+      try {
+        this.isLoading = true;
+        const response = await eventPdv.fetchPdvFromEventAndUserId({ eventId: this.eventId, userId: this.userId });
+
+        if (response.success && response.data) {
+
+          // Sabendo que o usuário só tem um PDV, pegamos o primeiro
+          this.pdvId = response.data[0].id;
+
+          response.data.forEach(pdv => {
+            pdv.pdvTickets.forEach(pdvTicket => {
+              this.pdvTickets.push(pdvTicket.ticket);
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar ingressos:', error);
+        toast.setToast({ text: 'Erro ao carregar ingressos.', type: 'error', time: 3000 });
+      } finally {
         this.isLoading = false;
       }
     },
     
     resetData() {
-      console.log('resetData');
       this.selectedQuantities = {};
       this.expandedPanels = [];
       this.expandedFormPanels = [];
@@ -251,7 +308,6 @@ export default {
     },
     
     close() {
-      console.log('close');
       this.isLoading = false;
       this.isLoadingFields = false;
       this.isProcessing = false;
@@ -400,7 +456,8 @@ export default {
           checkoutFields: this.checkoutFields,
           checkoutFieldOptions: this.checkoutFieldOptions,
           totalAmount: this.totalAmount,
-          netAmount: this.netAmount
+          netAmount: this.netAmount,
+          pdvId: this.pdvId
         });
 
         toast.setToast({ text: 'Pedido PDV realizado com sucesso!', type: 'success', time: 3000 });

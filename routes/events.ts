@@ -99,7 +99,7 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'orders',
-          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_ORDERS),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_ORDERS, EVENT_PERMISSIONS.MANAGE_ORDERS_PDV),
         },
       },
       {

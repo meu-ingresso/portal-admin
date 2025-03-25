@@ -154,6 +154,7 @@
             <AdvancedAutocomplete
               v-model="selectedUsers"
               :items="availableUsers"
+              :disabled-tooltip-text="`Este usuário já está associado a outro PDV`"
               label="Usuários (opcional)"
               item-text="name"
               item-value="id"
@@ -214,6 +215,7 @@
                 <AdvancedAutocomplete
                   v-model="editUserSelection"
                   :items="availableUsers"
+                  :disabled-tooltip-text="`Este usuário já está associado a outro PDV`"
                   label="Usuários associados"
                   item-text="name"
                   item-value="id"
@@ -261,6 +263,7 @@
           <AdvancedAutocomplete
             v-model="userToAdd"
             :items="availableUsers"
+            :disabled-tooltip-text="`Este usuário já está associado a outro PDV`"
             label="Selecione os usuários"
             item-text="name" 
             item-value="id"
@@ -339,6 +342,8 @@ import {
   user,
   toast,
 } from '@/store';
+import { PDV_ROLE, ADMIN_ROLE, MANAGER_ROLE } from '@/utils/permissions-config';
+
 export default {
 
   data() {
@@ -380,7 +385,6 @@ export default {
       editUserSelection: [],
       editTicketSelection: [],
       availableStatuses: [],
-      // IDs dos status disponível e fechado
       statusAvailable: null,
       statusClosed: null,
     };
@@ -398,12 +402,12 @@ export default {
     availableUsers() {
       // Apenas usuários admin e gerente e colaboradores do evento com permissão de PDV
 
-      const adminAndGerenteUsers = user.$userList.filter(user => user?.role?.name === 'Admin' || user?.role?.name === 'Gerente');
+      const adminAndGerenteUsers = user.$userList.filter(user => user?.role?.name === ADMIN_ROLE || user?.role?.name === MANAGER_ROLE);
 
       const collaboratorsWithPdvPermission = eventCollaborators.$collaborators.filter(
-        collaborator => collaborator?.role?.name === 'PDV (Ponto de venda)' ||
-          collaborator?.role?.name === 'Admin' ||
-          collaborator?.role?.name === 'Gerente'
+        collaborator => collaborator?.role?.name === PDV_ROLE ||
+          collaborator?.role?.name === ADMIN_ROLE ||
+          collaborator?.role?.name === MANAGER_ROLE
       );
 
       // Remover duplicatas
@@ -411,13 +415,14 @@ export default {
 
       const usersWithPdvPermission = [...adminAndGerenteUsers, ...uniqueCollaborators.map(collaborator => collaborator.user)];
 
-      console.log('[PDV] Usuários com permissão de PDV', usersWithPdvPermission);
-
-      return usersWithPdvPermission.map(user => ({
+      const mappedUsers = usersWithPdvPermission.map(user => ({
         id: user.id,
         name: user.people?.first_name + ' ' + user.people?.last_name || user.email || 'Usuário sem nome',
-        email: user.email
+        email: user.email,
+        _disabled: eventPdv.$pdvs.some(pdv => pdv.users.some(u => u.user_id === user.id && u.pdv_id !== this.editingPdv?.id))
       }));
+
+      return mappedUsers;
     },
 
     getPdvs() {
@@ -439,7 +444,6 @@ export default {
 
   watch: {
     editPdvModal(isOpen) {
-      // Quando o modal for aberto, preencher os campos de seleção
       if (isOpen && this.editingPdv) {
         this.populateEditSelections();
       }
@@ -447,9 +451,7 @@ export default {
   },
 
   async created() {
-    // Carregar dados necessários ao iniciar o componente
     await this.fetchInitialData();
-    // Buscar e configurar os status disponíveis
     await this.fetchAndSetupStatuses();
   },
 
@@ -457,11 +459,9 @@ export default {
     async fetchInitialData() {
       try {
         await eventPdv.fetchAndPopulateByEventId(this.eventId);
-        // Precarregar a lista de usuários se ainda não estiver carregada
         if (!user.$userList.length) {
           await user.fetchUsers();
         }
-        // Precarregar a lista de ingressos se ainda não estiver carregada
         if (!eventTickets.$tickets.length) {
           await eventTickets.fetchByEventId(this.eventId);
         }
@@ -477,11 +477,9 @@ export default {
 
     async fetchAndSetupStatuses() {
       try {
-        // Obter a lista de status disponíveis do eventPdv
         if (eventPdv.$statuses && eventPdv.$statuses.length > 0) {
           this.availableStatuses = eventPdv.$statuses;
           
-          // Encontrar e armazenar os IDs dos status "Disponível" e "Fechado"
           const availableStatus = this.availableStatuses.find(s => 
             s.name.toLowerCase() === 'disponível' || 
             s.name.toLowerCase() === 'disponivel');
@@ -497,11 +495,9 @@ export default {
             this.statusClosed = closedStatus.id;
           }
         } else {
-          // Se não tiver status na store, buscar
           const statuses = await eventPdv.fetchStatuses();
           this.availableStatuses = statuses;
           
-          // Encontrar os status após buscar
           const availableStatus = this.availableStatuses.find(s => 
             s.name.toLowerCase() === 'disponível' || 
             s.name.toLowerCase() === 'disponivel');
@@ -536,7 +532,6 @@ export default {
       this.selectedTickets = [];
       this.addPdvModal = true;
       
-      // Garantir que os arrays de seleção estejam inicializados corretamente
       this.$nextTick(() => {
         if (!Array.isArray(this.selectedUsers)) this.selectedUsers = [];
         if (!Array.isArray(this.selectedTickets)) this.selectedTickets = [];
@@ -565,10 +560,8 @@ export default {
     },
     
     populateEditSelections() {
-      // Evitar chamadas desnecessárias se não tiver dados
       if (!this.editingPdv || !this.editingPdv.id) return;
 
-      // Mapear usuários atuais para o formato do autocomplete - otimizado
       this.editUserSelection = this.editingPdv.users
         .filter(u => u.user && u.user.id)
         .map(u => {
@@ -582,7 +575,6 @@ export default {
           };
         });
         
-      // Mapear ingressos atuais para o formato do autocomplete - otimizado
       this.editTicketSelection = this.editingPdv.tickets
         .filter(t => t.ticket && t.ticket.id)
         .map(t => {
@@ -605,8 +597,19 @@ export default {
           this.$refs.editPdvForm.reset();
         }
       });
+      this.clearEditingPdv();
     },
 
+    clearEditingPdv() {
+      this.editingPdv = {
+        id: '',
+        name: '',
+        originalName: '',
+        status_id: '',
+        users: [],
+        tickets: [],
+      };
+    },
     openAddUserModal() {
       this.userToAdd = [];
       this.addUserModal = true;
@@ -643,12 +646,10 @@ export default {
       try {
         this.isSubmitting = true;
 
-        // Garantir que o PDV tenha um nome e event_id
         if (!this.newPdv.name || !this.newPdv.event_id) {
           throw new Error('Nome do PDV e evento são obrigatórios');
         }
 
-        // Cria o PDV
         const response = await eventPdv.createPdv(this.newPdv);
 
         if (!response.success) {
@@ -657,7 +658,6 @@ export default {
 
         const newPdvId = response.data.id;
 
-        // Associa usuários apenas se houver usuários selecionados
         if (this.selectedUsers && this.selectedUsers.length > 0) {
           try {
             const userIds = this.selectedUsers.map(user => user.id);
@@ -667,11 +667,9 @@ export default {
             });
           } catch (userError) {
             console.error('Erro ao associar usuários, mas o PDV foi criado:', userError);
-            // Continua o fluxo mesmo com erro na associação de usuários
           }
         }
 
-        // Associa ingressos apenas se houver ingressos selecionados
         if (this.selectedTickets && this.selectedTickets.length > 0) {
           try {
             const ticketIds = this.selectedTickets.map(ticket => ticket.id);
@@ -681,7 +679,6 @@ export default {
             });
           } catch (ticketError) {
             console.error('Erro ao associar ingressos, mas o PDV foi criado:', ticketError);
-            // Continua o fluxo mesmo com erro na associação de ingressos
           }
         }
 
@@ -710,12 +707,9 @@ export default {
       try {
         this.isSubmitting = true;
 
-        // Processa as atualizações em lote para melhorar performance
         const updatePromises = [];
         
-        // Verifica se o nome do PDV foi alterado
         if (this.editingPdv.name !== this.editingPdv.originalName) {
-          // Apenas atualiza os dados básicos do PDV se o nome foi alterado
           const updateData = {
             data: {
               id: this.editingPdv.id,
@@ -730,30 +724,24 @@ export default {
           }
         }
         
-        // Obter usuários atuais para comparação
         const currentUserIds = this.editingPdv.users
           .filter(u => u.user && u.user.id)
           .map(u => u.user.id);
-          
-        // Obter usuários selecionados
+
         const selectedUserIds = this.editUserSelection.map(u => u.id);
         
-        // Identificar usuários a serem removidos
         const usersToRemove = this.editingPdv.users.filter(
           u => u.user && u.user.id && !selectedUserIds.includes(u.user.id)
         );
         
-        // Identificar usuários a serem adicionados
         const userIdsToAdd = this.editUserSelection
           .filter(u => !currentUserIds.includes(u.id))
           .map(u => u.id);
         
-        // Agendar remoções de usuários
         usersToRemove.forEach(userAssoc => {
           updatePromises.push(eventPdv.removeUserAssociation(userAssoc.id));
         });
         
-        // Agendar adição de novos usuários em um único batch
         if (userIdsToAdd.length > 0) {
           updatePromises.push(eventPdv.associateUsers({
             pdvId: this.editingPdv.id,
@@ -761,7 +749,6 @@ export default {
           }));
         }
         
-        // Mesmo processo para ingressos
         const currentTicketIds = this.editingPdv.tickets
           .filter(t => t.ticket && t.ticket.id)
           .map(t => t.ticket.id);
@@ -776,20 +763,17 @@ export default {
           .filter(t => !currentTicketIds.includes(t.id))
           .map(t => t.id);
         
-        // Agendar remoções de ingressos
         ticketsToRemove.forEach(ticketAssoc => {
           updatePromises.push(eventPdv.removeTicketAssociation(ticketAssoc.id));
         });
-        
-        // Agendar adição de novos ingressos em um único batch
+                
         if (ticketIdsToAdd.length > 0) {
           updatePromises.push(eventPdv.associateTickets({
             pdvId: this.editingPdv.id,
             ticketIds: ticketIdsToAdd
           }));
         }
-        
-        // Executar todas as operações em paralelo (exceto a atualização do nome que já foi feita)
+
         if (updatePromises.length > 0) {
           await Promise.all(updatePromises);
         }
@@ -860,10 +844,8 @@ export default {
           throw new Error('Erro ao adicionar usuários');
         }
 
-        // Atualiza a lista de PDVs
         await this.fetchEventPdvs();
         
-        // Atualiza os dados do PDV em edição
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.users = updatedPdv.users || [];
@@ -905,10 +887,8 @@ export default {
           throw new Error('Erro ao adicionar ingressos');
         }
 
-        // Atualiza a lista de PDVs
         await this.fetchEventPdvs();
         
-        // Atualiza os dados do PDV em edição
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.tickets = updatedPdv.tickets || [];
@@ -943,10 +923,8 @@ export default {
           throw new Error('Erro ao remover usuário');
         }
 
-        // Atualiza a lista de PDVs
         await this.fetchEventPdvs();
         
-        // Atualiza os dados do PDV em edição
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.users = updatedPdv.users || [];
@@ -980,10 +958,8 @@ export default {
           throw new Error('Erro ao remover ingresso');
         }
 
-        // Atualiza a lista de PDVs
         await this.fetchEventPdvs();
         
-        // Atualiza os dados do PDV em edição
         const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.tickets = updatedPdv.tickets || [];
@@ -1007,7 +983,6 @@ export default {
       }
     },
 
-    // Métodos para gerenciar status do PDV
     getPdvStatusColor(pdv) {
       const statusName = pdv.status?.name?.toLowerCase() || '';
       
@@ -1053,22 +1028,18 @@ export default {
         const currentStatusName = pdv.status?.name?.toLowerCase() || '';
         let newStatusId = null;
         
-        // Determinar o novo status baseado no status atual
         if (currentStatusName.includes('disponível') || currentStatusName.includes('disponivel')) {
           newStatusId = this.statusClosed;
         } else if (currentStatusName.includes('fechado')) {
           newStatusId = this.statusAvailable;
         } else {
-          // Se não for nenhum dos dois status conhecidos, definir como disponível
           newStatusId = this.statusAvailable;
         }
         
-        // Verificar se temos um status válido para atualizar
         if (!newStatusId) {
           throw new Error('Não foi possível determinar o novo status do PDV');
         }
         
-        // Preparar dados para atualização
         const updateData = {
           data: {
             id: pdv.id,
@@ -1076,17 +1047,14 @@ export default {
           }
         };
         
-        // Executar a atualização
         const response = await eventPdv.updatePdv(updateData);
         
         if (!response.success) {
           throw new Error('Erro ao atualizar status do PDV');
         }
         
-        // Atualizar a lista de PDVs para refletir a mudança
         await this.fetchEventPdvs();
         
-        // Mostrar mensagem de sucesso
         const newStatus = newStatusId === this.statusAvailable ? 'disponível' : 'fechado';
         toast.setToast({
           text: `PDV agora está ${newStatus}`,
