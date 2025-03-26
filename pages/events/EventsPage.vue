@@ -11,6 +11,7 @@
 
       <RequiredUserDocModal
         :show-document-dialog="showDocumentDialog"
+        :has-document-info="hasDocumentInfo"
         @saved-user-data="handleSavedUserData"
         @close-document-dialog="closeDocumentDialog"
       />
@@ -174,16 +175,14 @@ export default {
           if (events) {
 
             // Verifica se possui eventos com status Aguardando
-            const hasWaitingEvents = events.some(event => event?.status?.name === 'Aguardando');
+            // const hasWaitingEvents = events.some(event => event?.status?.name === 'Aguardando');
 
-            if (hasWaitingEvents) {
+            const { hasRequiredDocuments, hasPixInfo } = await userDocuments.fetchDocumentStatus(this.userId);
 
-              const { hasRequiredDocuments, hasBankInfo } = await userDocuments.fetchDocumentStatus(this.userId);
-
-              if (!hasRequiredDocuments || !hasBankInfo) {
-                this.showDocumentDialog = true;
-              }
+            if (!hasRequiredDocuments || !hasPixInfo) {
+              this.showDocumentDialog = true;
             }
+            
           }
 
         } else {
@@ -219,15 +218,6 @@ export default {
       });
     },
 
-    goToCompleteCadastro() {
-      this.showDocumentDialog = false;
-      this.$router.push({
-        name: 'CompletarCadastro',
-        query: {
-          personType: this.hasDocumentInfo?.personType || 'PF'
-        }
-      });
-    },
   },
 };
 </script>

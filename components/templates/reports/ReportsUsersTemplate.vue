@@ -58,7 +58,16 @@
               :color="item.account_verified ? 'success' : 'error'"
               small
             >
-              {{ item.account_verified ? 'Verificada' : 'Não verificada' }}
+              {{ item.account_verified ? 'Sim' : 'Não' }}
+            </v-chip>
+          </template>
+
+          <template #[`item.document_sent`]="{ item }">
+            <v-chip
+              :color="getDocumentSent(item) ? 'success' : 'error'"
+              small
+            >
+              {{ getDocumentSent(item) ? 'Sim' : 'Não' }}
             </v-chip>
           </template>
           
@@ -72,15 +81,14 @@
           </template>
           
           <template #[`item.actions`]="{ item }">
-            <v-btn
-              color="primary"
-              small
-              text
-              @click="viewOrders(item)"
-            >
-              <v-icon small left>mdi-cart</v-icon>
-              Ver pedidos
-            </v-btn>
+            <ActionsMenu
+              :show-edit="isAdmin"
+              :show-delete="false"
+              :show-duplicate="false"
+              icon="mdi-dots-horizontal"
+              @edit="editUser(item)"
+              @view-orders="viewOrders(item)"
+            />
           </template>
         </v-data-table>
       </v-col>
@@ -91,6 +99,14 @@
       :show.sync="showUserOrders"
       :user-id="selectedUserId"
       :user-name="selectedUserName" />
+
+    <!-- Modal de edição do usuário -->
+    <EditUserModal
+      v-if="showEditUserModal"
+      :show.sync="showEditUserModal"
+      :user="selectedUser"
+      @saved="handleUserSaved"
+    />
 
   </div>
 </template>
@@ -107,7 +123,8 @@ export default {
         { text: 'Data de Cadastro', value: 'created_at', sortable: true },
         { text: 'E-mail', value: 'email', sortable: true },
         { text: 'Nome Completo', value: 'full_name', sortable: false },
-        { text: 'Conta Verificada', value: 'account_verified', sortable: false },
+        { text: 'Verificado', value: 'account_verified', sortable: false },
+        { text: 'Docs. Enviados', value: 'document_sent', sortable: false },
         { text: 'Tipo de Pessoa', value: 'person_type', sortable: false },
         { text: 'Ações', value: 'actions', sortable: false }
       ],
@@ -124,14 +141,20 @@ export default {
       searchTimeout: null,
       isLoadingInternal: false,
       showUserOrders: false,
+      showEditUserModal: false,
       selectedUserId: null,
       selectedUserName: '',
+      selectedUser: null,
     };
   },
   
   computed: {
     isLoading() {
       return this.isLoadingInternal || loading.$isLoading;
+    },
+    isAdmin() {
+      const role = this.$cookies.get('user_role');
+      return role && role.name === 'Admin';
     },
   },
   
@@ -141,6 +164,18 @@ export default {
   
   methods: {
     formatDateToCustomString,
+
+    getDocumentSent(user) {
+
+      if (!user?.attachments) return false;
+
+      if (user?.people?.person_type === 'PF') {
+        return user.attachments.some(attachment => attachment.type === 'document_cnh') ||
+          (user.attachments.some(attachment => attachment.type === 'document_rg_front') && user.attachments.some(attachment => attachment.type === 'document_rg_back'));
+      } else {
+        return user.attachments.some(attachment => attachment.type === 'document_cnpj' || attachment.type === 'document_social_contract');
+      }   
+    },
     
     getPersonTypeColor(personType) {
       switch (personType) {
@@ -162,7 +197,7 @@ export default {
         search: this.search || undefined,
         sortBy: sortBy.length ? sortBy : ['created_at'],
         sortDesc: sortDesc.length ? sortDesc : [true],
-        preloads: ['people'],
+        preloads: ['people:address', 'attachments'],
       };
     },
     
@@ -229,6 +264,16 @@ export default {
       this.selectedUserId = user.id;
       this.selectedUserName = `${user.people?.first_name} ${user.people?.last_name}`;
       this.showUserOrders = true;
+    },
+
+    editUser(user) {
+      this.selectedUser = user;
+      this.showEditUserModal = true;
+    },
+
+    handleUserSaved() {
+      this.showEditUserModal = false;
+      this.loadUsers(true);
     },
   },
 };

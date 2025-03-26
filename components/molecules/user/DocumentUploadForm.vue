@@ -183,7 +183,6 @@
 
 <script>
 export default {
-  name: 'DocumentUploadForm',
   props: {
     personType: {
       type: String,

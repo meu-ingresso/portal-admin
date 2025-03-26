@@ -1,4 +1,5 @@
-export interface PostAddressPayload {
+export interface AddressPayload {
+  id?: string;
   street: string;
   zipcode: string;
   number: string;

@@ -2,7 +2,7 @@ import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleDeleteResponse, handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 
-export interface UserAddressPayload {
+export interface AddressPayload {
   street: string;
   number: string;
   zipcode: string;
@@ -16,11 +16,11 @@ export interface UserAddressPayload {
 }
 
 @Module({
-  name: 'userAddress',
+  name: 'address',
   stateFactory: true,
   namespaced: true,
 })
-export default class UserAddress extends VuexModule {
+export default class Address extends VuexModule {
   private isLoading: boolean = false;
   private address = {
     id: '',
@@ -34,7 +34,6 @@ export default class UserAddress extends VuexModule {
     latitude: null,
     longitude: null,
     deleted_at: null,
-    isApiZipcode: false
   };
 
   public get $isLoading() {
@@ -74,12 +73,11 @@ export default class UserAddress extends VuexModule {
       latitude: null,
       longitude: null,
       deleted_at: null,
-      isApiZipcode: false
     };
   }
 
   @Action
-  public updateAddress(payload: Partial<UserAddressPayload>) {
+  public updateAddress(payload: Partial<AddressPayload>) {
     this.context.commit('SET_ADDRESS', payload);
   }
 
@@ -89,32 +87,28 @@ export default class UserAddress extends VuexModule {
   }
 
   @Action
-  public async fetchUserAddress(peopleId: string) {
+  public async fetchGetAddress(addressId: string) {
     try {
       this.context.commit('SET_LOADING', true);
 
-      if (!peopleId) {
-        throw new Error('ID de pessoa não encontrado');
+      if (!addressId) {
+        throw new Error('ID de endereço não encontrado');
       }
 
-      const response = await $axios.$get(`people?where[id][v]=${peopleId}&preloads[]=address`);
+      const response = await $axios.$get(`addresses?where[id][v]=${addressId}`);
       const { data } = handleGetResponse(response, 'Informações de endereço não encontradas', null, true);
 
       if (data && data.length > 0 && data[0].address) {
         const address = data[0].address;
-        const isApiZipcode = this.address.isApiZipcode !== undefined ? 
-          this.address.isApiZipcode : 
-          !!address.zipcode;
-        
+
         this.context.commit('SET_ADDRESS', {
           ...address,
-          isApiZipcode
         });
       }
 
-      return data[0];
+      return this.address;
     } catch (error) {
-      console.error('Erro ao buscar endereço do usuário:', error);
+      console.error('Erro ao buscar endereço:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);
@@ -122,24 +116,22 @@ export default class UserAddress extends VuexModule {
   }
 
   @Action
-  public async createUserAddress(payload: UserAddressPayload) {
+  public async fetchCreateAddress(payload: AddressPayload) {
     try {
       this.context.commit('SET_LOADING', true);
-
-      const { ...addressData } = payload;
 
       const addressResponse = await $axios.$post('address', {
         data: [
           {
-            street: addressData.street,
-            number: addressData.number,
-            complement: addressData.complement || '',
-            neighborhood: addressData.neighborhood,
-            city: addressData.city,
-            state: addressData.state,
-            zipcode: addressData.zipcode,
-            latitude: addressData.latitude || null,
-            longitude: addressData.longitude || null,
+            street: payload.street,
+            number: payload.number,
+            complement: payload.complement || '',
+            neighborhood: payload.neighborhood,
+            city: payload.city,
+            state: payload.state,
+            zipcode: payload.zipcode,
+            latitude: payload.latitude || null,
+            longitude: payload.longitude || null,
           },
         ],
       });
@@ -152,7 +144,7 @@ export default class UserAddress extends VuexModule {
 
       return addressId;
     } catch (error) {
-      console.error('Erro ao criar endereço do usuário:', error);
+      console.error('Erro ao criar endereço:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);
@@ -160,46 +152,42 @@ export default class UserAddress extends VuexModule {
   }
 
   @Action
-  public async updateUserAddress(payload: { addressId: string, data: Partial<UserAddressPayload> }) {
+  public async fetchUpdateAddress(payload: { addressId: string, payload: Partial<AddressPayload> }) {
     try {
       this.context.commit('SET_LOADING', true);
-
-      const { addressId, data } = payload;
 
       const addressResponse = await $axios.$patch('address', {
         data: [
           {
-            id: addressId,
-            ...data
+            id: payload.addressId,
+            ...payload.payload
           },
         ],
       });
 
-      const result = handleUpdateResponse(addressResponse, 'Falha ao atualizar endereço', null);
+      const { data } = handleUpdateResponse(addressResponse, 'Falha ao atualizar endereço', null);
 
-      this.context.commit('SET_ADDRESS', result[0]);
-
-      return result[0];
+      return data;
     } catch (error) {
-      console.error('Erro ao atualizar endereço do usuário:', error);
+      console.error('Erro ao atualizar endereço:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);
     }
   }
 
+
   @Action
-  public async deleteUserAddress(addressId: string) {
+  public async fetchDeleteAddress(addressId: string) {
     try {
       this.context.commit('SET_LOADING', true);
 
       const response = await $axios.$delete(`address/${addressId}`);
+      const { data } = handleDeleteResponse(response, 'Falha ao deletar endereço', null);
 
-      const result = handleDeleteResponse(response, 'Falha ao deletar endereço', null);
-
-      return result;
+      return data;
     } catch (error) {
-      console.error('Erro ao deletar endereço do usuário:', error);
+      console.error('Erro ao deletar endereço:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);

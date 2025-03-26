@@ -27,6 +27,7 @@ import EventCollaborators from '@/store/eventCollaborators';
 import EventCheckout from '@/store/eventCheckout';
 import UserDocuments from '@/store/userDocuments';
 import UserAddress from '@/store/userAddress';
+import Address from '~/store/address';
 
 let auth: Auth;
 let toast: Toast;
@@ -53,7 +54,7 @@ let eventCollaborators: EventCollaborators;
 let eventCheckout: EventCheckout;
 let userDocuments: UserDocuments;
 let userAddress: UserAddress;
-
+let address: Address;
 const initializeStores = (store: Store<any>) => {
   auth = getModule(Auth, store);
   toast = getModule(Toast, store);
@@ -80,6 +81,7 @@ const initializeStores = (store: Store<any>) => {
   eventCheckout = getModule(EventCheckout, store);
   userDocuments = getModule(UserDocuments, store);
   userAddress = getModule(UserAddress, store);
+  address = getModule(Address, store);
 };
 
 export {
@@ -109,4 +111,5 @@ export {
   eventCheckout,
   userDocuments,
   userAddress,
+  address,
 };

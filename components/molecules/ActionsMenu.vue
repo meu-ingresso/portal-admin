@@ -6,9 +6,17 @@
       </v-btn>
     </template>
     <v-list dense>
+      <!-- Opção de Ver Pedidos -->
+      <v-list-item @click="$emit('view-orders')">
+        <v-list-item-icon class="mr-2">
+          <v-icon>mdi-cart</v-icon>
+        </v-list-item-icon>
+        <v-list-item-title>Ver pedidos</v-list-item-title>
+      </v-list-item>
+
       <!-- Opção de Editar -->
       <template v-if="showEdit">
-        <v-list-item @click="onEdit">
+        <v-list-item @click="$emit('edit')">
           <v-list-item-icon class="mr-2">
             <v-icon>mdi-pencil</v-icon>
           </v-list-item-icon>
@@ -18,7 +26,7 @@
 
       <!-- Opção de Duplicar -->
       <template v-if="showDuplicate">
-        <v-list-item @click="onDuplicate">
+        <v-list-item @click="$emit('duplicate')">
           <v-list-item-icon class="mr-2">
             <v-icon>mdi-content-copy</v-icon>
           </v-list-item-icon>
@@ -28,7 +36,7 @@
 
       <!-- Opção de Interromper Vendas -->
       <template v-if="showStopSales">
-        <v-list-item @click="onStopSales">
+        <v-list-item @click="$emit('stop-sales')">
           <v-list-item-icon class="mr-2">
             <v-icon>mdi-pause-circle</v-icon>
           </v-list-item-icon>
@@ -38,7 +46,7 @@
 
       <!-- Opção de Excluir -->
       <template v-if="showDelete">
-        <v-list-item @click="onDelete">
+        <v-list-item @click="$emit('delete')">
           <v-list-item-icon class="mr-2">
             <v-icon color="red">mdi-delete</v-icon>
           </v-list-item-icon>
@@ -76,20 +84,6 @@ export default {
     icon: {
       type: String,
       default: 'mdi-dots-vertical',
-    },
-  },
-  methods: {
-    onEdit() {
-      this.$emit('edit', this.index);
-    },
-    onDuplicate() {
-      this.$emit('duplicate', this.index);
-    },
-    onDelete() {
-      this.$emit('delete', this.index);
-    },
-    onStopSales() {
-      this.$emit('stop-sales', this.index);
     },
   },
 };
