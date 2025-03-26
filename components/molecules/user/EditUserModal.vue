@@ -177,13 +177,20 @@
                   <h3 class="text-subtitle-1 font-weight-bold mb-1">Documentos</h3>
                   <p class="text-caption grey--text">Documentos enviados para completude cadastral</p>
                 </div>
-                <ButtonWithIcon
-                  v-if="documentAttachments && documentAttachments.length > 0"
-                  text="Limpar Documentos"
-                  icon="mdi-file-remove"
-                  color="error"
-                  @click="confirmClearDocuments"
-                />
+
+                <v-tooltip bottom>
+                  <template #activator="{ on, attrs }">
+                    <v-icon
+                      v-bind="attrs"
+                      color="red"
+                      v-on="on"
+                      @click="confirmClearDocuments"
+                      >
+                        mdi-file-remove
+                      </v-icon>
+                    </template>
+                    Limpar Documentos
+                  </v-tooltip>
               </div>
             </v-col>
             
@@ -204,14 +211,6 @@
                       <td>{{ formatDateTimeWithTimezone(doc.created_at) }}</td>
                       <td>
                         <div class="d-flex justify-end">
-                          <v-btn
-                            small
-                            icon
-                            color="error"
-                            @click="confirmDeleteDocument(doc)"
-                        >
-                            <v-icon small>mdi-delete</v-icon>
-                          </v-btn>
                           <v-btn
                             small
                             icon
@@ -376,7 +375,8 @@ export default {
       return filteredDocuments.map(doc => ({
         name: doc.name,
         created_at: doc.created_at,
-        value: doc.value
+        value: doc.value,
+        id: doc.id
       }));
     },
     
