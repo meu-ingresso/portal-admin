@@ -3,7 +3,7 @@
     <v-btn-toggle
       v-model="localValue"
       mandatory
-      class="person-type-toggle d-flex flex-column flex-sm-row"
+      class="person-type-toggle d-flex flex-xs-column"
       @change="updateValue"
     >
       <v-btn

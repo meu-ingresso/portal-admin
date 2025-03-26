@@ -128,7 +128,7 @@ export default {
     return {
       headers: [
         { text: 'E-mail', value: 'email', sortable: true },
-        { text: 'Nome / Empresa', value: 'full_name', sortable: false },
+        { text: 'Nome', value: 'full_name', sortable: false },
         { text: 'Tipo de Pessoa', value: 'person_type', sortable: false },
         { text: 'Verificado', value: 'account_verified', sortable: false },
         { text: 'Docs. Enviados', value: 'document_sent', sortable: false },

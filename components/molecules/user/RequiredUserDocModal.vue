@@ -1,6 +1,6 @@
 <template>
   <v-dialog :value="showDocumentDialog" persistent max-width="960" :fullscreen="isMobile" @input="$emit('update:showDocumentDialog', $event)">
-    <v-card class="d-flex flex-column" >
+    <v-card class="d-flex flex-column" :tile="isMobile" :flat="isMobile">
       <v-row no-gutters>
         <v-col cols="12" md="5" class="d-flex flex-column py-8 px-8" :class="{'justify-space-between': !isMobile}">
           <div class="text-center mb-6 mb-md-10">
@@ -20,7 +20,7 @@
         
         <v-col cols="12" md="7">
           <v-card tile flat class="bg-tertiary">
-            <v-card-title class="d-flex justify-end align-center">
+            <v-card-title class="d-flex justify-end align-center" :class="{'fixed-top bg-transparent': isMobile}">
               <v-btn icon @click="closeDocumentDialog">
                 <v-icon>mdi-close</v-icon>
               </v-btn>
@@ -367,18 +367,20 @@ export default {
           pixKeyType: this.pixKeyType
         });
 
+        let addressId = this.currentAddress?.id || null;
+
         // Salva os dados de endereço do usuário
-        if (this.currentAddress && this.currentAddress.id) {
+        if (addressId) {
           // Atualiza endereço existente
           await userAddress.updateUserAddress({
-            addressId: this.currentAddress.id,
+            addressId,
             data: {
               ...this.currentAddress,
             }
           });
         } else {
           // Cria um novo endereço
-          await userAddress.createUserAddress({
+          addressId = await userAddress.createUserAddress({
             ...this.currentAddress,
           });
         }
@@ -402,7 +404,7 @@ export default {
         const peopleData = {
           id: this.people.id,
           person_type: this.personType,
-          address_id: this.currentAddress.id
+          address_id: addressId,
         };
         
         if (this.personType === 'PF') {
@@ -606,6 +608,14 @@ export default {
   right: 0;
   background-color: white;
   z-index: 1;
+}
+
+.fixed-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
 }
 
 @media (min-width: 960px) {

@@ -4,7 +4,7 @@
       <v-col cols="12" md="6" sm="12">
         <div class="events-template-title">Lista de Eventos</div>
       </v-col>
-      <v-col cols="12" md="6" sm="12" class="d-flex justify-md-end justify-sm-start">
+      <v-col cols="12" md="6" sm="12" class="d-flex" :class="{ 'justify-md-end': !isMobile, 'justify-space-between': isMobile }">
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -20,7 +20,7 @@
           </template>
           <span>Ver calendário de eventos</span>
         </v-tooltip>
-        <DefaultButton text="Criar um evento" :block="isMobile" to="/events/create" />
+        <DefaultButton text="Criar um evento"  to="/events/create" />
       </v-col>
     </v-row>
     <div class="actions">
