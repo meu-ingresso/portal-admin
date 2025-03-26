@@ -50,7 +50,14 @@
           </template>
           
           <template #[`item.full_name`]="{ item }">
-            {{ item.people?.first_name }} {{ item.people?.last_name }}
+
+            <span v-if="item.people?.person_type === 'PF'">
+              {{ item.people?.first_name }} {{ item.people?.last_name }}
+            </span>
+
+            <span v-else>
+              {{ item.people?.social_name }}
+            </span>
           </template>
           
           <template #[`item.account_verified`]="{ item }">
@@ -120,12 +127,12 @@ export default {
   data() {
     return {
       headers: [
-        { text: 'Data de Cadastro', value: 'created_at', sortable: true },
         { text: 'E-mail', value: 'email', sortable: true },
-        { text: 'Nome Completo', value: 'full_name', sortable: false },
+        { text: 'Nome / Empresa', value: 'full_name', sortable: false },
+        { text: 'Tipo de Pessoa', value: 'person_type', sortable: false },
         { text: 'Verificado', value: 'account_verified', sortable: false },
         { text: 'Docs. Enviados', value: 'document_sent', sortable: false },
-        { text: 'Tipo de Pessoa', value: 'person_type', sortable: false },
+        { text: 'Data de Cadastro', value: 'created_at', sortable: true },
         { text: 'Ações', value: 'actions', sortable: false }
       ],
       users: [],
