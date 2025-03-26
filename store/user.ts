@@ -196,55 +196,77 @@ export default class User extends VuexModule {
   }
 
   @Action
-  public async getUsers({ page, limit, search, sortBy, sortDesc, preloads = ['people'] }: ExtendedSearchPayload) {
-    let filter = '';
-    let filter2 = '';
-    let orderAux = '';
-    let preloadsStr = '';
+  public async getUsers({ 
+    page = 1, 
+    limit = 12, 
+    search, 
+    sortBy = [], 
+    sortDesc = [], 
+    preloads = ['people'] 
+  }: ExtendedSearchPayload) {
+    try {
+      const params = new URLSearchParams();
 
-    filter += page ? `page=${page}&` : '';
-    filter += limit ? `limit=${limit}&` : '';
-    
-    // Add preloads if provided
-    if (preloads && preloads.length > 0) {
-      preloadsStr = preloads.map(preload => `preloads[]=${preload}`).join('&');
-      if (preloadsStr) {
-        preloadsStr = `&${preloadsStr}`;
-      }
-    }
+      // Paginação
+      params.append('page', String(page));
+      params.append('limit', String(limit));
 
-    for (let i = 0; i < sortBy.length; i++) {
-      const sortDescAux = sortDesc[i] ? 'desc' : 'asc';
-      orderAux += `&orderBy[]=${sortBy[i]}:${sortDescAux}`;
-    }
-
-    if (search) {
-      const newString = encodeURIComponent(`${search}`);
-      filter2 += `&search[people][first_name:last_name][o]=LIKE&search[people][first_name:last_name][v]=${newString}&search[email][o]=LIKE&search[email][v]=${newString}`;
-    }
-
-    const status = await $axios
-      .$get(`users?${filter}${filter2}&preloads[]=role${preloadsStr}${orderAux}`)
-      .then((response) => {
-        if (response.body && response.body.code !== 'SEARCH_SUCCESS')
-          throw new Error(response);
-
-        this.context.commit('SET_USER_LIST', response.body.result.data);
-
-        return {
-          data: response.body.result.data,
-          code: response.body.code,
-          total: response.body.result.meta.total,
-        };
-      })
-      .catch(() => {
-        return {
-          data: 'Error',
-          code: 'SEARCH_NOTFOUND',
-          total: 0,
-        };
+      // Ordenação
+      sortBy.forEach((field: string, index: number) => {
+        const order = sortDesc[index] ? 'desc' : 'asc';
+        params.append('orderBy[]', `${field}:${order}`);
       });
-    return status;
+
+      // Busca
+      if (search) {
+        const searchValue = String(search);
+        const encodedSearch = encodeURIComponent(searchValue);
+
+        // Busca com OR em todos os campos relevantes
+        params.append('search[email][o]', 'LIKE');
+        params.append('search[email][v]', encodedSearch);
+        params.append('search[people][first_name:last_name:social_name:tax:person_type][o]', 'LIKE');
+        params.append('search[people][first_name:last_name:social_name:tax:person_type][v]', encodedSearch);
+      }
+
+      // Preloads
+      const defaultPreloads = ['role', 'attachments'];
+      [...new Set([...preloads, ...defaultPreloads])].forEach(preload => {
+        if (preload === 'people') {
+          params.append('preloads[]', 'people:address');
+        } else {
+          params.append('preloads[]', preload);
+        }
+      });
+
+      const response = await $axios.$get(`users?${params.toString()}`);
+      
+      const result = handleGetResponse(response, 'Usuários não encontrados', null, true);
+
+      if (result && result.data) {
+        this.context.commit('SET_USER_LIST', result.data);
+      }
+
+      return {
+        data: result.data,
+        meta: result.meta,
+        code: response.body.code
+      };
+
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          perPage: limit,
+          currentPage: page,
+          lastPage: 1,
+          firstPage: 1
+        },
+        code: 'SEARCH_NOTFOUND'
+      };
+    }
   }
 
   @Action
