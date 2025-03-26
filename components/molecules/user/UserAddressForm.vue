@@ -1,9 +1,5 @@
 <template>
   <div class="user-address-form">
-    <p class="text-subtitle-1 grey--text mb-4">
-      Informe seu endereço para emissão de nota fiscal e comprovantes.
-    </p>
-    
     <v-form ref="form">
       <!-- Campo de busca de endereço (linha inteira) -->
       <v-row>
@@ -144,6 +140,11 @@ export default {
     };
   },
   computed: {
+
+    isLoading() {
+      return userAddress.$isLoading;
+    },
+
     isAddressFilled() {
       const address = userAddress.$address;
       return (
@@ -451,10 +452,6 @@ export default {
 </script>
 
 <style scoped>
-.user-address-form {
-  margin-bottom: 16px;
-}
-
 .autocomplete-results {
   position: absolute;
   z-index: 10;

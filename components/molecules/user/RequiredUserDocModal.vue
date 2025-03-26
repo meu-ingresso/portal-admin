@@ -1,10 +1,10 @@
 <template>
   <v-dialog :value="showDocumentDialog" persistent max-width="960" :fullscreen="isMobile" @input="$emit('update:showDocumentDialog', $event)">
-    <v-card class="d-flex flex-column">
+    <v-card class="d-flex flex-column" >
       <v-row no-gutters>
         <v-col cols="12" md="5" class="d-flex flex-column py-8 px-8" :class="{'justify-space-between': !isMobile}">
           <div class="text-center mb-6 mb-md-10">
-            <img :src="fingerPrintIcon" alt="Fingerprint Icon" class="fingerprint-icon">
+            <img :src="fingerPrintIcon" alt="Fingerprint Icon" class="fingerprint-icon" :class="{'small-icon': isMobile}">
           </div>
           <div>
             <div class="d-flex align-center">
@@ -18,90 +18,100 @@
           </div>
         </v-col>
         
-        <v-col cols="12" md="7" class="bg-tertiary py-8 px-8">
-          <div class="d-flex justify-end">
-            <v-btn icon @click="closeDocumentDialog">
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
-          </div>
-          
-          <div class="py-2 py-md-4 user-doc-form">
-            <!-- Step 1: Informações pessoais -->
-            <div v-if="currentStep === 1">
-              <PersonTypeSelector 
-                :model-value="personType" 
-                @update:modelValue="personType = $event" 
-              />
-              
-              <p class="text-subtitle-1 grey--text mb-6 mb-md-8">
-                Os dados devem ser de acordo com seu documento oficial, sem abreviatura.
-              </p>
-              
-              <PhysicalPersonForm
-                v-if="personType === 'PF'"
-                :cpf="cpf"
-                :first-name="firstName"
-                :last-name="lastName"
-                :form-submitted="formSubmitted"
-                @update:cpf="cpf = $event"
-                @update:firstName="firstName = $event"
-                @update:lastName="lastName = $event"
-              />
+        <v-col cols="12" md="7">
+          <v-card tile flat class="bg-tertiary">
+            <v-card-title class="d-flex justify-end align-center">
+              <v-btn icon @click="closeDocumentDialog">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </v-card-title>
 
-              <LegalPersonForm
-                v-else
-                :cnpj="cnpj"
-                :company-name="companyName"
-                :trade-name="tradeName"
-                :form-submitted="formSubmitted"
-                @update:cnpj="cnpj = $event"
-                @update:companyName="companyName = $event"
-                @update:tradeName="tradeName = $event"
+            <v-card-text class="user-doc-form px-4" :class="{'pb-16': isMobile}">
+              <div>
+                <!-- Step 1: Informações pessoais -->
+                <div v-if="currentStep === 1">
+                  <PersonTypeSelector 
+                    :model-value="personType" 
+                    @update:modelValue="personType = $event" 
+                  />
+                  <p class="text-subtitle-1 grey--text mb-6 mb-md-8">
+                    Os dados devem ser de acordo com seu documento oficial, sem abreviatura.
+                  </p>
+                  
+                  <PhysicalPersonForm
+                    v-if="personType === 'PF'"
+                    :cpf="cpf"
+                    :first-name="firstName"
+                    :last-name="lastName"
+                    :form-submitted="formSubmitted"
+                    @update:cpf="cpf = $event"
+                    @update:firstName="firstName = $event"
+                    @update:lastName="lastName = $event" />
+                  
+                    <LegalPersonForm
+                      v-else 
+                      :cnpj="cnpj"
+                      :company-name="companyName"
+                      :trade-name="tradeName"
+                      :form-submitted="formSubmitted"
+                      @update:cnpj="cnpj = $event"
+                      @update:companyName="companyName = $event"
+                      @update:tradeName="tradeName = $event"
+                      />
+                </div>
+                <!-- Step 2: Informações de endereço -->
+                <div v-else-if="currentStep === 2">
+                  <p class="text-subtitle-1 grey--text mb-4">
+                    Informe seu endereço para emissão de nota fiscal e comprovantes.
+                  </p>
+                  <UserAddressForm />
+                </div>
+                <!-- Step 3: Informações para recebimento -->
+                <div v-else-if="currentStep === 3">
+                  <p class="text-subtitle-1 grey--text mb-8">
+                    Informe sua chave PIX para receber os valores das vendas.
+                  </p>
+                  <PixKeyForm
+                    :pix-key-type="pixKeyType"
+                    :pix-key="bankInfo.pixKey"
+                    :form-submitted="formSubmitted"
+                    @update:pixKeyType="pixKeyType = $event"
+                    @update:pixKey="bankInfo.pixKey = $event" />
+                </div>
+                <!-- Step 4: Upload de documentos -->
+                <div v-else>
+                  <DocumentUploadForm
+                    v-model="documentUploadData"
+                    :person-type="personType"
+                    @update:modelValue="updateDocumentUploadData"
+                    @error="handleDocumentError"
+                  
+                  />
+                </div>
+              </div>
+            </v-card-text>
+            <v-card-actions 
+              class="d-flex py-4 px-4" 
+              :class="[
+                currentStep === 1 ? 'justify-end' : 'justify-space-between',
+                {'fixed-bottom': isMobile}
+              ]"
+            >
+              <DefaultButton 
+                v-if="currentStep > 1"
+                text="Voltar" 
+                outlined
+                @click="previousStep" 
               />
-            </div>
-
-            <!-- Step 2: Informações de endereço -->
-            <div v-else-if="currentStep === 2">
-              <UserAddressForm />
-            </div>
-
-            <!-- Step 3: Informações para recebimento -->
-            <div v-else-if="currentStep === 3">
-              <PixKeyForm
-                :pix-key-type="pixKeyType"
-                :pix-key="bankInfo.pixKey"
-                :form-submitted="formSubmitted"
-                @update:pixKeyType="pixKeyType = $event"
-                @update:pixKey="bankInfo.pixKey = $event"
+              <DefaultButton 
+                :text="currentStep === 4 ? 'Concluir' : 'Continuar'" 
+                color="primary"
+                :disabled="!isStepValid || isUploading"
+                :is-loading="isUploading"
+                @click="nextStep" 
               />
-            </div>
-
-            <!-- Step 4: Upload de documentos -->
-            <div v-else>
-              <DocumentUploadForm
-                v-model="documentUploadData"
-                :person-type="personType"
-                @update:modelValue="updateDocumentUploadData"
-                @error="handleDocumentError"
-              />
-            </div>
-          </div>
-
-          <div class="d-flex" :class="currentStep === 1 ? 'justify-end' : 'justify-space-between'">
-            <DefaultButton 
-              v-if="currentStep > 1"
-              text="Voltar" 
-              outlined
-              @click="previousStep" 
-            />
-            <DefaultButton 
-              :text="currentStep === 4 ? 'Concluir' : 'Continuar'" 
-              color="primary"
-              :disabled="!isStepValid || isUploading"
-              :is-loading="isUploading"
-              @click="nextStep" 
-            />
-          </div>
+            </v-card-actions>
+          </v-card>
         </v-col>
       </v-row>
     </v-card>
@@ -149,6 +159,7 @@ export default {
     };
   },
   computed: {
+
     fingerPrintIcon() {
       return require(`~/assets/images/fingerprint_icon.svg`);
     },
@@ -165,8 +176,8 @@ export default {
       return this.$cookies.get('user_id');
     },
 
-    peopleId() {
-      return this.$cookies.get('people_id');
+    people() {
+      return user.$people;
     },
 
     stepTitle() {
@@ -187,12 +198,12 @@ export default {
     isStep1Valid() {
       if (this.personType === 'PF') {
         return this.cpf && /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(this.cpf) && 
-               this.firstName && this.firstName.length >= 2 &&
-               this.lastName && this.lastName.length >= 2;
+               this.firstName && this.firstName?.length >= 2 &&
+               this.lastName && this.lastName?.length >= 2;
       } else {
         return this.cnpj && /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(this.cnpj) &&
-               this.companyName && this.companyName.length >= 3 &&
-               this.tradeName && this.tradeName.length >= 2;
+               this.companyName && this.companyName?.length >= 3 &&
+               this.tradeName && this.tradeName?.length >= 2;
       }
     },
 
@@ -245,6 +256,35 @@ export default {
     }
   },
   watch: {
+
+    showDocumentDialog(newVal) {
+      if (newVal) {
+        const pixInfo = userDocuments.$userAttachments.find(doc => doc.name === 'Pix Key');
+        if (pixInfo) {
+          this.bankInfo.pixKey = pixInfo.value;
+          this.pixKeyType = pixInfo.type;
+        }
+      }else {
+        this.bankInfo.pixKey = '';
+        this.pixKeyType = 'cpf';
+      }
+    },
+
+    people() {
+      if (this.people) {
+        this.firstName = this.people.first_name;
+        this.lastName = this.people.last_name;
+        this.cpf = this.people.tax;
+        this.cnpj = this.people.tax;
+        this.companyName = this.people.social_name;
+        this.tradeName = this.people.fantasy_name;
+        this.personType = this.people.person_type;   
+
+        userAddress.fetchUserAddress(this.people.id);
+        
+      }
+    },
+
     personType() {
       // Reset document upload data when person type changes
       this.documentUploadData = {
@@ -269,20 +309,16 @@ export default {
     // Inicializa os campos de nome e sobrenome a partir do nome completo, se disponível
     if (this.hasDocumentInfo?.fullName) {
       const nameParts = this.hasDocumentInfo.fullName.split(' ');
-      if (nameParts.length > 0) {
+      if (nameParts && nameParts.length > 0) {
         this.firstName = nameParts[0];
         this.lastName = nameParts.slice(1).join(' ');
       }
     }
 
-    // Carrega os dados de endereço do usuário se disponível
-    if (this.peopleId) {
-      // userAddress.fetchUserAddress(this.peopleId);
-    }
   },
+
   methods: {
     updateDocumentUploadData(data) {
-      console.log('updateDocumentUploadData', data);
       this.documentUploadData = data;
     },
 
@@ -334,25 +370,22 @@ export default {
         // Salva os dados de endereço do usuário
         if (this.currentAddress && this.currentAddress.id) {
           // Atualiza endereço existente
-          await userAddress.updateUserAddress(this.currentAddress.id, {
-            ...this.currentAddress,
-            // Garantir que o status do CEP seja preservado
-            isApiZipcode: this.currentAddress.isApiZipcode
+          await userAddress.updateUserAddress({
+            addressId: this.currentAddress.id,
+            data: {
+              ...this.currentAddress,
+            }
           });
         } else {
           // Cria um novo endereço
           await userAddress.createUserAddress({
             ...this.currentAddress,
-            // Garantir que o status do CEP seja preservado
-            isApiZipcode: this.currentAddress.isApiZipcode
           });
         }
         
-
         await event.fetchAndUpdateEventsAfterUserDocuments(this.userId);
 
         // 3. Atualiza o nome do usuário no cookie
-
         if (this.personType === 'PF') {
           auth.updateUserName({
             first: this.firstName,
@@ -367,7 +400,7 @@ export default {
     
         // 4. Atualiza tipo de pessoa e nome completo da base
         const peopleData = {
-          id: this.peopleId,
+          id: this.people.id,
           person_type: this.personType,
           address_id: this.currentAddress.id
         };
@@ -525,7 +558,7 @@ export default {
         case 'phone':
           return /^\(\d{2}\)\s\d{5}-\d{4}$/.test(pixKey) || /^\+55\d{2}\d{9}$/.test(pixKey);
         case 'random':
-          return pixKey.length > 0;
+          return pixKey?.length > 0;
         default:
           return false;
       }
@@ -541,19 +574,19 @@ export default {
 }
 
 .user-doc-form {
-  display: flex;
-  flex-direction: column;
   min-height: 465px;
-}
-
-.step-indicator {
-  align-items: center;
+  overflow-y: auto;
 }
 
 .fingerprint-icon {
   width: 120px;
   height: 120px;
   max-width: 100%;
+}
+
+.small-icon {
+  width: 80px;
+  height: 80px;
 }
 
 .blue-check-icon {
@@ -564,5 +597,25 @@ export default {
 
 .custom-line-height {
   line-height: 1.2;
+}
+
+.fixed-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  z-index: 1;
+}
+
+@media (min-width: 960px) {
+  .v-card-actions {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 58.33%; /* Corresponde à largura de md="7" */
+    background-color: #f5f5f5; /* Ajuste conforme a cor de bg-tertiary */
+    z-index: 1;
+  }
 }
 </style>

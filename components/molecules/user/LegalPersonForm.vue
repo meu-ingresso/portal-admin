@@ -34,7 +34,7 @@
       :error-messages="companyNameErrors"
       :rules="[
         v => !!v || 'Razão Social obrigatória',
-        v => v.length >= 3 || 'Razão Social deve ter pelo menos 3 caracteres'
+        v => v?.length >= 3 || 'Razão Social deve ter pelo menos 3 caracteres'
       ]"
       validate-on-blur
       required
@@ -54,7 +54,7 @@
       :error-messages="tradeNameErrors"
       :rules="[
         v => !!v || 'Nome Fantasia obrigatório',
-        v => v.length >= 2 || 'Nome Fantasia deve ter pelo menos 2 caracteres'
+        v => v?.length >= 2 || 'Nome Fantasia deve ter pelo menos 2 caracteres'
       ]"
       validate-on-blur
       required
@@ -100,11 +100,11 @@ export default {
     },
     
     companyNameValid() {
-      return this.companyNameModel && this.companyNameModel.length >= 3;
+      return this.companyNameModel && this.companyNameModel?.length >= 3;
     },
     
     tradeNameValid() {
-      return this.tradeNameModel && this.tradeNameModel.length >= 2;
+      return this.tradeNameModel && this.tradeNameModel?.length >= 2;
     },
     
     cnpjErrors() {
@@ -117,14 +117,14 @@ export default {
     companyNameErrors() {
       if (!this.formSubmitted) return [];
       if (!this.companyNameModel) return ['Razão Social obrigatória'];
-      if (this.companyNameModel.length < 3) return ['Razão Social deve ter pelo menos 3 caracteres'];
+      if (this.companyNameModel?.length < 3) return ['Razão Social deve ter pelo menos 3 caracteres'];
       return [];
     },
     
     tradeNameErrors() {
       if (!this.formSubmitted) return [];
       if (!this.tradeNameModel) return ['Nome Fantasia obrigatório'];
-      if (this.tradeNameModel.length < 2) return ['Nome Fantasia deve ter pelo menos 2 caracteres'];
+      if (this.tradeNameModel?.length < 2) return ['Nome Fantasia deve ter pelo menos 2 caracteres'];
       return [];
     },
     

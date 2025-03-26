@@ -176,7 +176,7 @@ export default class Auth extends VuexModule {
   }
 
   @Action
-  public  updateUserName(payload: { first: string, last: string }) {
+  public updateUserName(payload: { first: string, last: string }) {
     try {
       this.context.commit('SET_IS_UPDATING_USER_NAME', true);
 

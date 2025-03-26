@@ -1,35 +1,9 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-disable camelcase */
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-
 import { $axios } from '@/utils/nuxt-instance';
-
-import { SearchPayload as BaseSearchPayload } from '@/models';
+import { SearchPayload as BaseSearchPayload, PeoplePayload, UserWithRelations, RolePayload } from '@/models';
 import { handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
-import { RoleApiResponse, UserApiResponse } from '~/models/event';
-
-interface CreatePayload {
-  first_name: String;
-  last_name: String;
-  cellphone: String;
-  email: String;
-  password: String;
-  id_erp?: String;
-  hiring_mode: String;
-  role_id: String;
-  is_active: Boolean;
-  sellers: Array<String>;
-}
-
-interface PeoplePayload {
-  id: string;
-  person_type?: 'PF' | 'PJ';
-  first_name?: string;
-  last_name?: string;
-  tax?: string;
-  social_name?: string;
-  fantasy_name?: string;
-}
 
 interface ExtendedSearchPayload extends BaseSearchPayload {
   preloads?: string[];
@@ -37,7 +11,7 @@ interface ExtendedSearchPayload extends BaseSearchPayload {
 
 @Module({ name: 'user', stateFactory: true, namespaced: true })
 export default class User extends VuexModule {
-  private user: UserApiResponse = {
+  private user: UserWithRelations = {
     id: '',
     people_id: '',
     email: '',
@@ -57,15 +31,27 @@ export default class User extends VuexModule {
       email: '',
       created_at: '',
       updated_at: '',
+      address: {
+        id: '',
+        street: '',
+        number: '',
+        neighborhood: '',
+        zipcode: '',
+        city: '',
+        state: '',
+      },
     },
     role: {
       id: '',
       name: '',
       description: '',
+      created_at: '',
+      updated_at: '',
     },
+    attachments: [],
   };
 
-  private copyUser: UserApiResponse = {
+  private copyUser: UserWithRelations = {
     id: '',
     people_id: '',
     email: '',
@@ -85,12 +71,22 @@ export default class User extends VuexModule {
       email: '',
       created_at: '',
       updated_at: '',
+      address: {
+        id: '',
+        street: '',
+        number: '',
+        neighborhood: '',
+        zipcode: '',
+        city: '',
+        state: '',
+      },
     },
     role: {
       id: '',
       name: '',
       description: '',
     },
+    attachments: [],
   };
 
   private userList = [];
@@ -99,6 +95,10 @@ export default class User extends VuexModule {
 
   public get $user() {
     return this.user;
+  }
+
+  public get $people() {
+    return this.user.people;
   }
 
   public get $userList() {
@@ -110,18 +110,18 @@ export default class User extends VuexModule {
   }
 
   @Mutation
-  private SET_USER(payload: UserApiResponse) {
+  private SET_USER(payload: UserWithRelations) {
     this.user = payload;
     this.copyUser = { ...this.user };
   }
 
   @Mutation
-  private SET_USER_LIST(data: UserApiResponse[]) {
+  private SET_USER_LIST(data: UserWithRelations[]) {
     this.userList = data;
   }
 
   @Mutation
-  private SET_ROLE_LIST(data: RoleApiResponse[]) {
+  private SET_ROLE_LIST(data: RolePayload[]) {
     this.roleList = data;
   }
 
@@ -147,64 +147,30 @@ export default class User extends VuexModule {
         email: '',
         created_at: '',
         updated_at: '',
+        address: {
+          id: '',
+          street: '',
+          number: '',
+          neighborhood: '',
+          zipcode: '',
+          city: '',
+          state: '',
+        },
       },
       role: {
         id: '',
         name: '',
         description: '',
       },
+      attachments: [],
     };
     this.copyUser = { ...this.user };
   }
 
   @Action
-  public async create(payload: CreatePayload) {
-    return await $axios
-      .$post('user', payload)
-      .then((response) => {
-        if (response.body && response.body.code !== 'CREATE_SUCCESS')
-          throw new Error(response);
-
-        return response;
-      })
-      .catch(({ response }) => {
-        return response;
-      });
-  }
-
-  @Action
-  public async update() {
-    const payload: UserApiResponse = {
-      id: this.user.id,
-      people_id: this.user.people_id,
-      email: this.user.email,
-      alias: this.user.alias,
-      role_id: this.user.role_id,
-      account_verified: this.user.account_verified,
-      created_at: this.user.created_at,
-      updated_at: this.user.updated_at,
-      deleted_at: this.user.deleted_at,
-      people: this.user.people,
-      role: this.user.role,
-    };
-
-    return await $axios
-      .$patch('user', payload)
-      .then((response) => {
-        if (response.body && response.body.code !== 'UPDATE_SUCCESS')
-          throw new Error(response);
-
-        return response;
-      })
-      .catch(({ response }) => {
-        return response;
-      });
-  }
-
-  @Action
   public async get(user_id: string) {
 
-    const response = await $axios.$get(`users?where[id][v]=${user_id}&preloads[]=people&preloads[]=role`);
+    const response = await $axios.$get(`users?where[id][v]=${user_id}&preloads[]=people:address&preloads[]=role&preloads[]=attachments`);
     
     const result = handleGetResponse(response, 'Usuário não encontrado', null, true);
 
@@ -218,7 +184,7 @@ export default class User extends VuexModule {
   @Action
   public async getAllUsers() {
     const response = await $axios
-      .$get('users?preloads[]=people&preloads[]=role');
+      .$get('users?preloads[]=people:address&preloads[]=role&preloads[]=attachments&limit=9999');
     
     const responseResult = handleGetResponse(response, 'Usuários não encontrados', null, true);
 

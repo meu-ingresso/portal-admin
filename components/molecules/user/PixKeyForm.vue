@@ -1,45 +1,42 @@
 <template>
-  <div>
-    <p class="text-subtitle-1 grey--text mb-8">
-      Informe sua chave PIX para receber os valores das vendas.
-    </p>
-    
-    <v-select
-      v-model="pixKeyTypeModel"
-      label="Tipo de chave PIX"
-      outlined
-      dense
-      hide-details="auto"
-      class="mb-6"
-      :items="pixKeyTypeOptions"
-      :error-messages="pixKeyTypeErrors"
-      :rules="[v => !!v || 'Tipo de chave PIX obrigatório']"
-      validate-on-blur
-      required
-    ></v-select>
-    
-    <v-text-field
-      v-model="pixKeyModel"
-      label="Chave PIX"
-      outlined
-      aria-autocomplete="off"
-      dense
-      hide-details="auto"
-      class="mb-6"
-      :error-messages="pixKeyErrors"
-      :rules="[
-        v => !!v || 'Chave PIX obrigatória',
-        v => validatePixKey(v) || getPixKeyErrorMessage()
-      ]"
-      :maxlength="pixKeyMaxLength"
-      validate-on-blur
-      required
-      :placeholder="getPixKeyPlaceholder()"
-      :append-icon="pixKeyValid ? 'mdi-check' : ''"
-      :append-icon-color="pixKeyValid ? 'success' : ''"
-      @input="formatPixKey"
-    ></v-text-field>
-  </div>
+  <v-row>
+    <v-col cols="12" :md="formInline ? 6 : 12" sm="12"> 
+      <v-select
+        v-model="pixKeyTypeModel"
+        label="Tipo de chave PIX"
+        outlined
+        dense
+        hide-details="auto"
+        :items="pixKeyTypeOptions"
+        :error-messages="pixKeyTypeErrors"
+        :rules="[v => !!v || 'Tipo de chave PIX obrigatório']"
+        validate-on-blur
+        required
+      ></v-select>
+    </v-col>
+    <v-col cols="12" :md="formInline ? 6 : 12" sm="12"> 
+      <v-text-field
+        v-model="pixKeyModel"
+        label="Chave PIX"
+        outlined
+        aria-autocomplete="off"
+        dense
+        hide-details="auto"
+        :error-messages="pixKeyErrors"
+        :rules="[
+          v => !!v || 'Chave PIX obrigatória',
+          v => validatePixKey(v) || getPixKeyErrorMessage()
+        ]"
+        :maxlength="pixKeyMaxLength"
+        validate-on-blur
+        required
+        :placeholder="getPixKeyPlaceholder()"
+        :append-icon="pixKeyValid ? 'mdi-check' : ''"
+        :append-icon-color="pixKeyValid ? 'success' : ''"
+        @input="formatPixKey"
+      ></v-text-field>
+    </v-col>
+  </v-row>
 </template>
 
 <script>
@@ -56,6 +53,10 @@ export default {
       default: ''
     },
     formSubmitted: {
+      type: Boolean,
+      default: false
+    },
+    formInline: {
       type: Boolean,
       default: false
     }
