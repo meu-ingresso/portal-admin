@@ -61,10 +61,16 @@
                 </div>
                 <!-- Step 2: Informações de endereço -->
                 <div v-else-if="currentStep === 2">
+                  <p class="text-subtitle-1 grey--text mb-4">
+                    Informe seu endereço para emissão de nota fiscal e comprovantes.
+                  </p>
                   <UserAddressForm />
                 </div>
                 <!-- Step 3: Informações para recebimento -->
                 <div v-else-if="currentStep === 3">
+                  <p class="text-subtitle-1 grey--text mb-8">
+                    Informe sua chave PIX para receber os valores das vendas.
+                  </p>
                   <PixKeyForm
                     :pix-key-type="pixKeyType"
                     :pix-key="bankInfo.pixKey"
@@ -153,6 +159,7 @@ export default {
     };
   },
   computed: {
+
     fingerPrintIcon() {
       return require(`~/assets/images/fingerprint_icon.svg`);
     },
@@ -169,8 +176,8 @@ export default {
       return this.$cookies.get('user_id');
     },
 
-    peopleId() {
-      return this.$cookies.get('people_id');
+    people() {
+      return user.$people;
     },
 
     stepTitle() {
@@ -191,12 +198,12 @@ export default {
     isStep1Valid() {
       if (this.personType === 'PF') {
         return this.cpf && /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(this.cpf) && 
-               this.firstName && this.firstName.length >= 2 &&
-               this.lastName && this.lastName.length >= 2;
+               this.firstName && this.firstName?.length >= 2 &&
+               this.lastName && this.lastName?.length >= 2;
       } else {
         return this.cnpj && /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(this.cnpj) &&
-               this.companyName && this.companyName.length >= 3 &&
-               this.tradeName && this.tradeName.length >= 2;
+               this.companyName && this.companyName?.length >= 3 &&
+               this.tradeName && this.tradeName?.length >= 2;
       }
     },
 
@@ -249,6 +256,35 @@ export default {
     }
   },
   watch: {
+
+    showDocumentDialog(newVal) {
+      if (newVal) {
+        const pixInfo = userDocuments.$userAttachments.find(doc => doc.name === 'Pix Key');
+        if (pixInfo) {
+          this.bankInfo.pixKey = pixInfo.value;
+          this.pixKeyType = pixInfo.type;
+        }
+      }else {
+        this.bankInfo.pixKey = '';
+        this.pixKeyType = 'cpf';
+      }
+    },
+
+    people() {
+      if (this.people) {
+        this.firstName = this.people.first_name;
+        this.lastName = this.people.last_name;
+        this.cpf = this.people.tax;
+        this.cnpj = this.people.tax;
+        this.companyName = this.people.social_name;
+        this.tradeName = this.people.fantasy_name;
+        this.personType = this.people.person_type;   
+
+        userAddress.fetchUserAddress(this.people.id);
+        
+      }
+    },
+
     personType() {
       // Reset document upload data when person type changes
       this.documentUploadData = {
@@ -273,20 +309,16 @@ export default {
     // Inicializa os campos de nome e sobrenome a partir do nome completo, se disponível
     if (this.hasDocumentInfo?.fullName) {
       const nameParts = this.hasDocumentInfo.fullName.split(' ');
-      if (nameParts.length > 0) {
+      if (nameParts && nameParts.length > 0) {
         this.firstName = nameParts[0];
         this.lastName = nameParts.slice(1).join(' ');
       }
     }
 
-    // Carrega os dados de endereço do usuário se disponível
-    if (this.peopleId) {
-      // userAddress.fetchUserAddress(this.peopleId);
-    }
   },
+
   methods: {
     updateDocumentUploadData(data) {
-      console.log('updateDocumentUploadData', data);
       this.documentUploadData = data;
     },
 
@@ -338,25 +370,22 @@ export default {
         // Salva os dados de endereço do usuário
         if (this.currentAddress && this.currentAddress.id) {
           // Atualiza endereço existente
-          await userAddress.updateUserAddress(this.currentAddress.id, {
-            ...this.currentAddress,
-            // Garantir que o status do CEP seja preservado
-            isApiZipcode: this.currentAddress.isApiZipcode
+          await userAddress.updateUserAddress({
+            addressId: this.currentAddress.id,
+            data: {
+              ...this.currentAddress,
+            }
           });
         } else {
           // Cria um novo endereço
           await userAddress.createUserAddress({
             ...this.currentAddress,
-            // Garantir que o status do CEP seja preservado
-            isApiZipcode: this.currentAddress.isApiZipcode
           });
         }
         
-
         await event.fetchAndUpdateEventsAfterUserDocuments(this.userId);
 
         // 3. Atualiza o nome do usuário no cookie
-
         if (this.personType === 'PF') {
           auth.updateUserName({
             first: this.firstName,
@@ -371,7 +400,7 @@ export default {
     
         // 4. Atualiza tipo de pessoa e nome completo da base
         const peopleData = {
-          id: this.peopleId,
+          id: this.people.id,
           person_type: this.personType,
           address_id: this.currentAddress.id
         };
@@ -529,7 +558,7 @@ export default {
         case 'phone':
           return /^\(\d{2}\)\s\d{5}-\d{4}$/.test(pixKey) || /^\+55\d{2}\d{9}$/.test(pixKey);
         case 'random':
-          return pixKey.length > 0;
+          return pixKey?.length > 0;
         default:
           return false;
       }

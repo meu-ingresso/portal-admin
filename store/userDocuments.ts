@@ -1,7 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { user } from '@/utils/store-util';
-import { handleGetResponse } from '~/utils/responseHelpers';
+import { handleDeleteResponse, handleGetResponse } from '~/utils/responseHelpers';
 
 interface UserAttachment {
   id: string;
@@ -44,8 +44,8 @@ export default class UserDocuments extends VuexModule {
     if (this.documentInfo.personType === 'PJ') {
       return this.userAttachments.some(att => att.type === 'document_cnpj');
     } else {
-      return this.userAttachments.some(att => att.type.includes('document_identification'));
-    }
+      return this.userAttachments.some(att => att.type.includes('document_cnh') || att.type.includes('document_rg'));
+    } 
   }
 
   public get $hasPixInfo() {
@@ -131,7 +131,7 @@ export default class UserDocuments extends VuexModule {
   }
 
   @Action
-  public async createUserDocument(payload: { name: string; type: string; userId: string }) {
+  public async createUserDocument(payload: { name: string; type: string; userId: string, value?: string }) {
     try {
       const userId = payload.userId;
       
@@ -144,7 +144,7 @@ export default class UserDocuments extends VuexModule {
           user_id: userId,
           name: payload.name,
           type: payload.type,
-          value: null,
+          value: payload.value || null,
         }]
       });
       
@@ -232,6 +232,7 @@ export default class UserDocuments extends VuexModule {
       
       // Se existir, atualizamos com os novos valores
       if (pixAttachment) {
+
         await this.context.dispatch('updateUserAttachment', {
           id: pixAttachment.id,
           type: pixKeyType,  // Atualizamos o tipo para o novo pixKeyType
@@ -265,6 +266,19 @@ export default class UserDocuments extends VuexModule {
       return pixAttachment;
     } catch (error) {
       console.error('Erro ao salvar informações de PIX:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async deleteUserDocument(payload: { attachmentId: string }) {
+    try {
+      const response = await $axios.$delete(`user-attachment/${payload.attachmentId}`);
+      const { data } = handleDeleteResponse(response, 'Falha ao deletar documento', null);
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao deletar documento:', error);
       throw error;
     }
   }
