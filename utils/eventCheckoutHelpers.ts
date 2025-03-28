@@ -30,7 +30,7 @@
             current_owner_id: payload.ownerId,
             payment_id: payload.paymentId,
             status_id: payload.statusId,
-            custom_fields: instance.fields
+            // custom_fields: instance.fields
           });
         }
       }

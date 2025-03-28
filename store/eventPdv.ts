@@ -343,8 +343,6 @@ export default class EventPdv extends VuexModule {
   public async fetchPdvFromEventAndUserId(payload: { eventId: string; userId: string }) {
     const { eventId, userId } = payload;
 
-    const filterStatus = 'Disponível';
-
     const preloads = [
       'event',
       'status',
@@ -355,7 +353,6 @@ export default class EventPdv extends VuexModule {
     const params = new URLSearchParams();
 
     params.append('where[event_id][v]', eventId);
-    params.append('whereHas[status][name][v]', filterStatus);
     params.append('whereHas[pdvUsers][user_id][v]', userId);
     params.append('limit', '9999');
 
