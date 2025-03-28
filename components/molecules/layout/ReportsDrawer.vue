@@ -180,7 +180,6 @@ export default {
 
 .active-item {
   background-color: var(--primary) !important;
-  border-radius: 8px;
   color: white;
   font-size: 16px !important;
   font-family: var(--font-family) !important;
@@ -207,20 +206,16 @@ export default {
 
 .event-detail-image {
   margin: 0px;
-  margin-bottom: 8px;
   padding: 0;
   overflow: hidden;
 }
 
 .event-drawer-item {
-  padding-right: 8px;
-  padding-left: 8px;
   margin-bottom: 2px;
 }
 
 .event-drawer-item:hover {
   background-color: var(--tertiary);
-  border-radius: 8px;
 }
 
 .event-drawer-item a:hover {
