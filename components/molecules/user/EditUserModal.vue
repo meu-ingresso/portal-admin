@@ -1,10 +1,10 @@
 <template>
   <v-dialog :value="show" persistent max-width="960" :fullscreen="isMobile" @input="$emit('update:show', $event)">
     <v-card class="d-flex flex-column">
-      <v-card-title class="d-flex justify-space-between align-center pa-6">
+      <v-card-title class="d-flex justify-space-between align-start pa-6">
         <div>
           <span class="modalTitle">Editar Usuário</span>
-          <div class="text-caption grey--text mt-1">
+          <div class="text-caption grey--text">
             Cliente desde {{ formatDateToCustomString(user.created_at) }}
           </div>
         </div>
@@ -303,7 +303,7 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { formatDateToCustomString } from '@/utils/formatters';
+import { formatDateToCustomString, formatDateTimeWithTimezone } from '@/utils/formatters';
 import { user, userDocuments, toast, userAddress, event } from '@/store';
 
 export default {
@@ -412,6 +412,7 @@ export default {
 
   methods: {
     formatDateToCustomString,
+    formatDateTimeWithTimezone,
 
     initializeForm(userData) {
       const people = userData.people || {};
