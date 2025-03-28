@@ -127,7 +127,6 @@ export default {
         { text: 'Tipo de Pessoa', value: 'person_type', sortable: false },
         { text: 'Verificado', value: 'account_verified', sortable: false },
         { text: 'Docs. Enviados', value: 'document_sent', sortable: false },
-        { text: 'Data de Cadastro', value: 'created_at', sortable: true },
         { text: 'Ações', value: 'actions', sortable: false }
       ],
       users: [],
