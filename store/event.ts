@@ -642,21 +642,21 @@ export default class Event extends VuexModule {
 
 
   @Action
-  public async fetchAndUpdateEventsAfterUserDocuments(userId: string) {
+  public async updatePromoterEventsFromStatusToStatus(payload: { userId: string, fromStatus: string, toStatus: string }) {
 
     try {
-      const response = await $axios.$get(`events?preloads[]=status&where[promoter_id][v]=${userId}&whereHas[status][name]=Aguardando&limit=9999`);
+      const response = await $axios.$get(`events?preloads[]=status&where[promoter_id][v]=${payload.userId}&whereHas[status][name]=${payload.fromStatus}&limit=9999`);
 
-      const events = handleGetResponse(response, 'Falha ao buscar eventos do promotor com status Aguardando.', null, true);
+      const events = handleGetResponse(response, `Falha ao buscar eventos do promotor com status ${payload.fromStatus}.`, null, true);
 
       if (!events.data.length) {
         return;
       }
 
-      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Em Análise' });
+      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: payload.toStatus });
 
       if (!updateStatus) {
-        throw new Error('Status de análise não encontrado.');
+        throw new Error(`Status ${payload.toStatus} não encontrado.`);
       }
 
       const eventsToUpdate = events.data.map((event: any) => ({
@@ -667,13 +667,13 @@ export default class Event extends VuexModule {
       const updateEvents = await this.updateEvent(eventsToUpdate);
 
       if (!updateEvents.success) {
-        throw new Error('Falha ao atualizar o status dos eventos.');
+        throw new Error(`Falha ao atualizar o status dos eventos para ${payload.toStatus}.`);
       }
 
       return { success: true, data: updateEvents.data };
 
     } catch (error) {
-      console.error('Erro ao buscar eventos:', error);
+      console.error(`Erro ao buscar eventos do promotor ${payload.userId} com status ${payload.fromStatus}:`, error);
       throw error;
     }
   }

@@ -385,7 +385,11 @@ export default {
           });
         }
         
-        await event.fetchAndUpdateEventsAfterUserDocuments(this.userId);
+        await event.updatePromoterEventsFromStatusToStatus({
+          userId: this.userId,
+          fromStatus: 'Aguardando',
+          toStatus: 'Em Análise'
+        });
 
         // 3. Atualiza o nome do usuário no cookie
         if (this.personType === 'PF') {

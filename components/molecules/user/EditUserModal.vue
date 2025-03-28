@@ -299,7 +299,7 @@
 <script>
 import { isMobileDevice } from '@/utils/utils';
 import { formatDateTimeWithTimezone } from '@/utils/formatters';
-import { user, userDocuments, toast, userAddress } from '@/store';
+import { user, userDocuments, toast, userAddress, event } from '@/store';
 
 export default {
   props: {
@@ -588,6 +588,12 @@ export default {
         for (const attachment of this.documentAttachments) {
           await userDocuments.deleteUserDocument({ attachmentId: attachment.id });
         }
+
+        await event.updatePromoterEventsFromStatusToStatus({
+          userId: this.user.id,
+          fromStatus: 'Em Análise',
+          toStatus: 'Aguardando'
+        });
 
         // Atualiza a lista de documentos
         this.userDocuments = [];
