@@ -61,27 +61,22 @@
           </template>
           
           <template #[`item.account_verified`]="{ item }">
-            <v-chip
-              :color="item.account_verified ? 'success' : 'error'"
-              small
-            >
-              {{ item.account_verified ? 'Sim' : 'Não' }}
-            </v-chip>
+            <v-icon
+              :color="item.account_verified ? 'green' : 'error'">
+              {{ item.account_verified ? 'mdi-check-circle' : 'mdi-close-circle' }}
+            </v-icon>
           </template>
 
           <template #[`item.document_sent`]="{ item }">
-            <v-chip
-              :color="getDocumentSent(item) ? 'success' : 'error'"
-              small
-            >
-              {{ getDocumentSent(item) ? 'Sim' : 'Não' }}
-            </v-chip>
+            <v-icon
+              :color="getDocumentSent(item) ? 'green' : 'error'">
+              {{ getDocumentSent(item) ? 'mdi-check-circle' : 'mdi-close-circle' }}
+            </v-icon>
           </template>
           
           <template #[`item.person_type`]="{ item }">
             <v-chip
               :color="getPersonTypeColor(item.people?.person_type)"
-              small
             >
               {{ item.people?.person_type }}
             </v-chip>
