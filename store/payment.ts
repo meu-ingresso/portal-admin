@@ -5,6 +5,7 @@ import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
 
 interface OrderByEventFilters {
   eventId: string;
+  userId?: string;
   page?: number;
   limit?: number;
   sort?: string;
@@ -182,6 +183,10 @@ export default class Payment extends VuexModule {
         limit: params.limit || 10,
         sort: params.sort || '-created_at',
       };
+
+      if (params.userId) {
+        queryParams['whereHas[payment][user_id][v]'] = params.userId;
+      }
 
       // Adiciona busca por nome/email do comprador
       if (params.search) {

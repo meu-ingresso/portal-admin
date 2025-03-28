@@ -31,25 +31,32 @@ export default {
       
       // 2. Obter status necessários
       const ticketAvailableStatus = await status.fetchStatusByModuleAndName({ 
-        module: 'customer-ticket', 
+        module: 'customer_ticket', 
         name: 'Disponível' 
       });
       if (!ticketAvailableStatus) throw new Error('Status de ingresso disponível não encontrado');
       
-      // 3. Obter dados do usuário
-      const userId = context.$cookies.get('user_id');
-      if (!userId) throw new Error('ID do usuário não encontrado');
-      
-      const userResponse = await user.get(userId);
-      if (!userResponse || !userResponse.people || !userResponse.people.id) {
-        throw new Error('Dados do usuário não encontrados');
+      // 3. Obter profile_id do usuário
+      let peopleID = context.$cookies.get('people_id');
+      if (!peopleID) {
+        const userId = context.$cookies.get('user_id');
+        if (!userId) throw new Error('ID do usuário não encontrado');
+
+        const userResponse = await user.get(userId);
+        if (!userResponse || !userResponse?.people || !userResponse?.people?.id) {
+          throw new Error('Dados do usuário não encontrados');
+        }
+        peopleID = userResponse.people.id;
       }
+
+      if (!peopleID) throw new Error('ID do perfil não encontrado');
       
-      // 4. Criar tickets customizados
+      // 4. Criar tickets customizados. Se pdvId for passado, o ownerId será null, pois o pagamento é feito por um PDV
+      // TODO: Verificar se o ownerId é realmente necessário
       const customerTicketsPayload = prepareCustomTicketsPayload({
         ticketFormGroups,
         paymentId,
-        ownerId: userResponse.people.id,
+        ownerId: pdvId ? peopleID : peopleID,
         statusId: ticketAvailableStatus.id
       });
       

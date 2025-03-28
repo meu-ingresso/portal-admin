@@ -8,7 +8,6 @@
       label="Tipo de Pessoa"
       outlined
       dense
-      class="mb-4"
       @change="updatePersonFields"
     ></v-select>
     

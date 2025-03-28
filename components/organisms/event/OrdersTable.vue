@@ -244,6 +244,15 @@ import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters'
 import { getPaymentMethod } from '@/utils/utils';
 
 export default {
+
+  props: {
+    filterUserId: {
+      type: String,
+      required: false,
+      default: null,
+    },
+  },
+
   data() {
     return {
       headers: [
@@ -418,6 +427,7 @@ export default {
           ? `${this.filters.endDate}T23:59:59.999Z`
           : undefined,
         status: this.filters.status || undefined,
+        userId: this.filterUserId || undefined,
       };
     },
 

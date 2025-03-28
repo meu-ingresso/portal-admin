@@ -139,7 +139,7 @@ export default class EventGeneralInfo extends VuexModule {
 
   public get $formattedLocation() {
 
-    if (this.info.address && this.info.address.deleted_at === null) {
+    if (this.info.address && this.info.address.deleted_at !== null) {
       return `${this.info.address.street}, ${this.info.address.number} - ${this.info.address.neighborhood}, ${this.info.address.city} - ${this.info.address.state}`;
     }
 
