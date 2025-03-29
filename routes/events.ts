@@ -1,4 +1,3 @@
-import Home from '@/pages/home.vue';
 import EventsPage from '~/pages/events/EventsPage.vue';
 import EventDetailsPage from '~/pages/events/EventDetailsPage.vue';
 import CreateEventPage from '~/pages/events/CreateEventPage.vue';
@@ -8,23 +7,12 @@ import { EVENT_PERMISSIONS, requirePermissions } from '~/utils/permissions-confi
 export default [
   {
     path: '/',
-    component: Home,
-    name: 'Eventos',
-    meta: {
-      name: 'home',
-      prefix: '/',
-      screenName: 'home',
-      isEdit: false,
-    },
-  },
-  {
-    path: '/events',
     component: EventsPage,
     name: 'Lista de Eventos',
     meta: {
-      name: 'events',
-      prefix: '/events',
-      screenName: 'events',
+      name: 'Home',
+      prefix: '/',
+      screenName: 'home',
       isEdit: false,
       permissions: requirePermissions(EVENT_PERMISSIONS.VIEW),
     },
