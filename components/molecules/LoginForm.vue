@@ -118,7 +118,7 @@ export default {
 
         if (res && res?.body?.code === 'LOGIN_SUCCESS') {
           this.error = false;
-          this.$router.push({ name: 'Eventos' });
+          this.$router.push({ name: 'Lista de Eventos' });
         } else {
           this.error = true;
           this.$refs.form.resetValidation();

@@ -3,7 +3,7 @@ export const TopBar = [
     icon: 'mdi-calendar-multiselect-outline',
     iconActive: 'mdi-calendar-multiselect',
     title: 'Eventos',
-    to: '/events',
+    to: '/',
     needPermissions: false,
   },
   {
@@ -31,7 +31,8 @@ export const TopBar = [
     icon: 'mdi-help-circle-outline',
     iconActive: 'mdi-help-circle',
     title: 'Central de Ajuda',
-    to: '/help-center',
+    to: 'https://ajuda.meuingresso.com.br/',
+    target: '_blank',
     needPermissions: true,
   },
 ];

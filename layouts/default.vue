@@ -12,11 +12,25 @@
           <MobileLogo is-dark :click-to-home="true" />
         </v-list-item>
         <v-list-item
-          v-for="item in topBarItems"
+          v-for="item in internalTopBarItems"
           :key="item.title"
           :to="item.to"
           router
           exact
+          active-class="active-item">
+          <v-list-item-icon>
+            <v-icon>{{ item.icon }}</v-icon>
+          </v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item
+          v-for="item in externalTopBarItems"
+          :key="'ext-'+item.title"
+          :href="item.to"
+          :target="item.target"
           active-class="active-item">
           <v-list-item-icon>
             <v-icon>{{ item.icon }}</v-icon>
@@ -38,9 +52,21 @@
 
         <!-- Desktop -->
         <div v-if="!isMobile" class="content-menus">
-          <div v-for="(item, index) in topBarItems" :key="index" class="topbar-item">
+          <div v-for="(item, index) in internalTopBarItems" :key="index" class="topbar-item">
             <v-btn
               :to="item.to"
+              class="topbar-button"
+              :title="item.title"
+              depressed
+              plain
+              tile>
+              <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
+            </v-btn>
+          </div>
+          <div v-for="(item, index) in externalTopBarItems" :key="'ext-'+index" class="topbar-item">
+            <v-btn
+              :href="item.to"
+              :target="item.target"
               class="topbar-button"
               :title="item.title"
               depressed
@@ -98,6 +124,14 @@ export default {
         return [];
       }
       return TopBar;
+    },
+
+    internalTopBarItems() {
+      return this.topBarItems.filter(item => !item.target);
+    },
+
+    externalTopBarItems() {
+      return this.topBarItems.filter(item => item.target);
     },
   },
 
