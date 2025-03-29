@@ -3,7 +3,7 @@ export const TopBar = [
     icon: 'mdi-calendar-multiselect-outline',
     iconActive: 'mdi-calendar-multiselect',
     title: 'Eventos',
-    to: '/events',
+    to: '/',
     needPermissions: false,
   },
   {
