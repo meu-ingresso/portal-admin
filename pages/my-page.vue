@@ -84,8 +84,14 @@
                 <div class="event-details">
                   <div class="event-name">{{ event.name }}</div>
                   <div class="event-location">
-                    <v-icon small class="mr-1">mdi-map-marker</v-icon>
-                    {{ event.location_name }}
+                    <template v-if="event.event_type === 'Online'">
+                      <v-icon small class="mr-1">mdi-web</v-icon>
+                      <span>Evento online</span>
+                    </template>
+                    <template v-else>
+                      <v-icon small class="mr-1">mdi-map-marker</v-icon>
+                      {{ event.location_name }}
+                    </template>
                   </div>
                 </div>
                 <div class="event-stats">
@@ -310,7 +316,7 @@
 
 <script>
 import { user, userDocuments, toast, event } from '@/utils/store-util';
-import { formatRealValue } from '@/utils/formatters';
+import { formatRealValue, formatMonth } from '@/utils/formatters';
 
 export default {
   data() {
@@ -366,12 +372,18 @@ export default {
   methods: {
 
     formatRealValue,
+    formatMonth,
     async fetchData() {
       try {
         this.isLoading = true;
         // Fetch user documents (bio and profile image)
         await userDocuments.fetchDocumentStatus(this.userId);
-        this.events = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status', 'tickets'] });
+        const resultEvents = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status', 'tickets', 'attachments'] });
+
+        this.events = resultEvents.map(event => ({
+          ...event,
+          link_online: event.attachments.find(attachment => attachment.name === 'link_online')?.url || '',
+        }));
 
         const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
         const profileImageDoc = userDocuments.$userAttachments.find(doc => doc.name === 'profile_image');
@@ -503,11 +515,6 @@ export default {
       return date.getDate();
     },
     
-    formatMonth(dateString) {
-      const date = new Date(dateString);
-      const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-      return months[date.getMonth()];
-    },
   
   }
 }
@@ -625,7 +632,7 @@ export default {
 .event-card {
   display: flex;
   background-color: var(--beige) !important;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   padding: 12px;
 }
