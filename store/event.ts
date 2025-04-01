@@ -626,9 +626,13 @@ export default class Event extends VuexModule {
   }
 
   @Action
-  public async fetchEventsByPromoterId(promoterId: string) {
+  public async fetchEventsByPromoterId(payload: { promoterId: string, limit?: number, preloads?: string[] }) {
     try {
-      const response = await $axios.$get(`events?where[promoter_id][v]=${promoterId}&preloads[]=status&limit=9999`);
+
+
+      const preloads = payload.preloads?.map((preload) => `preloads[]=${preload}`).join('&') || '';
+
+      const response = await $axios.$get(`events?where[promoter_id][v]=${payload.promoterId}&${preloads}&limit=${payload.limit || 9999}`);
 
       const events = handleGetResponse(response, 'Falha ao buscar eventos do promotor.', null, true);
 

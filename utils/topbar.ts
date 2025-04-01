@@ -20,13 +20,6 @@ export const TopBar = [
     to: '/reports',
     needPermissions: true,
   },
-  // {
-  //     icon: 'mdi-cog-outline',
-  //     iconActive: 'mdi-cog',
-  //     title: 'Configurações',
-  //     to: '/settings',
-  //     needPermissions: true,
-  // },
   {
     icon: 'mdi-help-circle-outline',
     iconActive: 'mdi-help-circle',
