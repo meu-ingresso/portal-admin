@@ -45,7 +45,14 @@ export default {
     },
 
     events() {
-      return event.$eventList || [];
+      return event.$eventList.sort((a, b) => {
+        if (a.status.name === 'Publicado' && b.status.name !== 'Publicado') {
+          return -1;
+        } else if (a.status.name !== 'Publicado' && b.status.name === 'Publicado') {
+          return 1;
+        }
+        return 0;
+      }) || [];
     },
     groupedEvents() {
       return groupEventsBySession(this.events);
@@ -97,7 +104,7 @@ export default {
       try {
         const { meta } = await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
         });
@@ -113,7 +120,7 @@ export default {
         this.currentPage = 1;
         await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           search,
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
@@ -129,7 +136,7 @@ export default {
         this.currentPage = 1;
         await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           search: this.currentSearch,
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
@@ -146,7 +153,7 @@ export default {
         this.currentPage += 1;
         await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           search: this.currentSearch,
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
