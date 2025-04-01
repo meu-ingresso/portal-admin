@@ -508,6 +508,7 @@ export default {
     async handleClearCheckinsFromViewMembers(payload) {
       try {
         const { mode, items } = payload;
+        const toDelete = [];
 
        if (mode === 'all') {
 
