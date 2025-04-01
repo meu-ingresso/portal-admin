@@ -202,23 +202,23 @@
                 class="elevation-0"
                 @click:row="(item) => viewEvent(item.id)"
               >
-                <template #item.start_date="{ item }">
+                <template slot="item.start_date" slot-scope="{ item }">
                   {{ new Date(item.start_date).toLocaleDateString('pt-BR') }}
                 </template>
                 
-                <template #item.status.name="{ item }">
+                <template slot="item.status.name" slot-scope="{ item }">
                   <StatusBadge :text="item.status.name" />
                 </template>
                 
-                <template #item.totalizers.totalSales="{ item }">
+                <template slot="item.totalizers.totalSales" slot-scope="{ item }">
                   {{ item.totalizers.totalSales || 0 }}
                 </template>
                 
-                <template #item.totalizers.totalSalesAmount="{ item }">
+                <template slot="item.totalizers.totalSalesAmount" slot-scope="{ item }">
                   {{ formatRealValue(item.totalizers.totalSalesAmount || 0) }}
                 </template>
                 
-                <template #item.actions="{ item }">
+                <template slot="item.actions" slot-scope="{ item }">
                   <v-btn icon small @click.stop="viewEvent(item.id)">
                     <v-icon small>mdi-eye</v-icon>
                   </v-btn>
@@ -234,69 +234,16 @@
       </v-col>
     </v-row>
 
-
-    <!-- Edit Profile Dialog for Mobile -->
-    <v-dialog v-model="showEditDialog" fullscreen transition="dialog-bottom-transition">
-      <v-card tile flat>
-        <v-toolbar dark color="primary">
-          <v-btn icon dark @click="showEditDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-          <v-toolbar-title>Editar Perfil</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-toolbar-items>
-            <v-btn dark text @click="saveProfileChanges">
-              Salvar
-            </v-btn>
-          </v-toolbar-items>
-        </v-toolbar>
-        
-        <v-list>
-          <v-list-item>
-            <v-list-item-content>
-              <div class="text-center my-4">
-                <v-avatar size="120" class="profile-image">
-                  <v-img :src="profileImageUrl || '/default_avatar.svg'"></v-img>
-                </v-avatar>
-                <div class="mt-2">
-                  <v-btn color="primary" text @click="$refs.fileInput.click()">
-                    <v-icon left>mdi-camera</v-icon>
-                    Alterar foto
-                  </v-btn>
-                </div>
-              </div>
-            </v-list-item-content>
-          </v-list-item>
-        
-          
-          <v-list-item>
-            <v-list-item-content>
-              <v-text-field
-                v-model="editedAlias"
-                label="Nome de exibição"
-                outlined
-                hide-details
-                dense
-              ></v-text-field>
-            </v-list-item-content>
-          </v-list-item>
-          
-          <v-list-item>
-            <v-list-item-content>
-              <v-textarea
-                v-model="editedBio"
-                label="Biografia"
-                outlined
-                auto-grow
-                rows="3"
-                counter
-                maxlength="200"
-              ></v-textarea>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-card>
-    </v-dialog>
+    <!-- Edit Profile Dialog -->
+    <EditProfileDialog
+      v-model="showEditDialog"
+      :loading="isLoading"
+      :profile-image="profileImageUrl"
+      :initial-alias="userAlias"
+      :initial-bio="userBio"
+      @save="saveProfileChanges"
+      @change-photo="$refs.fileInput.click()"
+    />
 
     <input
       ref="fileInput"
@@ -330,8 +277,6 @@ export default {
       totalTickets: 0,
       totalRevenue: 0,
       showEditDialog: false,
-      editedAlias: '',
-      editedBio: '',
       eventHeaders: [
         { text: 'Nome', value: 'name', sortable: true },
         { text: 'Data', value: 'start_date', sortable: true },
@@ -392,10 +337,6 @@ export default {
         this.userAlias = user.$user.alias;
         this.profileImageUrl = profileImageDoc?.value || '';
         
-        // Set edited values
-        this.editedAlias = this.userAlias;
-        this.editedBio = this.userBio;
-
         // Calculate totals
         this.totalEvents = this.events.length;
         this.totalTickets = this.events.reduce((sum, event) => sum + (event.tickets.length || 0), 0);
@@ -482,17 +423,13 @@ export default {
       }
     },
 
-    saveChanges() {
-      toast.setToast({ text: 'Alterações salvas com sucesso', type: 'success', time: 3000 });
-    },
-
-    async saveProfileChanges() {
-      if (this.editedAlias !== this.userAlias) {
-        await this.updateAlias(this.editedAlias);
+    async saveProfileChanges({ alias, bio }) {
+      if (alias !== this.userAlias) {
+        await this.updateAlias(alias);
       }
       
-      if (this.editedBio !== this.userBio) {
-        await this.updateBiography(this.editedBio);
+      if (bio !== this.userBio) {
+        await this.updateBiography(bio);
       }
       
       this.showEditDialog = false;
@@ -578,7 +515,7 @@ export default {
 }
 
 .info-card {
-  min-height: 50vh;
+  min-height: 42vh;
   margin-top: 0;
   border-top-left-radius: 32px !important;
   border-top-right-radius: 32px !important;
