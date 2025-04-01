@@ -186,7 +186,7 @@ export default {
     canRequestPublication() {
       return (
         this.getEvent.status.name !== 'Publicado' &&
-        this.getEvent.status.name !== 'Em análise'
+        this.getEvent.status.name !== 'Em Análise'
       );
     },
     getEvent() {
@@ -353,7 +353,7 @@ export default {
     async requestPublication() {
       const response = await eventGeneralInfo.updateEventStatus({
         eventId: this.getEvent.id,
-        statusName: 'Em análise',
+        statusName: 'Em Análise',
       });
 
       if (response.length > 0) {
