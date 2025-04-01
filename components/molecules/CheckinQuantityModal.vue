@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :value="show" max-width="480" @input="$emit('update:show', $event)">
+  <v-dialog :value="show" max-width="480" persistent @input="$emit('update:show', $event)">
     <v-card>
       <v-card-title class="d-flex justify-space-between align-center">
         <h3 class="modalTitle">Check-in de Convidado</h3>

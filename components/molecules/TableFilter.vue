@@ -34,7 +34,7 @@
           <slot name="filter-content"></slot>
 
           <!-- Botão de limpar filtros -->
-          <v-row class="mt-4">
+          <v-row v-if="showClearFilters" class="mt-4">
             <v-col class="text-right">
               <v-btn text color="primary" @click="$emit('clear-filters')">
                 Limpar filtros
@@ -49,12 +49,15 @@
 
 <script>
 export default {
-  name: 'TableFilter',
 
   props: {
     activeFiltersCount: {
       type: Number,
       default: 0,
+    },
+    showClearFilters: {
+      type: Boolean,
+      default: true,
     },
   },
 

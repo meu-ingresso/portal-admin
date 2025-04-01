@@ -1,7 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { EventGuestList, EventGuestListMember, ResultMeta } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
-import { handleGetResponse } from '~/utils/responseHelpers';
+import { handleGetResponse, handleDeleteResponse } from '~/utils/responseHelpers';
 @Module({
   name: 'eventGuests',
   stateFactory: true,
@@ -422,5 +422,19 @@ export default class EventGuests extends VuexModule {
       lastPage: 1,
       firstPage: 1
     });
+  }
+
+  @Action
+  public async deleteGuestListMemberValidated(guestListMemberId: string) {
+    try {
+      const response = await $axios.$delete(`guest-list-member-validated/${guestListMemberId}`);
+
+      const result = handleDeleteResponse(response, 'Falha ao remover check-in de convidado', null);
+
+      return result;
+    } catch (error) {
+      console.error('Erro ao remover check-in de convidado:', error);
+      throw error;
+    }
   }
 } 
