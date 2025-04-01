@@ -21,7 +21,7 @@
       <!-- Slot para filtros -->
       <template #top>
         <v-toolbar flat>
-          <v-row>
+          <v-row class="align-center">
             <v-col cols="6">
               <!-- Campo de busca -->
               <v-text-field
@@ -354,9 +354,14 @@ export default {
 
     async fetchCustomerTickets() {
       const query = this.buildQueryParams();
+
+
+
       const searchQuery = this.filters.search
-        ? `&whereOr[currentOwner][first_name][like]=%${this.filters.search}%&whereOr[currentOwner][last_name][like]=%${this.filters.search}%&whereOr[ticket_identifier][like]=%${this.filters.search}%`
+        ? `&search[currentOwner][first_name:last_name][o]=%LIKE%&search[currentOwner][first_name:last_name][v]=%${this.filters.search}%&search[ticket_identifier][o]=%LIKE%&search[ticket_identifier][v]=%${this.filters.search}%`
         : '';
+
+
       const ticketTypeQuery = this.filters.ticketType
         ? `&where[ticket][name][v]=${this.filters.ticketType}`
         : '';

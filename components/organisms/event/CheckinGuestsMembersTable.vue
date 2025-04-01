@@ -101,9 +101,6 @@
 
 <script>
 export default {
-  components: {
-    CheckinQuantityModal: () => import('@/components/molecules/CheckinQuantityModal.vue')
-  },
 
   props: {
     members: {

@@ -14,69 +14,47 @@
       @row-click="handleListRowClick"
     >
       <template #toolbar>
-        <v-container class="px-1 py-1 d-flex align-center">
-          <v-row class="align-center">
-            <v-col :cols="isMobile ? 12 : 6" class="py-0 px-4 d-flex justify-center">
-              <v-text-field
-                v-model="listSearch"
-                :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
-                prepend-inner-icon="mdi-magnify"
-                clearable
-                hide-details="auto"
-                @input="handleListSearch"
-              />
-            </v-col>
+        <v-row class="align-center">
+          <v-col :cols="isMobile ? 12 : 6">
+            <v-text-field
+              v-model="listSearch"
+              :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              hide-details="auto"
+              @input="handleListSearch"
+            />
+          </v-col>
 
-            <template v-if="isMobile">
-              <v-col cols="12">
-                <div class="view-buttons">
-                  <v-btn
-                    text
-                    :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
-                    @click="viewMode = 'lists'"
-                  >
-                    <v-icon left size="18">mdi-format-list-bulleted</v-icon>
-                    <span>Visão por Lista</span>
-                  </v-btn>
-               </div>
-              </v-col>
-              <v-col cols="12">
-                <div class="view-buttons">
-                  <v-btn
-                    text
-                    :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
-                    @click="viewMode = 'members'"
-                  >
-                    <v-icon left size="18">mdi-account-group</v-icon>
-                    <span>Visão por Convidados</span>
-                  </v-btn>
-                </div>  
-              </v-col>
-
-            </template>
-
-            <v-col v-else cols="6" class="d-flex justify-end align-center">
-              <div class="view-buttons">
-                <v-btn
-                  text
-                  :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
-                  @click="viewMode = 'lists'"
-                >
-                  <v-icon left size="18">mdi-format-list-bulleted</v-icon>
-                  <span>Visão por Lista</span>
-                </v-btn>
-                <v-btn
-                  text
-                  :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
-                  @click="viewMode = 'members'"
-                >
-                  <v-icon left size="18">mdi-account-group</v-icon>
-                  <span>Visão por Convidados</span>
-                </v-btn>
-              </div>
-            </v-col>
-          </v-row>
-        </v-container>
+          <v-col :cols="isMobile ? 12 : 6" class="d-flex justify-end align-center">
+            <DefaultButton
+              color="error"
+              class="mr-2"
+              text="Limpar Check-ins"
+              is-text
+              @click="showClearCheckinModal = true"
+            />
+            <TableFilter
+              :active-filters-count="activeFiltersCount"
+              :show-clear-filters="false">
+              <template #filter-content>
+                <v-row>
+                  <v-col cols="12">
+                    <v-select
+                      v-model="viewMode"
+                      :items="viewModeOptions"
+                      label="Modo de Visualização"
+                      outlined
+                      dense
+                      hide-details="auto"
+                      @change="handleViewModeChange"
+                    />
+                  </v-col>
+                </v-row>
+              </template>
+            </TableFilter>
+          </v-col>
+        </v-row>
       </template>
     </CheckinGuestsListsTable>
 
@@ -94,68 +72,48 @@
       @check-in="handleCheckIn"
     >
       <template #toolbar>
-        <v-container class="px-1 py-1 d-flex align-center">
-          <v-row class="align-center">
-            <v-col :cols="isMobile ? 12 : 6" class="py-0 px-4 d-flex justify-center">
-              <v-text-field
-                v-model="memberSearch"
-                :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
-                prepend-inner-icon="mdi-magnify"
-                clearable
-                hide-details="auto"
-                @input="handleMemberSearch"
-              />
-            </v-col>
-            
-            <template v-if="isMobile">
-              <v-col cols="12">
-                <div class="view-buttons">
-                  <v-btn
-                    text
-                    :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
-                    @click="viewMode = 'lists'"
-                  >
-                    <v-icon left size="18">mdi-format-list-bulleted</v-icon>
-                    <span>Visão por Lista</span>
-                  </v-btn>
-               </div>
-              </v-col>
-              <v-col cols="12">
-                <div class="view-buttons">
-                  <v-btn
-                    text
-                    :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
-                    @click="viewMode = 'members'"
-                  >
-                    <v-icon left size="18">mdi-account-group</v-icon>
-                    <span>Visão por Convidados</span>
-                  </v-btn>
-                </div>  
-              </v-col>
-            </template>
-
-            <v-col v-else cols="6" class="d-flex justify-end align-center">
-              <div class="view-buttons">
-                <v-btn
-                  text
-                  :class="{ 'view-btn': true, 'active': viewMode === 'lists' }"
-                  @click="viewMode = 'lists'"
-                >
-                  <v-icon left size="18">mdi-format-list-bulleted</v-icon>
-                  <span>Visão por Lista</span>
-                </v-btn>
-                <v-btn
-                  text
-                  :class="{ 'view-btn': true, 'active': viewMode === 'members' }"
-                  @click="viewMode = 'members'"
-                >
-                  <v-icon left size="18">mdi-account-group</v-icon>
-                  <span>Visão por Convidados</span>
-                </v-btn>
-              </div>
-            </v-col>
-          </v-row>
-        </v-container>
+        <v-row class="align-center">
+          <v-col :cols="isMobile ? 12 : 6">
+            <v-text-field
+              v-model="memberSearch"
+              :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              hide-details="auto"
+              class="mr-4"
+              @input="handleMemberSearch"
+            />
+          </v-col>
+          
+          <v-col :cols="isMobile ? 12 : 6" class="d-flex justify-end align-center">
+            <DefaultButton
+              color="error"
+              class="mr-2"
+              text="Limpar Check-ins"
+              is-text
+              @click="showClearCheckinModal = true"
+            />
+            <TableFilter
+              :active-filters-count="activeFiltersCount"
+              :show-clear-filters="false">
+              <template #filter-content>
+                <v-row>
+                  <v-col cols="12">
+                    <v-select
+                      v-model="viewMode"
+                      :items="viewModeOptions"
+                      label="Modo de Visualização"
+                      outlined
+                      dense
+                      hide-details="auto"
+                      @change="handleViewModeChange"
+                    />
+                  </v-col>
+                </v-row>
+              </template>
+            </TableFilter>
+          </v-col>
+        </v-row>
       </template>
     </CheckinGuestsMembersTable>
 
@@ -173,6 +131,15 @@
       @check-in="handleCheckIn"
       @close="handleClose"
     />
+
+    <!-- Modal para limpar check-ins -->
+    <ClearCheckinModal
+      :show.sync="showClearCheckinModal"
+      :items="guestLists"
+      :loading="isLoading"
+      mode="guests"
+      @clear="handleClearCheckins"
+    />
   </div>
 </template>
 
@@ -183,8 +150,9 @@ import { isMobileDevice } from '@/utils/utils';
 
 export default {
   data: () => ({
-    viewMode: 'lists',
+    viewMode: 'members',
     showMembersModal: false,
+    showClearCheckinModal: false,
     selectedGuestList: null,
     listOptions: {
       page: 1,
@@ -229,6 +197,17 @@ export default {
 
     isMobile() {
       return isMobileDevice(this.$vuetify);
+    },
+
+    viewModeOptions() {
+      return [
+        { text: 'Visão por Convidados', value: 'members', icon: 'mdi-account-group' },
+        { text: 'Visão por Lista', value: 'lists', icon: 'mdi-format-list-bulleted' }
+      ];
+    },
+
+    activeFiltersCount() {
+      return 0;
     },
   },
 
@@ -438,66 +417,197 @@ export default {
 
       return query;
     },
+
+    handleViewModeChange() {
+      if (this.viewMode === 'members') {
+        this.loadAllMembers();
+      } else {
+        this.loadGuestLists();
+      }
+    },
+
+    async handleClearCheckinsFromViewLists(payload) {
+      try {
+        const { mode, items } = payload;
+        const toDelete = [];
+
+         if (mode === 'all') {
+
+          this.guestLists.forEach(list => {
+            list.members.forEach(member => {
+              member.guestListMemberValidated.forEach(validation => {
+
+                  if (toDelete.includes(validation.id)) {
+                    return;
+                  }
+
+                  toDelete.push(validation.id);
+                });
+              });
+            });
+
+          if (toDelete.length > 0) {
+            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            await Promise.all(promises);
+
+            toast.setToast({
+              text: 'Check-ins limpos com sucesso!',
+              type: 'success',
+              time: 5000,
+            });
+
+          } else {
+            toast.setToast({
+              text: 'Nenhum check-in para limpar!',
+              type: 'info',
+              time: 5000,
+            });
+          }
+        } else {
+
+          items.forEach(item => {
+            const filteredLists = this.guestLists.filter(list => list.name === item.name);
+
+            filteredLists.forEach(list => {
+              list.members.forEach(member => {
+                member.guestListMemberValidated.forEach(validation => {
+                  if (toDelete.includes(validation.id)) {
+                    return;
+                  }
+                  toDelete.push(validation.id);
+                });
+              });
+            });
+          });
+
+          if (toDelete.length > 0) {
+            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            await Promise.all(promises);
+
+            toast.setToast({
+              text: 'Check-ins limpos com sucesso!',
+              type: 'success',
+              time: 5000,
+            });
+            
+          } else {
+            toast.setToast({
+              text: 'Nenhum check-in para limpar!',
+              type: 'info',
+              time: 5000,
+            });
+          }
+
+        }
+      } catch (error) {
+        throw new Error('Erro ao limpar check-ins de listas:', error);
+      }
+
+    },
+
+    async handleClearCheckinsFromViewMembers(payload) {
+      try {
+        const { mode, items } = payload;
+
+       if (mode === 'all') {
+
+          this.guestListMembers.forEach(member => {
+            if (member.guestList) {
+              member.guestList.members.forEach(member => {
+                member.guestListMemberValidated.forEach(validation => {
+
+                  if (toDelete.includes(validation.id)) {
+                    return;
+                  }
+
+                  toDelete.push(validation.id);
+                });
+              });
+            }
+          });
+
+          if (toDelete.length > 0) {
+            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            await Promise.all(promises);
+
+            toast.setToast({
+              text: 'Check-ins limpos com sucesso!',
+              type: 'success',
+              time: 5000,
+            });
+
+          } else {
+            toast.setToast({
+              text: 'Nenhum check-in para limpar!',
+              type: 'info',
+              time: 5000,
+            });
+          }
+        } else {
+
+          items.forEach(item => {
+            const filteredLists = this.guestListMembers.filter(member => member.guestList.name === item.name);
+
+            filteredLists.forEach(list => {
+              list.guestList.members.forEach(member => {
+                member.guestListMemberValidated.forEach(validation => {
+                  if (toDelete.includes(validation.id)) {
+                    return;
+                  }
+                  toDelete.push(validation.id);
+                });
+              });
+            });
+          });
+
+          if (toDelete.length > 0) {
+            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            await Promise.all(promises);
+
+            toast.setToast({
+              text: 'Check-ins limpos com sucesso!',
+              type: 'success',
+              time: 5000,
+            });
+            
+          } else {
+            toast.setToast({
+              text: 'Nenhum check-in para limpar!',
+              type: 'info',
+              time: 5000,
+            });
+          }
+
+        }
+      } catch (error) {
+        throw new Error('Erro ao limpar check-ins de membros:', error);
+      }
+    },
+
+    async handleClearCheckins(payload) {
+      try {
+
+        if (this.viewMode === 'lists') {
+          await this.handleClearCheckinsFromViewLists(payload);
+        } else {
+          await this.handleClearCheckinsFromViewMembers(payload);
+        }
+
+      } catch (error) {
+        console.error('Erro ao limpar check-ins:', error);
+        toast.setToast({
+          text: 'Erro ao limpar check-ins',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        if (this.viewMode === 'lists') {
+          await this.loadGuestLists();
+        } else {
+          await this.loadAllMembers();
+        }
+      }
+    },
   },
 };
 </script>
-
-<style lang="scss" scoped>
-.checkin-guests-table {
-  width: 100%;
-
-  .view-buttons {
-    display: flex;
-    gap: 24px;
-
-    @media (max-width: 600px) {
-      width: 100%;
-      gap: 8px;
-      justify-content: space-between;
-      
-      .view-btn {
-        flex: 1;
-        text-align: center;
-      }
-    }
-
-    .view-btn {
-      text-transform: none;
-      letter-spacing: normal;
-      font-weight: 400;
-      color: rgba(var(--v-primary-base), 0.7) !important;
-      padding: 0;
-      min-width: 0;
-      position: relative;
-
-      &:hover {
-        color: var(--v-primary-base) !important;
-        background: none;
-      }
-
-      &.active {
-        span {
-          text-decoration: underline !important;
-          font-weight: 500;
-        }
-
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: -4px;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background-color: var(--v-primary-base);
-          border-radius: 2px;
-        }
-      }
-
-      .v-icon {
-        margin-right: 8px;
-        font-size: 18px;
-      }
-    }
-  }
-}
-</style>
