@@ -1,37 +1,38 @@
 <template>
   <NuxtLink :to="`/events/${event.id}`">
-    <v-card class="event-card">
-      <v-card-text>
-        <div class="d-flex align-items-center">
-          <h3 class="event-title mb-4">{{ event.title }}</h3>
-          <v-chip
-            v-if="showSessionsIndicator && event.hasSessions"
-            color="primary"
-            small
-            class="ml-2"
-            dark>
-            {{ event.sessionsCount }} datas disponíveis
-          </v-chip>
+    <v-card class="event-card mb-2" flat>
+      <div class="event-date">
+        <div class="date-day">{{ formatDay(event.start_date) }}</div>
+        <div class="date-month">{{ formatMonth(event.start_date) }}</div>
+      </div>
+      <div class="event-details">
+        <div class="event-name">{{ event.name }}</div>
+        <div class="event-location">
+          <template v-if="event.event_type === 'Online'">
+            <v-icon small class="mr-1">mdi-web</v-icon>
+            <span>Evento online</span>
+          </template>
+          <template v-else>
+            <v-icon small class="mr-1">mdi-map-marker</v-icon>
+            {{ event.location_name }}
+          </template>
         </div>
-        <div class="d-flex align-end justify-space-between">
-          <div class="d-flex align-center justify-space-between w-full">
-            <div class="d-flex flex-column align-start justify-space-between">
-              <p class="event-revenue">{{ formatToMoney(event.totalizers.totalSalesAmount) }}</p>
-              <p class="event-revenue-today">{{ formatToMoney(event.totalizers.totalSalesAmountToday) }} hoje</p>
-            </div>
-            <div class="d-flex flex-column align-start justify-space-between">
-              <p class="event-tickets">{{ event.totalizers.totalSales  }}</p>
-              <p class="event-tickets-today">{{  event.totalizers.totalSalesToday  }} hoje</p>
-            </div>
-          </div>
+      </div>
+      <div class="event-stats">
+        <div class="event-stat">
+          <v-icon small>mdi-ticket</v-icon>
+          <span>{{ event.totalizers.totalSales || 0 }}</span>
         </div>
-      </v-card-text>
+        <div class="event-stat">
+          <span>{{ formatRealValue(event.totalizers.totalSalesAmount || 0) }}</span>
+        </div>
+      </div>
     </v-card>
   </NuxtLink>
 </template>
 
 <script>
-import { formatDateTimeToBr, formatRealValue } from '@/utils/formatters';
+import { formatDateTimeToBr, formatRealValue, formatMonth } from '@/utils/formatters';
 export default {
   props: {
     event: { type: Object, required: true },
@@ -46,8 +47,11 @@ export default {
   },
 
   methods: {
-    formatToMoney(value) {
-      return formatRealValue(value);
+    formatRealValue,
+    formatMonth,
+    formatDay(dateString) {
+      const date = new Date(dateString);
+      return date.getDate();
     },
   },
 };
@@ -55,34 +59,87 @@ export default {
 
 <style scoped>
 .event-card {
-  transition: all 0.5s;
-  border-radius: 8px !important;
+  display: flex;
+  background-color: var(--tertiary) !important;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: none !important;
-  margin-bottom: 16px;
-  background-color: var(--tertiary);
+  padding: 12px;
 }
 
-.event-card:hover {
-  transform: scale(1.005);
-}
-.event-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--primary);
+.event-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary, #1976d2);
+  color: white;
+  border-radius: 8px;
+  padding: 8px;
+  width: 60px;
+  height: 60px;
+  margin-right: 12px;
 }
 
-.event-revenue,
-.event-tickets {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--font-black);
+.date-day {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
 }
-.event-date,
-.event-location,
-.event-revenue-today,
-.event-tickets-today {
-  font-size: 14px;
-  color: gray;
+
+.date-month {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.event-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.event-name {
+  font-weight: 600;
+  font-size: .875rem;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.event-location {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.event-status {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.event-stats {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.event-stat {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.7);
+  margin-bottom: 4px;
+}
+
+.event-stat i {
+  margin-right: 4px;
 }
 </style>
