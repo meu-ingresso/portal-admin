@@ -184,6 +184,7 @@ export default {
   color: var(--black-text) !important;
   font-weight: 400 !important;
   font-size: 16px !important;
+  border-radius: 0px !important;
   font-family: var(--font-family-inter-bold) !important;
 }
 
@@ -193,9 +194,8 @@ export default {
 
 .active-item {
   background-color: var(--primary) !important;
-  border-top-right-radius: 38px;
-  border-bottom-right-radius: 38px;
   color: white;
+  border-radius: 0px !important;
   font-size: 16px !important;
   font-display: var(--font-family-inter-bold) !important;
 }
