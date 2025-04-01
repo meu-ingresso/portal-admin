@@ -2,7 +2,7 @@
 /* eslint-disable camelcase */
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { SearchPayload as BaseSearchPayload, PeoplePayload, UserWithRelations, RolePayload } from '@/models';
+import { SearchPayload as BaseSearchPayload, PeoplePayload, UserWithRelations, RolePayload, UserPayload } from '@/models';
 import { handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 
 interface ExtendedSearchPayload extends BaseSearchPayload {
@@ -308,6 +308,29 @@ export default class User extends VuexModule {
     } catch (error) {
       return error;
     }
+  }
+
+  @Action
+  public async updateUser(payload: UserPayload) {
+    try {
+
+      const response = await $axios.$patch('user', {
+        data: [
+          {
+            ...payload,
+          },
+        ],
+      });
+
+      const result = handleUpdateResponse(response, 'Usuário não encontrado', null);
+
+      return result;
+      
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      return error;
+    }
+
   }
 
   @Action

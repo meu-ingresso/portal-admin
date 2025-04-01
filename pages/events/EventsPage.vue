@@ -171,7 +171,7 @@ export default {
         if (this.userId) {
 
           // Verifica se o usuário é dono de algum evento
-          const events = await event.fetchEventsByPromoterId(this.userId);
+          const events = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status'] });
           if (events) {
 
             // Verifica se possui eventos com status Aguardando
