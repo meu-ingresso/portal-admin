@@ -23,7 +23,7 @@
         <DefaultButton
           :text="buttonText"
           :disabled="isSaving"
-          @click="$emit('submit', 'Em análise')" />
+          @click="$emit('submit', 'Em Análise')" />
       </div>
     </v-col>
   </v-row>
