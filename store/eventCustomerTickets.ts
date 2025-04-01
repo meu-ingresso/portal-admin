@@ -1,7 +1,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { CustomerTicketApiResponse, ResultMeta } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
-import { handleGetResponse } from '~/utils/responseHelpers';
+import { handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 @Module({
   name: 'eventCustomerTickets',
   stateFactory: true,
@@ -87,6 +87,24 @@ export default class EventCustomerTickets extends VuexModule {
   public updateCustomerTicket(payload: { index: number; customerTicket: CustomerTicketApiResponse }) {
     this.context.commit('UPDATE_CUSTOMER_TICKET', payload);
   }
+
+  @Action 
+  public async bulkInvalidateCustomerTickets(customerTicketIds: string[]): Promise<CustomerTicketApiResponse[]> {
+    try {
+      const response = await $axios.$patch(`customer-ticket`, {
+        data: customerTicketIds.map(id => ({ id, validated: false }))
+      });
+
+      const result = handleUpdateResponse(response, 'Erro ao invalidar ingressos', null);
+
+      return result;
+
+    } catch (error) {
+      console.error('Erro ao invalidar ingressos:', error);
+      throw error;
+    }
+  }  
+    
 
   @Action
   public async validateCustomerTicket(customerTicketId: string): Promise<void> {
