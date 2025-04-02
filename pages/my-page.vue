@@ -65,8 +65,8 @@
       <v-col cols="12">
         <PageConfigSection
           icon="mdi-text"
-          title="Biografia"
-          subtitle="Conte um pouco sobre você"
+          title="Sobre"
+          subtitle="Crie uma bio para exibir aos clientes"
           :loading="isLoading"
           @save="handleSaveBio"
           @cancel="handleCancelBio"
@@ -74,7 +74,7 @@
           <RichTextEditor
             ref="bioEditor"
             v-model="biography"
-            placeholder="Escreva uma descrição..."
+            placeholder="Apresente-se em poucas palavras..."
             :actions="['bold', 'italic', 'list']"
             :disabled="isLoading"
           />

@@ -37,6 +37,36 @@
             ></v-text-field>
           </v-col>
 
+          <!-- WhatsApp -->
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="socialLinks.whatsapp"
+              outlined
+              dense
+              hide-details
+              class="mb-1"
+              placeholder="Seu grupo/contato"
+              :prefix="socialPrefixes.whatsapp"
+              prepend-inner-icon="mdi-whatsapp"
+              @input="handleInput('whatsapp')"
+            ></v-text-field>
+          </v-col>
+
+          <!-- Telegram -->
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="socialLinks.telegram"
+              outlined
+              dense
+              hide-details
+              class="mb-1"
+              placeholder="Seu usuário"
+              :prefix="socialPrefixes.telegram"
+              prepend-inner-icon="mdi-send"
+              @input="handleInput('telegram')"
+            ></v-text-field>
+          </v-col>
+
           <!-- TikTok -->
           <v-col cols="12" sm="6">
             <v-text-field
@@ -60,7 +90,7 @@
               dense
               hide-details
               class="mb-1"
-              placeholder="Seu canal"
+              placeholder="@seu.canal"
               :prefix="socialPrefixes.youtube"
               prepend-inner-icon="mdi-youtube"
               @input="handleInput('youtube')"
@@ -92,46 +122,8 @@
               class="mb-1"
               placeholder="@seu.usuario"
               :prefix="socialPrefixes.x"
-              prepend-inner-icon="mdi-twitter"
+              prepend-inner-icon="mdi-alpha-x-box"
               @input="handleInput('x')"
-            ></v-text-field>
-          </v-col>
-        </v-row>
-      </v-col>
-
-      <!-- Community Section -->
-      <v-col cols="12" class="mt-2">
-        <div class="d-flex align-center mb-4">
-          <div class="text-subtitle-2 font-weight-medium">Comunidade</div>
-        </div>
-        <v-row>
-          <!-- WhatsApp -->
-          <v-col cols="12" sm="6">
-            <v-text-field
-              v-model="socialLinks.whatsapp"
-              outlined
-              dense
-              hide-details
-              class="mb-1"
-              placeholder="Seu grupo/contato"
-              :prefix="socialPrefixes.whatsapp"
-              prepend-inner-icon="mdi-whatsapp"
-              @input="handleInput('whatsapp')"
-            ></v-text-field>
-          </v-col>
-
-          <!-- Messenger -->
-          <v-col cols="12" sm="6">
-            <v-text-field
-              v-model="socialLinks.messenger"
-              outlined
-              dense
-              hide-details
-              class="mb-1"
-              placeholder="Seu usuário"
-              :prefix="socialPrefixes.messenger"
-              prepend-inner-icon="mdi-facebook-messenger"
-              @input="handleInput('messenger')"
             ></v-text-field>
           </v-col>
         </v-row>

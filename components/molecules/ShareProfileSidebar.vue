@@ -29,7 +29,7 @@
             <v-col cols="12" class="d-flex align-center">
               <v-icon class="mr-2">mdi-information</v-icon>
               <span class="text-body-2">
-                Tenha mais seguidores ao compartilhar a sua página de produtor com todo mundo.
+                Compartilhe e apresente sua vitrine de eventos para todo mundo.
               </span>
             </v-col>
           </v-row>
@@ -52,7 +52,7 @@
           <v-row no-gutters>
             <v-col cols="12">
               <ButtonWithIcon
-                text="Fazer download do QR Code da minha página"
+                text="QR Code"
                 icon="mdi-qrcode"
                 direction="left"
                 block
