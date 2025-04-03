@@ -7,6 +7,13 @@ import { handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers
 
 interface ExtendedSearchPayload extends BaseSearchPayload {
   preloads?: string[];
+  roleFilter?: string | string[];
+  personType?: string;
+  verifiedStatus?: string;
+  startDate?: string;
+  endDate?: string;
+  active?: string;
+  includeEventCount?: boolean;
 }
 
 @Module({ name: 'user', stateFactory: true, namespaced: true })
@@ -255,6 +262,131 @@ export default class User extends VuexModule {
 
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          perPage: limit,
+          currentPage: page,
+          lastPage: 1,
+          firstPage: 1
+        },
+        code: 'SEARCH_NOTFOUND'
+      };
+    }
+  }
+
+  @Action
+  public async getUsersByRole({ 
+    page = 1, 
+    limit = 50, 
+    search, 
+    sortBy = [], 
+    sortDesc = [], 
+    preloads = ['people'],
+    roleFilter,
+    personType,
+    verifiedStatus,
+    startDate,
+    endDate,
+    active,
+    includeEventCount = false
+  }: ExtendedSearchPayload) {
+    try {
+      const params = new URLSearchParams();
+
+      // Paginação
+      params.append('page', String(page));
+      params.append('limit', String(limit));
+
+      // Ordenação
+      sortBy.forEach((field: string, index: number) => {
+        const order = sortDesc[index] ? 'desc' : 'asc';
+        params.append('orderBy[]', `${field}:${order}`);
+      });
+
+      // Busca
+      if (search) {
+        const searchValue = String(search);
+        const encodedSearch = encodeURIComponent(searchValue);
+
+        // Busca com OR em todos os campos relevantes
+        params.append('search[email][o]', 'LIKE');
+        params.append('search[email][v]', encodedSearch);
+        params.append('search[people][first_name:last_name:social_name:tax:person_type][o]', 'LIKE');
+        params.append('search[people][first_name:last_name:social_name:tax:person_type][v]', encodedSearch);
+      }
+
+      // Filtro por role
+      if (roleFilter) {
+        if (Array.isArray(roleFilter)) {
+          params.append('whereHas[role][name][o]', 'IN');
+          roleFilter.forEach((role: string) => {
+            params.append('whereHas[role][name][v][]', role);
+          });
+        } else {
+          params.append('whereHas[role][name][v]', roleFilter);
+        }
+      }
+
+      // Filtro por tipo de pessoa
+      if (personType) {
+        params.append('whereHas[people][person_type][v]', personType);
+      }
+
+      // Filtro por status de verificação
+      if (verifiedStatus) {
+        params.append('where[account_verified][v]', verifiedStatus === 'verified' ? 'true' : 'false');
+      }
+
+      // Filtro por data de cadastro
+      if (startDate) {
+        params.append('where[created_at][gte]', startDate);
+      }
+      if (endDate) {
+        params.append('where[created_at][lte]', endDate);
+      }
+
+      // Filtro por status ativo/inativo
+      if (active) {
+        if (active === 'active') {
+          params.append('whereNull[deleted_at]', 'true');
+        } else if (active === 'inactive') {
+          params.append('whereNotNull[deleted_at]', 'true');
+        }
+      }
+
+      // Preloads
+      const defaultPreloads = ['role'];
+      [...new Set([...preloads, ...defaultPreloads])].forEach(preload => {
+        if (preload === 'people') {
+          params.append('preloads[]', 'people:address');
+        } else {
+          params.append('preloads[]', preload);
+        }
+      });
+
+      // Incluir contagem de eventos para organizadores
+      if (includeEventCount) {
+        params.append('includeEventCount', 'true');
+      }
+
+      const response = await $axios.$get(`users?${params.toString()}`);
+      
+      const result = handleGetResponse(response, 'Usuários não encontrados', null, true);
+
+      if (result && result.data) {
+        this.context.commit('SET_USER_LIST', result.data);
+      }
+
+      return {
+        data: result.data,
+        meta: result.meta,
+        code: response.body.code
+      };
+
+    } catch (error) {
+      console.error('Erro ao buscar usuários por função:', error);
       return {
         data: [],
         meta: {

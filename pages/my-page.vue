@@ -37,7 +37,7 @@
       </v-col>
     </v-row>
 
-    <!-- Statistics Cards -->
+    <!-- Statistics Cards 
     <v-row class="center-row mb-6">
 
       <v-col cols="12"> 
@@ -55,6 +55,14 @@
         </v-card>
       </v-col>
     </v-row>
+    -->
+
+    <v-row class="center-row mb-6 mt-6">
+      <v-col cols="12"> 
+        <StatisticList :statistics="getStatistics" title="Análises da página" />
+      </v-col>
+    </v-row>
+
 
     <!-- Configurações da página -->
     <v-row class="center-row">
