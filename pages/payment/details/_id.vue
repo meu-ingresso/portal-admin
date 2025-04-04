@@ -168,17 +168,21 @@
                           <td>
                             <v-tooltip bottom>
                               <template #activator="{ on, attrs }">
-                                <v-btn
-                                  v-bind="attrs"
-                                  x-small
-                                  icon
-                                  color="primary"
-                                  v-on="on"
-                                  @click="openTicketEditModal(ticket)">
-                                  <v-icon small>mdi-pencil</v-icon>
-                                </v-btn>
+                                <div v-bind="attrs" v-on="on">
+                                  <v-btn
+                                    x-small
+                                    icon
+                                    :disabled="!is24HoursOrMoreBeforeEventStart"
+                                    color="primary"
+                                    @click="openTicketEditModal(ticket)">
+                                    <v-icon small>mdi-pencil</v-icon>
+                                  </v-btn>
+                                </div>
                               </template>
-                              Editar participante
+                              <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
+                              <span v-else>
+                                Não é possível editar participantes de eventos que já aconteceram ou estão a menos de 24 horas do início
+                              </span>
                             </v-tooltip>
                           </td>
                         </tr>
@@ -201,13 +205,24 @@
                             <div class="subtitle-2 font-weight-medium">{{ ticket.ticket?.name }}</div>
                           </div>
                           
-                          <v-btn
-                            small
-                            icon
-                            color="primary"
-                            @click="openTicketEditModal(ticket)">
-                            <v-icon small>mdi-pencil</v-icon>
-                          </v-btn>
+                          <v-tooltip bottom>
+                            <template #activator="{ on, attrs }">
+                              <div v-bind="attrs" v-on="on">
+                                <v-btn
+                                  small
+                                  icon
+                                  color="primary"
+                                  :disabled="!is24HoursOrMoreBeforeEventStart"
+                                  @click="openTicketEditModal(ticket)">
+                                  <v-icon small>mdi-pencil</v-icon>
+                                </v-btn>
+                              </div>
+                            </template>
+                            <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
+                            <span v-else>
+                              Não é possível editar participantes de eventos que já aconteceram ou estão a menos de 24 horas do início
+                            </span>
+                          </v-tooltip>
                         </div>
                         
                         <v-divider class="my-2"></v-divider>
@@ -311,7 +326,7 @@
 import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
 import { payment, toast, eventCheckout } from '@/store';
-import { getPaymentMethod } from '@/utils/utils';
+import { getPaymentMethod, is24HoursOrMoreBeforeDate } from '@/utils/utils';
 
 export default {
   layout: 'default',
@@ -339,6 +354,12 @@ export default {
 
       return firstEventFromRelatedTickets?.ticket?.event;
     },
+
+    is24HoursOrMoreBeforeEventStart() {
+      const event = this.getEvent;
+      return event?.start_date ? is24HoursOrMoreBeforeDate(event.start_date) : false;
+    },
+
 
     getEventFee() {
       if (!this.getEvent) return null;

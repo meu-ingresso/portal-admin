@@ -1,98 +1,32 @@
 <template>
   <div class="reports-users">
     <v-row>
-
       <v-col cols="12">
         <div>
           <h3 class="template-title">Usuários</h3>
         </div>
       </v-col>
 
-      <v-col cols="12">
-        <v-data-table
-          :headers="headers"
-          :items="users"
-          :items-per-page="100"
-          :loading="isLoading"
-          :server-items-length="totalUsers"
-          :footer-props="{
-            itemsPerPageOptions: [100, 200, 500],
-            itemsPerPageText: 'Usuários por página',
-            pageText: '{0}-{1} de {2}',
-          }"
-          :no-data-text="'Nenhum usuário encontrado'"
-          :no-results-text="'Nenhum usuário encontrado'"
-          :loading-text="'Carregando...'"
-          class="elevation-1"
-          :options.sync="options"
-          @update:options="handleTableUpdate"
-        >
-          <!-- Campo de busca -->
-          <template #top>
-            <v-toolbar flat>
-              <v-row>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model="search"
-                    label="Buscar por nome ou email"
-                    prepend-inner-icon="mdi-magnify"
-                    clearable
-                    hide-details="auto"
-                    class="mr-4"
-                    @input="handleSearchChange" />
-                </v-col>
-              </v-row>
-            </v-toolbar>
-          </template>
-          
-          <template #[`item.created_at`]="{ item }">
-            {{ formatDateToCustomString(item.created_at) }}
-          </template>
-          
-          <template #[`item.full_name`]="{ item }">
+      <v-col cols="12" md="12" sm="12">
+        <v-tabs v-model="activeTab" background-color="white" grow class="custom-tabs">
+          <v-tab>
+            <v-icon left>mdi-account</v-icon>
+            Clientes
+          </v-tab>
+          <v-tab>
+            <v-icon left>mdi-account-group</v-icon>
+            Organizadores
+          </v-tab>
+          <v-tab>
+            <v-icon left>mdi-account-tie</v-icon>
+            Equipe
+          </v-tab>
+        </v-tabs>
 
-            <span v-if="item.people?.person_type === 'PF'">
-              {{ item.people?.first_name }} {{ item.people?.last_name }}
-            </span>
-
-            <span v-else>
-              {{ item.people?.social_name }}
-            </span>
-          </template>
-          
-          <template #[`item.account_verified`]="{ item }">
-            <v-icon
-              :color="item.account_verified ? 'green' : 'error'">
-              {{ item.account_verified ? 'mdi-check-circle' : 'mdi-close-circle' }}
-            </v-icon>
-          </template>
-
-          <template #[`item.document_sent`]="{ item }">
-            <v-icon
-              :color="getDocumentSent(item) ? 'green' : 'error'">
-              {{ getDocumentSent(item) ? 'mdi-check-circle' : 'mdi-close-circle' }}
-            </v-icon>
-          </template>
-          
-          <template #[`item.person_type`]="{ item }">
-            <v-chip
-              :color="getPersonTypeColor(item.people?.person_type)"
-            >
-              {{ item.people?.person_type }}
-            </v-chip>
-          </template>
-          
-          <template #[`item.actions`]="{ item }">
-            <ActionsMenu
-              :show-edit="isAdmin"
-              :show-delete="false"
-              :show-duplicate="false"
-              icon="mdi-dots-horizontal"
-              @edit="editUser(item)"
-              @view-orders="viewOrders(item)"
-            />
-          </template>
-        </v-data-table>
+        <!-- Componentes de cada aba -->
+        <ReportsClientsTable v-if="activeTab === 0" />
+        <ReportsOrganizersTable v-if="activeTab === 1" />
+        <ReportsTeamTable v-if="activeTab === 2" />
       </v-col>
     </v-row>
 
@@ -146,6 +80,7 @@ export default {
       selectedUserId: null,
       selectedUserName: '',
       selectedUser: null,
+      activeTab: 0,
     };
   },
   
@@ -283,5 +218,13 @@ export default {
 <style scoped>
 .reports-users {
   padding: 16px 0;
+}
+
+.custom-tabs {
+  margin-bottom: 16px;
+}
+
+:deep(.theme--light.v-tabs > .v-tabs-bar) {
+  background-color: var(--tertiary) !important;
 }
 </style> 
