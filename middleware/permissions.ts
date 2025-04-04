@@ -67,8 +67,10 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
       eventId = eventIdMatch[1]; // ID do evento
     }
 
+    console.log('requiredPermissions', requiredPermissions);
+
     const hasPermission = requiredPermissions.length === 0 || 
-                          await checkUserPermissions(userRole.id, requiredPermissions, userId, eventId);
+      await checkUserPermissions(userRole.id, requiredPermissions, userId, eventId);
     
     if (!hasPermission) {
 
@@ -87,8 +89,8 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
         }
       }
       
-      // Se não for rota de evento ou não encontrou a rota pai, redirecionar para a página inicial
-      return redirect('/');
+      // TODO: Se não for rota de evento ou não encontrou a rota pai, redirecionar para a página inicial
+      // return redirect('/');
     }
   } catch (error) {
     console.error('Erro ao verificar permissões:', error);

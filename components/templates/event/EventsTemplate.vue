@@ -5,7 +5,7 @@
         <div class="events-template-title">Lista de Eventos</div>
       </v-col>
       <v-col cols="12" md="6" sm="12" class="d-flex" :class="{ 'justify-md-end': !isMobile, 'justify-space-between': isMobile }">
-        <DefaultButton text="Criar um evento" :block="isMobile" to="/events/create" />
+        <DefaultButton v-if="canCreateEvent" text="Criar um evento" :block="isMobile" to="/events/create" />
       </v-col>
     </v-row>
     <div class="actions">
@@ -50,7 +50,10 @@
 
 <script>
 import { event, status } from '@/store';
-import { isMobileDevice } from '@/utils/utils';
+import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
+import { checkUserPermissionsBatch } from '@/utils/permissions-util';
+import { EVENT_PERMISSIONS } from '@/utils/permissions-config';
+
 export default {
   props: {
     groupedEvents: { type: Array, required: true },
@@ -70,11 +73,22 @@ export default {
     return {
       search: '',
       selectedFilter: { name: 'Todos' },
-      showCalendar: false,
+      canCreateEvent: false,
     };
   },
   computed: {
 
+    getUserRole() {
+      return this.$cookies.get('user_role');
+    },
+
+    getUserId() {
+      return this.$cookies.get('user_id');
+    },
+
+    isAdminOrManager() {
+      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+    },
 
     isMobile() {
       return isMobileDevice(this.$vuetify);
@@ -111,11 +125,29 @@ export default {
 
   },
 
-  async mounted() {
-    await this.handleFetchFilterStatus();
+  mounted() {
+    this.checkUserPermission();
   },
 
   methods: {
+
+    async checkUserPermission() {
+      try {
+
+        if (this.isAdminOrManager) {
+          this.canCreateEvent = true;
+          return;
+        }
+
+        const permissions = await checkUserPermissionsBatch(this.getUserRole?.id, this.getUserId);
+
+        if (permissions.has('*') || permissions.has(EVENT_PERMISSIONS.CREATE)) {
+          this.canCreateEvent = true;
+        }
+      } catch (error) {
+        console.error('Erro ao verificar permissões do usuário', error);
+      }
+    },
 
     handleFilterChange(filter) {
       this.selectedFilter = filter;
@@ -128,13 +160,6 @@ export default {
     loadMore() {
       if (this.hasMorePages) {
         this.$emit('load-more');
-      }
-    },
-    async handleFetchFilterStatus() {
-      try {
-        await status.fetchStatusByModule('event');
-      } catch (error) {
-        console.error('Erro ao carregar lista de status de eventos', error);
       }
     },
   },

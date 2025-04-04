@@ -88,7 +88,7 @@
 </template>
 
 <script>
-import { isMobileDevice } from '@/utils/utils';
+import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
 import { TopBar } from '~/utils/topbar';
 import { loading } from '@/store';
 import { checkMenuItemsPermissions } from '~/utils/permissions-util';
@@ -107,6 +107,10 @@ export default {
   computed: {
     isLoading() {
       return loading.$isLoading;
+    },
+
+    isAdminOrManager() {
+      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
     },
 
     isMobile() {
@@ -172,13 +176,19 @@ export default {
           this.getUserId,
           TopBar
         );
-        
+
         // Aplicar resultados
         this.filteredItems = TopBar.filter((item, index) => {
           // Se tem permissões vazias, mostrar o item
           if (!item.permissions || item.permissions.length === 0) {
             return true;
           }
+
+          // Se o item é 'Minha página' e o usuário é admin ou gerente, não mostrar
+          if (item.title === 'Minha página' && this.isAdminOrManager) {
+            return false;
+          }
+
           return permissionsResult[index];
         });
       } catch (error) {

@@ -3,6 +3,8 @@ import Reports from './reports';
 import LoginPage from '@/pages/LoginPage.vue';
 import PaymentDetailsPage from '@/pages/payment/details/_id.vue';
 import MyPage from '@/pages/my-page.vue';
+import UserProfilePage from '@/pages/user/profile/_id.vue';
+
 export default [
   {
     path: '/login',
@@ -13,6 +15,14 @@ export default [
     path: '/my-page',
     name: 'MyPage',
     component: MyPage,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/user/profile/:id',
+    name: 'UserProfile',
+    component: UserProfilePage,
     meta: {
       requiresAuth: true
     }
