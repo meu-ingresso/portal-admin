@@ -22,7 +22,7 @@
           <v-col cols="9" md="5" sm="9">
             <v-autocomplete
               v-model="collaborator.role"
-              :items="$roles"
+              :items="rolesRelatedToEvent"
               label="Função"
               placeholder="Selecione a função"
               required
@@ -53,6 +53,7 @@
 
 <script>
 import { user, eventCollaborators } from '@/store';
+import { EVENT_COLLABORATOR_ROLES } from '~/utils/permissions-config';
 
 export default {
   props: {
@@ -75,6 +76,16 @@ export default {
         text: role.name,
         value: role.id,
       }));
+    },
+
+    rolesRelatedToEvent() {
+
+      if (!this.$roles) {
+        return [];
+      }
+
+      const eventCollaboratorRoles = EVENT_COLLABORATOR_ROLES.map((role) => role.name);
+      return this.$roles.filter((role) => eventCollaboratorRoles.includes(role.text));
     },
   },
 

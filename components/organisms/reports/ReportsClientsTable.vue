@@ -194,6 +194,7 @@
 
 <script>
 import { user, loading } from '@/store';
+import { CLIENT_ROLE } from '@/utils/permissions-config';
 
 export default {
   data() {
@@ -294,7 +295,7 @@ export default {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         verifiedStatus: verifiedStatus || undefined,
-        roleFilter: 'Cliente Final'
+        roleFilter: CLIENT_ROLE
       };
     },
     
