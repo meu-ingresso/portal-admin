@@ -168,6 +168,13 @@
           </v-chip>
         </v-sheet>
       </template>
+
+      <!-- Tipo de pessoa -->
+      <template #[`item.person_type`]="{ item }">
+        <v-chip color="primary">
+          {{ item.people?.person_type }}
+        </v-chip>
+      </template>
       
       <!-- Nome do organizador -->
       <template #[`item.full_name`]="{ item }">
@@ -188,16 +195,16 @@
       
       <!-- Status de verificação -->
       <template #[`item.account_verified`]="{ item }">
-        <v-icon :color="item.account_verified ? 'green' : 'error'">
-          {{ item.account_verified ? 'mdi-check-circle' : 'mdi-close-circle' }}
+        <v-icon :color="item.account_verified ? 'primary' : 'gray'">
+          {{ item.account_verified ? 'mdi-check-bold' : 'mdi-close' }}
         </v-icon>
       </template>
-      
-      <!-- Eventos associados -->
-      <template #[`item.events_count`]="{ item }">
-        <span class="events-link" @click="viewEvents(item)">
-          {{ item.events_count || '0' }} evento(s)
-        </span>
+
+      <!-- Documentos enviados -->
+      <template #[`item.document_sent`]="{ item }">
+        <v-icon :color="getDocumentSent(item) ? 'primary' : 'gray'">
+          {{ getDocumentSent(item) ? 'mdi-check-bold' : 'mdi-close' }}
+        </v-icon>
       </template>
       
       <!-- Ações -->
@@ -238,12 +245,12 @@ export default {
   data() {
     return {
       headers: [
+        { text: 'Tipo', value: 'person_type', sortable: false, align: 'center' },
+        { text: 'Nome/Razão Social', value: 'full_name', sortable: false },
         { text: 'E-mail', value: 'email', sortable: true },
-        { text: 'Nome', value: 'full_name', sortable: false },
-        { text: 'Função', value: 'role_name', sortable: true },
-        { text: 'Verificado', value: 'account_verified', sortable: false },
-        { text: 'Eventos', value: 'events_count', sortable: false },
-        { text: 'Ações', value: 'actions', sortable: false }
+        { text: 'Verificado', value: 'account_verified', sortable: false, align: 'center' },
+        { text: 'Docs', value: 'document_sent', sortable: false, align: 'center' },
+        { text: 'Ações', value: 'actions', sortable: false, align: 'center' }
       ],
       users: [],
       totalUsers: 0,
@@ -317,6 +324,21 @@ export default {
   },
   
   methods: {
+
+    getDocumentSent(user) {
+      if (!user?.attachments) return false;
+
+      if (user?.people?.person_type === 'PF') {
+        return user.attachments.some(attachment => attachment.type === 'document_cnh') ||
+          (user.attachments.some(attachment => attachment.type === 'document_rg_front') && 
+           user.attachments.some(attachment => attachment.type === 'document_rg_back'));
+      } else {
+        return user.attachments.some(attachment => 
+          attachment.type === 'document_cnpj' || 
+          attachment.type === 'document_social_contract'
+        );
+      }   
+    },
  
     formatDate(dateString) {
       if (!dateString) return '';
@@ -461,11 +483,6 @@ export default {
         ? `${user.people?.first_name} ${user.people?.last_name}`
         : user.people?.social_name;
       this.showUserOrders = true;
-    },
-
-    viewEvents(user) {
-      // TODO: Implementar visualização de eventos associados ao organizador
-      console.log('Visualizar eventos do organizador:', user.id);
     },
 
     editUser(user) {

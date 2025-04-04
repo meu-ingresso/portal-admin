@@ -100,19 +100,6 @@
                       </v-row>
                     </v-col>
 
-                    <!-- Filtro de tipo de pessoa -->
-                    <v-col cols="6">
-                      <v-select
-                        v-model="filters.personType"
-                        :items="personTypeOptions"
-                        label="Tipo de Pessoa"
-                        outlined
-                        dense
-                        clearable
-                        hide-details="auto"
-                        @change="handleFilterChange" />
-                    </v-col>
-
                     <!-- Filtro de status de verificação -->
                     <v-col cols="6">
                       <v-select
@@ -146,17 +133,6 @@
           </v-chip>
 
           <v-chip
-            v-if="filters.personType"
-            class="mr-2 chip-filter"
-            close
-            dark
-            color="primary"
-            @click:close="clearPersonType">
-            <v-icon left small>mdi-account</v-icon>
-            Tipo: {{ filters.personType }}
-          </v-chip>
-
-          <v-chip
             v-if="filters.verifiedStatus"
             class="mr-2 chip-filter" 
             close
@@ -179,24 +155,11 @@
         </span>
       </template>
       
-      <!-- Tipo de pessoa -->
-      <template #[`item.person_type`]="{ item }">
-        <v-chip :color="getPersonTypeColor(item.people?.person_type)">
-          {{ item.people?.person_type }}
-        </v-chip>
-      </template>
-      
+    
       <!-- Status de verificação -->
       <template #[`item.account_verified`]="{ item }">
-        <v-icon :color="item.account_verified ? 'green' : 'error'">
-          {{ item.account_verified ? 'mdi-check-circle' : 'mdi-close-circle' }}
-        </v-icon>
-      </template>
-
-      <!-- Documentos enviados -->
-      <template #[`item.document_sent`]="{ item }">
-        <v-icon :color="getDocumentSent(item) ? 'green' : 'error'">
-          {{ getDocumentSent(item) ? 'mdi-check-circle' : 'mdi-close-circle' }}
+        <v-icon :color="item.account_verified ? 'primary' : 'gray'">
+          {{ item.account_verified ? 'mdi-check-bold' : 'mdi-close' }}
         </v-icon>
       </template>
       
@@ -236,12 +199,10 @@ export default {
   data() {
     return {
       headers: [
-        { text: 'E-mail', value: 'email', sortable: true },
         { text: 'Nome', value: 'full_name', sortable: false },
-        { text: 'Tipo de Pessoa', value: 'person_type', sortable: false },
-        { text: 'Verificado', value: 'account_verified', sortable: false },
-        { text: 'Docs. Enviados', value: 'document_sent', sortable: false },
-        { text: 'Ações', value: 'actions', sortable: false }
+        { text: 'E-mail', value: 'email', sortable: true },
+        { text: 'E-mail verificado', value: 'account_verified', sortable: false, align: 'center' },
+        { text: 'Ações', value: 'actions', sortable: false, align: 'center' }
       ],
       users: [],
       totalUsers: 0,
@@ -255,7 +216,6 @@ export default {
         search: '',
         startDate: '',
         endDate: '',
-        personType: '',
         verifiedStatus: '',
       },
       currentQuery: null,
@@ -268,10 +228,6 @@ export default {
       selectedUser: null,
       startDateMenu: false,
       endDateMenu: false,
-      personTypeOptions: [
-        { text: 'Pessoa Física', value: 'PF' },
-        { text: 'Pessoa Jurídica', value: 'PJ' }
-      ],
       verifiedStatusOptions: [
         { text: 'Verificado', value: 'verified' },
         { text: 'Não Verificado', value: 'not_verified' }
@@ -318,32 +274,7 @@ export default {
       const date = new Date(dateString);
       return date.toLocaleDateString('pt-BR');
     },
-
-    getDocumentSent(user) {
-      if (!user?.attachments) return false;
-
-      if (user?.people?.person_type === 'PF') {
-        return user.attachments.some(attachment => attachment.type === 'document_cnh') ||
-          (user.attachments.some(attachment => attachment.type === 'document_rg_front') && 
-           user.attachments.some(attachment => attachment.type === 'document_rg_back'));
-      } else {
-        return user.attachments.some(attachment => 
-          attachment.type === 'document_cnpj' || 
-          attachment.type === 'document_social_contract'
-        );
-      }   
-    },
     
-    getPersonTypeColor(personType) {
-      switch (personType) {
-        case 'PF':
-          return 'primary';
-        case 'PJ':
-          return 'secondary';
-        default:
-          return 'grey';
-      }
-    },
 
     getVerifiedStatusText(status) {
       return this.verifiedStatusOptions.find(opt => opt.value === status)?.text || status;
@@ -351,7 +282,7 @@ export default {
     
     buildQueryParams() {
       const { page, itemsPerPage, sortBy, sortDesc } = this.options;
-      const { search, startDate, endDate, personType, verifiedStatus } = this.filters;
+      const { search, startDate, endDate, verifiedStatus } = this.filters;
       
       return {
         page,
@@ -360,7 +291,6 @@ export default {
         sortBy: sortBy.length ? sortBy : ['created_at'],
         sortDesc: sortDesc.length ? sortDesc : [true],
         preloads: ['people:address', 'attachments', 'role'],
-        personType: personType || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         verifiedStatus: verifiedStatus || undefined,
@@ -441,7 +371,6 @@ export default {
         search: '',
         startDate: '',
         endDate: '',
-        personType: '',
         verifiedStatus: '',
       };
       this.loadUsers(true);
@@ -460,11 +389,6 @@ export default {
     
     clearEndDate() {
       this.filters.endDate = '';
-      this.handleFilterChange();
-    },
-    
-    clearPersonType() {
-      this.filters.personType = '';
       this.handleFilterChange();
     },
     

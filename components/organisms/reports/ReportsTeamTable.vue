@@ -181,17 +181,9 @@
       
       <!-- Função -->
       <template #[`item.role_name`]="{ item }">
-        <v-chip :color="getRoleColor(item.role?.name)">
-          {{ item.role?.name }}
-        </v-chip>
+        <span class="text-capitalize">{{ item.role?.name }}</span>
       </template>
       
-      <!-- Status -->
-      <template #[`item.active`]="{ item }">
-        <v-icon :color="!item.deleted_at ? 'green' : 'error'">
-          {{ !item.deleted_at ? 'mdi-check-circle' : 'mdi-close-circle' }}
-        </v-icon>
-      </template>
       
       <!-- Ações -->
       <template #[`item.actions`]="{ item }">
@@ -225,7 +217,6 @@ export default {
         { text: 'E-mail', value: 'email', sortable: true },
         { text: 'Nome', value: 'full_name', sortable: false },
         { text: 'Função', value: 'role_name', sortable: true },
-        { text: 'Status', value: 'active', sortable: false },
         { text: 'Ações', value: 'actions', sortable: false }
       ],
       users: [],
