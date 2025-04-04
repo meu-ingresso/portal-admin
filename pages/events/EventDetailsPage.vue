@@ -189,7 +189,7 @@ export default {
     async fetchEventData() {
       try {
         this.eventInvalid = false;
-        if (!this.$route.params.id || this.getEvent?.id === this.$route.params.id) {
+        if (!this.$route.params.id) {
           return;
         }
 

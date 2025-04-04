@@ -240,7 +240,7 @@
 
 <script>
 import { user, loading } from '@/store';
-
+import { EVENT_COLLABORATOR_ROLES } from '@/utils/permissions-config';
 export default {
   data() {
     return {
@@ -277,13 +277,6 @@ export default {
       selectedUser: null,
       startDateMenu: false,
       endDateMenu: false,
-      roleOptions: [
-        { text: 'Gerente', value: 'Gerente' },
-        { text: 'PDV (Ponto de venda)', value: 'PDV (Ponto de venda)' },
-        { text: 'Check-in', value: 'Check-in' },
-        { text: 'Coordenador de Check-in', value: 'Coordenador de Check-in' },
-        { text: 'Visualização', value: 'Visualização' }
-      ],
       verifiedStatusOptions: [
         { text: 'Verificado', value: 'verified' },
         { text: 'Não Verificado', value: 'not_verified' }
@@ -292,6 +285,15 @@ export default {
   },
   
   computed: {
+
+    organizerRoles() {
+      return EVENT_COLLABORATOR_ROLES.map(role => role.name);
+    },
+
+    roleOptions() {
+      return EVENT_COLLABORATOR_ROLES.map(role => ({ text: role.name, value: role.name }));
+    },
+
     isLoading() {
       return this.isLoadingInternal || loading.$isLoading;
     },
@@ -353,9 +355,7 @@ export default {
     buildQueryParams() {
       const { page, itemsPerPage, sortBy, sortDesc } = this.options;
       const { search, startDate, endDate, role, verifiedStatus } = this.filters;
-      
-      // Definir os roles de organizadores que queremos buscar
-      const organizerRoles = ['Gerente', 'PDV (Ponto de venda)', 'Check-in', 'Coordenador de Check-in', 'Visualização'];
+  
       
       return {
         page,
@@ -367,7 +367,7 @@ export default {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         verifiedStatus: verifiedStatus || undefined,
-        roleFilter: role || organizerRoles,
+        roleFilter: role || this.organizerRoles,
         includeEventCount: true
       };
     },
