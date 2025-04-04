@@ -12,7 +12,7 @@
           <MobileLogo is-dark :click-to-home="true" />
         </v-list-item>
         <v-list-item
-          v-for="item in internalTopBarItems"
+          v-for="item in filteredInternalTopBarItems"
           :key="item.title"
           :to="item.to"
           router
@@ -27,7 +27,7 @@
           </v-list-item-content>
         </v-list-item>
         <v-list-item
-          v-for="item in externalTopBarItems"
+          v-for="item in filteredExternalTopBarItems"
           :key="'ext-'+item.title"
           :href="item.to"
           :target="item.target"
@@ -52,7 +52,7 @@
 
         <!-- Desktop -->
         <div v-if="!isMobile" class="content-menus">
-          <div v-for="(item, index) in internalTopBarItems" :key="index" class="topbar-item">
+          <div v-for="(item, index) in filteredInternalTopBarItems" :key="index" class="topbar-item">
             <v-btn
               :to="item.to"
               class="topbar-button"
@@ -63,7 +63,7 @@
               <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
             </v-btn>
           </div>
-          <div v-for="(item, index) in externalTopBarItems" :key="'ext-'+index" class="topbar-item">
+          <div v-for="(item, index) in filteredExternalTopBarItems" :key="'ext-'+index" class="topbar-item">
             <v-btn
               :href="item.to"
               :target="item.target"
@@ -91,6 +91,7 @@
 import { isMobileDevice } from '@/utils/utils';
 import { TopBar } from '~/utils/topbar';
 import { loading } from '@/store';
+import { checkMenuItemsPermissions } from '~/utils/permissions-util';
 
 export default {
   name: 'LayoutDefault',
@@ -99,6 +100,7 @@ export default {
       isValid: false,
       isLogin: false,
       drawer: false,
+      filteredItems: [],
     };
   },
 
@@ -118,34 +120,71 @@ export default {
     getUserLogged() {
       return !!this.$cookies.get('user_logged');
     },
+    
+    getUserId() {
+      return this.$cookies.get('user_id');
+    },
+    
+    getUserRole() {
+      return this.$cookies.get('user_role');
+    },
 
     topBarItems() {
       if (!this.getUserLogged) {
         return [];
       }
-      return TopBar;
+      return this.filteredItems.length > 0 ? this.filteredItems : [];
     },
 
-    internalTopBarItems() {
+    filteredInternalTopBarItems() {
       return this.topBarItems.filter(item => !item.target);
     },
 
-    externalTopBarItems() {
+    filteredExternalTopBarItems() {
       return this.topBarItems.filter(item => item.target);
     },
   },
 
-  mounted() {
+  async mounted() {
     if (!this.getUserLogged || !this.getUserToken || this.getUserToken === '') {
       this.$router.push('/login');
     } else {
       this.$set(this, 'isValid', true);
+      await this.filterMenuItemsByPermissions();
     }
   },
 
   methods: {
     onChangeDrawer() {
       this.drawer = !this.drawer;
+    },
+    
+    async filterMenuItemsByPermissions() {
+      try {
+        if (!this.getUserId || !this.getUserRole) {
+          this.filteredItems = [];
+          return;
+        }
+
+        // Verificar permissões diretamente para todos os itens
+        const permissionsResult = await checkMenuItemsPermissions(
+          this.getUserRole,
+          this.getUserId,
+          TopBar
+        );
+        
+        // Aplicar resultados
+        this.filteredItems = TopBar.filter((item, index) => {
+          // Se tem permissões vazias, mostrar o item
+          if (!item.permissions || item.permissions.length === 0) {
+            return true;
+          }
+          return permissionsResult[index];
+        });
+      } catch (error) {
+        console.error('Erro ao filtrar itens de menu:', error);
+        this.filteredItems = [];
+      }
     },
   },
 };

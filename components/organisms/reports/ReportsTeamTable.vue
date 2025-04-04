@@ -209,7 +209,7 @@
 
 <script>
 import { user, loading } from '@/store';
-
+import { ADMIN_ROLES } from '@/utils/permissions-config';
 export default {
   data() {
     return {
@@ -241,12 +241,6 @@ export default {
       selectedUser: null,
       startDateMenu: false,
       endDateMenu: false,
-      roleOptions: [
-        { text: 'Admin', value: 'Admin' },
-        { text: 'Financeiro', value: 'Financeiro' },
-        { text: 'Analista', value: 'Analista' },
-        { text: 'Operador', value: 'Operador' }
-      ],
       activeOptions: [
         { text: 'Ativo', value: 'active' },
         { text: 'Inativo', value: 'inactive' }
@@ -255,6 +249,15 @@ export default {
   },
   
   computed: {
+
+    teamRoles() {
+      return ADMIN_ROLES.map(role => role.name);
+    },
+
+    roleOptions() {
+      return ADMIN_ROLES.map(role => ({ text: role.name, value: role.name }));
+    },
+
     isLoading() {
       return this.isLoadingInternal || loading.$isLoading;
     },
@@ -287,6 +290,7 @@ export default {
   },
   
   methods: {
+    
 
     formatDate(dateString) {
       if (!dateString) return '';
@@ -317,9 +321,6 @@ export default {
       const { page, itemsPerPage, sortBy, sortDesc } = this.options;
       const { search, startDate, endDate, role, active } = this.filters;
       
-      // Definir os roles de equipe que queremos buscar
-      const teamRoles = ['Admin', 'Financeiro', 'Analista', 'Operador'];
-      
       return {
         page,
         limit: itemsPerPage,
@@ -329,7 +330,7 @@ export default {
         preloads: ['people:address', 'role'],
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        roleFilter: role || teamRoles,
+        roleFilter: role || this.teamRoles,
         active: active || undefined
       };
     },

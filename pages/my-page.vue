@@ -1,76 +1,60 @@
 <template>
   <v-container fluid class="pa-0">
-    <v-row no-gutters>
-      <v-col cols="12">
-        <v-card tile flat>
-          <v-card-text class="px-8 py-8">
-            <v-row align="center" no-gutters>
-              <v-col cols="auto" class="mr-4">
-                <v-avatar size="64" class="profile-image">
-                  <v-img :src="profileImageUrl || '/default_avatar.svg'" @click="$refs.fileInput.click()">
-                    <template #placeholder>
-                      <v-icon size="32">mdi-account</v-icon>
-                    </template>
-                  </v-img>
-                </v-avatar>
-              </v-col>
-              <v-col>
-                <div class="d-flex flex-column">
-                  <div class="text-h6 font-weight-bold">{{ userAlias }}</div>
-                  <div class="text-body-2 grey--text">
-                    <v-icon small class="mr-1">mdi-link</v-icon>
-                    {{ profileUrl }}
-                  </div>
-                </div>
-              </v-col>
-              <v-spacer></v-spacer>
-              <v-col cols="auto">
-                <ButtonWithIcon
-                  text="Compartilhar"
-                  icon="mdi-share-variant"
-                  @click="handleShare"
-                />
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- Statistics Cards 
-    <v-row class="center-row mb-6">
-
-      <v-col cols="12"> 
-        <div class="template-title">Análises da página</div>
-      </v-col>
-
-      <v-col v-for="(stat, index) in getStatistics" :key="index" cols="12" sm="6" md="4">
-        <v-card tile flat class="stat-card">
-          <v-card-text>
-            <div class="d-flex flex-column">
-              <div class="text-h4 font-weight-bold primary--text">{{ stat.value }}</div>
-              <div class="text-body-2 grey--text text--darken-1">{{ stat.title }}</div>
+    <!-- Profile Header Card -->
+    <v-card elevation="0" class="mb-6 rounded-lg">
+      <v-card-text class="px-8 py-8">
+        <v-row align="center" no-gutters>
+          <v-col cols="auto" class="mr-4">
+            <div class="profile-image-container">
+              <v-avatar size="80" class="profile-image">
+                <v-img :src="profileImageUrl || '/default_avatar.svg'" :aspect-ratio="1">
+                  <template #placeholder>
+                    <v-icon size="32">mdi-account</v-icon>
+                  </template>
+                </v-img>
+              </v-avatar>
+              <div class="image-upload-overlay" @click="$refs.fileInput.click()">
+                <v-icon color="white">mdi-camera</v-icon>
+                <div class="upload-text">Alterar</div>
+              </div>
             </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-    -->
+          </v-col>
+          <v-col>
+            <div class="d-flex flex-column">
+              <div class="text-h6 font-weight-bold">{{ userAlias }}</div>
+              <div class="text-body-2 grey--text d-flex align-center">
+                <v-icon small class="mr-1">mdi-link</v-icon>
+                <span class="text-truncate">{{ profileUrl }}</span>
+              </div>
+            </div>
+          </v-col>
+          <v-spacer></v-spacer>
+          <v-col cols="auto">
+            <ButtonWithIcon
+              text="Compartilhar"
+              icon="mdi-share-variant"
+              @click="handleShare"
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
-    <v-row class="center-row mb-6 mt-6">
+    <!-- Statistics Section -->
+    <v-row class="center-row mb-6">
       <v-col cols="12"> 
         <StatisticList :statistics="getStatistics" title="Análises da página" />
       </v-col>
     </v-row>
 
-
-    <!-- Configurações da página -->
+    <!-- Page Configuration Sections -->
     <v-row class="center-row">
       <v-col cols="12">
-        <div class="template-title">Configurações da página</div>
+        <div class="template-title mb-4">Configurações da página</div>
       </v-col>
       
       <v-col cols="12">
+        <!-- Bio Section -->
         <PageConfigSection
           icon="mdi-text"
           title="Sobre"
@@ -88,6 +72,7 @@
           />
         </PageConfigSection>
 
+        <!-- Social Links Section -->
         <PageConfigSection
           icon="mdi-link-variant"
           title="Links"
@@ -102,6 +87,7 @@
           />
         </PageConfigSection>
 
+        <!-- Contact Info Section -->
         <PageConfigSection
           icon="mdi-account-box-outline"
           title="Informações de contato"
@@ -112,7 +98,7 @@
         >
           <v-row>
             <v-col cols="12" sm="6">
-              <v-card tile flat>
+              <v-card tile flat class="pa-2 custom-hover">
                 <v-card-text>
                   <v-text-field
                     v-model="contactEmail"
@@ -120,6 +106,7 @@
                     outlined
                     dense
                     :disabled="isLoading"
+                    prepend-inner-icon="mdi-email-outline"
                   ></v-text-field>
                   <v-checkbox
                     v-model="showContactEmail"
@@ -131,7 +118,7 @@
               </v-card>
             </v-col>
             <v-col cols="12" sm="6">
-              <v-card tile flat>
+              <v-card tile flat class="pa-2 custom-hover">
                 <v-card-text>
                   <v-text-field
                     v-model="contactPhone"
@@ -140,6 +127,7 @@
                     max-length="15"
                     dense
                     :disabled="isLoading"
+                    prepend-inner-icon="mdi-phone-outline"
                     @input="formatPhoneInput"
                   ></v-text-field>
                   <v-checkbox
@@ -185,7 +173,6 @@ import { user, userDocuments, toast, event } from '@/utils/store-util';
 import { formatRealValue, onFormatCellphone } from '@/utils/formatters';
 
 export default {
-
   data() {
     return {
       isLoading: false,
@@ -460,9 +447,41 @@ export default {
 </script>
 
 <style scoped>
+.profile-image-container {
+  position: relative;
+  display: inline-block;
+}
+
 .profile-image {
   border: 2px solid var(--v-primary-base);
+  transition: all 0.3s ease;
+}
+
+.image-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
   cursor: pointer;
+}
+
+.upload-text {
+  color: white;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.profile-image-container:hover .image-upload-overlay {
+  opacity: 1;
 }
 
 .center-row {
@@ -470,7 +489,18 @@ export default {
   margin: 0 auto;
 }
 
-.bio-textarea {
-  background-color: white;
+.template-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--v-primary-base);
+}
+
+/* Add card styling */
+.v-card {
+  transition: all 0.3s ease;
+}
+
+.custom-hover:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 </style>

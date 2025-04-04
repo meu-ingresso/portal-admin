@@ -29,14 +29,16 @@ export async function checkUserPermissionsBatch(
 
         const collaborator = collaboratorsResponse.body.result.data[0];
 
-        if (collaborator?.role?.name === 'Promoter' || collaborator?.role?.name === 'Gerente' || collaborator?.role?.name === 'Admin') {
+         if (collaborator && (collaborator?.role?.name === 'Gerente' || collaborator?.role?.name === 'Admin')) {
           // Retorna um Set com todas as permissões possíveis, já que esses roles têm acesso total
           return new Set(['*']);
-        }
+         }
+        
+        const targetRoleId = collaborator?.role_id || roleId;
 
         // Buscar todas as permissões do role do colaborador de uma vez
         const rolePermissionsResponse = await $axios.$get(
-          `role-permissions?where[role_id][v]=${collaborator.role_id}&limit=9999&preloads[]=permission`
+          `role-permissions?where[role_id][v]=${targetRoleId}&limit=9999&preloads[]=permission`
         );
 
         if (!rolePermissionsResponse?.body?.result?.data) {
