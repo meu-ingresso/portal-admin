@@ -147,10 +147,9 @@
 </template>
 
 <script>
-import { loading, eventGeneralInfo, toast } from '@/store';
+import { loading, eventGeneralInfo, toast, permissions } from '@/store';
 import { eventsSideBar } from '@/utils/events-sidebar';
 import { isMobileDevice } from '@/utils/utils';
-import { checkMenuItemsPermissions } from '@/utils/permissions-util';
 
 export default {
   props: {
@@ -338,16 +337,39 @@ export default {
         to: item.to.replace(':id', eventId),
       }));
 
-      // Verificar todas as permissões de uma vez
-      const permissionsResults = await checkMenuItemsPermissions(
-        userRole,
-        userId,
-        items,
-        eventId
-      );
+      // Admin e Gerente têm acesso a tudo
+      if (userRole.name === 'Admin' || userRole.name === 'Gerente') {
+        this.filteredSidebar = items;
+        return;
+      }
 
-      // Filtrar os itens baseado nos resultados das permissões
-      this.filteredSidebar = items.filter((_, index) => permissionsResults[index]);
+      // Verificar se já temos as permissões deste evento em cache
+      if (!permissions.$eventPermissions[eventId] || !permissions.$isCacheValid) {
+        // Carregar as permissões do evento se não existirem no cache
+        await permissions.loadEventPermissions({
+          userId,
+          eventId,
+          roleId: userRole.id
+        });
+      }
+
+      // Se o usuário tem a permissão especial '*', permite tudo
+      if (permissions.$eventPermissions[eventId]?.includes('*')) {
+        this.filteredSidebar = items;
+        return;
+      }
+
+      // Filtrar os itens baseado nas permissões armazenadas
+      this.filteredSidebar = items.filter((item) => {
+        if (!item.permissions || item.permissions.length === 0) {
+          return true;
+        }
+        
+        // Verificar se o usuário tem pelo menos uma das permissões necessárias
+        return item.permissions.some(permission => 
+          permissions.$eventPermissions[eventId]?.includes(permission)
+        );
+      });
     },
 
     async requestPublication() {

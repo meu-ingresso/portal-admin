@@ -175,17 +175,28 @@ export default class User extends VuexModule {
   }
 
   @Action
-  public async get(user_id: string) {
+  public async getById(payload: { user_id: string, commit?: boolean }) {
 
-    const response = await $axios.$get(`users?where[id][v]=${user_id}&preloads[]=people:address&preloads[]=role&preloads[]=attachments`);
-    
-    const result = handleGetResponse(response, 'Usuário não encontrado', null, true);
+    try {
 
-    if (result && result.data) {
-      this.context.commit('SET_USER', result.data[0]);
+      const response = await $axios.$get(`users?where[id][v]=${payload.user_id}&preloads[]=people:address&preloads[]=role&preloads[]=attachments`);
+      
+      const result = handleGetResponse(response, 'Usuário não encontrado', null, true);
+
+      if (result && result.data) {
+        if (payload.commit) {
+          this.context.commit('SET_USER', result.data[0]);
+        }
+
+        return result.data[0];
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error('Erro ao buscar usuário por ID:', error);
+      return null;
     }
-
-    return result.data[0];
   }
 
   @Action
@@ -468,5 +479,126 @@ export default class User extends VuexModule {
   @Action
   public reset() {
     this.context.commit('RESET');
+  }
+
+  @Action
+  public async createUser(payload: {
+    email: string;
+    role_id: string;
+    people_id?: string;
+    password?: string;
+    require_password_change?: boolean;
+    firstName?: string;
+    lastName?: string;
+    birthDate?: string;
+    alias?: string;
+  }) {
+    try {
+      // Se não foi fornecido um people_id, criamos uma pessoa básica
+      let peopleId = payload.people_id;
+      
+      if (!peopleId) {
+        const peopleResponse = await $axios.$post('people', {
+          data: [{
+            first_name: payload.firstName || '',
+            last_name: payload.lastName || '',
+            person_type: 'PF',
+            email: payload.email,
+            birth_date: payload.birthDate || '2000-01-01',
+          }]
+        });
+        
+        if (!peopleResponse.body || peopleResponse.body.code !== 'CREATE_SUCCESS') {
+          throw new Error('Falha ao criar pessoa');
+        }
+        
+        peopleId = peopleResponse.body.result[0].id;
+      }
+      
+      // Gerar senha temporária se não fornecida
+      const password = payload.password || '123456';
+      
+      // Criar usuário
+      const userResponse = await $axios.$post('user', {
+        data: [{
+          people_id: peopleId,
+          email: payload.email,
+          role_id: payload.role_id,
+          password,
+          alias: payload.alias || `${payload.firstName}-${payload.lastName}`,
+        }]
+      });
+      
+      if (!userResponse.body || userResponse.body.code !== 'CREATE_SUCCESS') {
+        throw new Error('Falha ao criar usuário');
+      }
+      
+      return {
+        success: true,
+        data: userResponse.body.result[0],
+        password
+      };
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro desconhecido'
+      };
+    }
+  }
+
+  @Action
+  public async getRoleByName(roleName: string) {
+    try {
+      const response = await $axios.$get('roles?where[name][v]=' + encodeURIComponent(roleName));
+      
+      const result = handleGetResponse(response, 'Cargo não encontrado', null, true);
+
+      if (result && result.data && result.data.length > 0) {
+        return {
+          success: true,
+          data: result.data[0]
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'Cargo não encontrado'
+      };
+    } catch (error) {
+      console.error('Erro ao buscar cargo por nome:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro desconhecido'
+      };
+    }
+  }
+
+  @Action
+  public async findUserByEmail(email: string) {
+    try {
+      const response = await $axios.$get(`users?where[email][v]=${encodeURIComponent(email)}`);
+      
+      const result = handleGetResponse(response, 'Usuário não encontrado', null, true);
+      
+      if (result && result.data && result.data.length > 0) {
+        return {
+          success: true,
+          exists: true,
+          data: result.data[0]
+        };
+      }
+      
+      return {
+        success: true,
+        exists: false
+      };
+    } catch (error) {
+      console.error('Erro ao buscar usuário por email:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro desconhecido'
+      };
+    }
   }
 }

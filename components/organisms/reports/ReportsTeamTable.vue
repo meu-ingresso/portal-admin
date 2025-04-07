@@ -33,6 +33,12 @@
             </v-col>
 
             <v-col cols="6" class="d-flex justify-end align-center">
+              <DefaultButton 
+                v-if="isAdmin"
+                text="Adicionar" 
+                class="mr-3"
+                @click="openAddTeamMemberModal" 
+              />
               <TableFilter
                 :active-filters-count="activeFiltersCount"
                 @clear-filters="clearFilters">
@@ -204,12 +210,19 @@
       :user="selectedUser"
       @saved="handleUserSaved"
     />
+
+    <!-- Modal para adicionar novo membro da equipe -->
+    <AddTeamMemberModal
+      :show.sync="showAddTeamMemberModal"
+      @saved="handleTeamMemberSaved"
+    />
   </div>
 </template>
 
 <script>
 import { user, loading } from '@/store';
 import { ADMIN_ROLES } from '@/utils/permissions-config';
+
 export default {
   data() {
     return {
@@ -245,6 +258,7 @@ export default {
         { text: 'Ativo', value: 'active' },
         { text: 'Inativo', value: 'inactive' }
       ],
+      showAddTeamMemberModal: false
     };
   },
   
@@ -449,6 +463,14 @@ export default {
       this.showEditUserModal = false;
       this.loadUsers(true);
     },
+
+    openAddTeamMemberModal() {
+      this.showAddTeamMemberModal = true;
+    },
+    
+    handleTeamMemberSaved() {
+      this.loadUsers(true);
+    }
   },
 };
 </script>
