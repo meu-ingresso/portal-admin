@@ -12,6 +12,8 @@ export default class PermissionsModule extends VuexModule {
   private lastUpdate: number = 0;
   private cacheExpirationTime: number = 5 * 60 * 1000; // 5 minutos
 
+  private isLoadingEventPermissions: boolean = false;
+
   get $permissions(): string[] {
     return this.userPermissions;
   }
@@ -30,6 +32,15 @@ export default class PermissionsModule extends VuexModule {
 
   get $hasAllPermissions(): boolean {
     return this.userPermissions.includes('*');
+  }
+
+  get $isLoadingEventPermissions(): boolean {
+    return this.isLoadingEventPermissions;
+  }
+
+  @Mutation
+  SET_LOADING_EVENT_PERMISSIONS(loading: boolean) {
+    this.isLoadingEventPermissions = loading;
   }
 
   @Mutation
@@ -59,7 +70,7 @@ export default class PermissionsModule extends VuexModule {
       }
 
       // Admin e Gerente têm acesso a tudo
-      if (payload.roleId && ['1', '2'].includes(payload.roleId.toString())) {
+      if (payload.roleId && ['1c279e46-7105-4e3b-964b-2d8104254dec', '5388c6fa-2653-4c27-9cc8-a8d79ff59802'].includes(payload.roleId)) {
         const allPermissions = ['*'];
         this.context.commit('SET_USER_PERMISSIONS', allPermissions);
         return allPermissions;
@@ -90,13 +101,15 @@ export default class PermissionsModule extends VuexModule {
   @Action
   async loadEventPermissions(payload: { userId: string; eventId: string; roleId: string }) {
     try {
+      this.context.commit('SET_LOADING_EVENT_PERMISSIONS', true);
+
       // Verificar se já tem no cache
       if (this.$isCacheValid && this.eventPermissionsMap[payload.eventId]) {
         return this.eventPermissionsMap[payload.eventId];
       }
 
       // Admin e Gerente têm acesso a tudo
-      if (payload.roleId && ['1', '2'].includes(payload.roleId.toString())) {
+      if (payload.roleId && ['1c279e46-7105-4e3b-964b-2d8104254dec', '5388c6fa-2653-4c27-9cc8-a8d79ff59802'].includes(payload.roleId)) {
         const allPermissions = ['*'];
         this.context.commit('SET_EVENT_PERMISSIONS', { 
           eventId: payload.eventId, 
@@ -165,6 +178,8 @@ export default class PermissionsModule extends VuexModule {
     } catch (error) {
       console.error('Erro ao carregar permissões do evento:', error);
       return [];
+    } finally {
+      this.context.commit('SET_LOADING_EVENT_PERMISSIONS', false);
     }
   }
 

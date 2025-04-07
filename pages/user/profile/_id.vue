@@ -38,12 +38,11 @@
 import { user } from '@/store';
 
 export default {
-  name: 'UserProfilePage',
-  
+
   async asyncData({ params, error }) {
     try {
       const userId = params.id;
-      await user.get(userId);
+      await user.getById({ user_id: userId, commit: true });
       return { userId };
     } catch (e) {
       error({ statusCode: 404, message: 'Usuário não encontrado' });

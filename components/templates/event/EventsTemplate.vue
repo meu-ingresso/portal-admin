@@ -23,7 +23,11 @@
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
-    <EventList :events="groupedEvents" :show-sessions-indicator="showSessionsIndicator" />
+    <EventList
+      :events="groupedEvents"
+      :show-sessions-indicator="showSessionsIndicator"
+      @check-promoter="handleCheckPromoter"
+    />
 
     <!-- Estado vazio -->
     <template v-if="groupedEvents.length === 0 && !isLoadingEvents">
@@ -49,7 +53,7 @@
 </template>
 
 <script>
-import { event, status } from '@/store';
+import { event, status, user } from '@/store';
 import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
 import { checkUserPermissionsBatch } from '@/utils/permissions-util';
 import { EVENT_PERMISSIONS } from '@/utils/permissions-config';
@@ -130,6 +134,39 @@ export default {
   },
 
   methods: {
+
+    async handleCheckPromoter(promoterId) {
+      try {
+
+         const userResponse = await user.getById({ user_id: promoterId, commit: false });
+
+         if (userResponse && userResponse?.role) {
+
+          const { role } = userResponse;
+
+          // Verifica se o promotor é um cliente para transformar em promotor
+          if (role.name === 'Cliente') {
+            const roleResponse = await user.getRoleByName({ name: 'Promoter' });
+
+            if (roleResponse && roleResponse.success) {
+              await user.updateUser({
+                id: userResponse.id,
+                role_id: roleResponse.data.id
+              });
+
+              toast.setToast({
+                text: 'Cliente promovido a promotor com sucesso',
+                type: 'success',
+                time: 3000,
+              });
+            }
+          }
+         }
+        
+      } catch (error) {
+        console.error('Erro ao verificar promotor', error);
+      }
+    },
 
     async checkUserPermission() {
       try {

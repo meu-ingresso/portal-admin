@@ -97,7 +97,7 @@ export default class UserDocuments extends VuexModule {
         throw new Error('Usuário não encontrado. Por favor, faça login novamente.');
       }
 
-      const responseUser = await user.get(userId);
+      const responseUser = await user.getById({ user_id: userId, commit: true });
 
       const personType = responseUser?.people?.person_type || 'PF';
       this.context.commit('UPDATE_DOCUMENT_INFO', { personType });

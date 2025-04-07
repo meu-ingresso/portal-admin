@@ -1,7 +1,7 @@
 import Events from './events';
 import Reports from './reports';
 import LoginPage from '@/pages/LoginPage.vue';
-import PaymentDetailsPage from '@/pages/payment/details/_id.vue';
+import PaymentDetailsPage from '@/pages/payment/details/_orderId.vue';
 import MyPage from '@/pages/my-page.vue';
 import UserProfilePage from '@/pages/user/profile/_id.vue';
 
@@ -28,7 +28,7 @@ export default [
     }
   },
   {
-    path: '/payment/details/:id',
+    path: '/payment/details/:orderId',
     name: 'PaymentDetails',
     component: PaymentDetailsPage,
     meta: {
