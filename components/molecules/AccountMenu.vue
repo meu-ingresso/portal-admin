@@ -76,7 +76,7 @@ export default Vue.extend({
 
   methods: {
     userEdit(id: string): void {
-      this.$router.push(`/user/edit/${id}`);
+      this.$router.push(`/user/profile/${id}`);
     },
 
     getInitials(name) {

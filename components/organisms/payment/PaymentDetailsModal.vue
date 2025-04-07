@@ -231,7 +231,7 @@
 <script>
 import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
-import { payment, eventCustomerTickets, toast } from '@/store';
+import { payment, eventCustomerTickets, toast, permissions } from '@/store';
 import { isMobileDevice, getPaymentMethod, is24HoursOrMoreBeforeDate } from '@/utils/utils';
 
 export default {
@@ -259,6 +259,15 @@ export default {
   },
 
   computed: {
+
+    getUserEventPermissions() {
+      return permissions.$eventPermissions;
+    },
+
+    canCancelOrder() {
+      return Object.values(this.getUserEventPermissions).some(permissions => permissions.includes('cancel_event_orders'));
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },

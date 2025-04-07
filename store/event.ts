@@ -403,7 +403,7 @@ export default class Event extends VuexModule {
       'category',
       'attachments',
       'coupons',
-      'collaborators',
+      'collaborators:role',
       'groups'
     ];
 

@@ -184,3 +184,38 @@ export const is24HoursOrMoreBeforeDate = (date: string | Date): boolean => {
   // Verifica se a diferença é maior ou igual a 24 horas
   return eventDate.getTime() - now.getTime() >= oneDay;
 };
+
+export const extractNameFromEmail = (email: string): { firstName: string, lastName: string } => {
+
+  try {
+    if (!email || !email.includes('@')) {
+      return { firstName: '', lastName: '' };
+    }
+    
+    const localPart = email.split('@')[0];
+    
+    const cleanedPart = localPart.replace(/[0-9!#$%^&*()+=[\]{};':"\\|,<>/?]/g, '');
+    
+    const parts = cleanedPart.split(/[._-]/);
+
+    const formattedParts = parts
+      .filter(part => part.trim().length > 0)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase());
+    
+    if (formattedParts.length === 0) {
+      return { firstName: '', lastName: '' };
+    }
+    
+    if (formattedParts.length === 1) {
+      return { firstName: formattedParts[0], lastName: '' };
+    }
+    
+    const firstName = formattedParts[0];
+    const lastName = formattedParts[formattedParts.length - 1];
+    
+    return { firstName, lastName };
+  } catch (error) {
+    console.error('Erro ao extrair nome do e-mail:', error);
+    return { firstName: '', lastName: '' };
+  }
+};

@@ -7,7 +7,9 @@
         :event="event"
         :can-manage-event="canManageEvent"
         :image="findBannerImage(event)"
-        :show-sessions-indicator="showSessionsIndicator" />
+        :show-sessions-indicator="showSessionsIndicator"
+        @approved-event="handleApprovedEvent"
+        />
     </template>
     <template v-else>
       <EventCard
@@ -55,6 +57,22 @@ export default {
   },
 
   methods: {
+
+    handleApprovedEvent(eventId) {
+      try {
+        const relatedEvent = this.events.find(event => event.id === eventId);
+        if (relatedEvent) {
+          const promoterId = relatedEvent?.promoter_id;
+          if (promoterId) {
+            this.$emit('check-promoter', promoterId);
+          }
+        }
+        
+      } catch (error) {
+        console.error('Erro ao verificar promotor', error);
+      }
+    },
+
     findBannerImage(event) {
       const banner = event.attachments.find(
         (attach) => attach.type === 'image' && attach.name === 'banner'

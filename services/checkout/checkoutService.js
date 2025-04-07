@@ -42,7 +42,7 @@ export default {
         const userId = context.$cookies.get('user_id');
         if (!userId) throw new Error('ID do usuário não encontrado');
 
-        const userResponse = await user.get(userId);
+        const userResponse = await user.getById({ user_id: userId, commit: false });
         if (!userResponse || !userResponse?.people || !userResponse?.people?.id) {
           throw new Error('Dados do usuário não encontrados');
         }

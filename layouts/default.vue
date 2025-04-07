@@ -88,10 +88,9 @@
 </template>
 
 <script>
-import { isMobileDevice } from '@/utils/utils';
+import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
 import { TopBar } from '~/utils/topbar';
-import { loading } from '@/store';
-import { checkMenuItemsPermissions } from '~/utils/permissions-util';
+import { loading, permissions } from '@/store';
 
 export default {
   name: 'LayoutDefault',
@@ -107,6 +106,10 @@ export default {
   computed: {
     isLoading() {
       return loading.$isLoading;
+    },
+
+    isAdminOrManager() {
+      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
     },
 
     isMobile() {
@@ -166,20 +169,49 @@ export default {
           return;
         }
 
-        // Verificar permissões diretamente para todos os itens
-        const permissionsResult = await checkMenuItemsPermissions(
-          this.getUserRole,
-          this.getUserId,
-          TopBar
-        );
-        
-        // Aplicar resultados
-        this.filteredItems = TopBar.filter((item, index) => {
+        // Admin e Gerente têm acesso a tudo
+        if (this.isAdminOrManager) {
+          this.filteredItems = TopBar.filter(item => 
+            // Se o item é 'Minha página' e o usuário é admin ou gerente, não mostrar
+            !(item.title === 'Minha página' && this.isAdminOrManager)
+          );
+          return;
+        }
+
+        console.log('A: ', permissions.$permissions)
+
+        // Carregar as permissões do usuário se não existirem no cache ou se o cache expirou
+        if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
+          await permissions.loadUserPermissions({
+            userId: this.getUserId,
+            roleId: this.getUserRole.id
+          });
+        }
+
+        // Se o usuário tem a permissão especial '*', permite tudo (exceto 'Minha página' para admin/gerente)
+        if (permissions.$hasAllPermissions) {
+          this.filteredItems = TopBar.filter(item => 
+            !(item.title === 'Minha página' && this.isAdminOrManager)
+          );
+          return;
+        }
+
+        // Filtra os itens baseado nas permissões do usuário
+        this.filteredItems = TopBar.filter(item => {
           // Se tem permissões vazias, mostrar o item
           if (!item.permissions || item.permissions.length === 0) {
             return true;
           }
-          return permissionsResult[index];
+
+          // Se o item é 'Minha página' e o usuário é admin ou gerente, não mostrar
+          if (item.title === 'Minha página' && this.isAdminOrManager) {
+            return false;
+          }
+
+          // Verificar se o usuário tem pelo menos uma das permissões necessárias
+          return item.permissions.some(permission => 
+            permissions.$permissions.includes(permission)
+          );
         });
       } catch (error) {
         console.error('Erro ao filtrar itens de menu:', error);

@@ -239,6 +239,8 @@ export default {
           eventId: this.event.id,
           statusName: 'Publicado',
         });
+
+        this.$emit('approved-event', this.event.id);
       } catch (error) {
         console.error(error);
       }
