@@ -104,7 +104,11 @@ export default class Payment extends VuexModule {
   private SET_USER_ORDERS_META(meta: any) {
     this.userOrdersMeta = meta;
   }
-  
+
+  @Mutation
+  private SET_LOADING(loading: boolean) {
+    this.isLoading = loading;
+  }
 
   @Mutation
   private SET_LOADING_ORDERS(loading: boolean) {
@@ -134,6 +138,8 @@ export default class Payment extends VuexModule {
   @Action
   public async fetchPaymentDetails(paymentId: string): Promise<void> {
     try {
+      this.context.commit('SET_LOADING', true);
+
       const response = await $axios.$get(
         `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people&limit=9999`
       );
@@ -144,6 +150,8 @@ export default class Payment extends VuexModule {
     } catch (error) {
       console.error('Erro ao buscar detalhes do pagamento:', error);
       throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
     }
   }
 

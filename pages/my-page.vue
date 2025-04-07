@@ -15,7 +15,6 @@
               </v-avatar>
               <div class="image-upload-overlay" @click="$refs.fileInput.click()">
                 <v-icon color="white">mdi-camera</v-icon>
-                <div class="upload-text">Alterar</div>
               </div>
             </div>
           </v-col>
@@ -96,50 +95,12 @@
           @save="handleSaveContactInfo"
           @cancel="handleCancelContactInfo"
         >
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-card tile flat class="pa-2 custom-hover">
-                <v-card-text>
-                  <v-text-field
-                    v-model="contactEmail"
-                    label="E-mail para contato"
-                    outlined
-                    dense
-                    :disabled="isLoading"
-                    prepend-inner-icon="mdi-email-outline"
-                  ></v-text-field>
-                  <v-checkbox
-                    v-model="showContactEmail"
-                    label="Exibir meu email de contato na minha página"
-                    :disabled="isLoading"
-                    class="mt-0"
-                  ></v-checkbox>
-                </v-card-text>
-              </v-card>
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-card tile flat class="pa-2 custom-hover">
-                <v-card-text>
-                  <v-text-field
-                    v-model="contactPhone"
-                    label="Telefone para contato"
-                    outlined
-                    max-length="15"
-                    dense
-                    :disabled="isLoading"
-                    prepend-inner-icon="mdi-phone-outline"
-                    @input="formatPhoneInput"
-                  ></v-text-field>
-                  <v-checkbox
-                    v-model="showContactPhone"
-                    label="Exibir meu telefone de contato na minha página"
-                    :disabled="isLoading"
-                    class="mt-0"
-                  ></v-checkbox>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
+          <ContactForm
+            ref="contactForm"
+            :contact-email.sync="contactEmail"
+            :contact-phone.sync="contactPhone"
+            :disabled="isLoading"
+          />
         </PageConfigSection>
       </v-col>
     </v-row>
@@ -170,7 +131,7 @@
 
 <script>
 import { user, userDocuments, toast, event } from '@/utils/store-util';
-import { formatRealValue, onFormatCellphone } from '@/utils/formatters';
+import { formatRealValue } from '@/utils/formatters';
 
 export default {
   data() {
@@ -190,9 +151,7 @@ export default {
       originalSocialLinks: {},
       showShareSidebar: false,
       contactEmail: '',
-      showContactEmail: false,
       contactPhone: '',
-      showContactPhone: false,
       originalContactInfo: {
         email: '',
         showEmail: false,
@@ -259,29 +218,16 @@ export default {
         if (contactInfoDoc) {
           const contactInfo = JSON.parse(contactInfoDoc.value);
           this.contactEmail = contactInfo.email || user.$user.email || '';
-          this.showContactEmail = contactInfo.showEmail || false;
           this.contactPhone = contactInfo.phone || '';
-          this.showContactPhone = contactInfo.showPhone || false;
         } else {
-          // Default to user's email
           this.contactEmail = user.$user.email || '';
-          this.showContactEmail = false;
           this.contactPhone = '';
-          this.showContactPhone = false;
         }
         
         this.originalContactInfo = {
           email: this.contactEmail,
-          showEmail: this.showContactEmail,
           phone: this.contactPhone,
-          showPhone: this.showContactPhone
         };
-        
-        // Fetch statistics from API (you'll need to implement this endpoint)
-        // For now using dummy data
-        this.totalViews = 1234;
-        this.totalSales = 56;
-        this.totalRevenue = 12345.67;
         
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -392,14 +338,19 @@ export default {
 
     async handleSaveContactInfo() {
       try {
+        // Verificar se o formulário é válido antes de salvar
+        const contactForm = this.$refs.contactForm;
+        if (!contactForm || !contactForm.isFormValid()) {
+          toast.setToast({ text: 'Por favor, corrija os erros no formulário antes de salvar', type: 'error', time: 3000 });
+          return;
+        }
+        
         this.isLoading = true;
         const contactInfoDoc = userDocuments.$userAttachments.find(doc => doc.name === 'contact_info');
         
         const contactInfo = {
           email: this.contactEmail,
-          showEmail: this.showContactEmail,
           phone: this.contactPhone,
-          showPhone: this.showContactPhone
         };
         
         if (contactInfoDoc) {
@@ -428,19 +379,11 @@ export default {
 
     handleCancelContactInfo() {
       this.contactEmail = this.originalContactInfo.email;
-      this.showContactEmail = this.originalContactInfo.showEmail;
       this.contactPhone = this.originalContactInfo.phone;
-      this.showContactPhone = this.originalContactInfo.showPhone;
     },
 
     handleSocialLinkChange({ type, value }) {
-      // You can add specific validation or formatting here if needed
       console.log(`Social link changed: ${type} = ${value}`);
-    },
-
-    formatPhoneInput() {
-      if (!this.contactPhone) return;
-      this.contactPhone = onFormatCellphone(this.contactPhone);
     }
   }
 }

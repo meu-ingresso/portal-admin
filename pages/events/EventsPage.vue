@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import { event, toast, userDocuments } from '@/store';
+import { event, toast, userDocuments, status } from '@/store';
 import { groupEventsBySession, logEventGroupingDiagnostics } from '~/utils/event-utils';
 
 export default {
@@ -95,11 +95,25 @@ export default {
       this.diagnosticRun = true;
     }
 
-    // Check if we should show the document dialog
-    await this.checkDocumentStatus();         
+    const promises = [
+      this.checkDocumentStatus(),
+      this.getStatuses(),
+    ];
+
+    await Promise.all(promises);
   },
 
   methods: {
+
+
+    async getStatuses() {
+      try {
+        await status.fetchStatusByModule('event');
+      } catch (error) {
+        console.error('Erro ao carregar lista de status de eventos', error);
+      }
+    },
+
     async getData() {
       try {
         const { meta } = await event.fetchEvents({
