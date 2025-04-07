@@ -1,7 +1,7 @@
 <template>
-  <v-form ref="form" v-model="isValid">
+  <v-form ref="form" v-model="isValid" class="py-6 px-2">
     <v-row>
-      <v-col cols="12" sm="6">
+      <v-col cols="12" sm="12">
         <v-text-field
           v-model="firstName"
           label="Primeiro Nome"
@@ -10,7 +10,7 @@
           dense
         />
       </v-col>
-      <v-col cols="12" sm="6">
+      <v-col cols="12" sm="12">
         <v-text-field
           v-model="lastName"
           label="Sobrenome"
@@ -33,15 +33,15 @@
       </v-col>
     </v-row>
 
-    <v-row class="d-flex justify-end mb-4">
-      <v-btn
-        color="primary"
-        :loading="isLoading"
-        :disabled="!isValid || !hasChanges"
-        @click="saveProfile"
-      >
-        Salvar alterações
-      </v-btn>
+    <v-row>
+      <v-col cols="12" class="d-flex justify-end">
+        <DefaultButton
+          text="Salvar alterações"
+          :loading="isLoading"
+          :disabled="!isValid || !hasChanges"
+          @click="saveProfile"
+        />
+      </v-col>
     </v-row>
   </v-form>
 </template>
