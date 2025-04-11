@@ -375,7 +375,8 @@ export default {
 
       if (!this.userDocuments || this.userDocuments.length === 0) return [];
 
-      const filteredDocuments = this.userDocuments.filter(doc => doc.name !== 'Pix Key');
+      // Remove os documentos que não são necessários para editar o usuário
+      const filteredDocuments = this.userDocuments.filter(doc => doc.name !== 'Pix Key' && doc.name !== 'profile_image' && doc.name !== 'contact_info');
 
       return filteredDocuments.map(doc => ({
         name: doc.name,

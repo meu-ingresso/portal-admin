@@ -100,7 +100,7 @@
                       </v-row>
                     </v-col>
 
-                    <!-- Filtro de Função -->
+                    <!-- Filtro de Função 
                     <v-col cols="6">
                       <v-select
                         v-model="filters.role"
@@ -112,6 +112,7 @@
                         hide-details="auto"
                         @change="handleFilterChange" />
                     </v-col>
+                    -->
 
                     <!-- Filtro de status de verificação -->
                     <v-col cols="6">
@@ -213,9 +214,13 @@
           :show-edit="isAdmin"
           :show-delete="false"
           :show-duplicate="false"
+          :show-activate-deactivate="true"
+          :is-inactive="!!item.deleted_at"
           icon="mdi-dots-horizontal"
           @edit="editUser(item)"
           @view-orders="viewOrders(item)"
+          @activate="activateUser(item)"
+          @deactivate="deactivateUser(item)"
         />
       </template>
     </v-data-table>
@@ -234,13 +239,25 @@
       @saved="handleUserSaved"
     />
 
+    <!-- Modal de confirmação -->
+    <ConfirmDialog
+      :loading="isLoading"
+      :value="showConfirmDialog"
+      :title="confirmDialogTitle"
+      :message="confirmDialogMessage"
+      :confirm-text="confirmDialogConfirmText"
+      :cancel-text="confirmDialogCancelText"
+      @confirm="handleConfirmAction"
+      @cancel="handleCloseConfirmDialog"
+    />
+
     <!-- TODO: Modal para mostrar eventos do organizador -->
   </div>
 </template>
 
 <script>
-import { user, loading } from '@/store';
-import { EVENT_COLLABORATOR_ROLES } from '@/utils/permissions-config';
+import { user, loading, toast } from '@/store';
+import { EVENT_COLLABORATOR_ROLES, PRODUCER_ROLE } from '@/utils/permissions-config';
 export default {
   data() {
     return {
@@ -281,13 +298,21 @@ export default {
         { text: 'Verificado', value: 'verified' },
         { text: 'Não Verificado', value: 'not_verified' }
       ],
+      showConfirmDialog: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogConfirmText: '',
+      confirmDialogCancelText: 'Cancelar',
+      confirmAction: null,
+      userToUpdate: null,
     };
   },
   
   computed: {
 
     organizerRoles() {
-      return EVENT_COLLABORATOR_ROLES.map(role => role.name);
+      // return EVENT_COLLABORATOR_ROLES.map(role => role.name);
+      return PRODUCER_ROLE;
     },
 
     roleOptions() {
@@ -493,6 +518,83 @@ export default {
     handleUserSaved() {
       this.showEditUserModal = false;
       this.loadUsers(true);
+    },
+
+    deactivateUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Inativar Organizador';
+      this.confirmDialogMessage = `Tem certeza que deseja inativar o organizador ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Inativar';
+      this.confirmAction = this.performDeactivation;
+      this.showConfirmDialog = true;
+    },
+
+    activateUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Ativar Organizador';
+      this.confirmDialogMessage = `Tem certeza que deseja ativar o organizador ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Ativar';
+      this.confirmAction = this.performActivation;
+      this.showConfirmDialog = true;
+    },
+
+    handleCloseConfirmDialog() {
+      this.showConfirmDialog = false;
+      this.userToUpdate = null;
+      this.confirmAction = null;
+    },
+
+    async handleConfirmAction() {
+      if (this.confirmAction) {
+        await this.confirmAction();
+        this.showConfirmDialog = false;
+        this.userToUpdate = null;
+        this.confirmAction = null;
+        this.loadUsers(true);
+      }
+    },
+
+    async performDeactivation() {
+      try {
+        if (this.userToUpdate) {
+          await user.deleteUser({ user_id: this.userToUpdate.id });
+          toast.setToast({
+            text: 'Organizador inativado com sucesso',
+            type: 'success',
+            time: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao inativar organizador:', error);
+        toast.setToast({
+          text: 'Erro ao inativar organizador',
+          type: 'error',
+          time: 5000,
+        });
+      }
+    },
+
+    async performActivation() {
+      try {
+        if (this.userToUpdate) {
+          await user.updateUser({
+            id: this.userToUpdate.id,
+            deleted_at: null
+          });
+          toast.setToast({
+            text: 'Organizador ativado com sucesso',
+            type: 'success',
+            time: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao ativar organizador:', error);
+        toast.setToast({
+          text: 'Erro ao ativar organizador',
+          type: 'error',
+          time: 5000,
+        });
+      }
     },
   },
 };

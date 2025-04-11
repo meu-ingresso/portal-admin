@@ -3,7 +3,7 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload as BaseSearchPayload, PeoplePayload, UserWithRelations, RolePayload, UserPayload } from '@/models';
-import { handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
+import { handleGetResponse, handleUpdateResponse, handleDeleteResponse } from '~/utils/responseHelpers';
 
 interface ExtendedSearchPayload extends BaseSearchPayload {
   preloads?: string[];
@@ -517,6 +517,8 @@ export default class User extends VuexModule {
       
       // Gerar senha temporária se não fornecida
       const password = payload.password || '123456';
+
+      const alias = payload.alias || `${payload.firstName}-${payload.lastName}`;
       
       // Criar usuário
       const userResponse = await $axios.$post('user', {
@@ -525,7 +527,7 @@ export default class User extends VuexModule {
           email: payload.email,
           role_id: payload.role_id,
           password,
-          alias: payload.alias || `${payload.firstName}-${payload.lastName}`,
+          alias: alias.substring(0, 30),
         }]
       });
       
@@ -571,6 +573,21 @@ export default class User extends VuexModule {
         success: false,
         error: error.message || 'Erro desconhecido'
       };
+    }
+  }
+
+
+  @Action
+  public async deleteUser(payload: { user_id: string }) {
+    try {
+      const response = await $axios.$delete(`user/${payload.user_id}`);
+
+      const result = handleDeleteResponse(response, 'Usuário não encontrado', null);
+
+      return result;
+    } catch (error) {
+      console.error('Erro ao deletar usuário:', error);
+      return error;
     }
   }
 
