@@ -6,73 +6,101 @@
       </v-col>
     </v-row>
 
-    <v-tabs v-model="activeTab" background-color="white" grow class="mb-8">
-      <v-tab>
-        <v-icon left>mdi-key</v-icon>
-        Dados de Acesso
-      </v-tab>
-      <v-tab v-if="isOrganizer">
-        <v-icon left>mdi-account-tie</v-icon>
-        Dados de Organizador
-      </v-tab>
-      <v-tab>
-        <v-icon left>mdi-account</v-icon>
-        Dados de Comprador
-      </v-tab>
-      <v-tab v-if="hasTickets">
-        <v-icon left>mdi-ticket</v-icon>
-        Meus Ingressos
-      </v-tab>
-    </v-tabs>
+    <v-row>
+      <!-- Card fixo de Dados de Acesso à esquerda -->
+      <v-col cols="12" md="4">
+        <v-card tile flat class="mb-4 py-4">
+          <v-card-text>
+            <div class="d-flex align-center justify-space-between mb-4 px-4">
+              <h3 class="text-h6 mb-0 primary--text font-weight-bold">Dados de acesso</h3>
+              <v-btn icon class="ml-2" @click="showSecurityDialog = true">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+            </div>
 
-    <v-tabs-items v-model="activeTab" class="mt-4">
-      <!-- Aba de Dados de Acesso -->
-      <v-tab-item>
-        <v-row>
-          <v-col cols="12" md="6">
-            <v-card tile flat class="mb-4">
-              <v-card-text>
-                <UserProfileForm />
+            <v-list dense>
+              <v-list-item>
+                <v-list-item-content>
+                  <v-list-item-subtitle class="text-caption">Login</v-list-item-subtitle>
+                  <v-list-item-title>{{ userEmail }}</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+
+              <v-list-item>
+                <v-list-item-content>
+                  <v-list-item-subtitle class="text-caption">Senha</v-list-item-subtitle>
+                  <v-list-item-title>
+                    <div class="d-flex align-center">
+                      <span>{{ '••••••••' }}</span>
+                    </div>
+                  </v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Conteúdo das tabs à direita -->
+      <v-col cols="12" md="8">
+        <v-tabs v-model="activeTab" background-color="white" grow class="mb-8">
+          <v-tab>
+            Organizador
+          </v-tab>
+          <v-tab>
+            Comprador
+          </v-tab>
+          <v-tab>
+            Configurações
+          </v-tab>
+        </v-tabs>
+
+        <v-tabs-items v-model="activeTab" :class="{ 'bg-transparent': activeTab === 0 }">
+          <!-- Aba de Dados de Organizador -->
+          <v-tab-item class="bg-transparent">
+            <v-card tile flat class="mb-4 bg-transparent" >
+              <v-card-text class="bg-transparent px-0 py-0">
+                <div v-if="hasSubmittedDocuments && isOrganizer">
+                  <UserOrganizerForm :readonly="true" />
+                </div>
+                <div v-else class="rounded-lg pa-6" style="background-color: #FFCDD2;">
+                  <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between">
+                    <div>
+                      <p class="text-body-1 font-weight-bold mb-2">Para ativar sua conta de organizador e receber seus lucros, complete seu cadastro.</p>
+                      <p class="mb-0">Após o cadastro completo, seus eventos podem ser publicados.</p>
+                    </div>
+                    <DefaultButton 
+                      color="error" 
+                      class="mt-4 mt-sm-0"
+                      text="Completar cadastro"
+                      @click="showDocumentDialog = true"
+                    />
+                  </div>
+                </div>
               </v-card-text>
             </v-card>
-          </v-col>
-          <v-col cols="12" md="6">
+          </v-tab-item>
+
+          <!-- Aba de Dados de Comprador -->
+          <v-tab-item>
             <v-card tile flat class="mb-4">
               <v-card-text>
-                <UserSecurityForm />
+                <UserBuyerForm />
               </v-card-text>
             </v-card>
-          </v-col>
-        </v-row>
-      </v-tab-item>
+          </v-tab-item>
 
-      <!-- Aba de Dados de Organizador -->
-      <v-tab-item v-if="isOrganizer">
-        <v-card tile flat class="mb-4">
-          <v-card-text>
-            <UserOrganizerForm />
-          </v-card-text>
-        </v-card>
-      </v-tab-item>
-
-      <!-- Aba de Dados de Comprador -->
-      <v-tab-item>
-        <v-card tile flat class="mb-4">
-          <v-card-text>
-            <UserBuyerForm />
-          </v-card-text>
-        </v-card>
-      </v-tab-item>
-
-      <!-- Aba de Meus Ingressos (apenas se tiver ingressos) -->
-      <v-tab-item v-if="hasTickets">
-        <v-card tile flat class="mb-4">
-          <v-card-text>
-            <UserTicketsList />
-          </v-card-text>
-        </v-card>
-      </v-tab-item>
-    </v-tabs-items>
+          <!-- Aba de Configurações -->
+          <v-tab-item>
+            <v-card tile flat class="mb-4">
+              <v-card-text>
+                <p class="text-center grey--text">Nenhuma configuração disponível no momento.</p>
+              </v-card-text>
+            </v-card>
+          </v-tab-item>
+        </v-tabs-items>
+      </v-col>
+    </v-row>
 
     <!-- Modal para completar o cadastro se necessário -->
     <RequiredUserDocModal
@@ -80,6 +108,25 @@
       @close-document-dialog="showDocumentDialog = false"
       @saved-user-data="onDocumentsSubmitted"
     />
+
+    <!-- Modal para editar dados de acesso -->
+    <v-dialog v-model="showSecurityDialog" max-width="500">
+      <v-card>
+        <v-card-title class="headline">
+          Editar dados de acesso
+          <v-spacer></v-spacer>
+          <v-btn icon @click="showSecurityDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <UserSecurityForm
+            @saved="showSecurityDialog = false"
+            @cancel="showSecurityDialog = false" 
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -87,7 +134,6 @@
 import { user, userDocuments } from '@/store';
 
 export default {
-
   async asyncData({ params, error }) {
     try {
       const userId = params.id;
@@ -108,6 +154,7 @@ export default {
     return {
       activeTab: 0,
       showDocumentDialog: false,
+      showSecurityDialog: false,
       hasSubmittedDocuments: false,
       userRole: null
     };
@@ -120,12 +167,13 @@ export default {
   },
   
   computed: {
-    isOrganizer() {
-      return user.$user?.role?.name === 'Produtor' || user.$user?.role?.name === 'Admin';
+
+    userEmail() {
+      return user?.$user?.email || '••••••••';
     },
-    
-    hasTickets() {
-      return true;
+
+    isOrganizer() {
+      return user?.$user?.role?.name === 'Produtor' || user?.$user?.role?.name === 'Admin';
     },
     
     needsToCompleteProfile() {
@@ -151,7 +199,7 @@ export default {
     onDocumentsSubmitted() {
       this.showDocumentDialog = false;
       this.hasSubmittedDocuments = true;
-      this.activeTab = 1;
+      this.activeTab = 0;
     }
   }
 }
