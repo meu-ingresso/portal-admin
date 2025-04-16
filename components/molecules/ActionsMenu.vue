@@ -68,6 +68,26 @@
         </v-list-item>
       </template>
 
+      <!-- Opção de Verificar -->
+      <template v-if="showVerify">
+        <v-list-item @click="$emit('verify')">
+          <v-list-item-icon class="mr-2">
+            <v-icon>mdi-check-circle</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Verificar</v-list-item-title>
+        </v-list-item>
+      </template>
+
+      <!-- Opção de Rejeitar -->
+      <template v-if="showReject">
+        <v-list-item @click="$emit('reject')">
+          <v-list-item-icon class="mr-2">
+            <v-icon>mdi-close-circle</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Rejeitar</v-list-item-title>
+        </v-list-item>
+      </template>
+
       <!-- Opção de Excluir -->
       <template v-if="showDelete">
         <v-list-item @click="$emit('delete')">
@@ -110,6 +130,14 @@ export default {
       default: false,
     },
     showChangeRole: {
+      type: Boolean,
+      default: false,
+    },
+    showVerify: {
+      type: Boolean,
+      default: false,
+    },
+    showReject: {
       type: Boolean,
       default: false,
     },

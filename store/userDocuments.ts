@@ -1,6 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { user } from '@/utils/store-util';
 import { handleDeleteResponse, handleGetResponse } from '~/utils/responseHelpers';
 
 interface UserAttachment {
@@ -10,10 +9,13 @@ interface UserAttachment {
   value: string | null;
 }
 
-interface DocumentInfo {
-  hasSubmittedDocuments: boolean;
-  personType: string;
-}
+// Constantes para tipos de documentos
+const DOCUMENT_TYPES = {
+  PF: ['document_cnh', 'document_rg_front', 'document_rg_back'],
+  PJ: ['document_cnpj', 'document_social_contract']
+};
+
+const PIX_ATTACHMENT_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random'];
 
 @Module({
   name: 'userDocuments',
@@ -23,17 +25,9 @@ interface DocumentInfo {
 export default class UserDocuments extends VuexModule {
   private isLoading: boolean = false;
   private userAttachments: UserAttachment[] = [];
-  private documentInfo: DocumentInfo = {
-    hasSubmittedDocuments: false,
-    personType: 'PF',
-  };
 
   public get $isLoading() {
     return this.isLoading;
-  }
-
-  public get $documentInfo() {
-    return this.documentInfo;
   }
 
   public get $userAttachments() {
@@ -41,19 +35,43 @@ export default class UserDocuments extends VuexModule {
   }
 
   public get $hasRequiredDocuments() {
-    if (this.documentInfo.personType === 'PJ') {
-      return this.userAttachments.some(att => att.type === 'document_cnpj');
+
+    const fiscalInfo = this.$fiscalInfo;
+
+    if (!fiscalInfo) {
+      return false;
+    }
+
+    if (fiscalInfo?.personType === 'PJ') {
+      return this.userAttachments.some(att => DOCUMENT_TYPES.PJ.includes(att.type));
     } else {
-      return this.userAttachments.some(att => att.type.includes('document_cnh') || att.type.includes('document_rg'));
+      return this.userAttachments.some(att => DOCUMENT_TYPES.PF.includes(att.type));
     } 
   }
 
-  public get $hasPixInfo() {
-    // Verifica se há algum anexo que seja um tipo de chave PIX
-    const pixAttachmentTypes = ['cpf', 'cnpj', 'email', 'phone', 'random'];
-    return this.userAttachments.some(att => pixAttachmentTypes.includes(att.type) && att.name === 'Pix Key');
+  public get $hasFiscalInfo() {
+    return this.userAttachments.some(att => att.name === 'fiscal_info');
   }
 
+  public get $fiscalInfo() {
+    if (this.$hasFiscalInfo) {
+      return JSON.parse(this.userAttachments.find(att => att.name === 'fiscal_info')?.value || '{}');
+    }
+
+    return null;
+  }
+
+  public get $hasPixInfo() {
+    return this.userAttachments.some(att => PIX_ATTACHMENT_TYPES.includes(att.type) && att.name === 'pix_key');
+  }
+
+  public get $pixInfo() {
+    if (this.$hasPixInfo) {
+      return this.userAttachments.find(att => PIX_ATTACHMENT_TYPES.includes(att.type) && att.name === 'pix_key');
+    }
+    return null;
+  }
+  
   @Mutation
   private SET_LOADING(payload: boolean) {
     this.isLoading = payload;
@@ -78,13 +96,8 @@ export default class UserDocuments extends VuexModule {
   }
 
   @Mutation
-  private UPDATE_DOCUMENT_INFO(payload: Partial<DocumentInfo>) {
-    this.documentInfo = { ...this.documentInfo, ...payload };
-  }
-
-  @Action
-  public updateDocumentInfo(payload: Partial<DocumentInfo>) {
-    this.context.commit('UPDATE_DOCUMENT_INFO', payload);
+  private DELETE_USER_ATTACHMENT(payload: string) {
+    this.userAttachments = this.userAttachments.filter(att => att.id !== payload);
   }
 
   @Action
@@ -97,36 +110,131 @@ export default class UserDocuments extends VuexModule {
         throw new Error('Usuário não encontrado. Por favor, faça login novamente.');
       }
 
-      const responseUser = await user.getById({ user_id: userId, commit: true });
-
-      const personType = responseUser?.people?.person_type || 'PF';
-      this.context.commit('UPDATE_DOCUMENT_INFO', { personType });
-      
       const response = await $axios.$get(`user-attachments?where[user_id][v]=${userId}`);
       const { data } = handleGetResponse(response, 'Falha ao buscar documentos do usuário', null, true);
       
       if (data && Array.isArray(data)) {
         this.context.commit('SET_USER_ATTACHMENTS', data);
-        
-        const hasRequiredDocuments = this.$hasRequiredDocuments;
-        const hasPixInfo = this.$hasPixInfo;
-        
-        this.context.commit('UPDATE_DOCUMENT_INFO', {
-          hasSubmittedDocuments: hasRequiredDocuments && hasPixInfo
-        });
       }
+
+      return null;
       
-      return {
-        attachments: this.userAttachments,
-        hasRequiredDocuments: this.$hasRequiredDocuments,
-        hasPixInfo: this.$hasPixInfo,
-        personType
-      };
     } catch (error) {
       console.error('Erro ao buscar status de documentos:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);
+    }
+  }
+
+  @Action
+  public async getAccountVerificationStatus(userId: string) {
+    try {
+      const response = await $axios.$get(`user-attachments?where[user_id][v]=${userId}&where[type][v]=account_verification`);
+      const { data } = handleGetResponse(response, 'Falha ao buscar status de verificação', null, true);
+      
+      if (!data || !data.length) return null;
+      return data[0];
+    } catch (error) {
+      console.error('Erro ao buscar status de verificação:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async getRejectionReason(userId: string) {
+    try {
+      const response = await $axios.$get(`user-attachments?where[user_id][v]=${userId}&where[type][v]=rejection_reason`);
+      const { data } = handleGetResponse(response, 'Falha ao buscar motivo da rejeição', null, true);
+      
+      if (!data || !data.length) return null;
+      return data[0];
+    } catch (error) {
+      console.error('Erro ao buscar motivo da rejeição:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async verifyAccount(userId: string) {
+    try {
+      // Busca o status atual de verificação
+      const verificationStatus = await this.getAccountVerificationStatus(userId);
+      
+      if (verificationStatus) {
+        // Atualiza o registro existente
+        await this.context.dispatch('updateUserAttachment', {
+          id: verificationStatus.id,
+          value: 'verified'
+        });
+      } else {
+        // Cria um novo registro
+        await this.context.dispatch('createUserDocument', {
+          userId,
+          name: 'account_verification',
+          type: 'account_verification',
+          value: 'verified'
+        });
+      }
+
+      // Remove o registro de rejeição se existir
+      const rejectionReason = await this.context.dispatch('getRejectionReason', userId);
+      if (rejectionReason) {
+        await this.context.dispatch('deleteUserDocument', {
+          attachmentId: rejectionReason.id
+        });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao verificar conta:', error);
+      throw error;
+    }
+  }
+
+  @Action
+  public async rejectAccount(userId: string, rejectionReason: string) {
+    try {
+      
+      // Busca o status atual de verificação
+      const verificationStatus = await this.getAccountVerificationStatus(userId);
+      
+      if (verificationStatus) {
+        // Atualiza o registro existente
+        await this.context.dispatch('updateUserAttachment', {
+          id: verificationStatus.id,
+          value: 'rejected'
+        });
+      } else {
+        // Cria um novo registro
+        await this.context.dispatch('createUserDocument', {
+          userId,
+          name: 'account_verification',
+          type: 'account_verification',
+          value: 'rejected'
+        });
+      }
+
+      // Adiciona ou atualiza o motivo da rejeição
+      const existingRejection = await this.context.dispatch('getRejectionReason', userId);
+      if (existingRejection) {
+        await this.context.dispatch('updateUserAttachment', {
+          id: existingRejection.id,
+          value: rejectionReason
+        });
+      } else {
+        await this.context.dispatch('createUserDocument', {
+          userId,
+          name: 'documents_rejection',
+          type: 'rejection_reason',
+          value: rejectionReason
+        });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao rejeitar conta:', error);
+      throw error;
     }
   }
 
@@ -225,25 +333,22 @@ export default class UserDocuments extends VuexModule {
         throw new Error('Usuário não encontrado. Por favor, faça login novamente.');
       }
       
-      // Verifica se já existe um attachment para PIX
       let pixAttachment = this.userAttachments.find(
-        att => att.name === 'Pix Key' && ['cpf', 'cnpj', 'email', 'phone', 'random'].includes(att.type)
+        att => att.name === 'pix_key' && PIX_ATTACHMENT_TYPES.includes(att.type)
       );
       
-      // Se existir, atualizamos com os novos valores
       if (pixAttachment) {
 
         await this.context.dispatch('updateUserAttachment', {
           id: pixAttachment.id,
-          type: pixKeyType,  // Atualizamos o tipo para o novo pixKeyType
-          value: pixKey      // Armazenamos o valor da chave PIX diretamente
+          type: pixKeyType,  
+          value: pixKey
         });
       } else {
-        // Se não existir, criamos um novo
         const response = await $axios.$post('user-attachment', {
           data: [{
             user_id: userId,
-            name: 'Pix Key',
+            name: 'pix_key',
             type: pixKeyType,
             value: pixKey
           }]
@@ -256,12 +361,9 @@ export default class UserDocuments extends VuexModule {
         pixAttachment = response.body.result[0];
         this.context.commit('ADD_USER_ATTACHMENT', pixAttachment);
       }
-      
-      if (this.$hasRequiredDocuments && this.$hasPixInfo) {
-        this.context.commit('UPDATE_DOCUMENT_INFO', {
-          hasSubmittedDocuments: true
-        });
-      }
+
+      // Atualiza o status de documentos do usuário
+      await this.context.dispatch('fetchDocumentStatus', userId);
       
       return pixAttachment;
     } catch (error) {
@@ -275,6 +377,8 @@ export default class UserDocuments extends VuexModule {
     try {
       const response = await $axios.$delete(`user-attachment/${payload.attachmentId}`);
       const { data } = handleDeleteResponse(response, 'Falha ao deletar documento', null);
+
+      this.context.commit('DELETE_USER_ATTACHMENT', payload.attachmentId);
 
       return data;
     } catch (error) {

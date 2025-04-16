@@ -8,11 +8,11 @@
       :options.sync="options"
       :footer-props="{
         itemsPerPageOptions: [50, 100, 200],
-        itemsPerPageText: 'Organizadores por página',
+        itemsPerPageText: 'Produtores por página',
         pageText: '{0}-{1} de {2}',
       }"
-      :no-data-text="'Nenhum organizador encontrado'"
-      :no-results-text="'Nenhum organizador encontrado'"
+      :no-data-text="'Nenhum produtor encontrado'"
+      :no-results-text="'Nenhum produtor encontrado'"
       :loading-text="'Carregando...'"
       class="elevation-1"
       @update:options="handleTableUpdate"
@@ -196,16 +196,34 @@
       
       <!-- Status de verificação -->
       <template #[`item.account_verified`]="{ item }">
-        <v-icon :color="item.account_verified ? 'primary' : 'gray'">
-          {{ item.account_verified ? 'mdi-check-bold' : 'mdi-close' }}
-        </v-icon>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-icon
+              v-bind="attrs"
+              :color="getVerificationColor(item)"
+              v-on="on"
+            >
+              {{ getVerificationIcon(item) }}
+            </v-icon>
+          </template>
+          <span>{{ getVerificationTooltip(item) }}</span>
+        </v-tooltip>
       </template>
 
       <!-- Documentos enviados -->
       <template #[`item.document_sent`]="{ item }">
-        <v-icon :color="getDocumentSent(item) ? 'primary' : 'gray'">
-          {{ getDocumentSent(item) ? 'mdi-check-bold' : 'mdi-close' }}
-        </v-icon>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-icon
+              v-bind="attrs"
+              :color="getDocumentSent(item) ? 'primary' : 'grey'"
+              v-on="on"
+            >
+              {{ getDocumentSent(item) ? 'mdi-check-bold' : 'mdi-close' }}
+            </v-icon>
+          </template>
+          <span>{{ getDocumentTooltip(item) }}</span>
+        </v-tooltip>
       </template>
       
       <!-- Ações -->
@@ -215,12 +233,16 @@
           :show-delete="false"
           :show-duplicate="false"
           :show-activate-deactivate="true"
+          :show-verify="isAdmin && !item.account_verified && getDocumentSent(item)"
+          :show-reject="isAdmin && !item.account_verified && getDocumentSent(item)"
           :is-inactive="!!item.deleted_at"
           icon="mdi-dots-horizontal"
           @edit="editUser(item)"
           @view-orders="viewOrders(item)"
           @activate="activateUser(item)"
           @deactivate="deactivateUser(item)"
+          @verify="verifyUser(item)"
+          @reject="rejectUser(item)"
         />
       </template>
     </v-data-table>
@@ -251,14 +273,23 @@
       @cancel="handleCloseConfirmDialog"
     />
 
+    <!-- Modal de rejeição -->
+    <RejectUserModal
+      :show.sync="showRejectModal"
+      @confirm="handleRejectConfirm"
+      @cancel="handleRejectCancel"
+    />
+
     <!-- TODO: Modal para mostrar eventos do organizador -->
   </div>
 </template>
 
 <script>
-import { user, loading, toast } from '@/store';
+import { user, loading, toast, userDocuments } from '@/store';
 import { EVENT_COLLABORATOR_ROLES, PRODUCER_ROLE } from '@/utils/permissions-config';
+
 export default {
+
   data() {
     return {
       headers: [
@@ -289,6 +320,7 @@ export default {
       isLoadingInternal: false,
       showUserOrders: false,
       showEditUserModal: false,
+      showRejectModal: false,
       selectedUserId: null,
       selectedUserName: '',
       selectedUser: null,
@@ -595,6 +627,119 @@ export default {
           time: 5000,
         });
       }
+    },
+
+    verifyUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Verificar Produtor';
+      this.confirmDialogMessage = `Tem certeza que deseja verificar o produtor ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Verificar';
+      this.confirmAction = this.performVerification;
+      this.showConfirmDialog = true;
+    },
+
+    rejectUser(userItem) {
+      this.userToUpdate = userItem;
+      this.showRejectModal = true;
+    },
+
+    async performVerification() {
+      try {
+        if (this.userToUpdate) {
+          const response = await userDocuments.verifyAccount(this.userToUpdate.id);
+
+          if (response) {
+            toast.setToast({
+              text: 'Produtor verificado com sucesso',
+              type: 'success',
+              time: 5000,
+            });
+
+            this.loadUsers(true);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar produtor:', error);
+        toast.setToast({
+          text: 'Erro ao verificar produtor',
+          type: 'error',
+          time: 5000,
+        });
+      }
+    },
+
+    handleRejectCancel() {
+      this.showRejectModal = false;
+      this.userToUpdate = null;
+    },
+
+    async handleRejectConfirm(rejectionReason) {
+      try {
+        if (this.userToUpdate) {
+          const response = await userDocuments.rejectAccount(this.userToUpdate.id, rejectionReason);
+
+          if (response) {
+
+            toast.setToast({
+              text: 'Produtor rejeitado com sucesso',
+              type: 'success',
+              time: 5000,
+            });
+
+            this.loadUsers(true);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao rejeitar produtor:', error);
+        toast.setToast({
+          text: 'Erro ao rejeitar produtor',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        this.showRejectModal = false;
+        this.userToUpdate = null;
+      }
+    },
+
+    getVerificationColor(item) {
+      if (!item.attachments) return 'grey';
+      
+      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
+      if (!verificationAttachment) return 'grey';
+      
+      return verificationAttachment.value === 'verified' ? 'primary' : 'error';
+    },
+
+    getVerificationIcon(item) {
+      if (!item.attachments) return 'mdi-help-circle-outline';
+      
+      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
+      if (!verificationAttachment) return 'mdi-help-circle-outline';
+      
+      return verificationAttachment.value === 'verified' ? 'mdi-check-bold' : 'mdi-close';
+    },
+
+    getVerificationTooltip(item) {
+      if (!item.attachments) return 'Aguardando verificação';
+      
+      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
+      if (!verificationAttachment) return 'Aguardando verificação';
+      
+      if (verificationAttachment.value === 'verified') {
+        return 'Conta verificada';
+      }
+      
+      const rejectionAttachment = item.attachments.find(att => att.type === 'rejection_reason');
+      return rejectionAttachment 
+        ? `Conta rejeitada: ${rejectionAttachment.value}`
+        : 'Conta rejeitada';
+    },
+
+    getDocumentTooltip(item) {
+      return this.getDocumentSent(item) 
+        ? 'Documentos enviados'
+        : 'Documentos não enviados';
     },
   },
 };

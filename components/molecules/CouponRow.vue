@@ -110,7 +110,7 @@
 
 <script>
 import { formatRealValue } from '@/utils/formatters';
-import { isMobileDevice } from '@/utils/utils';
+import { isMobileDevice, isUserAdmin } from '@/utils/utils';
 
 export default {
   props: {
@@ -157,17 +157,12 @@ export default {
       return `Válido para os ingressos:\n${this.tickets.map((t) => t.name).join('\n')}`;
     },
 
-    userRole() {
-      return this.$cookies.get('user_role');
-    },
-
     userId() {
       return this.$cookies.get('user_id');
     },
 
     isAdmin() {
-      const role = this.userRole;
-      return role && role.name === 'Admin';
+      return isUserAdmin(this.$cookies);
     },
 
     isEventPromoter() {

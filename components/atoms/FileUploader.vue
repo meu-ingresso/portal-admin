@@ -250,4 +250,17 @@ export default {
 .selected-file:hover {
   background-color: #eeeeee;
 }
+
+.file-details {
+  max-width: calc(100% - 80px);
+  overflow: hidden;
+}
+
+.text-truncate {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
 </style> 

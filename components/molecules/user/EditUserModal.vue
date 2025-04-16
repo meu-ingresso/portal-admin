@@ -15,38 +15,76 @@
 
       <v-card-text class="px-6">
         <v-form ref="form" v-model="isFormValid">
-          <!-- Tipo de Pessoa -->
-          <PersonTypeSelector 
-            :model-value="formData.personType" 
-            class="mb-4" 
-            @update:modelValue="updatePersonType"
-          />
+          <!-- Informações Pessoais -->
+          <v-row>
+            <v-col cols="12">
+              <div class="text-subtitle-1 font-weight-bold mb-4">Informações Pessoais</div>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.email"
+                label="E-mail"
+                outlined
+                dense
+                disabled
+                hide-details="auto"
+              />
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.firstName"
+                label="Nome"
+                outlined
+                dense
+                hide-details="auto"
+              />
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.lastName"
+                label="Sobrenome"
+                outlined
+                dense
+                hide-details="auto"
+              />
+            </v-col>
+          </v-row>
 
-          <!-- Dados Pessoais -->
-          <template v-if="formData.personType === 'PF'">
-            <v-row>
-              <v-col cols="12">
-                <div class="d-flex justify-space-between align-center">
-                  <div class="text-subtitle-1 font-weight-bold">Dados Pessoais</div>
+          <!-- Informações Fiscais -->
+          <v-row class="mt-6">
+            <v-col cols="12">
+              <div class="d-flex justify-space-between align-center">
+                <div class="text-subtitle-1 font-weight-bold">Dados Fiscais</div>
+                <v-tooltip bottom>
+                  <template #activator="{ on, attrs }">
+                    <v-icon
+                      v-bind="attrs"
+                      color="red"
+                      v-on="on"
+                      @click="confirmClearUserData"
+                    >
+                      mdi-account-remove
+                    </v-icon>
+                  </template>
+                  Limpar Dados Fiscais
+                </v-tooltip>
+              </div>
+            </v-col>
 
-                  <v-tooltip bottom>
-                    <template #activator="{ on, attrs }">
-                      <v-icon
-                        v-bind="attrs"
-                        color="red"
-                        v-on="on"
-                        @click="confirmClearUserData"
-                      >
-                        mdi-account-remove
-                      </v-icon>
-                    </template>
-                    Limpar Dados
-                  </v-tooltip>
-                </div>
-              </v-col>
+            <!-- Tipo de Pessoa -->
+            <v-col cols="12">
+              <PersonTypeSelector 
+                :model-value="formData.fiscalData.personType" 
+                class="mb-4" 
+                @update:modelValue="updatePersonType"
+              />
+            </v-col>
+
+            <!-- Dados Fiscais - PF -->
+            <template v-if="formData.fiscalData.personType === 'PF'">
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="formData.cpf"
+                  v-model="formData.fiscalData.cpf"
                   label="CPF"
                   :rules="[v => !!v || 'CPF é obrigatório']"
                   mask="###.###.###-##"
@@ -57,20 +95,9 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="formData.email"
-                  label="E-mail"
-                  :rules="[v => !!v || 'E-mail é obrigatório']"
-                  outlined
-                  dense
-                  disabled
-                  hide-details="auto"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="formData.firstName"
-                  label="Nome"
-                  :rules="[v => !!v || 'Nome é obrigatório']"
+                  v-model="formData.fiscalData.firstName"
+                  label="Nome (Fiscal)"
+                  :rules="[v => !!v || 'Nome fiscal é obrigatório']"
                   outlined
                   dense
                   hide-details="auto"
@@ -78,40 +105,21 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="formData.lastName"
-                  label="Sobrenome"
-                  :rules="[v => !!v || 'Sobrenome é obrigatório']"
+                  v-model="formData.fiscalData.lastName"
+                  label="Sobrenome (Fiscal)"
+                  :rules="[v => !!v || 'Sobrenome fiscal é obrigatório']"
                   outlined
                   dense
                   hide-details="auto"
                 />
               </v-col>
-            </v-row>
-          </template>
+            </template>
 
-          <template v-else>
-            <v-row>
-              <v-col cols="12">
-                <div class="d-flex justify-space-between align-center">
-                  <h3 class="text-subtitle-1 font-weight-bold">Dados Empresariais</h3>
-                  <v-tooltip bottom>
-                    <template #activator="{ on, attrs }">
-                      <v-icon
-                        v-bind="attrs"
-                        color="red"
-                        v-on="on"
-                        @click="confirmClearUserData"
-                      >
-                        mdi-account-remove
-                      </v-icon>
-                    </template>
-                    Limpar Dados
-                  </v-tooltip>
-                </div>
-              </v-col>
+            <!-- Dados Fiscais - PJ -->
+            <template v-else>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="formData.cnpj"
+                  v-model="formData.fiscalData.cnpj"
                   label="CNPJ"
                   :rules="[v => !!v || 'CNPJ é obrigatório']"
                   mask="##.###.###/####-##"
@@ -122,18 +130,7 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="formData.email"
-                  label="E-mail"
-                  :rules="[v => !!v || 'E-mail é obrigatório']"
-                  outlined
-                  dense
-                  disabled
-                  hide-details="auto"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="formData.companyName"
+                  v-model="formData.fiscalData.companyName"
                   label="Razão Social"
                   :rules="[v => !!v || 'Razão Social é obrigatória']"
                   outlined
@@ -143,7 +140,7 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="formData.tradeName"
+                  v-model="formData.fiscalData.tradeName"
                   label="Nome Fantasia"
                   :rules="[v => !!v || 'Nome Fantasia é obrigatório']"
                   outlined
@@ -151,8 +148,8 @@
                   hide-details="auto"
                 />
               </v-col>
-            </v-row>
-          </template>
+            </template>
+          </v-row>
 
           <PixKeyForm
             form-inline
@@ -326,23 +323,19 @@ export default {
       showConfirmClearData: false,
       showConfirmDeleteDoc: false,
       selectedDocument: null,
-      pixKeyTypeOptions: [
-        { value: 'cpf', text: 'CPF' },
-        { value: 'cnpj', text: 'CNPJ' },
-        { value: 'email', text: 'E-mail' },
-        { value: 'phone', text: 'Telefone' },
-        { value: 'random', text: 'Chave aleatória' }
-      ],
-      userDocuments: [],
       formData: {
-        personType: 'PF',
-        cpf: '',
+        email: '',
         firstName: '',
         lastName: '',
-        cnpj: '',
-        companyName: '',
-        tradeName: '',
-        email: '',
+        fiscalData: {
+          personType: 'PF',
+          cpf: '',
+          firstName: '',
+          lastName: '',
+          cnpj: '',
+          companyName: '',
+          tradeName: '',
+        },
         pix: {
           key: '',
           type: ''
@@ -365,33 +358,35 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
 
-    pixInfo() {
-      if (!this.userDocuments || this.userDocuments.length === 0) return [];
+    userAttachments() {
+      return userDocuments.$userAttachments;
+    },
 
-      return this.userDocuments.find(doc => doc.name === 'Pix Key');
+    pixInfo() {
+      return userDocuments.$pixInfo;
+    },
+
+    fiscalInfo() {
+      return userDocuments.$fiscalInfo;
     },
 
     documentAttachments() {
+      if (!this.userAttachments || !Array.isArray(this.userAttachments)) return [];
 
-      if (!this.userDocuments || this.userDocuments.length === 0) return [];
+      const notAcceptedAttachments = ['pix_key', 'profile_image', 'contact_info', 'fiscal_info', 'rejection_reason', 'account_verification'];
 
-      // Remove os documentos que não são necessários para editar o usuário
-      const filteredDocuments = this.userDocuments.filter(doc => doc.name !== 'Pix Key' && doc.name !== 'profile_image' && doc.name !== 'contact_info');
+      const filteredAttachments = this.userAttachments.filter(att => !notAcceptedAttachments.includes(att.name));
 
-      return filteredDocuments.map(doc => ({
-        name: doc.name,
-        created_at: doc.created_at,
-        value: doc.value,
-        id: doc.id
+      return filteredAttachments.map(att => ({
+        name: att.name,
+        created_at: att.created_at,
+        value: att.value,
+        id: att.id
       }));
     },
     
     clearDataConfirmMessage() {
-      if (this.formData.personType === 'PF') {
-        return 'Tem certeza que deseja limpar os dados deste usuário (CPF, Nome completo, PIX e Endereço)? Esta ação não pode ser desfeita.';
-      } else {
-        return 'Tem certeza que deseja limpar os dados deste usuário (CNPJ, Razão Social, Nome Fantasia, PIX e Endereço)? Esta ação não pode ser desfeita.';
-      }
+      return 'Tem certeza que deseja limpar os dados fiscais deste usuário? Esta ação não pode ser desfeita.';
     },
 
     addressData() {
@@ -419,15 +414,20 @@ export default {
       const people = userData.people || {};
       const address = people.address || {};
 
+      // Inicializa dados pessoais
       this.formData = {
-        personType: people.person_type || 'PF',
-        cpf: people.person_type === 'PF' ? people.tax || '' : '',
+        email: userData.email || '',
         firstName: people.first_name || '',
         lastName: people.last_name || '',
-        cnpj: people.person_type === 'PJ' ? people.tax || '' : '',
-        companyName: people.social_name || '',
-        tradeName: people.fantasy_name || '',
-        email: userData.email || '',
+        fiscalData: {
+          personType: 'PF',
+          cpf: '',
+          firstName: '',
+          lastName: '',
+          cnpj: '',
+          companyName: '',
+          tradeName: '',
+        },
         address: {
           id: address.id || '',
           zipcode: address.zipcode || '',
@@ -444,6 +444,20 @@ export default {
         }
       };
 
+      // Inicializa dados fiscais se disponíveis
+      if (this.fiscalInfo) {
+        const fiscalInfo = this.fiscalInfo;
+        this.formData.fiscalData = {
+          personType: fiscalInfo.personType || 'PF',
+          cpf: fiscalInfo.cpf || '',
+          firstName: fiscalInfo.firstName || '',
+          lastName: fiscalInfo.lastName || '',
+          cnpj: fiscalInfo.cnpj || '',
+          companyName: fiscalInfo.companyName || '',
+          tradeName: fiscalInfo.tradeName || '',
+        };
+      }
+
       userAddress.updateAddress({
         ...this.formData.address
       });      
@@ -451,9 +465,7 @@ export default {
 
     async fetchUserDocuments() {
       try {
-        // Assumindo que o método fetchDocumentStatus retorna os documentos do usuário
-        const response = await userDocuments.fetchDocumentStatus(this.user.id);
-        this.userDocuments = response.attachments || [];
+        await userDocuments.fetchDocumentStatus(this.user.id);
 
         // Atualiza os dados da chave PIX que vem como documento
         this.formData.pix.key = this.pixInfo?.value || '';
@@ -468,21 +480,21 @@ export default {
     },
 
     updatePersonType(type) {
-      this.formData.personType = type;
+      this.formData.fiscalData.personType = type;
     },
 
     getDocumentType(name) {
       if (!name) return 'Desconhecido';
       
-      if (name.includes('RG')) {
+      if (name.includes('rg')) {
         return 'RG';
-      } else if (name.includes('CNH')) {
+      } else if (name.includes('cnh')) {
         return 'CNH';
       } else if (name.includes('document_cnpj')) {
         return 'Cartão CNPJ';
       } else if (name.includes('document_social_contract')) {
         return 'Contrato Social';
-      } else if (name.includes('Pix Key')) {
+      } else if (name.includes('pix_key')) {
         return 'Chave PIX';
       }
       
@@ -495,35 +507,56 @@ export default {
       try {
         this.isSaving = true;
 
+        // Atualiza informações pessoais
         const peopleData = {
           id: this.user.people.id,
-          person_type: this.formData.personType,
+          first_name: this.formData.firstName,
+          last_name: this.formData.lastName,
         };
 
-        // Dados específicos por tipo de pessoa
-        if (this.formData.personType === 'PF') {
-          Object.assign(peopleData, {
-            tax: this.formData.cpf,
-            first_name: this.formData.firstName,
-            last_name: this.formData.lastName
+        // Atualiza dados fiscais
+        const fiscalInfo = {
+          personType: this.formData.fiscalData.personType,
+          ...(this.formData.fiscalData.personType === 'PF' 
+            ? {
+                cpf: this.formData.fiscalData.cpf,
+                firstName: this.formData.fiscalData.firstName,
+                lastName: this.formData.fiscalData.lastName
+              }
+            : {
+                cnpj: this.formData.fiscalData.cnpj,
+                companyName: this.formData.fiscalData.companyName,
+                tradeName: this.formData.fiscalData.tradeName
+              }
+          )
+        };
+
+        // Salva dados fiscais
+        const fiscalInfoDoc = this.userAttachments.find(att => att.name === 'fiscal_info');
+        if (fiscalInfoDoc) {
+          await userDocuments.updateUserAttachment({
+            id: fiscalInfoDoc.id,
+            value: JSON.stringify(fiscalInfo)
           });
         } else {
-          Object.assign(peopleData, {
-            tax: this.formData.cnpj,
-            social_name: this.formData.companyName,
-            fantasy_name: this.formData.tradeName
+          await userDocuments.createUserDocument({
+            name: 'fiscal_info',
+            type: 'json',
+            userId: this.user.id,
+            value: JSON.stringify(fiscalInfo)
           });
         }
 
-        // Dados de endereço
+        // Atualiza endereço
         if (this.user.people.address_id) {
-          // Atualizar endereço existente          
-          await userAddress.updateUserAddress({ addressId: this.user.people.address_id, data: this.addressData });
+          await userAddress.updateUserAddress({ 
+            addressId: this.user.people.address_id, 
+            data: this.addressData 
+          });
         } else if (
           this.formData.address.street && 
           this.formData.address.zipcode
         ) {
-          // Criar novo endereço          
           const newAddressId = await userAddress.createUserAddress(this.addressData);
           peopleData.address_id = newAddressId;
         }
@@ -535,13 +568,12 @@ export default {
         if (this.pixInfo && this.pixInfo.id) {
           await userDocuments.updateUserAttachment({
             id: this.pixInfo.id,
-            name: 'Pix Key',
             type: this.formData.pix.type,
             value: this.formData.pix.key
           });
-        } else {
+        } else if (this.formData.pix.key) {
           await userDocuments.createUserDocument({
-            name: 'Pix Key',
+            name: 'pix_key',
             type: this.formData.pix.type,
             value: this.formData.pix.key,
             userId: this.user.id
@@ -586,7 +618,7 @@ export default {
         this.isSaving = true;
         
         // Busca os documentos atuais do usuário se ainda não foram carregados
-        if (this.userDocuments.length === 0) {
+        if (this.userAttachments.length === 0) {
           await this.fetchUserDocuments();
         }
         
@@ -600,9 +632,6 @@ export default {
           fromStatus: 'Em Análise',
           toStatus: 'Aguardando'
         });
-
-        // Atualiza a lista de documentos
-        this.userDocuments = [];
 
         toast.setToast({
           text: 'Documentos removidos com sucesso!',
@@ -627,73 +656,34 @@ export default {
       try {
         this.isSaving = true;
         
-        const peopleData = {
-          id: this.user.people.id,
-          person_type: this.formData.personType,
-          address_id: null,
+        // Limpa apenas os dados fiscais
+        const fiscalInfoDoc = this.userAttachments.find(att => att.name === 'fiscal_info');
+        if (fiscalInfoDoc) {
+          await userDocuments.deleteUserDocument({ attachmentId: fiscalInfoDoc.id });
+        }
+
+        // Reseta o formulário fiscal
+        this.formData.fiscalData = {
+          personType: 'PF',
+          cpf: '',
+          firstName: '',
+          lastName: '',
+          cnpj: '',
+          companyName: '',
+          tradeName: '',
         };
 
-        // Limpar dados específicos por tipo de pessoa
-        if (this.formData.personType === 'PF') {
-          Object.assign(peopleData, {
-            tax: '',
-            first_name: '',
-            last_name: ''
-          });
-          
-          // Atualizar o formulário
-          this.formData.cpf = '';
-          this.formData.firstName = '';
-          this.formData.lastName = '';
-        } else {
-          Object.assign(peopleData, {
-            tax: '',
-            social_name: '',
-            fantasy_name: ''
-          });
-          
-          // Atualizar o formulário
-          this.formData.cnpj = '';
-          this.formData.companyName = '';
-          this.formData.tradeName = '';
-        }
-
-        // Limpar endereço se existir
-        if (this.user.people.address_id) {
-
-          await userAddress.deleteUserAddress(this.user.people.address_id);
-          
-          // Atualizar o formulário
-          this.formData.address = {
-            zipcode: '',
-            street: '',
-            number: '',
-            complement: '',
-            neighborhood: '',
-            city: '',
-            state: ''
-          };
-        }
-
-        // Atualiza os dados de people
-        await user.updatePeople(peopleData);
-
-        // Remove os dados de pix
-        if (this.pixInfo && this.pixInfo.id) {
-          await userDocuments.deleteUserDocument({ attachmentId: this.pixInfo.id });
-        }
-
         toast.setToast({
-          text: 'Dados do usuário limpos com sucesso!',
+          text: 'Dados fiscais limpos com sucesso!',
           type: 'success',
           time: 3000,
         });
 
         this.showConfirmClearData = false;
       } catch (error) {
-        console.error('Erro ao limpar dados do usuário:', error);
+        console.error('Erro ao limpar dados fiscais:', error);
         toast.setToast({
-          text: 'Erro ao limpar dados do usuário',
+          text: 'Erro ao limpar dados fiscais',
           type: 'error',
           time: 3000,
         });
@@ -708,12 +698,7 @@ export default {
       try {
         this.isSaving = true;
         
-        await this.$axios.$delete(`user-attachment/${this.selectedDocument.id}`);
-        
-        // Atualiza a lista de documentos
-        this.userDocuments = this.userDocuments.filter(
-          doc => doc.id !== this.selectedDocument.id
-        );
+        await userDocuments.deleteUserDocument({ attachmentId: this.selectedDocument.id });
 
         toast.setToast({
           text: 'Documento removido com sucesso!',
@@ -734,7 +719,6 @@ export default {
         this.isSaving = false;
       }
     },
-
 
     openDocument(document) {
       window.open(document.value, '_blank');

@@ -565,6 +565,7 @@ export default class User extends VuexModule {
       
       return {
         success: false,
+        data: null,
         error: 'Cargo não encontrado'
       };
     } catch (error) {
