@@ -23,7 +23,7 @@
 
     <!-- Seção: Dados fiscais -->
     <v-card flat tile class="py-6 px-4">
-      <v-card-title class="primary--text font-weight-bold">Dados fiscais</v-card-title>
+      <v-card-title class="primary--text font-weight-bold">Dados Fiscais</v-card-title>
       <v-card-subtitle class="grey--text">
         Estes dados serão utilizados para emissão de nota fiscal dos serviços prestados pela Meu Ingresso.
       </v-card-subtitle>
@@ -31,25 +31,30 @@
         <v-row>
           <v-col cols="12" md="6" sm="12">
             <div>
-              <div class="text-caption grey--text">CNPJ</div>
-              <div class="text-subtitle-1">{{ formatCNPJ(people?.tax) }}</div>
+              <div class="text-caption grey--text">{{ fiscalInfo?.personType === 'PF' ? 'CPF' : 'CNPJ' }}</div>
+              <div class="text-subtitle-1">{{ formatDocument(fiscalInfo?.cpf || fiscalInfo?.cnpj) }}</div>
             </div>
           </v-col>
           <v-col cols="12" md="6" sm="12">
             <div>
-              <div class="text-caption grey--text">Razão Social</div>
-              <div class="text-subtitle-1">{{ people?.social_name }}</div>
+              <div class="text-caption grey--text">{{ fiscalInfo?.personType === 'PF' ? 'Nome Completo' : 'Razão Social' }}</div>
+              <div class="text-subtitle-1">{{ displayName }}</div>
             </div>
           </v-col>
         </v-row>
 
+        <template v-if="fiscalInfo?.personType === 'PJ'">
+          <v-row>
+            <v-col cols="12" md="6" sm="12">
+              <div>
+                <div class="text-caption grey--text">Nome Fantasia</div>
+                <div class="text-subtitle-1">{{ fiscalInfo?.tradeName || '-' }}</div>
+              </div>
+            </v-col>
+          </v-row>
+        </template>
+
         <v-row>
-          <v-col cols="12" md="6" sm="12">
-            <div>
-              <div class="text-caption grey--text">Nome Fantasia</div>
-              <div class="text-subtitle-1">{{ people?.fantasy_name }}</div>
-            </div>
-          </v-col>
           <v-col cols="12" md="6" sm="12">
             <div>
               <div class="text-caption grey--text">CEP</div>
@@ -88,9 +93,20 @@
 
 <script>
 import { user, userAddress, userDocuments } from '@/store';
-import { onFormatCNPJ, onFormatCEP } from '@/utils/formatters';
+import { onFormatCNPJ, onFormatCEP, onFormatCPF } from '@/utils/formatters';
 
 export default {
+  props: {
+    readonly: {
+      type: Boolean,
+      default: false
+    },
+    fiscalInfo: {
+      type: Object,
+      default: null
+    }
+  },
+
   computed: {
     people() {
       return user?.$user?.people || {};
@@ -101,7 +117,7 @@ export default {
     },
     
     pixInfo() {
-      return userDocuments.$userAttachments.find(doc => doc.name === 'Pix Key') || {};
+      return userDocuments.$pixInfo;
     },
 
     pixKey() {
@@ -111,6 +127,16 @@ export default {
     pixValue() {
       return this.pixInfo?.value ? this.pixInfo.value : '-';
     },
+
+    displayName() {
+      if (!this.fiscalInfo) return '-';
+
+      if (this.fiscalInfo.personType === 'PF') {
+        return `${this.fiscalInfo.firstName} ${this.fiscalInfo.lastName}`.trim();
+      }
+      return this.fiscalInfo.companyName || this.fiscalInfo.tradeName || '-';
+    },
+
     formatAddress() {
       if (!this.currentAddress) return '-';
       
@@ -141,9 +167,9 @@ export default {
       }
     },
 
-    formatCNPJ(doc) {
+    formatDocument(doc) {
       if (!doc) return '-';
-      return onFormatCNPJ(doc);
+      return this.fiscalInfo?.personType === 'PF' ? onFormatCPF(doc) : onFormatCNPJ(doc);
     },
 
     formatCEP(cep) {

@@ -169,9 +169,13 @@
           :show-edit="isAdmin"
           :show-delete="false"
           :show-duplicate="false"
+          :show-activate-deactivate="true"
+          :is-inactive="!!item.deleted_at"
           icon="mdi-dots-horizontal"
           @edit="editUser(item)"
           @view-orders="viewOrders(item)"
+          @activate="activateUser(item)"
+          @deactivate="deactivateUser(item)"
         />
       </template>
     </v-data-table>
@@ -189,11 +193,23 @@
       :user="selectedUser"
       @saved="handleUserSaved"
     />
+
+    <!-- Modal de confirmação -->
+    <ConfirmDialog
+      :loading="isLoading"
+      :value="showConfirmDialog"
+      :title="confirmDialogTitle"
+      :message="confirmDialogMessage"
+      :confirm-text="confirmDialogConfirmText"
+      :cancel-text="confirmDialogCancelText"
+      @confirm="handleConfirmAction"
+      @cancel="handleCloseConfirmDialog"
+    />
   </div>
 </template>
 
 <script>
-import { user, loading } from '@/store';
+import { user, loading, toast } from '@/store';
 import { CLIENT_ROLE } from '@/utils/permissions-config';
 
 export default {
@@ -233,6 +249,13 @@ export default {
         { text: 'Verificado', value: 'verified' },
         { text: 'Não Verificado', value: 'not_verified' }
       ],
+      showConfirmDialog: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogConfirmText: '',
+      confirmDialogCancelText: 'Cancelar',
+      confirmAction: null,
+      userToUpdate: null,
     };
   },
   
@@ -411,9 +434,86 @@ export default {
       this.showEditUserModal = true;
     },
 
-    handleUserSaved() {
+    async handleUserSaved() {
       this.showEditUserModal = false;
-      this.loadUsers(true);
+      await this.loadUsers(true);
+    },
+
+    deactivateUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Inativar Usuário';
+      this.confirmDialogMessage = `Tem certeza que deseja inativar o usuário ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Inativar';
+      this.confirmAction = this.performDeactivation;
+      this.showConfirmDialog = true;
+    },
+
+    activateUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Ativar Usuário';
+      this.confirmDialogMessage = `Tem certeza que deseja ativar o usuário ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Ativar';
+      this.confirmAction = this.performActivation;
+      this.showConfirmDialog = true;
+    },
+
+    handleCloseConfirmDialog() {
+      this.showConfirmDialog = false;
+      this.userToUpdate = null;
+      this.confirmAction = null;
+    },
+
+    async handleConfirmAction() {
+      if (this.confirmAction) {
+        await this.confirmAction();
+        this.showConfirmDialog = false;
+        this.userToUpdate = null;
+        this.confirmAction = null;
+        this.loadUsers(true);
+      }
+    },
+
+    async performDeactivation() {
+      try {
+        if (this.userToUpdate) {
+          await user.deleteUser({ user_id: this.userToUpdate.id });
+          toast.setToast({
+            text: 'Usuário inativado com sucesso',
+            type: 'success',
+            time: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao inativar usuário:', error);
+        toast.setToast({
+          text: 'Erro ao inativar usuário',
+          type: 'error',
+          time: 5000,
+        });
+      }
+    },
+
+    async performActivation() {
+      try {
+        if (this.userToUpdate) {
+          await user.updateUser({
+            id: this.userToUpdate.id,
+            deleted_at: null
+          });
+          toast.setToast({
+            text: 'Usuário ativado com sucesso',
+            type: 'success',
+            time: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao ativar usuário:', error);
+        toast.setToast({
+          text: 'Erro ao ativar usuário',
+          type: 'error',
+          time: 5000,
+        });
+      }
     },
   },
 };

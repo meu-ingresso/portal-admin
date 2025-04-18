@@ -1,16 +1,31 @@
 import { Middleware } from '@nuxt/types';
-import { permissions } from '@/utils/store-util';
+import { permissions, user } from '@/utils/store-util';
 
 /**
  * Middleware para verificar permissões de acesso a rotas
  * Verifica se o usuário tem as permissões necessárias para acessar a rota
  * com base em meta.permissions e verificações específicas para promotores e colaboradores
  */
-const permissionsMiddleware: Middleware = async ({ route, redirect, app }) => {
+const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }) => {
+
 
   // Se a rota é a de login, não é necessário verificar permissões
   if (route.path === '/login') {
     return;
+  }
+
+  // Verifica se temos os dados do usuário logado na store de user
+  if (!store.state.user.user || store.state.user.user.id === '') {
+    console.log("Buscando dados do usuário no banco de dados...")
+    const responseUser = await user.getById({
+      user_id: app.$cookies.get('user_id'),
+      commit: true
+    });
+
+    if (!responseUser) {
+      console.log("Usuário não encontrado, redirecionando para login...")
+      return redirect('/login');
+    }
   }
 
   // Se a rota não tem configuração de permissões, permite o acesso

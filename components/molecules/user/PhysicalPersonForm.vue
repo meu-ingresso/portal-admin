@@ -132,21 +132,27 @@ export default {
   },
   watch: {
     cpf(value) {
-      this.cpfModel = value;
+      if (!value) return;
+      this.formatCPF(value);
     },
     cpfModel(value) {
+      if (!value) return;
       this.$emit('update:cpf', value);
     },
     firstName(value) {
+      if (!value) return;
       this.firstNameModel = value;
     },
     firstNameModel(value) {
+      if (!value) return;
       this.$emit('update:firstName', value);
     },
     lastName(value) {
+      if (!value) return;
       this.lastNameModel = value;
     },
     lastNameModel(value) {
+      if (!value) return;
       this.$emit('update:lastName', value);
     }
   },

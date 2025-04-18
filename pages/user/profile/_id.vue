@@ -7,7 +7,7 @@
     </v-row>
 
     <v-row>
-      <!-- Card fixo de Dados de Acesso à esquerda -->
+      <!-- Card de Dados de Acesso -->
       <v-col cols="12" md="4">
         <v-card tile flat class="mb-4 py-4">
           <v-card-text>
@@ -41,32 +41,27 @@
         </v-card>
       </v-col>
 
-      <!-- Conteúdo das tabs à direita -->
+      <!-- Conteúdo das tabs -->
       <v-col cols="12" md="8">
         <v-tabs v-model="activeTab" background-color="white" grow class="mb-8">
-          <v-tab>
-            Organizador
-          </v-tab>
-          <v-tab>
-            Comprador
-          </v-tab>
-          <v-tab>
-            Configurações
-          </v-tab>
+          <v-tab>Organizador</v-tab>
+          <v-tab>Configurações</v-tab>
         </v-tabs>
 
         <v-tabs-items v-model="activeTab" :class="{ 'bg-transparent': activeTab === 0 }">
           <!-- Aba de Dados de Organizador -->
           <v-tab-item class="bg-transparent">
-            <v-card tile flat class="mb-4 bg-transparent" >
+            <v-card tile flat class="mb-4 bg-transparent">
               <v-card-text class="bg-transparent px-0 py-0">
-                <div v-if="hasSubmittedDocuments && isOrganizer">
-                  <UserOrganizerForm :readonly="true" />
+                <div v-if="(hasSubmittedDocuments && isOrganizer) || isAdmin">
+                  <UserOrganizerForm :readonly="true" :fiscal-info="fiscalInfo" />
                 </div>
                 <div v-else class="rounded-lg pa-6" style="background-color: #FFCDD2;">
                   <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between">
                     <div>
-                      <p class="text-body-1 font-weight-bold mb-2">Para ativar sua conta de organizador e receber seus lucros, complete seu cadastro.</p>
+                      <p class="text-body-1 font-weight-bold mb-2">
+                        Para ativar sua conta de organizador e receber seus lucros, complete seu cadastro.
+                      </p>
                       <p class="mb-0">Após o cadastro completo, seus eventos podem ser publicados.</p>
                     </div>
                     <DefaultButton 
@@ -77,15 +72,6 @@
                     />
                   </div>
                 </div>
-              </v-card-text>
-            </v-card>
-          </v-tab-item>
-
-          <!-- Aba de Dados de Comprador -->
-          <v-tab-item>
-            <v-card tile flat class="mb-4">
-              <v-card-text>
-                <UserBuyerForm />
               </v-card-text>
             </v-card>
           </v-tab-item>
@@ -102,14 +88,14 @@
       </v-col>
     </v-row>
 
-    <!-- Modal para completar o cadastro se necessário -->
+    <!-- Modais -->
     <RequiredUserDocModal
       :show-document-dialog="showDocumentDialog"
+      :has-document-info="fiscalInfo"
       @close-document-dialog="showDocumentDialog = false"
       @saved-user-data="onDocumentsSubmitted"
     />
 
-    <!-- Modal para editar dados de acesso -->
     <v-dialog v-model="showSecurityDialog" max-width="500">
       <v-card>
         <v-card-title class="headline">
@@ -121,7 +107,7 @@
         </v-card-title>
         <v-card-text>
           <UserSecurityForm
-            @saved="showSecurityDialog = false"
+            @saved="onSecurityFormSaved"
             @cancel="showSecurityDialog = false" 
           />
         </v-card-text>
@@ -132,77 +118,113 @@
 
 <script>
 import { user, userDocuments } from '@/store';
+import { PRODUCER_ROLE, ADMIN_ROLE } from '@/utils/permissions-config';
+
+const PERSON_TYPES = {
+  PF: 'PF',
+  PJ: 'PJ'
+};
+
 
 export default {
-  async asyncData({ params, error }) {
-    try {
-      const userId = params.id;
-      await user.getById({ user_id: userId, commit: true });
-      
-      const documentStatus = await userDocuments.fetchDocumentStatus(userId);
-      
-      return { 
-        userId,
-        hasSubmittedDocuments: documentStatus?.hasRequiredDocuments && documentStatus?.hasPixInfo
-      };
-    } catch (e) {
-      error({ statusCode: 404, message: 'Usuário não encontrado' });
-    }
-  },
 
   data() {
     return {
       activeTab: 0,
       showDocumentDialog: false,
       showSecurityDialog: false,
-      hasSubmittedDocuments: false,
-      userRole: null
     };
   },
   
   head() {
     return {
-      title: 'Minha Conta',
+      title: 'Minha Conta'
     };
   },
   
   computed: {
-
     userEmail() {
       return user?.$user?.email || '••••••••';
     },
 
     isOrganizer() {
-      return user?.$user?.role?.name === 'Produtor' || user?.$user?.role?.name === 'Admin';
+      const roleName = user?.$user?.role?.name;
+      return roleName === PRODUCER_ROLE;
     },
-    
-    needsToCompleteProfile() {
-      return this.isOrganizer && !this.hasSubmittedDocuments;
-    }
+
+    isAdmin() {
+      const roleName = user?.$user?.role?.name;
+      return roleName === ADMIN_ROLE;
+    },
+
+    displayName() {
+      if (!this.fiscalInfo) return '';
+
+      if (this.fiscalInfo.personType === PERSON_TYPES.PF) {
+        return `${this.fiscalInfo.firstName} ${this.fiscalInfo.lastName}`.trim();
+      }
+      return this.fiscalInfo.companyName || this.fiscalInfo.tradeName || '';
+    },
+
+    hasRequiredDocuments() {
+      return userDocuments.$hasRequiredDocuments;
+    },
+
+    hasPixInfo() {
+      return userDocuments.$hasPixInfo;
+    },
+
+    hasFiscalInfo() {
+      return userDocuments.$hasFiscalInfo;
+    },
+
+    fiscalInfo() {
+      return userDocuments.$fiscalInfo;
+    },
+
+    hasDocumentInfo() {
+      return userDocuments.$documentInfo;
+    },
+
+    hasSubmittedDocuments() {
+      return this.hasRequiredDocuments && this.hasPixInfo && this.hasFiscalInfo;
+    },
+
+    userId() {
+      return user.$user?.id;
+    },
   },
-  
+
   watch: {
-    needsToCompleteProfile(val) {
-      if (val) {
-        this.showDocumentDialog = true;
+    userId: {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          userDocuments.fetchDocumentStatus(newValue);
+        }
       }
     }
   },
   
-  mounted() {
-    if (this.needsToCompleteProfile) {
-      this.showDocumentDialog = true;
-    }
-  },
-  
   methods: {
-    onDocumentsSubmitted() {
-      this.showDocumentDialog = false;
-      this.hasSubmittedDocuments = true;
-      this.activeTab = 0;
+
+    async onDocumentsSubmitted() {
+      try {
+        await userDocuments.fetchDocumentStatus(this.userId);
+        this.showDocumentDialog = false;
+        this.activeTab = 0;
+      } catch (error) {
+        console.error('Erro ao atualizar informações:', error);
+      }
+    },
+
+
+    onSecurityFormSaved() {
+      this.showSecurityDialog = false;
     }
   }
-}
+};
+
 </script>
 
 <style scoped>

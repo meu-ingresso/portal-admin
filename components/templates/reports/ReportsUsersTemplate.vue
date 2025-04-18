@@ -15,7 +15,7 @@
           </v-tab>
           <v-tab>
             <v-icon left>mdi-account-group</v-icon>
-            Organizadores
+            Produtores
           </v-tab>
           <v-tab>
             <v-icon left>mdi-account-tie</v-icon>
