@@ -110,10 +110,18 @@
 </template>
 
 <script>
-import { userAddress, user } from '@/store';
+import { userAddress } from '@/store';
 import { onFormatCEP } from '@/utils/formatters';
 
 export default {
+
+  props: {
+    peopleId: {
+      type: String,
+      required: true,
+    },
+  },
+
   data() {
     return {
       isFetchingAddress: false,
@@ -175,9 +183,6 @@ export default {
       return fullAddress;
     },
 
-    peopleId() {
-      return user.$people?.id;
-    }
   },
   watch: {
     peopleId: {

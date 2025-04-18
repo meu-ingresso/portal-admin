@@ -192,7 +192,7 @@
               <v-tab-item>
                 <v-card flat>
                   <v-card-text>
-                    <UserAddressForm />
+                    <UserAddressForm :people-id="user.people.id" />
                   </v-card-text>
                 </v-card>
               </v-tab-item>

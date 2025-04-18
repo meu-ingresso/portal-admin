@@ -129,7 +129,7 @@
                   <p class="text-body-1 grey--text text--darken-2 mb-6">
                     Informe seu endereço para emissão de nota fiscal e comprovantes.
                   </p>
-                  <UserAddressForm />
+                  <UserAddressForm :people-id="people.id" />
                 </v-container>
               </v-stepper-content>
 
@@ -477,7 +477,8 @@ export default {
           this.savePersonalInfoAsJson(),
           this.handleDocumentUpload(),
           this.savePixInformation(),
-          this.saveAddressInfo()
+          this.saveAddressInfo(),
+          this.handleAccountVerification()
         ]);
 
         await this.updateUserRole();
@@ -491,6 +492,26 @@ export default {
         this.handleError('Erro ao salvar informações');
       } finally {
         this.isUploading = false;
+      }
+    },
+
+    async handleAccountVerification() {
+      try {
+        const verificationStatus = await userDocuments.getAccountVerificationStatus(this.userId);
+        if (verificationStatus) {
+          await userDocuments.deleteUserDocument({
+            attachmentId: verificationStatus.id
+          });
+        }
+
+        const rejectionReason = await userDocuments.getRejectionReason(this.userId);
+        if (rejectionReason) {
+          await userDocuments.deleteUserDocument({
+            attachmentId: rejectionReason.id
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao remover verificação de conta:', error);
       }
     },
 
