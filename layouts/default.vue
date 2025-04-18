@@ -178,8 +178,6 @@ export default {
           return;
         }
 
-        console.log('A: ', permissions.$permissions)
-
         // Carregar as permissões do usuário se não existirem no cache ou se o cache expirou
         if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
           await permissions.loadUserPermissions({

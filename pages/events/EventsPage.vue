@@ -85,6 +85,10 @@ export default {
     hasFiscalInfo() {
       return userDocuments.$hasFiscalInfo;
     },
+
+    hasRejectionReason() {
+      return userDocuments.$hasRejectionReason;
+    },
   },
 
   async mounted() {
@@ -198,7 +202,7 @@ export default {
           }
 
           setTimeout(() => {
-            if ((!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo) && !this.isAdmin) {
+            if ((!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo || this.hasRejectionReason) && !this.isAdmin) {
               this.showDocumentDialog = true;
             }
           }, 1000);

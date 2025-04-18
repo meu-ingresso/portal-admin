@@ -17,10 +17,9 @@
     >
       <v-sheet class="d-flex flex-column fill-height">
         <!-- Drawer Header -->
-        <v-toolbar flat dense color="primary" dark class="flex-shrink-0 drawer-header">
+        <v-toolbar flat dense class="flex-shrink-0 drawer-header">
           <div class="d-flex align-center">
-            <v-icon class="mr-2">mdi-account-check</v-icon>
-            <span class="text-h6">Dados Cadastrais</span>
+            <span class="modalTitle">Dados Cadastrais</span>
           </div>
           <v-spacer></v-spacer>
           <v-btn icon @click="closeDocumentDialog">
@@ -342,11 +341,10 @@ export default {
 
     async initializeData() {
       try {
-        await Promise.all([
-          this.fetchDocumentStatus(),
-          this.loadPersonalInfo(),
-          this.loadPixInfo()
-        ]);
+        await this.fetchDocumentStatus();
+
+        this.loadPersonalInfo();
+        this.loadPixInfo();
       } catch (error) {
         console.error('Erro ao inicializar dados:', error);
         this.handleError('Erro ao carregar dados iniciais');
@@ -597,6 +595,7 @@ export default {
         if (personalInfoDoc?.value) {
           try {
             const personalInfo = JSON.parse(personalInfoDoc.value);
+
             this.updatePersonalInfoFromJson(personalInfo);
           } catch (error) {
             console.error('Erro ao parsear informações pessoais:', error);
@@ -792,7 +791,8 @@ export default {
 }
 
 .drawer-header {
-  max-height: 48px !important;
+  max-height: 54px !important;
+  padding: 8px;
 }
 
 :deep(.v-stepper__header) {

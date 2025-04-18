@@ -196,18 +196,27 @@
       
       <!-- Status de verificação -->
       <template #[`item.account_verified`]="{ item }">
-        <v-tooltip bottom>
+        <v-menu offset-y>
           <template #activator="{ on, attrs }">
-            <v-icon
-              v-bind="attrs"
-              :color="getVerificationColor(item)"
-              v-on="on"
-            >
-              {{ getVerificationIcon(item) }}
-            </v-icon>
+            <div class="menu-activator" v-bind="attrs" v-on="on">
+              <v-icon
+                :color="getVerificationColor(item)"
+              >
+                {{ getVerificationIcon(item) }}
+              </v-icon>
+            </div>
           </template>
-          <span>{{ getVerificationTooltip(item) }}</span>
-        </v-tooltip>
+          <v-card class="menu-popup pa-4" max-width="300">
+            <template v-if="getRejectionReason(item)">
+                <div class="menu-header mb-2">Conta Rejeitada</div>
+                <div class="rejection-reason-text">{{ getRejectionReason(item) }}</div>
+            </template>
+            <template v-else>
+              <div class="menu-header mb-2">Status da Verificação:</div>
+              <span>{{ getVerificationStatus(item) }}</span>
+            </template>
+          </v-card>
+        </v-menu>
       </template>
 
       <!-- Documentos enviados -->
@@ -676,7 +685,10 @@ export default {
     async handleRejectConfirm(rejectionReason) {
       try {
         if (this.userToUpdate) {
-          const response = await userDocuments.rejectAccount(this.userToUpdate.id, rejectionReason);
+          const response = await userDocuments.rejectAccount({
+            userId: this.userToUpdate.id,
+            rejectionReason,
+          });
 
           if (response) {
 
@@ -720,7 +732,7 @@ export default {
       return verificationAttachment.value === 'verified' ? 'mdi-check-bold' : 'mdi-close';
     },
 
-    getVerificationTooltip(item) {
+    getVerificationStatus(item) {
       if (!item.attachments) return 'Aguardando verificação';
       
       const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
@@ -734,6 +746,13 @@ export default {
       return rejectionAttachment 
         ? `Conta rejeitada: ${rejectionAttachment.value}`
         : 'Conta rejeitada';
+    },
+
+    getRejectionReason(item) {
+      if (!item.attachments) return null;
+      
+      const rejectionAttachment = item.attachments.find(att => att.type === 'rejection_reason');
+      return rejectionAttachment ? rejectionAttachment.value : null;
     },
 
     getDocumentTooltip(item) {
@@ -762,5 +781,45 @@ export default {
 
 .events-link:hover {
   opacity: 0.8;
+}
+
+.menu-activator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.menu-activator:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-popup {
+  border-radius: 8px;
+}
+
+.menu-header {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--black-text);
+}
+
+.menu-content {
+  font-size: 14px;
+}
+
+.rejection-reason-label {
+  font-weight: 500;
+  color: var(--error);
+}
+
+.rejection-reason-text {
+  color: var(--error);
+  opacity: 0.9;
+  line-height: 1.4;
+  word-break: break-word;
 }
 </style> 

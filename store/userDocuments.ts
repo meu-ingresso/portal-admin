@@ -71,6 +71,17 @@ export default class UserDocuments extends VuexModule {
     }
     return null;
   }
+
+  public get $hasRejectionReason() {
+    return this.userAttachments.some(att => att.name === 'documents_rejection');
+  }
+
+  public get $rejectionReason() {
+    if (this.$hasRejectionReason) {
+      return this.userAttachments.find(att => att.name === 'documents_rejection');
+    }
+    return null;
+  }
   
   @Mutation
   private SET_LOADING(payload: boolean) {
@@ -103,6 +114,9 @@ export default class UserDocuments extends VuexModule {
   @Action
   public async fetchDocumentStatus(userId: string) {
     try {
+
+      this.context.commit('SET_USER_ATTACHMENTS', []);
+
       this.context.commit('SET_LOADING', true);
     
       
@@ -193,11 +207,11 @@ export default class UserDocuments extends VuexModule {
   }
 
   @Action
-  public async rejectAccount(userId: string, rejectionReason: string) {
+  public async rejectAccount(payload: { userId: string, rejectionReason: string }) {
     try {
       
       // Busca o status atual de verificação
-      const verificationStatus = await this.getAccountVerificationStatus(userId);
+      const verificationStatus = await this.getAccountVerificationStatus(payload.userId);
       
       if (verificationStatus) {
         // Atualiza o registro existente
@@ -208,7 +222,7 @@ export default class UserDocuments extends VuexModule {
       } else {
         // Cria um novo registro
         await this.context.dispatch('createUserDocument', {
-          userId,
+          userId: payload.userId,
           name: 'account_verification',
           type: 'account_verification',
           value: 'rejected'
@@ -216,18 +230,18 @@ export default class UserDocuments extends VuexModule {
       }
 
       // Adiciona ou atualiza o motivo da rejeição
-      const existingRejection = await this.context.dispatch('getRejectionReason', userId);
+      const existingRejection = await this.context.dispatch('getRejectionReason', payload.userId);
       if (existingRejection) {
         await this.context.dispatch('updateUserAttachment', {
           id: existingRejection.id,
-          value: rejectionReason
+          value: payload.rejectionReason
         });
       } else {
         await this.context.dispatch('createUserDocument', {
-          userId,
+          userId: payload.userId,
           name: 'documents_rejection',
           type: 'rejection_reason',
-          value: rejectionReason
+          value: payload.rejectionReason
         });
       }
 
