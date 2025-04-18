@@ -170,20 +170,20 @@
         </v-sheet>
       </template>
 
-      <!-- Tipo de pessoa -->
-      <template #[`item.person_type`]="{ item }">
+      <!-- Tipo de pessoa dos dados fiscais -->
+      <template #[`item.fiscal_person_type`]="{ item }">
         <v-chip color="primary">
-          {{ item.people?.person_type }}
+          {{ item.fiscal_info?.person_type }}
         </v-chip>
       </template>
       
-      <!-- Nome do organizador -->
-      <template #[`item.full_name`]="{ item }">
-        <span v-if="item.people?.person_type === 'PF'">
-          {{ item.people?.first_name }} {{ item.people?.last_name }}
+      <!-- Nome do organizador a partir dos dados fiscais -->
+      <template #[`item.fiscal_name`]="{ item }">
+        <span v-if="item.fiscal_info?.person_type === 'PF'">
+          {{ item.fiscal_info?.first_name }} {{ item.fiscal_info?.last_name }}
         </span>
         <span v-else>
-          {{ item.people?.social_name }}
+          {{ item.fiscal_info?.company_name }}
         </span>
       </template>
       
@@ -207,9 +207,9 @@
             </div>
           </template>
           <v-card class="menu-popup pa-4" max-width="300">
-            <template v-if="getRejectionReason(item)">
+            <template v-if="item.rejection_reason">
                 <div class="menu-header mb-2">Conta Rejeitada</div>
-                <div class="rejection-reason-text">{{ getRejectionReason(item) }}</div>
+                <div class="rejection-reason-text">{{ item.rejection_reason }}</div>
             </template>
             <template v-else>
               <div class="menu-header mb-2">Status da Verificação:</div>
@@ -302,8 +302,8 @@ export default {
   data() {
     return {
       headers: [
-        { text: 'Tipo', value: 'person_type', sortable: false, align: 'center' },
-        { text: 'Nome/Razão Social', value: 'full_name', sortable: false },
+        { text: 'Tipo', value: 'fiscal_person_type', sortable: false, align: 'center' },
+        { text: 'Nome/Razão Social', value: 'fiscal_name', sortable: false },
         { text: 'E-mail', value: 'email', sortable: true },
         { text: 'Verificado', value: 'account_verified', sortable: false, align: 'center' },
         { text: 'Docs', value: 'document_sent', sortable: false, align: 'center' },
@@ -396,7 +396,7 @@ export default {
     getDocumentSent(user) {
       if (!user?.attachments) return false;
 
-      if (user?.people?.person_type === 'PF') {
+      if (user?.fiscal_info?.person_type === 'PF') {
         return user.attachments.some(attachment => attachment.type === 'document_cnh') ||
           (user.attachments.some(attachment => attachment.type === 'document_rg_front') && 
            user.attachments.some(attachment => attachment.type === 'document_rg_back'));
@@ -452,6 +452,38 @@ export default {
 
       return false;
     },
+
+    // TODO: Refatorar para usar o useUserStore
+    mapUsersResponse(users) {
+      try {
+
+        if (!users) return [];
+
+        return users.map(user => {
+          const accountVerification = user.attachments.find(attachment => attachment.type === 'account_verification');
+          const rejectionReason = user.attachments.find(attachment => attachment.type === 'rejection_reason');
+          const fiscalInfo = user.attachments.find(attachment => attachment.name === 'fiscal_info');
+
+          const parsedFiscalInfo = fiscalInfo ? JSON.parse(fiscalInfo.value) : null;
+
+          return {
+            ...user,
+            account_verified: accountVerification?.value === 'verified',
+            rejection_reason: rejectionReason?.value,
+            fiscal_info: {
+              person_type: parsedFiscalInfo?.personType || user.people?.person_type,
+              first_name: parsedFiscalInfo?.firstName || user.people?.first_name,
+              last_name: parsedFiscalInfo?.lastName || user.people?.last_name,
+              company_name: parsedFiscalInfo?.companyName || user.people?.social_name,
+              trade_name: parsedFiscalInfo?.tradeName || user.people?.social_reason,
+            }
+          };
+        });
+      } catch (error) {
+        console.error('Erro ao mapear usuários:', error);
+        return users;
+      }
+    },
     
     async loadUsers(force = false) {
       try {
@@ -463,7 +495,7 @@ export default {
           const response = await user.getUsersByRole(query);
           
           if (response && response.data && response.data !== 'Error') {
-            this.users = response.data;
+            this.users = this.mapUsersResponse(response.data);
             this.totalUsers = response.meta.total;
           } else {
             this.users = [];
@@ -545,9 +577,9 @@ export default {
     
     viewOrders(user) {
       this.selectedUserId = user.id;
-      this.selectedUserName = user.people?.person_type === 'PF' 
-        ? `${user.people?.first_name} ${user.people?.last_name}`
-        : user.people?.social_name;
+      this.selectedUserName = user.fiscal_info?.person_type === 'PF' 
+        ? `${user.fiscal_info?.first_name} ${user.fiscal_info?.last_name}`
+        : user.fiscal_info?.company_name;
       this.showUserOrders = true;
     },
 
@@ -564,7 +596,7 @@ export default {
     deactivateUser(userItem) {
       this.userToUpdate = userItem;
       this.confirmDialogTitle = 'Inativar Organizador';
-      this.confirmDialogMessage = `Tem certeza que deseja inativar o organizador ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogMessage = `Tem certeza que deseja inativar o organizador ${userItem.fiscal_info?.first_name || userItem.email}?`;
       this.confirmDialogConfirmText = 'Inativar';
       this.confirmAction = this.performDeactivation;
       this.showConfirmDialog = true;
@@ -573,7 +605,7 @@ export default {
     activateUser(userItem) {
       this.userToUpdate = userItem;
       this.confirmDialogTitle = 'Ativar Organizador';
-      this.confirmDialogMessage = `Tem certeza que deseja ativar o organizador ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogMessage = `Tem certeza que deseja ativar o organizador ${userItem.fiscal_info?.first_name || userItem.email}?`;
       this.confirmDialogConfirmText = 'Ativar';
       this.confirmAction = this.performActivation;
       this.showConfirmDialog = true;
@@ -641,7 +673,7 @@ export default {
     verifyUser(userItem) {
       this.userToUpdate = userItem;
       this.confirmDialogTitle = 'Verificar Produtor';
-      this.confirmDialogMessage = `Tem certeza que deseja verificar o produtor ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogMessage = `Tem certeza que deseja verificar o produtor ${userItem.fiscal_info?.first_name || userItem.email}?`;
       this.confirmDialogConfirmText = 'Verificar';
       this.confirmAction = this.performVerification;
       this.showConfirmDialog = true;
@@ -715,44 +747,27 @@ export default {
     },
 
     getVerificationColor(item) {
-      if (!item.attachments) return 'grey';
+      if (!item.account_verified && !item.rejection_reason) return 'grey';
       
-      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
-      if (!verificationAttachment) return 'grey';
-      
-      return verificationAttachment.value === 'verified' ? 'primary' : 'error';
+      return item.account_verified ? 'primary' : item.rejection_reason ? 'error' : 'grey';
     },
 
     getVerificationIcon(item) {
-      if (!item.attachments) return 'mdi-help-circle-outline';
+      if (!item.account_verified && !item.rejection_reason) return 'mdi-help-circle-outline';
       
-      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
-      if (!verificationAttachment) return 'mdi-help-circle-outline';
-      
-      return verificationAttachment.value === 'verified' ? 'mdi-check-bold' : 'mdi-close';
+      return item.account_verified ? 'mdi-check-bold' : item.rejection_reason ? 'mdi-close' : 'mdi-help-circle-outline';
     },
 
     getVerificationStatus(item) {
-      if (!item.attachments) return 'Aguardando verificação';
+      if (!item.account_verified) return 'Aguardando verificação';
       
-      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
-      if (!verificationAttachment) return 'Aguardando verificação';
-      
-      if (verificationAttachment.value === 'verified') {
+      if (item.account_verified) {
         return 'Conta verificada';
       }
       
-      const rejectionAttachment = item.attachments.find(att => att.type === 'rejection_reason');
-      return rejectionAttachment 
-        ? `Conta rejeitada: ${rejectionAttachment.value}`
+      return item.rejection_reason 
+        ? `Conta rejeitada: ${item.rejection_reason}`
         : 'Conta rejeitada';
-    },
-
-    getRejectionReason(item) {
-      if (!item.attachments) return null;
-      
-      const rejectionAttachment = item.attachments.find(att => att.type === 'rejection_reason');
-      return rejectionAttachment ? rejectionAttachment.value : null;
     },
 
     getDocumentTooltip(item) {
