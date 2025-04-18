@@ -8,11 +8,11 @@
       :options.sync="options"
       :footer-props="{
         itemsPerPageOptions: [50, 100, 200],
-        itemsPerPageText: 'Organizadores por página',
+        itemsPerPageText: 'Produtores por página',
         pageText: '{0}-{1} de {2}',
       }"
-      :no-data-text="'Nenhum organizador encontrado'"
-      :no-results-text="'Nenhum organizador encontrado'"
+      :no-data-text="'Nenhum produtor encontrado'"
+      :no-results-text="'Nenhum produtor encontrado'"
       :loading-text="'Carregando...'"
       class="elevation-1"
       @update:options="handleTableUpdate"
@@ -100,7 +100,7 @@
                       </v-row>
                     </v-col>
 
-                    <!-- Filtro de Função -->
+                    <!-- Filtro de Função 
                     <v-col cols="6">
                       <v-select
                         v-model="filters.role"
@@ -112,6 +112,7 @@
                         hide-details="auto"
                         @change="handleFilterChange" />
                     </v-col>
+                    -->
 
                     <!-- Filtro de status de verificação -->
                     <v-col cols="6">
@@ -195,16 +196,43 @@
       
       <!-- Status de verificação -->
       <template #[`item.account_verified`]="{ item }">
-        <v-icon :color="item.account_verified ? 'primary' : 'gray'">
-          {{ item.account_verified ? 'mdi-check-bold' : 'mdi-close' }}
-        </v-icon>
+        <v-menu offset-y>
+          <template #activator="{ on, attrs }">
+            <div class="menu-activator" v-bind="attrs" v-on="on">
+              <v-icon
+                :color="getVerificationColor(item)"
+              >
+                {{ getVerificationIcon(item) }}
+              </v-icon>
+            </div>
+          </template>
+          <v-card class="menu-popup pa-4" max-width="300">
+            <template v-if="getRejectionReason(item)">
+                <div class="menu-header mb-2">Conta Rejeitada</div>
+                <div class="rejection-reason-text">{{ getRejectionReason(item) }}</div>
+            </template>
+            <template v-else>
+              <div class="menu-header mb-2">Status da Verificação:</div>
+              <span>{{ getVerificationStatus(item) }}</span>
+            </template>
+          </v-card>
+        </v-menu>
       </template>
 
       <!-- Documentos enviados -->
       <template #[`item.document_sent`]="{ item }">
-        <v-icon :color="getDocumentSent(item) ? 'primary' : 'gray'">
-          {{ getDocumentSent(item) ? 'mdi-check-bold' : 'mdi-close' }}
-        </v-icon>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-icon
+              v-bind="attrs"
+              :color="getDocumentSent(item) ? 'primary' : 'grey'"
+              v-on="on"
+            >
+              {{ getDocumentSent(item) ? 'mdi-check-bold' : 'mdi-close' }}
+            </v-icon>
+          </template>
+          <span>{{ getDocumentTooltip(item) }}</span>
+        </v-tooltip>
       </template>
       
       <!-- Ações -->
@@ -213,9 +241,17 @@
           :show-edit="isAdmin"
           :show-delete="false"
           :show-duplicate="false"
+          :show-activate-deactivate="true"
+          :show-verify="isAdmin && !item.account_verified && getDocumentSent(item)"
+          :show-reject="isAdmin && !item.account_verified && getDocumentSent(item)"
+          :is-inactive="!!item.deleted_at"
           icon="mdi-dots-horizontal"
           @edit="editUser(item)"
           @view-orders="viewOrders(item)"
+          @activate="activateUser(item)"
+          @deactivate="deactivateUser(item)"
+          @verify="verifyUser(item)"
+          @reject="rejectUser(item)"
         />
       </template>
     </v-data-table>
@@ -234,14 +270,35 @@
       @saved="handleUserSaved"
     />
 
+    <!-- Modal de confirmação -->
+    <ConfirmDialog
+      :loading="isLoading"
+      :value="showConfirmDialog"
+      :title="confirmDialogTitle"
+      :message="confirmDialogMessage"
+      :confirm-text="confirmDialogConfirmText"
+      :cancel-text="confirmDialogCancelText"
+      @confirm="handleConfirmAction"
+      @cancel="handleCloseConfirmDialog"
+    />
+
+    <!-- Modal de rejeição -->
+    <RejectUserModal
+      :show.sync="showRejectModal"
+      @confirm="handleRejectConfirm"
+      @cancel="handleRejectCancel"
+    />
+
     <!-- TODO: Modal para mostrar eventos do organizador -->
   </div>
 </template>
 
 <script>
-import { user, loading } from '@/store';
-import { EVENT_COLLABORATOR_ROLES } from '@/utils/permissions-config';
+import { user, loading, toast, userDocuments } from '@/store';
+import { EVENT_COLLABORATOR_ROLES, PRODUCER_ROLE } from '@/utils/permissions-config';
+
 export default {
+
   data() {
     return {
       headers: [
@@ -272,6 +329,7 @@ export default {
       isLoadingInternal: false,
       showUserOrders: false,
       showEditUserModal: false,
+      showRejectModal: false,
       selectedUserId: null,
       selectedUserName: '',
       selectedUser: null,
@@ -281,13 +339,21 @@ export default {
         { text: 'Verificado', value: 'verified' },
         { text: 'Não Verificado', value: 'not_verified' }
       ],
+      showConfirmDialog: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogConfirmText: '',
+      confirmDialogCancelText: 'Cancelar',
+      confirmAction: null,
+      userToUpdate: null,
     };
   },
   
   computed: {
 
     organizerRoles() {
-      return EVENT_COLLABORATOR_ROLES.map(role => role.name);
+      // return EVENT_COLLABORATOR_ROLES.map(role => role.name);
+      return PRODUCER_ROLE;
     },
 
     roleOptions() {
@@ -494,6 +560,206 @@ export default {
       this.showEditUserModal = false;
       this.loadUsers(true);
     },
+
+    deactivateUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Inativar Organizador';
+      this.confirmDialogMessage = `Tem certeza que deseja inativar o organizador ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Inativar';
+      this.confirmAction = this.performDeactivation;
+      this.showConfirmDialog = true;
+    },
+
+    activateUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Ativar Organizador';
+      this.confirmDialogMessage = `Tem certeza que deseja ativar o organizador ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Ativar';
+      this.confirmAction = this.performActivation;
+      this.showConfirmDialog = true;
+    },
+
+    handleCloseConfirmDialog() {
+      this.showConfirmDialog = false;
+      this.userToUpdate = null;
+      this.confirmAction = null;
+    },
+
+    async handleConfirmAction() {
+      if (this.confirmAction) {
+        await this.confirmAction();
+        this.showConfirmDialog = false;
+        this.userToUpdate = null;
+        this.confirmAction = null;
+        this.loadUsers(true);
+      }
+    },
+
+    async performDeactivation() {
+      try {
+        if (this.userToUpdate) {
+          await user.deleteUser({ user_id: this.userToUpdate.id });
+          toast.setToast({
+            text: 'Organizador inativado com sucesso',
+            type: 'success',
+            time: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao inativar organizador:', error);
+        toast.setToast({
+          text: 'Erro ao inativar organizador',
+          type: 'error',
+          time: 5000,
+        });
+      }
+    },
+
+    async performActivation() {
+      try {
+        if (this.userToUpdate) {
+          await user.updateUser({
+            id: this.userToUpdate.id,
+            deleted_at: null
+          });
+          toast.setToast({
+            text: 'Organizador ativado com sucesso',
+            type: 'success',
+            time: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao ativar organizador:', error);
+        toast.setToast({
+          text: 'Erro ao ativar organizador',
+          type: 'error',
+          time: 5000,
+        });
+      }
+    },
+
+    verifyUser(userItem) {
+      this.userToUpdate = userItem;
+      this.confirmDialogTitle = 'Verificar Produtor';
+      this.confirmDialogMessage = `Tem certeza que deseja verificar o produtor ${userItem.people?.first_name || userItem.email}?`;
+      this.confirmDialogConfirmText = 'Verificar';
+      this.confirmAction = this.performVerification;
+      this.showConfirmDialog = true;
+    },
+
+    rejectUser(userItem) {
+      this.userToUpdate = userItem;
+      this.showRejectModal = true;
+    },
+
+    async performVerification() {
+      try {
+        if (this.userToUpdate) {
+          const response = await userDocuments.verifyAccount(this.userToUpdate.id);
+
+          if (response) {
+            toast.setToast({
+              text: 'Produtor verificado com sucesso',
+              type: 'success',
+              time: 5000,
+            });
+
+            this.loadUsers(true);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar produtor:', error);
+        toast.setToast({
+          text: 'Erro ao verificar produtor',
+          type: 'error',
+          time: 5000,
+        });
+      }
+    },
+
+    handleRejectCancel() {
+      this.showRejectModal = false;
+      this.userToUpdate = null;
+    },
+
+    async handleRejectConfirm(rejectionReason) {
+      try {
+        if (this.userToUpdate) {
+          const response = await userDocuments.rejectAccount({
+            userId: this.userToUpdate.id,
+            rejectionReason,
+          });
+
+          if (response) {
+
+            toast.setToast({
+              text: 'Produtor rejeitado com sucesso',
+              type: 'success',
+              time: 5000,
+            });
+
+            this.loadUsers(true);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao rejeitar produtor:', error);
+        toast.setToast({
+          text: 'Erro ao rejeitar produtor',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        this.showRejectModal = false;
+        this.userToUpdate = null;
+      }
+    },
+
+    getVerificationColor(item) {
+      if (!item.attachments) return 'grey';
+      
+      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
+      if (!verificationAttachment) return 'grey';
+      
+      return verificationAttachment.value === 'verified' ? 'primary' : 'error';
+    },
+
+    getVerificationIcon(item) {
+      if (!item.attachments) return 'mdi-help-circle-outline';
+      
+      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
+      if (!verificationAttachment) return 'mdi-help-circle-outline';
+      
+      return verificationAttachment.value === 'verified' ? 'mdi-check-bold' : 'mdi-close';
+    },
+
+    getVerificationStatus(item) {
+      if (!item.attachments) return 'Aguardando verificação';
+      
+      const verificationAttachment = item.attachments.find(att => att.type === 'account_verification');
+      if (!verificationAttachment) return 'Aguardando verificação';
+      
+      if (verificationAttachment.value === 'verified') {
+        return 'Conta verificada';
+      }
+      
+      const rejectionAttachment = item.attachments.find(att => att.type === 'rejection_reason');
+      return rejectionAttachment 
+        ? `Conta rejeitada: ${rejectionAttachment.value}`
+        : 'Conta rejeitada';
+    },
+
+    getRejectionReason(item) {
+      if (!item.attachments) return null;
+      
+      const rejectionAttachment = item.attachments.find(att => att.type === 'rejection_reason');
+      return rejectionAttachment ? rejectionAttachment.value : null;
+    },
+
+    getDocumentTooltip(item) {
+      return this.getDocumentSent(item) 
+        ? 'Documentos enviados'
+        : 'Documentos não enviados';
+    },
   },
 };
 </script>
@@ -515,5 +781,45 @@ export default {
 
 .events-link:hover {
   opacity: 0.8;
+}
+
+.menu-activator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.menu-activator:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-popup {
+  border-radius: 8px;
+}
+
+.menu-header {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--black-text);
+}
+
+.menu-content {
+  font-size: 14px;
+}
+
+.rejection-reason-label {
+  font-weight: 500;
+  color: var(--error);
+}
+
+.rejection-reason-text {
+  color: var(--error);
+  opacity: 0.9;
+  line-height: 1.4;
+  word-break: break-word;
 }
 </style> 

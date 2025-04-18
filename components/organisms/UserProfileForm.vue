@@ -125,7 +125,7 @@ export default {
         });
 
         // Update username in auth store and cookies
-        await auth.updateUserName({ 
+        auth.updateUserName({ 
           first: this.firstName, 
           last: this.lastName 
         });

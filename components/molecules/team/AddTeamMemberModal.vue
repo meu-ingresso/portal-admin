@@ -137,8 +137,8 @@ export default {
           const createResult = await user.createUser({
             email: this.formData.email,
             role_id: roleId,
-            firstName,
-            lastName
+            firstName: firstName || 'Primeiro Nome',
+            lastName: lastName || 'Sobrenome',
           });
           
           if (!createResult.success) {

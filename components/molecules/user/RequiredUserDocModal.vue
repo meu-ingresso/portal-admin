@@ -1,43 +1,106 @@
 <template>
-  <v-dialog :value="showDocumentDialog" persistent max-width="960" :fullscreen="isMobile" @input="$emit('update:showDocumentDialog', $event)">
-    <v-card class="d-flex flex-column" :tile="isMobile" :flat="isMobile">
-      <v-row no-gutters>
-        <v-col cols="12" md="5" class="d-flex flex-column py-8 px-8" :class="{'justify-space-between': !isMobile}">
-          <div class="text-center mb-6 mb-md-10">
-            <img :src="fingerPrintIcon" alt="Fingerprint Icon" class="fingerprint-icon" :class="{'small-icon': isMobile}">
+  <div class="required-doc-wrapper">
+    <!-- Overlay for closing drawer -->
+    <div 
+      v-if="showDocumentDialog" 
+      class="drawer-overlay"
+      @click="closeDocumentDialog"
+    ></div>
+    
+    <v-navigation-drawer
+      :value="showDocumentDialog"
+      fixed
+      right
+      :width="isMobile ? '100%' : '600'"
+      class="doc-drawer"
+      @input="$emit('update:showDocumentDialog', $event)"
+    >
+      <v-sheet class="d-flex flex-column fill-height">
+        <!-- Drawer Header -->
+        <v-toolbar flat dense class="flex-shrink-0 drawer-header">
+          <div class="d-flex align-center">
+            <span class="modalTitle">Dados Cadastrais</span>
           </div>
-          <div>
-            <div class="d-flex align-center">
-              <div class="template-title primary--text font-weight-bold mr-2">Quase lá!</div>
-              <img :src="blueCheckIcon" alt="Blue Check Icon" class="blue-check-icon">
-            </div>
-            <p class="template-title black--text mb-4 custom-line-height">Para quem devemos enviar o dinheiro das vendas?</p>
-            <p class="black--text custom-line-height">
-              Atenção: Esses dados são essenciais para processar seus pagamentos, transferir valores das vendas e emitir nota fiscal dos próximos eventos.
-            </p>
-          </div>
-        </v-col>
-        
-        <v-col cols="12" md="7">
-          <v-card tile flat class="bg-tertiary">
-            <v-card-title class="d-flex justify-end align-center" :class="{'fixed-top bg-transparent': isMobile}">
-              <v-btn icon @click="closeDocumentDialog">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </v-card-title>
+          <v-spacer></v-spacer>
+          <v-btn icon @click="closeDocumentDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-toolbar>
 
-            <v-card-text class="user-doc-form px-4" :class="{'pb-16': isMobile}">
-              <div>
-                <!-- Step 1: Informações pessoais -->
-                <div v-if="currentStep === 1">
+        <!-- Warning Disclaimer -->
+        <v-sheet class="pa-4 flex-shrink-0">
+          <div class="d-flex align-start">
+            <v-icon color="warning" class="mr-3">mdi-alert-circle</v-icon>
+            <div>
+              <p class="text-subtitle-1 font-weight-medium mb-2">NOTAS FISCAIS</p>
+              <p class="text-body-2 mb-0">
+                A partir de agora, <strong>todas as notas fiscais</strong> dos seus eventos e conteúdos digitais, em 
+                andamento e futuros, <strong>serão emitidas para os dados cadastrados</strong> nessa etapa.
+              </p>
+            </div>
+          </div>
+        </v-sheet>
+
+        <!-- Rejection Disclaimer (if applicable) -->
+        <v-sheet v-if="rejectionReason" class="pa-4 error lighten-4 flex-shrink-0">
+          <div class="d-flex align-start">
+            <v-icon color="error" class="mr-3">mdi-close-circle</v-icon>
+            <div>
+              <p class="text-subtitle-1 font-weight-medium mb-2">DADOS REJEITADOS</p>
+              <p class="text-body-2">{{ rejectionReason }}</p>
+            </div>
+          </div>
+        </v-sheet>
+
+        <!-- Scrollable Content Area -->
+        <div class="drawer-scrollable-content flex-grow-1 overflow-auto">
+          <v-stepper v-model="currentStep" class="elevation-0">
+            <!-- Stepper Header -->
+            <v-stepper-header class="stepper-header-sticky">
+              <v-stepper-step 
+                :complete="currentStep > 1" 
+                :step="1" 
+                :editable="isStepComplete(1)"
+                @click="isStepComplete(1) && (currentStep = 1)"
+              >
+                Dados Pessoais
+              </v-stepper-step>
+              <v-stepper-step 
+                :complete="currentStep > 2" 
+                :step="2" 
+                :editable="isStepComplete(1)"
+                @click="isStepComplete(1) && (currentStep = 2)"
+              >
+                Endereço
+              </v-stepper-step>
+              <v-stepper-step 
+                :complete="currentStep > 3" 
+                :step="3" 
+                :editable="isStepComplete(1) && isStepComplete(2)"
+                @click="isStepComplete(1) && isStepComplete(2) && (currentStep = 3)"
+              >
+                Chave PIX
+              </v-stepper-step>
+              <v-stepper-step 
+                :step="4" 
+                :editable="isStepComplete(1) && isStepComplete(2) && isStepComplete(3)"
+                @click="isStepComplete(1) && isStepComplete(2) && isStepComplete(3) && (currentStep = 4)"
+              >
+                Documentos
+              </v-stepper-step>
+            </v-stepper-header>
+
+            <v-stepper-items>
+              <!-- Step 1: Personal Information -->
+              <v-stepper-content step="1" class="pa-4 no-border no-margin">
+                <v-container>
                   <PersonTypeSelector 
                     :model-value="personType" 
                     @update:modelValue="personType = $event" 
                   />
-                  <p class="text-subtitle-1 grey--text mb-6 mb-md-8">
+                  <p class="text-body-1 grey--text text--darken-2 mb-6">
                     Os dados devem ser de acordo com seu documento oficial, sem abreviatura.
                   </p>
-                  
                   <PhysicalPersonForm
                     v-if="personType === 'PF'"
                     :cpf="cpf"
@@ -47,28 +110,33 @@
                     @update:cpf="cpf = $event"
                     @update:firstName="firstName = $event"
                     @update:lastName="lastName = $event" />
-                  
-                    <LegalPersonForm
-                      v-else 
-                      :cnpj="cnpj"
-                      :company-name="companyName"
-                      :trade-name="tradeName"
-                      :form-submitted="formSubmitted"
-                      @update:cnpj="cnpj = $event"
-                      @update:companyName="companyName = $event"
-                      @update:tradeName="tradeName = $event"
-                      />
-                </div>
-                <!-- Step 2: Informações de endereço -->
-                <div v-else-if="currentStep === 2">
-                  <p class="text-subtitle-1 grey--text mb-4">
+                  <LegalPersonForm
+                    v-else 
+                    :cnpj="cnpj"
+                    :company-name="companyName"
+                    :trade-name="tradeName"
+                    :form-submitted="formSubmitted"
+                    @update:cnpj="cnpj = $event"
+                    @update:companyName="companyName = $event"
+                    @update:tradeName="tradeName = $event"
+                  />
+                </v-container>
+              </v-stepper-content>
+
+              <!-- Step 2: Address Information -->
+              <v-stepper-content step="2" class="pa-4 no-border no-margin">
+                <v-container>
+                  <p class="text-body-1 grey--text text--darken-2 mb-6">
                     Informe seu endereço para emissão de nota fiscal e comprovantes.
                   </p>
                   <UserAddressForm />
-                </div>
-                <!-- Step 3: Informações para recebimento -->
-                <div v-else-if="currentStep === 3">
-                  <p class="text-subtitle-1 grey--text mb-8">
+                </v-container>
+              </v-stepper-content>
+
+              <!-- Step 3: Payment Information -->
+              <v-stepper-content step="3" class="pa-4 no-border no-margin">
+                <v-container>
+                  <p class="text-body-1 grey--text text--darken-2 mb-6">
                     Informe sua chave PIX para receber os valores das vendas.
                   </p>
                   <PixKeyForm
@@ -77,50 +145,75 @@
                     :form-submitted="formSubmitted"
                     @update:pixKeyType="pixKeyType = $event"
                     @update:pixKey="bankInfo.pixKey = $event" />
-                </div>
-                <!-- Step 4: Upload de documentos -->
-                <div v-else>
+                </v-container>
+              </v-stepper-content>
+
+              <!-- Step 4: Document Upload -->
+              <v-stepper-content step="4" class="pa-4 no-border no-margin">
+                <v-container>
+                  <p class="text-body-1 grey--text text--darken-2 mb-6">
+                    Envie os documentos necessários para validação da sua conta:
+                  </p>
                   <DocumentUploadForm
                     v-model="documentUploadData"
                     :person-type="personType"
                     @update:modelValue="updateDocumentUploadData"
                     @error="handleDocumentError"
-                  
                   />
-                </div>
-              </div>
-            </v-card-text>
-            <v-card-actions 
-              class="d-flex py-4 px-4" 
-              :class="[
-                currentStep === 1 ? 'justify-end' : 'justify-space-between',
-                {'fixed-bottom': isMobile}
-              ]"
-            >
-              <DefaultButton 
+                </v-container>
+              </v-stepper-content>
+            </v-stepper-items>
+          </v-stepper>
+        </div>
+        
+        <!-- Fixed Action Bar -->
+        <v-sheet class="drawer-actions pa-2">
+          <v-container>
+            <div class="d-flex" :class="currentStep === 1 ? 'justify-end' : 'justify-space-between'">
+              <DefaultButton
                 v-if="currentStep > 1"
-                text="Voltar" 
                 outlined
-                @click="previousStep" 
+                text="Voltar"
+                @click="previousStep"
               />
               <DefaultButton 
-                :text="currentStep === 4 ? 'Concluir' : 'Continuar'" 
-                color="primary"
-                :disabled="!isStepValid || isUploading"
-                :is-loading="isUploading"
-                @click="nextStep" 
+                :text="primaryActionText"
+                :disabled="!isStepValid || (currentStep === 4 && isUploading)"
+                :is-loading="currentStep === 4 && isUploading"
+                @click="handlePrimaryAction"
               />
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-card>
-  </v-dialog>
+            </div>
+          </v-container>
+        </v-sheet>
+      </v-sheet>
+    </v-navigation-drawer>
+  </div>
 </template>
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { toast, userDocuments, event, user, auth, userAddress } from '@/store';
+import { toast, userDocuments, event, user, userAddress } from '@/store';
+import { onFormatCPF, onFormatCNPJ } from '@/utils/formatters';
+import { PRODUCER_ROLE } from '@/utils/permissions-config';
+
+const DOCUMENT_TYPES = {
+  PF: {
+    CNH: 'CNH',
+    RG: 'RG'
+  },
+  PJ: {
+    CNPJ: 'CNPJ',
+    CONTRATO: 'ContratoSocial'
+  }
+};
+
+const DOCUMENT_TYPE_MAPPING = {
+  CNH: 'document_cnh',
+  RG_FRONT: 'document_rg_front',
+  RG_BACK: 'document_rg_back',
+  CNPJ: 'document_cnpj',
+  CONTRATO_SOCIAL: 'document_social_contract'
+};
 
 export default {
   props: {
@@ -133,6 +226,7 @@ export default {
       default: () => ({}),
     },
   },
+
   data() {
     return {
       currentStep: 1,
@@ -155,19 +249,13 @@ export default {
         isValid: false
       },
       isUploading: false,
-      documentError: false
+      documentError: false,
+      rejectionReason: '',
+      isInitialized: false
     };
   },
+
   computed: {
-
-    fingerPrintIcon() {
-      return require(`~/assets/images/fingerprint_icon.svg`);
-    },
-
-    blueCheckIcon() {
-      return require(`~/assets/images/blue_check_icon.svg`);
-    },
-
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -196,15 +284,7 @@ export default {
     },
 
     isStep1Valid() {
-      if (this.personType === 'PF') {
-        return this.cpf && /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(this.cpf) && 
-               this.firstName && this.firstName?.length >= 2 &&
-               this.lastName && this.lastName?.length >= 2;
-      } else {
-        return this.cnpj && /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(this.cnpj) &&
-               this.companyName && this.companyName?.length >= 3 &&
-               this.tradeName && this.tradeName?.length >= 2;
-      }
+      return this.validatePersonalInfo();
     },
 
     isStep2Valid() {
@@ -212,133 +292,114 @@ export default {
     },
 
     isStep3Valid() {
-      const pixKeyValid = this.validatePixKey(this.bankInfo.pixKey);
-      return this.pixKeyType && this.bankInfo.pixKey && pixKeyValid;
+      return this.validatePixKey(this.bankInfo.pixKey);
     },
 
     isStep4Valid() {
-      return this.documentUploadData && this.documentUploadData.isValid && !this.documentError;
+      return this.documentUploadData?.isValid && !this.documentError;
     },
 
     isStepValid() {
-      switch (this.currentStep) {
-        case 1:
-          return this.isStep1Valid;
-        case 2:
-          return this.isStep2Valid;
-        case 3:
-          return this.isStep3Valid;
-        case 4:
-          return this.isStep4Valid;
-        default:
-          return false;
-      }
-    },
-
-    documentTypeKey() {
-      if (!this.documentUploadData || !this.documentUploadData.documentType) {
-        return this.personType === 'PJ' ? 'document_cnpj' : 'document_identification';
-      }
-      
-      // Mapeamento do tipo de documento para chave de tipo usada na API
-      const typeMapping = {
-        'CNH': 'document_cnh',
-        'RG': 'document_rg',
-        'CNPJ': 'document_cnpj',
-        'ContratoSocial': 'document_social_contract'
+      const stepValidations = {
+        1: this.isStep1Valid,
+        2: this.isStep2Valid,
+        3: this.isStep3Valid,
+        4: this.isStep4Valid
       };
-      
-      return typeMapping[this.documentUploadData.documentType] || 'document_identification';
+      return stepValidations[this.currentStep] || false;
     },
 
     currentAddress() {
       return userAddress.$address;
-    }
-  },
-  watch: {
-
-    showDocumentDialog(newVal) {
-      if (newVal) {
-        const pixInfo = userDocuments.$userAttachments.find(doc => doc.name === 'Pix Key');
-        if (pixInfo) {
-          this.bankInfo.pixKey = pixInfo.value;
-          this.pixKeyType = pixInfo.type;
-        }
-      }else {
-        this.bankInfo.pixKey = '';
-        this.pixKeyType = 'cpf';
-      }
     },
 
-    people() {
-      if (this.people) {
-        this.firstName = this.people.first_name;
-        this.lastName = this.people.last_name;
-        this.cpf = this.people.tax;
-        this.cnpj = this.people.tax;
-        this.companyName = this.people.social_name;
-        this.tradeName = this.people.fantasy_name;
-        this.personType = this.people.person_type;   
+    primaryActionText() {
+      return this.currentStep === 4 ? 'Concluir' : 'Continuar';
+    },
 
-        userAddress.fetchUserAddress(this.people.id);
-        
+  },
+
+  watch: {
+    showDocumentDialog: {
+      immediate: true,
+      async handler(newVal) {
+        if (newVal && !this.isInitialized) {
+          await this.initializeData();
+          this.isInitialized = true;
+        } else if (!newVal) {
+          this.resetPixKeyInfo();
+        }
       }
     },
 
     personType() {
-      // Reset document upload data when person type changes
-      this.documentUploadData = {
-        pfDocuments: [],
-        pjDocument: null,
-        documentType: null,
-        isValid: false
-      };
-      this.documentError = false;
+      this.resetDocumentUploadData();
     }
-  },
-  created() {
-    if (this.hasDocumentInfo?.personType) {
-      this.personType = this.hasDocumentInfo.personType;
-    }
-    
-    if (this.hasDocumentInfo?.bankInfo?.pixKey) {
-      this.bankInfo.pixKey = this.hasDocumentInfo.bankInfo.pixKey;
-      this.detectPixKeyType();
-    }
-
-    // Inicializa os campos de nome e sobrenome a partir do nome completo, se disponível
-    if (this.hasDocumentInfo?.fullName) {
-      const nameParts = this.hasDocumentInfo.fullName.split(' ');
-      if (nameParts && nameParts.length > 0) {
-        this.firstName = nameParts[0];
-        this.lastName = nameParts.slice(1).join(' ');
-      }
-    }
-
   },
 
   methods: {
-    updateDocumentUploadData(data) {
-      this.documentUploadData = data;
+
+    async initializeData() {
+      try {
+        await this.fetchDocumentStatus();
+
+        this.loadPersonalInfo();
+        this.loadPixInfo();
+      } catch (error) {
+        console.error('Erro ao inicializar dados:', error);
+        this.handleError('Erro ao carregar dados iniciais');
+      }
     },
 
-    handleDocumentError(_message) {
-      this.documentError = true;
+    validatePersonalInfo() {
+      const validations = {
+        PF: () => {
+          const cpfValid = this.cpf && /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(this.cpf);
+          const namesValid = this.firstName?.length >= 2 && this.lastName?.length >= 2;
+          return cpfValid && namesValid;
+        },
+        PJ: () => {
+          const cnpjValid = this.cnpj && /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(this.cnpj);
+          const namesValid = this.companyName?.length >= 3 && this.tradeName?.length >= 2;
+          return cnpjValid && namesValid;
+        }
+      };
+
+      return validations[this.personType]?.() || false;
     },
-    
+
+    validatePixKey(pixKey) {
+      if (!pixKey) return false;
+      
+      const validations = {
+        cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
+        cnpj: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
+        email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        phone: /^(\(\d{2}\)\s\d{5}-\d{4}|\+55\d{2}\d{9})$/,
+        random: /.+/
+      };
+
+      return validations[this.pixKeyType]?.test(pixKey) || false;
+    },
+
+    isStepComplete(stepNumber) {
+      const stepValidations = {
+        1: this.isStep1Valid,
+        2: this.isStep2Valid,
+        3: this.isStep3Valid,
+        4: this.isStep4Valid
+      };
+      return stepValidations[stepNumber] || false;
+    },
+
     nextStep() {
       this.formSubmitted = true;
       
-      if (!this.isStepValid) {
-        return;
-      }
+      if (!this.isStepValid) return;
       
       if (this.currentStep < 4) {
         this.currentStep += 1;
         this.formSubmitted = false;
-        
-      } else {
-        this.saveUserData();
       }
     },
 
@@ -346,290 +407,450 @@ export default {
       this.currentStep -= 1;
       this.formSubmitted = false;
     },
-    
-    async saveUserData() {
-      if (!this.isStepValid) {
-        return;
-      }
-      
+
+    async handleDocumentUpload() {
       try {
-        this.isUploading = true;
-
-        // Faz o upload dos documentos
-        await this.uploadDocuments();
-
-        userDocuments.updateDocumentInfo({ personType: this.personType });
-        
-        // Atualizada a forma de salvar as informações de PIX
-        await userDocuments.savePixInformation({
-          userId: this.userId,
-          pixKey: this.bankInfo.pixKey,
-          pixKeyType: this.pixKeyType
-        });
-
-        let addressId = this.currentAddress?.id || null;
-
-        // Salva os dados de endereço do usuário
-        if (addressId) {
-          // Atualiza endereço existente
-          await userAddress.updateUserAddress({
-            addressId,
-            data: {
-              ...this.currentAddress,
-            }
-          });
-        } else {
-          // Cria um novo endereço
-          addressId = await userAddress.createUserAddress({
-            ...this.currentAddress,
-          });
-        }
-        
-        await event.updatePromoterEventsFromStatusToStatus({
-          userId: this.userId,
-          fromStatus: 'Aguardando',
-          toStatus: 'Em Análise'
-        });
-
-        // 3. Atualiza o nome do usuário no cookie
-        if (this.personType === 'PF') {
-          auth.updateUserName({
-            first: this.firstName,
-            last: this.lastName,
-          });
-        } else {
-          auth.updateUserName({
-            first: this.companyName,
-            last: this.tradeName,
-          });
-        }
-    
-        // 4. Atualiza tipo de pessoa e nome completo da base
-        const peopleData = {
-          id: this.people.id,
-          person_type: this.personType,
-          address_id: addressId,
+        const uploadMethods = {
+          PF: this.handlePFDocumentUpload,
+          PJ: this.handlePJDocumentUpload
         };
-        
-        if (this.personType === 'PF') {
-          // Para PF continua usando first_name e last_name
-          Object.assign(peopleData, {
-            tax: this.cpf,
-            first_name: this.firstName,
-            last_name: this.lastName
-          });
-        } else {
-          // Para PJ usa os novos campos social_name e fantasy_name
-          Object.assign(peopleData, {
-            tax: this.cnpj,
-            social_name: this.companyName,
-            fantasy_name: this.tradeName
-          });
-        }
-        
-        await user.updatePeople(peopleData);
-        
-        // 5. Mostra a mensagem de sucesso
-        toast.setToast({
-          text: 'Informações salvas com sucesso!',
-          type: 'success',
-          time: 5000,
-        });
 
-        // 6. Fecha o dialog
-        this.$emit('saved-user-data');
-
-      } catch (error) {
-        console.error('Erro ao salvar dados do usuário:', error);
-        
-        toast.setToast({
-          text: 'Erro ao salvar informações. Por favor, tente novamente.',
-          type: 'error',
-          time: 5000,
-        });
-      } finally {
-        this.isUploading = false;
-      }
-    },
-
-    async uploadDocuments() {
-      try {
-        if (this.personType === 'PF') {
-          // Upload de documentos para pessoa física
-          if (this.documentUploadData.documentType === 'CNH' && this.documentUploadData.pfDocuments.length > 0) {
-            // Upload da CNH (documento único)
-            const attachmentData = {
-              name: 'CNH',
-              type: 'document_cnh',
-              userId: this.userId
-            };
-            
-            const document = await userDocuments.createUserDocument(attachmentData);
-            
-            await userDocuments.uploadUserDocument({
-              documentFile: this.documentUploadData.pfDocuments[0],
-              attachmentId: document.id,
-            });
-          } else if (this.documentUploadData.documentType === 'RG' && this.documentUploadData.pfDocuments.length > 0) {
-            // Upload do RG frente
-            if (this.documentUploadData.pfDocuments.length > 0) {
-              const frontAttachmentData = {
-                name: 'RG - Frente',
-                type: 'document_rg_front',
-                userId: this.userId
-              };
-              
-              const frontDocument = await userDocuments.createUserDocument(frontAttachmentData);
-    
-              await userDocuments.uploadUserDocument({
-                documentFile: this.documentUploadData.pfDocuments[0],
-                attachmentId: frontDocument.id,
-              });
-            }
-            
-            // Upload do RG verso
-            if (this.documentUploadData.pfDocuments.length > 1) {
-              const backAttachmentData = {
-                name: 'RG - Verso',
-                type: 'document_rg_back',
-                userId: this.userId
-              };
-              
-              const backDocument = await userDocuments.createUserDocument(backAttachmentData);
-              
-              await userDocuments.uploadUserDocument({
-                documentFile: this.documentUploadData.pfDocuments[1],
-                attachmentId: backDocument.id,
-              });
-            }
-          }
-        } else {
-          // Upload de documento para pessoa jurídica
-          const pjDocument = this.documentUploadData.pjDocument;
-          if (pjDocument) {
-            const docType = this.documentUploadData.documentType === 'CNPJ' ? 'document_cnpj' : 'document_social_contract';
-            const docName = this.documentUploadData.documentType === 'CNPJ' ? 'Cartão CNPJ' : 'Contrato Social';
-            
-            const attachmentData = {
-              name: docName,
-              type: docType,
-              userId: this.userId
-            };
-            
-            const document = await userDocuments.createUserDocument(attachmentData);
-            
-            await userDocuments.uploadUserDocument({
-              documentFile: pjDocument,
-              attachmentId: document.id,
-            });
-          }
-        }
+        await uploadMethods[this.personType]();
       } catch (error) {
         console.error('Erro ao fazer upload dos documentos:', error);
         throw new Error('Erro ao fazer upload dos documentos');
       }
     },
 
+    async handlePFDocumentUpload() {
+      const { documentType, pfDocuments } = this.documentUploadData;
+
+      if (documentType === DOCUMENT_TYPES.PF.CNH && pfDocuments.length > 0) {
+        await this.uploadSingleDocument('CNH', DOCUMENT_TYPE_MAPPING.CNH, pfDocuments[0]);
+      } else if (documentType === DOCUMENT_TYPES.PF.RG && pfDocuments.length > 0) {
+        const uploads = [];
+        
+        if (pfDocuments[0]) {
+          uploads.push(this.uploadSingleDocument('RG - Frente', DOCUMENT_TYPE_MAPPING.RG_FRONT, pfDocuments[0]));
+        }
+        
+        if (pfDocuments[1]) {
+          uploads.push(this.uploadSingleDocument('RG - Verso', DOCUMENT_TYPE_MAPPING.RG_BACK, pfDocuments[1]));
+        }
+
+        await Promise.all(uploads);
+      }
+    },
+
+    async handlePJDocumentUpload() {
+      const { documentType, pjDocument } = this.documentUploadData;
+      if (!pjDocument) return;
+
+      const isContrato = documentType === DOCUMENT_TYPES.PJ.CONTRATO;
+      const docType = isContrato ? DOCUMENT_TYPE_MAPPING.CONTRATO_SOCIAL : DOCUMENT_TYPE_MAPPING.CNPJ;
+      const docName = isContrato ? 'Contrato Social' : 'Cartão CNPJ';
+      
+      await this.uploadSingleDocument(docName, docType, pjDocument);
+    },
+
+    async uploadSingleDocument(name, type, file) {
+      const document = await userDocuments.createUserDocument({
+        name,
+        type,
+        userId: this.userId
+      });
+      
+      await userDocuments.uploadUserDocument({
+        documentFile: file,
+        attachmentId: document.id,
+      });
+    },
+
+    // Métodos de Gerenciamento de Estado
+    async saveUserData() {
+      if (!this.isStepValid) return;
+      
+      try {
+        this.isUploading = true;
+
+        await Promise.all([
+          this.savePersonalInfoAsJson(),
+          this.handleDocumentUpload(),
+          this.savePixInformation(),
+          this.saveAddressInfo()
+        ]);
+
+        await this.updateUserRole();
+        await this.updateEventStatus();
+        
+        this.showSuccessMessage();
+        this.$emit('saved-user-data');
+
+      } catch (error) {
+        console.error('Erro ao salvar dados do usuário:', error);
+        this.handleError('Erro ao salvar informações');
+      } finally {
+        this.isUploading = false;
+      }
+    },
+
+    async saveAddressInfo() {
+      let addressId = this.currentAddress?.id;
+
+      if (addressId) {
+        await userAddress.updateUserAddress({
+          addressId,
+          data: { ...this.currentAddress }
+        });
+      } else {
+        addressId = await userAddress.createUserAddress({
+          ...this.currentAddress
+        });
+      }
+
+      await user.updatePeople({
+        id: this.people.id,
+        address_id: addressId
+      });
+    },
+
+    async updateEventStatus() {
+      await event.updatePromoterEventsFromStatusToStatus({
+        userId: this.userId,
+        fromStatus: 'Aguardando',
+        toStatus: 'Em Análise'
+      });
+    },
+
+    async updateUserRole() {
+      try {
+        const { success, data } = await user.getRoleByName(PRODUCER_ROLE);
+        if (!success) throw new Error('Erro ao buscar o cargo de produtor');
+        
+        await user.updateUser({
+          id: this.userId,
+          role_id: data.id
+        });
+      } catch (error) {
+        console.error('Erro ao atualizar cargo do usuário:', error);
+        throw error;
+      }
+    },
+
+    // Métodos de UI
+    handlePrimaryAction() {
+      if (this.currentStep === 4) {
+        this.saveUserData();
+      } else {
+        this.nextStep();
+      }
+    },
+
+    showSuccessMessage() {
+      toast.setToast({
+        text: 'Informações salvas com sucesso!',
+        type: 'success',
+        time: 5000,
+      });
+    },
+
+    handleError(message) {
+      toast.setToast({
+        text: message,
+        type: 'error',
+        time: 5000,
+      });
+    },
+
     closeDocumentDialog() {
       this.$emit('close-document-dialog', false);
     },
 
+    // Métodos de Reset
+    resetPixKeyInfo() {
+      this.bankInfo.pixKey = '';
+      this.pixKeyType = 'cpf';
+    },
+
+    resetDocumentUploadData() {
+      this.documentUploadData = {
+        pfDocuments: [],
+        pjDocument: null,
+        documentType: null,
+        isValid: false
+      };
+      this.documentError = false;
+    },
+
+    // Métodos de Carregamento de Dados
+    async fetchDocumentStatus() {
+      await userDocuments.fetchDocumentStatus(this.userId);
+      const rejectionDoc = userDocuments.$userAttachments.find(att => att.name === 'documents_rejection');
+      this.rejectionReason = rejectionDoc?.value || '';
+    },
+
+    loadPersonalInfo() {
+      try {
+        const personalInfoDoc = userDocuments.$userAttachments.find(att => att.name === 'fiscal_info');
+        if (personalInfoDoc?.value) {
+          try {
+            const personalInfo = JSON.parse(personalInfoDoc.value);
+
+            this.updatePersonalInfoFromJson(personalInfo);
+          } catch (error) {
+            console.error('Erro ao parsear informações pessoais:', error);
+          }
+        } else {
+          this.updatePersonalInfoFromPeople();
+        }
+      } catch (error) {
+        console.error('Erro ao carregar informações pessoais:', error);
+      }
+    },
+
+    updatePersonalInfoFromJson(personalInfo) {
+      this.personType = personalInfo.personType || 'PF';
+      
+      if (this.personType === 'PF') {
+        this.cpf = personalInfo.cpf || '';
+        this.firstName = personalInfo.firstName || '';
+        this.lastName = personalInfo.lastName || '';
+      } else {
+        this.cnpj = personalInfo.cnpj || '';
+        this.companyName = personalInfo.companyName || '';
+        this.tradeName = personalInfo.tradeName || '';
+      }
+    },
+
+    updatePersonalInfoFromPeople() {
+      if (!this.people) return;
+
+      this.personType = this.people.person_type || 'PF';
+      this.firstName = this.people.first_name || '';
+      this.lastName = this.people.last_name || '';
+      this.cpf = this.people?.tax ? onFormatCPF(this.people.tax) : '';
+      this.cnpj = this.people?.tax ? onFormatCNPJ(this.people.tax) : '';
+      this.companyName = this.people.social_name || '';
+      this.tradeName = this.people.fantasy_name || '';
+    },
+
+    loadPixInfo() {
+      const pixInfo = userDocuments.$userAttachments.find(att => att.name === 'pix_key');
+      if (pixInfo) {
+        this.bankInfo.pixKey = pixInfo.value || '';
+        this.pixKeyType = pixInfo.type || 'cpf';
+      }
+    },
+
+    // Métodos de PIX
     detectPixKeyType() {
       const pixKey = this.bankInfo.pixKey;
       if (!pixKey) return;
       
-      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(pixKey)) {
-        this.pixKeyType = 'cpf';
-      } else if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(pixKey)) {
-        this.pixKeyType = 'cnpj';
-      } else if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pixKey)) {
-        this.pixKeyType = 'email';
-      } else if (/^\+55\d{2}\d{9}$/.test(pixKey) || /^\(\d{2}\)\s\d{5}-\d{4}$/.test(pixKey)) {
-        this.pixKeyType = 'phone';
+      const keyTypes = {
+        cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
+        cnpj: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
+        email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        phone: /^(\(\d{2}\)\s\d{5}-\d{4}|\+55\d{2}\d{9})$/
+      };
+
+      for (const [type, regex] of Object.entries(keyTypes)) {
+        if (regex.test(pixKey)) {
+          this.pixKeyType = type;
+          return;
+        }
+      }
+
+      this.pixKeyType = 'random';
+    },
+
+    async savePixInformation() {
+      await userDocuments.savePixInformation({
+        userId: this.userId,
+        pixKey: this.bankInfo.pixKey,
+        pixKeyType: this.pixKeyType
+      });
+    },
+
+    async savePersonalInfoAsJson() {
+      const personalInfo = {
+        personType: this.personType,
+        ...(this.personType === 'PF' 
+          ? {
+              cpf: this.cpf,
+              firstName: this.firstName,
+              lastName: this.lastName
+            }
+          : {
+              cnpj: this.cnpj,
+              companyName: this.companyName,
+              tradeName: this.tradeName
+            }
+        )
+      };
+
+      const personalInfoDoc = userDocuments.$userAttachments.find(
+        att => att.name === 'fiscal_info'
+      );
+      
+      if (personalInfoDoc) {
+        await userDocuments.updateUserAttachment({
+          id: personalInfoDoc.id,
+          value: JSON.stringify(personalInfo)
+        });
       } else {
-        this.pixKeyType = 'random';
+        await userDocuments.createUserDocument({
+          name: 'fiscal_info',
+          type: 'json',
+          userId: this.userId,
+          value: JSON.stringify(personalInfo)
+        });
       }
     },
 
-    validatePixKey(pixKey) {
-      if (!pixKey) return false;
-      
-      switch (this.pixKeyType) {
-        case 'cpf':
-          return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(pixKey);
-        case 'cnpj':
-          return /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(pixKey);
-        case 'email':
-          return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pixKey);
-        case 'phone':
-          return /^\(\d{2}\)\s\d{5}-\d{4}$/.test(pixKey) || /^\+55\d{2}\d{9}$/.test(pixKey);
-        case 'random':
-          return pixKey?.length > 0;
-        default:
-          return false;
-      }
-    }
+    updateDocumentUploadData(data) {
+      this.documentUploadData = data;
+    },
+
+    handleDocumentError(_message) {
+      this.documentError = true;
+    },
   }
 };
 </script>
 
 <style scoped>
-.v-dialog > .v-card {
-  border-radius: 8px;
-  overflow: hidden;
+.required-doc-wrapper {
+  position: relative;
 }
 
-.user-doc-form {
-  min-height: 465px;
-  overflow-y: auto;
+.doc-drawer {
+  z-index: 1001;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
 }
 
-.fingerprint-icon {
-  width: 120px;
-  height: 120px;
-  max-width: 100%;
-}
-
-.small-icon {
-  width: 80px;
-  height: 80px;
-}
-
-.blue-check-icon {
-  width: 28px;
-  height: 28px;
-  max-width: 100%;
-}
-
-.custom-line-height {
-  line-height: 1.2;
-}
-
-.fixed-bottom {
+.drawer-overlay {
   position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+}
+
+.fill-height {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-scrollable-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-bottom: 80px; /* Space for fixed actions */
+}
+
+.drawer-actions {
+  position: sticky;
   bottom: 0;
   left: 0;
   right: 0;
   background-color: white;
-  z-index: 1;
+  border-top: 1px solid #e0e0e0;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
-.fixed-top {
-  position: fixed;
+.error.lighten-4 {
+  background-color: #FFEBEE;
+  border-left: 4px solid #D32F2F;
+}
+
+:deep(.v-stepper) {
+  background: transparent;
+  box-shadow: none !important;
+}
+
+.stepper-header-sticky {
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   background-color: white;
+  z-index: 5;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 16px;
 }
 
-@media (min-width: 960px) {
-  .v-card-actions {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    width: 58.33%; /* Corresponde à largura de md="7" */
-    background-color: #f5f5f5; /* Ajuste conforme a cor de bg-tertiary */
-    z-index: 1;
+.no-border {
+  border: none !important;
+}
+
+.no-margin {
+  margin: 0 !important;
+}
+
+.drawer-header {
+  max-height: 54px !important;
+  padding: 8px;
+}
+
+:deep(.v-stepper__header) {
+  box-shadow: none !important;
+  flex-wrap: nowrap;
+  height: auto;
+  min-height: 48px;
+}
+
+:deep(.v-stepper__step) {
+  padding: 12px 8px;
+}
+
+:deep(.v-stepper__step--editable) {
+  cursor: pointer;
+}
+
+:deep(.v-stepper__step--editable:hover) {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+:deep(.v-stepper__step:not(.v-stepper__step--editable)) {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+:deep(.v-stepper__step__step) {
+  margin-right: 8px;
+  font-size: 0.9rem;
+}
+
+:deep(.v-stepper__label) {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+:deep(.v-divider) {
+  border-color: #e0e0e0;
+}
+
+@media (max-width: 600px) {
+  .doc-drawer {
+    border-radius: 0;
+  }
+
+  :deep(.v-stepper__header) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  :deep(.v-stepper__step) {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  :deep(.v-divider) {
+    display: none;
   }
 }
 </style>

@@ -171,21 +171,12 @@
 
           <!-- Descrição do Evento -->
           <v-col cols="12" md="12" sm="12">
-            <v-textarea
+            <RichTextEditor
               v-model="formData.general_information"
-              rows="5"
-              outlined
-              dense
-              :loading="isImprovingDescription"
+              placeholder="Digite uma descrição para o evento"
               :disabled="isImprovingDescription"
-              loader-height="4"
-              :messages="
-                isImprovingDescription
-                  ? 'Melhorando descrição com nossa Inteligência Artificial...'
-                  : ''
-              "
-              hide-details="auto"
-              placeholder="Digite uma descrição para o evento" />
+              :actions="['bold', 'italic', 'list']"
+            />
 
             <div class="d-flex justify-end ma-0 pa-0">
               <v-btn
@@ -394,6 +385,7 @@ import { event, toast, openAI, eventGeneralInfo } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
+
   props: {
     categories: {
       type: Array,

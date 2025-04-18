@@ -47,7 +47,15 @@ export default class UserAddress extends VuexModule {
 
   public get $addressIsValid() {
     const { street, number, neighborhood, city, state, zipcode } = this.address;
-    return street && number && neighborhood && city && state && zipcode;
+
+    return Boolean(
+      street && street !== '' &&
+      number && number !== '' &&
+      neighborhood && neighborhood !== '' &&
+      city && city !== '' &&
+      state && state !== '' &&
+      zipcode && zipcode !== ''
+    );
   }
 
   @Mutation

@@ -197,8 +197,10 @@
           :show-edit="isAdmin"
           :show-delete="false"
           :show-duplicate="false"
+          :show-change-role="isAdmin"
           icon="mdi-dots-horizontal"
           @edit="editUser(item)"
+          @change-role="openChangeRoleDialog(item)"
         />
       </template>
     </v-data-table>
@@ -216,13 +218,89 @@
       :show.sync="showAddTeamMemberModal"
       @saved="handleTeamMemberSaved"
     />
+
+    <!-- Modal para trocar função -->
+    <v-dialog
+      v-model="showChangeRoleDialog"
+      max-width="500px"
+      persistent
+      :fullscreen="isMobile"
+    >
+      <v-card :tile="isMobile">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <div class="modalTitle">
+            Trocar Função
+          </div>
+          <v-btn icon @click="closeChangeRoleDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="mt-2">
+          <v-row>
+            <v-col cols="12">
+              <p class="mb-2">
+                Membro da equipe: 
+                <strong>
+                  {{ selectedUser?.people?.first_name }} {{ selectedUser?.people?.last_name }}
+                </strong>
+              </p>
+              <p class="mb-6">
+                Função atual: 
+                <strong>
+                  {{ selectedUser?.role?.name }}
+                </strong>
+              </p>
+              <v-select
+                v-model="newRole"
+                :items="roleOptions"
+                label="Nova Função"
+                outlined
+                dense
+                hide-details="auto"
+                :loading="isLoading"
+                :disabled="isLoading"
+                :error-messages="roleError"
+                @input="roleError = ''"
+              />
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+          <DefaultButton
+            outlined
+            text="Cancelar"
+            @click="closeChangeRoleDialog"
+          />
+          <DefaultButton
+            :loading="isLoading"
+            :disabled="isLoading"
+            text="Confirmar"
+            @click="handleChangeRole"
+          />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Modal de confirmação -->
+    <ConfirmDialog
+      :loading="isLoading"
+      :value="showConfirmDialog"
+      :title="confirmDialogTitle"
+      :message="confirmDialogMessage"
+      :confirm-text="confirmDialogConfirmText"
+      :cancel-text="confirmDialogCancelText"
+      @confirm="handleConfirmAction"
+      @cancel="handleCloseConfirmDialog"
+    />
   </div>
 </template>
 
 <script>
-import { user, loading } from '@/store';
+import { user, loading, toast } from '@/store';
 import { ADMIN_ROLES } from '@/utils/permissions-config';
-
+import { isMobileDevice } from '@/utils/utils';
 export default {
   data() {
     return {
@@ -258,11 +336,24 @@ export default {
         { text: 'Ativo', value: 'active' },
         { text: 'Inativo', value: 'inactive' }
       ],
-      showAddTeamMemberModal: false
+      showAddTeamMemberModal: false,
+      showChangeRoleDialog: false,
+      newRole: null,
+      roleError: '',
+      showConfirmDialog: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogConfirmText: '',
+      confirmDialogCancelText: 'Cancelar',
+      confirmAction: null,
     };
   },
   
   computed: {
+
+    isMobile() {
+      return isMobileDevice(this.$vuetify);
+    },
 
     teamRoles() {
       return ADMIN_ROLES.map(role => role.name);
@@ -470,7 +561,83 @@ export default {
     
     handleTeamMemberSaved() {
       this.loadUsers(true);
-    }
+    },
+
+    openChangeRoleDialog(userItem) {
+      this.selectedUser = userItem;
+      this.newRole = null;
+      this.roleError = '';
+      this.showChangeRoleDialog = true;
+    },
+
+    closeChangeRoleDialog() {
+      this.showChangeRoleDialog = false;
+      this.selectedUser = null;
+      this.newRole = null;
+      this.roleError = '';
+    },
+
+    async handleChangeRole() {
+      if (!this.newRole) {
+        this.roleError = 'Selecione uma nova função';
+        return;
+      }
+
+      if (this.selectedUser?.role?.name === this.newRole) {
+        this.roleError = 'Selecione uma função diferente da atual';
+        return;
+      }
+
+      try {
+        this.isLoadingInternal = true;
+
+        // Buscar o ID da nova role
+        const roleResponse = await user.getRoleByName(this.newRole);
+        
+        if (!roleResponse.success) {
+          throw new Error('Função não encontrada');
+        }
+
+        // Atualizar a role do usuário
+        await user.updateUser({
+          id: this.selectedUser.id,
+          role_id: roleResponse.data.id
+        });
+
+        toast.setToast({
+          text: 'Função alterada com sucesso',
+          type: 'success',
+          time: 5000,
+        });
+
+        this.closeChangeRoleDialog();
+        this.loadUsers(true);
+
+      } catch (error) {
+        console.error('Erro ao trocar função:', error);
+        toast.setToast({
+          text: 'Erro ao trocar função',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        this.isLoadingInternal = false;
+      }
+    },
+
+    handleCloseConfirmDialog() {
+      this.showConfirmDialog = false;
+      this.confirmAction = null;
+    },
+
+    async handleConfirmAction() {
+      if (this.confirmAction) {
+        await this.confirmAction();
+        this.showConfirmDialog = false;
+        this.confirmAction = null;
+        this.loadUsers(true);
+      }
+    },
   },
 };
 </script>

@@ -24,6 +24,16 @@
         </v-list-item>
       </template>
 
+      <!-- Opção de Trocar Função -->
+      <template v-if="showChangeRole">
+        <v-list-item @click="$emit('change-role')">
+          <v-list-item-icon class="mr-2">
+            <v-icon>mdi-badge-account-horizontal</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Trocar Função</v-list-item-title>
+        </v-list-item>
+      </template>
+
       <!-- Opção de Duplicar -->
       <template v-if="showDuplicate">
         <v-list-item @click="$emit('duplicate')">
@@ -41,6 +51,40 @@
             <v-icon>mdi-pause-circle</v-icon>
           </v-list-item-icon>
           <v-list-item-title>Interromper as vendas</v-list-item-title>
+        </v-list-item>
+      </template>
+
+      <!-- Opção de Ativar/Inativar -->
+      <template v-if="showActivateDeactivate">
+        <v-list-item @click="$emit(isInactive ? 'activate' : 'deactivate')">
+          <v-list-item-icon class="mr-2">
+            <v-icon>
+            {{ isInactive ? 'mdi-account-check' : 'mdi-account-off' }}
+            </v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>
+          {{ isInactive ? 'Ativar' : 'Inativar' }}
+          </v-list-item-title>
+        </v-list-item>
+      </template>
+
+      <!-- Opção de Verificar -->
+      <template v-if="showVerify">
+        <v-list-item @click="$emit('verify')">
+          <v-list-item-icon class="mr-2">
+            <v-icon>mdi-check-circle</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Verificar</v-list-item-title>
+        </v-list-item>
+      </template>
+
+      <!-- Opção de Rejeitar -->
+      <template v-if="showReject">
+        <v-list-item @click="$emit('reject')">
+          <v-list-item-icon class="mr-2">
+            <v-icon>mdi-close-circle</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Rejeitar</v-list-item-title>
         </v-list-item>
       </template>
 
@@ -81,9 +125,29 @@ export default {
       type: Boolean,
       default: false,
     },
+    showActivateDeactivate: {
+      type: Boolean,
+      default: false,
+    },
+    showChangeRole: {
+      type: Boolean,
+      default: false,
+    },
+    showVerify: {
+      type: Boolean,
+      default: false,
+    },
+    showReject: {
+      type: Boolean,
+      default: false,
+    },
     icon: {
       type: String,
       default: 'mdi-dots-vertical',
+    },
+    isInactive: {
+      type: Boolean,
+      default: false,
     },
   },
 };

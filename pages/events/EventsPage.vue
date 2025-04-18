@@ -22,7 +22,7 @@
 <script>
 import { event, toast, userDocuments, status } from '@/store';
 import { groupEventsBySession, logEventGroupingDiagnostics } from '~/utils/event-utils';
-
+import { isUserAdmin } from '@/utils/utils';
 export default {
   data() {
     return {
@@ -40,8 +40,8 @@ export default {
       return this.$cookies.get('user_id');
     },
 
-    userRole() {
-      return this.$cookies.get('user_role');
+    isAdmin() {
+      return isUserAdmin(this.$cookies);
     },
 
     events() {
@@ -74,16 +74,20 @@ export default {
       return userDocuments.$documentInfo;
     },
     
-    hasRequiredIdentityDocs() {
+    hasRequiredDocuments() {
       return userDocuments.$hasRequiredDocuments;
     },
 
-    hasBankInfo() {
-      return userDocuments.$hasBankInfo;
+    hasPixInfo() {
+      return userDocuments.$hasPixInfo;
     },
 
-    hasRequiredDocsAndBankInfo() {
-      return this.hasRequiredIdentityDocs && this.hasBankInfo;
+    hasFiscalInfo() {
+      return userDocuments.$hasFiscalInfo;
+    },
+
+    hasRejectionReason() {
+      return userDocuments.$hasRejectionReason;
     },
   },
 
@@ -192,19 +196,16 @@ export default {
         if (this.userId) {
 
           // Verifica se o usuário é dono de algum evento
-          const events = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status'] });
-          if (events) {
+          const hasEvents = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status'] });
+          if (hasEvents) {
+            await userDocuments.fetchDocumentStatus(this.userId);            
+          }
 
-            // Verifica se possui eventos com status Aguardando
-            // const hasWaitingEvents = events.some(event => event?.status?.name === 'Aguardando');
-
-            const { hasRequiredDocuments, hasPixInfo } = await userDocuments.fetchDocumentStatus(this.userId);
-
-            if (!hasRequiredDocuments || !hasPixInfo) {
+          setTimeout(() => {
+            if ((!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo || this.hasRejectionReason) && !this.isAdmin) {
               this.showDocumentDialog = true;
             }
-            
-          }
+          }, 1000);
 
         } else {
           console.warn('Usuário não encontrado para verificar status de documentação');
