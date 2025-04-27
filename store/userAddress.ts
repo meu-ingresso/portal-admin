@@ -1,6 +1,6 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { handleGetResponse } from '~/utils/responseHelpers';
+import { handleDeleteResponse, handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 
 export interface UserAddressPayload {
   street: string;
@@ -47,7 +47,15 @@ export default class UserAddress extends VuexModule {
 
   public get $addressIsValid() {
     const { street, number, neighborhood, city, state, zipcode } = this.address;
-    return street && number && neighborhood && city && state && zipcode;
+
+    return Boolean(
+      street && street !== '' &&
+      number && number !== '' &&
+      neighborhood && neighborhood !== '' &&
+      city && city !== '' &&
+      state && state !== '' &&
+      zipcode && zipcode !== ''
+    );
   }
 
   @Mutation
@@ -112,7 +120,7 @@ export default class UserAddress extends VuexModule {
         });
       }
 
-      return this.address;
+      return data[0];
     } catch (error) {
       console.error('Erro ao buscar endereço do usuário:', error);
       throw error;
@@ -126,7 +134,7 @@ export default class UserAddress extends VuexModule {
     try {
       this.context.commit('SET_LOADING', true);
 
-      const { isApiZipcode, ...addressData } = payload;
+      const { ...addressData } = payload;
 
       const addressResponse = await $axios.$post('address', {
         data: [
@@ -149,10 +157,6 @@ export default class UserAddress extends VuexModule {
       }
 
       const addressId = addressResponse.body.result[0].id;
-      this.context.commit('SET_ADDRESS', { 
-        id: addressId,
-        isApiZipcode
-      });
 
       return addressId;
     } catch (error) {
@@ -164,30 +168,46 @@ export default class UserAddress extends VuexModule {
   }
 
   @Action
-  public async updateUserAddress(addressId: string, payload: Partial<UserAddressPayload>) {
+  public async updateUserAddress(payload: { addressId: string, data: Partial<UserAddressPayload> }) {
     try {
       this.context.commit('SET_LOADING', true);
 
-      const { isApiZipcode, ...addressData } = payload;
+      const { addressId, data } = payload;
 
       const addressResponse = await $axios.$patch('address', {
         data: [
           {
             id: addressId,
-            ...addressData
+            ...data
           },
         ],
       });
 
-      if (!addressResponse.body || addressResponse.body.code !== 'UPDATE_SUCCESS') {
-        throw new Error('Falha ao atualizar endereço');
-      }
+      const result = handleUpdateResponse(addressResponse, 'Falha ao atualizar endereço', null);
 
-      this.context.commit('SET_ADDRESS', { isApiZipcode });
+      this.context.commit('SET_ADDRESS', result[0]);
 
-      return addressResponse.body.result;
+      return result[0];
     } catch (error) {
       console.error('Erro ao atualizar endereço do usuário:', error);
+      throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
+    }
+  }
+
+  @Action
+  public async deleteUserAddress(addressId: string) {
+    try {
+      this.context.commit('SET_LOADING', true);
+
+      const response = await $axios.$delete(`address/${addressId}`);
+
+      const result = handleDeleteResponse(response, 'Falha ao deletar endereço', null);
+
+      return result;
+    } catch (error) {
+      console.error('Erro ao deletar endereço do usuário:', error);
       throw error;
     } finally {
       this.context.commit('SET_LOADING', false);

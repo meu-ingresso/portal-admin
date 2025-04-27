@@ -1,4 +1,3 @@
-import Home from '@/pages/home.vue';
 import EventsPage from '~/pages/events/EventsPage.vue';
 import EventDetailsPage from '~/pages/events/EventDetailsPage.vue';
 import CreateEventPage from '~/pages/events/CreateEventPage.vue';
@@ -8,23 +7,12 @@ import { EVENT_PERMISSIONS, requirePermissions } from '~/utils/permissions-confi
 export default [
   {
     path: '/',
-    component: Home,
-    name: 'Eventos',
-    meta: {
-      name: 'home',
-      prefix: '/',
-      screenName: 'home',
-      isEdit: false,
-    },
-  },
-  {
-    path: '/events',
     component: EventsPage,
     name: 'Lista de Eventos',
     meta: {
-      name: 'events',
-      prefix: '/events',
-      screenName: 'events',
+      name: 'Home',
+      prefix: '/',
+      screenName: 'home',
       isEdit: false,
       permissions: requirePermissions(EVENT_PERMISSIONS.VIEW),
     },
@@ -72,7 +60,7 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'tickets',
-          permissions: requirePermissions(EVENT_PERMISSIONS.MANAGE_TICKETS),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_TICKETS),
         },
       },
       {
@@ -81,7 +69,7 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'coupons',
-          permissions: requirePermissions(EVENT_PERMISSIONS.MANAGE_COUPONS),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_COUPONS),
         },
       },
       {
@@ -90,7 +78,7 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'checkin',
-          permissions: requirePermissions(EVENT_PERMISSIONS.MANAGE_CHECKIN),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_CHECKIN),
         },
       },
       {
@@ -99,7 +87,7 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'orders',
-          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_ORDERS, EVENT_PERMISSIONS.MANAGE_ORDERS_PDV),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_ORDERS),
         },
       },
       {
@@ -109,7 +97,7 @@ export default [
           name: 'eventsDetails',
           template: 'guestlists',
           view: 'lists',
-          permissions: requirePermissions(EVENT_PERMISSIONS.MANAGE_GUESTLIST),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_GUESTLIST),
         },
       },
       {
@@ -119,7 +107,7 @@ export default [
           name: 'eventsDetails',
           template: 'guestlists',
           view: 'members',
-          permissions: requirePermissions(EVENT_PERMISSIONS.MANAGE_GUESTLIST),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_GUESTLIST),
         },
       },
       {
@@ -128,7 +116,7 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'collaborators',
-          permissions: requirePermissions(EVENT_PERMISSIONS.MANAGE_COLLABORATORS),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_COLLABORATORS),
         },
       },
       {
@@ -137,7 +125,7 @@ export default [
         meta: {
           name: 'eventsDetails',
           template: 'pdv',
-          permissions: requirePermissions(EVENT_PERMISSIONS.MANAGE_PDV),
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_PDV),
         },
       },
     ],

@@ -21,7 +21,7 @@
       <!-- Slot para filtros -->
       <template #top>
         <v-toolbar flat>
-          <v-row>
+          <v-row class="align-center">
             <v-col cols="6">
               <!-- Campo de busca -->
               <v-text-field
@@ -33,7 +33,14 @@
                 class="mr-4"
                 @input="handleFiltersChange" />
             </v-col>
-            <v-col cols="6" class="text-right">
+            <v-col cols="6" class="d-flex justify-end align-center">
+              <DefaultButton
+                color="error"
+                class="mr-2"
+                text="Limpar Check-ins"
+                is-text
+                @click="showClearCheckinModal = true"
+              />
               <TableFilter
                 :active-filters-count="activeFiltersCount"
                 @clear-filters="clearFilters">
@@ -231,6 +238,17 @@
     <PaymentDetailsModal
       :show.sync="showPaymentDetails"
       :payment-id="selectedPaymentId" />
+
+    <!-- Modal para limpar check-ins -->
+    <ClearCheckinModal
+      :show.sync="showClearCheckinModal"
+      :items="ticketTypeOptions"
+      item-text="text"
+      item-value="value"
+      :loading="isLoading"
+      mode="tickets"
+      @clear="handleClearCheckins"
+    />
   </div>
 </template>
 
@@ -241,6 +259,7 @@ import { formatDateTimeWithTimezone } from '@/utils/formatters';
 export default {
   data() {
     return {
+      showClearCheckinModal: false,
       headers: [
         { text: 'Nome', value: 'owner', sortable: true, width: '25%' },
         { text: 'Ingresso', value: 'ticket_type', sortable: true, width: '30%' },
@@ -293,6 +312,11 @@ export default {
 
       return eventCustomerTickets.$customerTickets;
     },
+
+    validatedCustomerTickets() {
+      return this.customerTickets.filter(ticket => ticket?.validated);
+    },
+
     meta() {
       return eventCustomerTickets.$meta;
     },
@@ -331,6 +355,54 @@ export default {
   },
 
   methods: {
+
+    async handleClearCheckins(payload) {
+      try {
+        const { mode, items } = payload;
+
+        if (mode === 'all') {
+
+          if (!this.validatedCustomerTickets.length) {
+            toast.setToast({
+              text: 'Nenhum check-in para limpar!',
+              type: 'info',
+              time: 5000,
+            });
+            return;
+          }
+
+          const customerTicketIds = this.validatedCustomerTickets.map(ticket => ticket.id);
+          await eventCustomerTickets.bulkInvalidateCustomerTickets(customerTicketIds);
+        } else {
+          const ticketsNames = items.map(item => item.value);
+          const filteredTickets = this.validatedCustomerTickets.filter(ticket => ticketsNames.includes(ticket?.ticket?.name));
+
+          if (!filteredTickets.length) {
+            toast.setToast({
+              text: 'Nenhum check-in para limpar!',
+              type: 'info',
+              time: 5000,
+            });
+            return;
+          }
+
+          const customerTicketIds = filteredTickets.map(ticket => ticket.id);
+
+          await eventCustomerTickets.bulkInvalidateCustomerTickets(customerTicketIds);
+        }
+      } catch (error) {
+        console.error('Erro ao limpar check-ins:', error);
+        toast.setToast({
+          text: 'Erro ao limpar check-ins',
+          type: 'error',
+          time: 5000,
+        });
+      } finally {
+        this.showClearCheckinModal = false;
+        await this.fetchCustomerTickets();
+      }
+    },
+    
     getTicketUserName(ticket) {
       if (ticket?.ticketFields?.length) {
         const nameField = ticket.ticketFields.find(
@@ -354,9 +426,12 @@ export default {
 
     async fetchCustomerTickets() {
       const query = this.buildQueryParams();
+
       const searchQuery = this.filters.search
-        ? `&whereOr[currentOwner][first_name][like]=%${this.filters.search}%&whereOr[currentOwner][last_name][like]=%${this.filters.search}%&whereOr[ticket_identifier][like]=%${this.filters.search}%`
+        ? `&search[currentOwner][first_name:last_name][o]=%LIKE%&search[currentOwner][first_name:last_name][v]=%${this.filters.search}%&search[ticket_identifier][o]=%LIKE%&search[ticket_identifier][v]=%${this.filters.search}%`
         : '';
+
+
       const ticketTypeQuery = this.filters.ticketType
         ? `&where[ticket][name][v]=${this.filters.ticketType}`
         : '';

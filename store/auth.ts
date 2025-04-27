@@ -1,5 +1,6 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios, $cookies } from '@/utils/nuxt-instance';
+import { permissions } from '@/store';
 
 interface LoginPayload {
   user_id: string;
@@ -160,6 +161,17 @@ export default class Auth extends VuexModule {
         maxAge: this.age,
       });
 
+      // Inicializar a store de permissões com as permissões do usuário
+      try {
+        await permissions.loadUserPermissions({
+          userId: auth.id,
+          roleId: auth.role.id
+        });
+      } catch (permissionError) {
+        console.error('Erro ao carregar permissões iniciais:', permissionError);
+        // Não interrompe o fluxo de login mesmo com erro nas permissões
+      }
+
       return response;
     } catch (error) {
       console.error('Erro ao fazer login:', error);
@@ -176,7 +188,7 @@ export default class Auth extends VuexModule {
   }
 
   @Action
-  public  updateUserName(payload: { first: string, last: string }) {
+  public updateUserName(payload: { first: string, last: string }) {
     try {
       this.context.commit('SET_IS_UPDATING_USER_NAME', true);
 
@@ -206,6 +218,9 @@ export default class Auth extends VuexModule {
       path: '/',
     });
 
+    // Limpar o cache de permissões ao fazer logout
+    await permissions.clearPermissions();
+    
     this.context.commit('UPDATE_TOKEN', null);
   }
 

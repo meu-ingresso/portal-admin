@@ -52,7 +52,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="canManageEvent && event.status.name === 'Em análise'"
+              v-if="canManageEvent && event.status.name === 'Em Análise'"
               class="approve-icon"
               icon
               v-bind="attrs"
@@ -67,7 +67,7 @@
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              v-if="canManageEvent && event.status.name === 'Em análise'"
+              v-if="canManageEvent && event.status.name === 'Em Análise'"
               class="reject-icon"
               icon
               v-bind="attrs"
@@ -239,6 +239,8 @@ export default {
           eventId: this.event.id,
           statusName: 'Publicado',
         });
+
+        this.$emit('approved-event', this.event.id);
       } catch (error) {
         console.error(error);
       }

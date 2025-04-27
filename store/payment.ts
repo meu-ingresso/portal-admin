@@ -5,6 +5,7 @@ import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
 
 interface OrderByEventFilters {
   eventId: string;
+  userId?: string;
   page?: number;
   limit?: number;
   sort?: string;
@@ -103,7 +104,11 @@ export default class Payment extends VuexModule {
   private SET_USER_ORDERS_META(meta: any) {
     this.userOrdersMeta = meta;
   }
-  
+
+  @Mutation
+  private SET_LOADING(loading: boolean) {
+    this.isLoading = loading;
+  }
 
   @Mutation
   private SET_LOADING_ORDERS(loading: boolean) {
@@ -133,6 +138,8 @@ export default class Payment extends VuexModule {
   @Action
   public async fetchPaymentDetails(paymentId: string): Promise<void> {
     try {
+      this.context.commit('SET_LOADING', true);
+
       const response = await $axios.$get(
         `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people&limit=9999`
       );
@@ -143,6 +150,8 @@ export default class Payment extends VuexModule {
     } catch (error) {
       console.error('Erro ao buscar detalhes do pagamento:', error);
       throw error;
+    } finally {
+      this.context.commit('SET_LOADING', false);
     }
   }
 
@@ -182,6 +191,10 @@ export default class Payment extends VuexModule {
         limit: params.limit || 10,
         sort: params.sort || '-created_at',
       };
+
+      if (params.userId) {
+        queryParams['whereHas[payment][user_id][v]'] = params.userId;
+      }
 
       // Adiciona busca por nome/email do comprador
       if (params.search) {

@@ -114,7 +114,7 @@ import { isMobileDevice } from '@/utils/utils';
 import { toast, eventCollaborators } from '@/store';
 
 export default {
-  name: 'EventCollaborator',
+
   props: {
     eventId: {
       type: String,

@@ -40,8 +40,6 @@
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
-  name: 'ConfirmDialog',
-
   props: {
     value: {
       type: Boolean,

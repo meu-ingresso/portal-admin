@@ -122,7 +122,7 @@
             <StepActions
               :is-last-step="true"
               :is-editing="isEditing"
-              :has-submitted-documents="hasRequiredDocsAndBankInfo"
+              :has-submitted-documents="hasRequiredDocuments && hasPixInfo && hasFiscalInfo"
               @previous="previousStep"
               @submit="submitData" />
           </template>
@@ -254,16 +254,20 @@ export default {
       return eventCustomFields.$customFields.every((field) => field.is_default);
     },
     
-    hasRequiredIdentityDocs() {
+    hasRequiredDocuments() {
       return userDocuments.$hasRequiredDocuments;
     },
 
-    hasBankInfo() {
-      return userDocuments.$hasBankInfo;
+    hasPixInfo() {
+      return userDocuments.$hasPixInfo;
     },
 
-    hasRequiredDocsAndBankInfo() {
-      return this.hasRequiredIdentityDocs && this.hasBankInfo;
+    hasFiscalInfo() {
+      return userDocuments.$hasFiscalInfo;
+    },
+
+    hasDocumentInfo() {
+      return userDocuments.$documentInfo;
     },
   },
 
@@ -339,7 +343,7 @@ export default {
     },
     previousStep() {
       if (this.currentStep === 1) {
-        this.$router.replace(this.isEditing ? `/events/${this.eventId}` : '/events');
+        this.$router.replace(this.isEditing ? `/events/${this.eventId}` : '/');
       } else if (this.currentStep > 1) {
         if (this.currentStep === 4 && this.getTickets.length === 0) {
           this.currentStep = 2;
@@ -399,7 +403,7 @@ export default {
           }, 500);
         } else {
 
-          if (status !== 'draft' && !this.hasRequiredDocsAndBankInfo) {
+          if (status !== 'draft' && (!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo)) {
             eventGeneralInfo.setEventStatus('Aguardando');
           } else {
             eventGeneralInfo.setEventStatus(status);
@@ -410,7 +414,7 @@ export default {
           let message = 'Evento salvo com sucesso!';
           if (status === 'draft') {
             message = 'Evento salvo em rascunho com sucesso!';
-          } else if (!this.hasRequiredDocsAndBankInfo) {
+          } else if (!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo) {
             message = 'Evento salvo com status "Aguardando". Complete sua documentação para publicação.';
           } else {
             message = 'Evento enviado para aprovação!';

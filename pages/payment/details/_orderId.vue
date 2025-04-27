@@ -4,7 +4,7 @@
       <v-row>
         <v-col cols="12">
           <div class="d-flex align-center mb-4">
-            <v-btn icon class="mr-2" @click="$router.go(-1)">
+            <v-btn icon class="mr-2" @click="goBack">
               <v-icon>mdi-arrow-left</v-icon>
             </v-btn>
             <div class="template-title">Detalhes do Pagamento</div>
@@ -168,17 +168,21 @@
                           <td>
                             <v-tooltip bottom>
                               <template #activator="{ on, attrs }">
-                                <v-btn
-                                  v-bind="attrs"
-                                  x-small
-                                  icon
-                                  color="primary"
-                                  v-on="on"
-                                  @click="openTicketEditModal(ticket)">
-                                  <v-icon small>mdi-pencil</v-icon>
-                                </v-btn>
+                                <div v-bind="attrs" v-on="on">
+                                  <v-btn
+                                    x-small
+                                    icon
+                                    :disabled="!is24HoursOrMoreBeforeEventStart"
+                                    color="primary"
+                                    @click="openTicketEditModal(ticket)">
+                                    <v-icon small>mdi-pencil</v-icon>
+                                  </v-btn>
+                                </div>
                               </template>
-                              Editar participante
+                              <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
+                              <span v-else>
+                                Não é possível editar participantes de eventos que já aconteceram ou estão a menos de 24 horas do início
+                              </span>
                             </v-tooltip>
                           </td>
                         </tr>
@@ -201,13 +205,24 @@
                             <div class="subtitle-2 font-weight-medium">{{ ticket.ticket?.name }}</div>
                           </div>
                           
-                          <v-btn
-                            small
-                            icon
-                            color="primary"
-                            @click="openTicketEditModal(ticket)">
-                            <v-icon small>mdi-pencil</v-icon>
-                          </v-btn>
+                          <v-tooltip bottom>
+                            <template #activator="{ on, attrs }">
+                              <div v-bind="attrs" v-on="on">
+                                <v-btn
+                                  small
+                                  icon
+                                  color="primary"
+                                  :disabled="!is24HoursOrMoreBeforeEventStart"
+                                  @click="openTicketEditModal(ticket)">
+                                  <v-icon small>mdi-pencil</v-icon>
+                                </v-btn>
+                              </div>
+                            </template>
+                            <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
+                            <span v-else>
+                              Não é possível editar participantes de eventos que já aconteceram ou estão a menos de 24 horas do início
+                            </span>
+                          </v-tooltip>
                         </div>
                         
                         <v-divider class="my-2"></v-divider>
@@ -252,6 +267,7 @@
                   }">
                   <div :class="{ 'd-flex align-center': $vuetify.breakpoint.mdAndUp }">
                     <ButtonWithIcon
+                      v-if="canCancelOrder"
                       text="Cancelar pedido"
                       outlined
                       color="error"
@@ -263,6 +279,7 @@
 
                   <div :class="{ 'd-flex justify-end': $vuetify.breakpoint.mdAndUp }">
                     <ButtonWithIcon
+                      v-if="canResendTickets"
                       text="Reenviar ingressos"
                       outlined
                       :loading="isResending"
@@ -271,6 +288,7 @@
                       @click="resendTickets" />
 
                     <ButtonWithIcon
+                      v-if="canPrintTickets"
                       text="Imprimir ingressos"
                       outlined
                       :loading="isPrinting"
@@ -310,8 +328,9 @@
 <script>
 import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
-import { payment, toast, eventCheckout } from '@/store';
-import { getPaymentMethod } from '@/utils/utils';
+import { payment, toast, eventCheckout, permissions } from '@/store';
+import { getPaymentMethod, is24HoursOrMoreBeforeDate } from '@/utils/utils';
+import { EVENT_PERMISSIONS } from '@/utils/permissions-config';
 
 export default {
   layout: 'default',
@@ -329,6 +348,36 @@ export default {
   },
 
   computed: {
+
+    isLoadingEventPermissions() {
+      return permissions.$isLoadingEventPermissions;
+    },
+
+    getUserEventPermissions() {
+      return permissions.$eventPermissions;
+    },
+
+    canCancelOrder() {
+
+      if (this.isLoadingEventPermissions) return false;
+
+      return Object.values(this.getUserEventPermissions).some(permissions => permissions.includes(EVENT_PERMISSIONS.CANCEL_ORDERS));
+    },
+
+    canResendTickets() {
+
+      if (this.isLoadingEventPermissions) return false;
+
+      return Object.values(this.getUserEventPermissions).some(permissions => permissions.includes(EVENT_PERMISSIONS.RESEND_TICKETS_FROM_ORDERS));
+    },
+
+    canPrintTickets() {
+
+      if (this.isLoadingEventPermissions) return false;
+
+      return Object.values(this.getUserEventPermissions).some(permissions => permissions.includes(EVENT_PERMISSIONS.PRINT_TICKETS_FROM_ORDERS));
+    },
+
     getEvent() {
 
       if (!this.relatedTickets) return null;
@@ -339,6 +388,12 @@ export default {
 
       return firstEventFromRelatedTickets?.ticket?.event;
     },
+
+    is24HoursOrMoreBeforeEventStart() {
+      const event = this.getEvent;
+      return event?.start_date ? is24HoursOrMoreBeforeDate(event.start_date) : false;
+    },
+
 
     getEventFee() {
       if (!this.getEvent) return null;
@@ -364,10 +419,40 @@ export default {
     },
   },
 
+  watch: {
+    getEvent: {
+      async handler() {
+      const eventId = this.getEvent?.id;
+
+      if (eventId) {
+        const userId = this.$cookies.get('user_id');
+        const roleId = this.$cookies.get('user_role')?.id;
+        
+        if (eventId && userId && roleId) {
+          await permissions.loadEventPermissions({
+            userId,
+            eventId,
+            roleId
+          });
+          }
+        }
+      },
+      deep: true,
+    },
+  },
+
   async mounted() {
-    if (this.$route.params.id) {
-      await payment.fetchPaymentDetails(this.$route.params.id);
-      await this.getDefaultFields();
+    const orderId = this.$route.params.orderId;
+    
+    if (orderId) {
+
+      await payment.fetchPaymentDetails(orderId);
+
+      const promises = [
+        this.getDefaultFields(),
+      ];
+
+      await Promise.all(promises);
     }
   },
 
@@ -474,13 +559,26 @@ export default {
     
     handleTicketFieldsUpdated() {
       // Recarregar os dados do pagamento para refletir as alterações
-      payment.fetchPaymentDetails(this.$route.params.id);
+      payment.fetchPaymentDetails(this.$route.params.orderId);
       this.getDefaultFields();
       toast.setToast({
         text: 'Dados do ingresso atualizados com sucesso!',
         type: 'success',
         time: 5000,
       });
+    },
+    
+    goBack() {
+      // Se estamos vindo da página de eventos, vamos voltar para a lista de pedidos
+      if (this.$route.params.id) {
+        this.$router.push({
+          name: 'eventsDetailsOrders',
+          params: { id: this.$route.params.id }
+        });
+      } else {
+        // Caso contrário, voltar para a página anterior
+        this.$router.go(-1);
+      }
     },
   },
 };

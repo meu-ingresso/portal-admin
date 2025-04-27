@@ -1,9 +1,9 @@
 import Events from './events';
 import Reports from './reports';
 import LoginPage from '@/pages/LoginPage.vue';
-import UserEditPage from '@/pages/user/edit/_id.vue';
-import PaymentDetailsPage from '@/pages/payment/details/_id.vue';
-import CompletarCadastroPage from '@/pages/user/CompletarCadastro.vue';
+import PaymentDetailsPage from '@/pages/payment/details/_orderId.vue';
+import MyPage from '@/pages/my-page.vue';
+import UserProfilePage from '@/pages/user/profile/_id.vue';
 
 export default [
   {
@@ -12,25 +12,25 @@ export default [
     component: LoginPage,
   },
   {
-    path: '/user/edit/:id',
-    name: 'UserEdit',
-    component: UserEditPage,
+    path: '/my-page',
+    name: 'MyPage',
+    component: MyPage,
     meta: {
       requiresAuth: true
     }
   },
   {
-    path: '/payment/details/:id',
+    path: '/user/profile/:id',
+    name: 'UserProfile',
+    component: UserProfilePage,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/payment/details/:orderId',
     name: 'PaymentDetails',
     component: PaymentDetailsPage,
-    meta: {
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/user/completar-cadastro',
-    name: 'CompletarCadastro',
-    component: CompletarCadastroPage,
     meta: {
       requiresAuth: true
     }

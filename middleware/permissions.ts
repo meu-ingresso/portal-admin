@@ -1,16 +1,31 @@
 import { Middleware } from '@nuxt/types';
-import { checkUserPermissions } from '@/utils/permissions-util';
+import { permissions, user } from '@/utils/store-util';
 
 /**
  * Middleware para verificar permissões de acesso a rotas
  * Verifica se o usuário tem as permissões necessárias para acessar a rota
  * com base em meta.permissions e verificações específicas para promotores e colaboradores
  */
-const permissions: Middleware = async ({ route, redirect, app }) => {
+const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }) => {
+
 
   // Se a rota é a de login, não é necessário verificar permissões
   if (route.path === '/login') {
     return;
+  }
+
+  // Verifica se temos os dados do usuário logado na store de user
+  if (!store.state.user.user || store.state.user.user.id === '') {
+    console.log("Buscando dados do usuário no banco de dados...")
+    const responseUser = await user.getById({
+      user_id: app.$cookies.get('user_id'),
+      commit: true
+    });
+
+    if (!responseUser) {
+      console.log("Usuário não encontrado, redirecionando para login...")
+      return redirect('/login');
+    }
   }
 
   // Se a rota não tem configuração de permissões, permite o acesso
@@ -51,7 +66,6 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
     requiredPermissions = route.meta?.permissions || [];
   }
 
-
   // Para outras rotas que exigem permissões específicas, verificar se o usuário tem as permissões
   // Usuários Admin e Gerente têm acesso a tudo
   if (userRole?.name === 'Admin' || userRole?.name === 'Gerente') {
@@ -65,14 +79,24 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
 
     if (eventIdMatch) {
       eventId = eventIdMatch[1]; // ID do evento
-    }
+      
+      // Carregar permissões do evento se ainda não foram carregadas ou cache expirou
+      if (!permissions.$eventPermissions[eventId] || !permissions.$isCacheValid) {
+        await permissions.loadEventPermissions({
+          userId,
+          eventId,
+          roleId: userRole.id
+        });
+      }
 
-    const hasPermission = requiredPermissions.length === 0 || 
-                          await checkUserPermissions(userRole.id, requiredPermissions, userId, eventId);
-    
-    if (!hasPermission) {
+      // Verificar permissões para o evento
+      const hasPermission = requiredPermissions.length === 0 || 
+        await permissions.checkEventPermissions({
+          eventId,
+          permissions: requiredPermissions
+        });
 
-      if (eventId) {
+      if (!hasPermission) {
         const subRoute = eventIdMatch[2]; // Sub-rota (template) que tentou acessar
         
         // Verificar se a rota pai do evento existe no array matched
@@ -86,9 +110,23 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
           return redirect(`/events/${eventId}?noPermission=true&template=${subRoute}`);
         }
       }
-      
-      // Se não for rota de evento ou não encontrou a rota pai, redirecionar para a página inicial
-      return redirect('/');
+    } else {
+      // Carregar permissões gerais do usuário se ainda não foram carregadas ou cache expirou
+      if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
+        await permissions.loadUserPermissions({
+          userId,
+          roleId: userRole.id
+        });
+      }
+
+      // Verificar permissões gerais
+      const hasPermission = requiredPermissions.length === 0 || 
+        await permissions.checkPermissions(requiredPermissions);
+
+      if (!hasPermission) {
+        // Redirecionar para a página inicial se não tem permissão
+        return redirect('/');
+      }
     }
   } catch (error) {
     console.error('Erro ao verificar permissões:', error);
@@ -96,4 +134,4 @@ const permissions: Middleware = async ({ route, redirect, app }) => {
   }
 };
 
-export default permissions; 
+export default permissionsMiddleware; 

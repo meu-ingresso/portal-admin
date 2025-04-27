@@ -16,7 +16,7 @@
       @input="$emit('update:show', $event)">
       
       <v-card flat class="full-height" :tile="isMobile">
-        <v-card-title class="d-flex justify-space-between align-center">
+        <v-card-title class="d-flex justify-space-between align-center mb-2">
           <h3 class="modalTitle">Editar Dados do Ingresso</h3>
           <v-btn icon @click="close">
             <v-icon>mdi-close</v-icon>
@@ -33,7 +33,7 @@
           <template v-else>
             <v-form ref="ticketFieldsForm" v-model="valid">
               <v-row>
-                <v-col v-for="field in processedTicketFields" :key="field.id" cols="12">
+                <v-col v-for="field in processedTicketFields" :key="field.id" cols="12" class="py-0">
                   <CheckoutFieldInput
                     ref="fieldInputs"
                     v-model="formData[field.id]"

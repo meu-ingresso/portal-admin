@@ -42,7 +42,8 @@ export const monthlyMovementsSideBar = [
     icon: 'mdi-help-circle-outline',
     iconActive: 'mdi-help-circle',
     title: 'Central de Ajuda',
-    to: '/help-center',
+    to: 'https://ajuda.meuingresso.com.br/',
+    target: '_blank',
     needPermissions: true,
   },
 ];

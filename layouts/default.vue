@@ -12,11 +12,25 @@
           <MobileLogo is-dark :click-to-home="true" />
         </v-list-item>
         <v-list-item
-          v-for="item in topBarItems"
+          v-for="item in filteredInternalTopBarItems"
           :key="item.title"
           :to="item.to"
           router
           exact
+          active-class="active-item">
+          <v-list-item-icon>
+            <v-icon>{{ item.icon }}</v-icon>
+          </v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item
+          v-for="item in filteredExternalTopBarItems"
+          :key="'ext-'+item.title"
+          :href="item.to"
+          :target="item.target"
           active-class="active-item">
           <v-list-item-icon>
             <v-icon>{{ item.icon }}</v-icon>
@@ -38,9 +52,21 @@
 
         <!-- Desktop -->
         <div v-if="!isMobile" class="content-menus">
-          <div v-for="(item, index) in topBarItems" :key="index" class="topbar-item">
+          <div v-for="(item, index) in filteredInternalTopBarItems" :key="index" class="topbar-item">
             <v-btn
               :to="item.to"
+              class="topbar-button"
+              :title="item.title"
+              depressed
+              plain
+              tile>
+              <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
+            </v-btn>
+          </div>
+          <div v-for="(item, index) in filteredExternalTopBarItems" :key="'ext-'+index" class="topbar-item">
+            <v-btn
+              :href="item.to"
+              :target="item.target"
               class="topbar-button"
               :title="item.title"
               depressed
@@ -62,9 +88,9 @@
 </template>
 
 <script>
-import { isMobileDevice } from '@/utils/utils';
+import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
 import { TopBar } from '~/utils/topbar';
-import { loading } from '@/store';
+import { loading, permissions } from '@/store';
 
 export default {
   name: 'LayoutDefault',
@@ -73,12 +99,17 @@ export default {
       isValid: false,
       isLogin: false,
       drawer: false,
+      filteredItems: [],
     };
   },
 
   computed: {
     isLoading() {
       return loading.$isLoading;
+    },
+
+    isAdminOrManager() {
+      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
     },
 
     isMobile() {
@@ -92,26 +123,98 @@ export default {
     getUserLogged() {
       return !!this.$cookies.get('user_logged');
     },
+    
+    getUserId() {
+      return this.$cookies.get('user_id');
+    },
+    
+    getUserRole() {
+      return this.$cookies.get('user_role');
+    },
 
     topBarItems() {
       if (!this.getUserLogged) {
         return [];
       }
-      return TopBar;
+      return this.filteredItems.length > 0 ? this.filteredItems : [];
+    },
+
+    filteredInternalTopBarItems() {
+      return this.topBarItems.filter(item => !item.target);
+    },
+
+    filteredExternalTopBarItems() {
+      return this.topBarItems.filter(item => item.target);
     },
   },
 
-  mounted() {
+  async mounted() {
     if (!this.getUserLogged || !this.getUserToken || this.getUserToken === '') {
       this.$router.push('/login');
     } else {
       this.$set(this, 'isValid', true);
+      await this.filterMenuItemsByPermissions();
     }
   },
 
   methods: {
     onChangeDrawer() {
       this.drawer = !this.drawer;
+    },
+    
+    async filterMenuItemsByPermissions() {
+      try {
+        if (!this.getUserId || !this.getUserRole) {
+          this.filteredItems = [];
+          return;
+        }
+
+        // Admin e Gerente têm acesso a tudo
+        if (this.isAdminOrManager) {
+          this.filteredItems = TopBar.filter(item => 
+            // Se o item é 'Minha página' e o usuário é admin ou gerente, não mostrar
+            !(item.title === 'Minha página' && this.isAdminOrManager)
+          );
+          return;
+        }
+
+        // Carregar as permissões do usuário se não existirem no cache ou se o cache expirou
+        if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
+          await permissions.loadUserPermissions({
+            userId: this.getUserId,
+            roleId: this.getUserRole.id
+          });
+        }
+
+        // Se o usuário tem a permissão especial '*', permite tudo (exceto 'Minha página' para admin/gerente)
+        if (permissions.$hasAllPermissions) {
+          this.filteredItems = TopBar.filter(item => 
+            !(item.title === 'Minha página' && this.isAdminOrManager)
+          );
+          return;
+        }
+
+        // Filtra os itens baseado nas permissões do usuário
+        this.filteredItems = TopBar.filter(item => {
+          // Se tem permissões vazias, mostrar o item
+          if (!item.permissions || item.permissions.length === 0) {
+            return true;
+          }
+
+          // Se o item é 'Minha página' e o usuário é admin ou gerente, não mostrar
+          if (item.title === 'Minha página' && this.isAdminOrManager) {
+            return false;
+          }
+
+          // Verificar se o usuário tem pelo menos uma das permissões necessárias
+          return item.permissions.some(permission => 
+            permissions.$permissions.includes(permission)
+          );
+        });
+      } catch (error) {
+        console.error('Erro ao filtrar itens de menu:', error);
+        this.filteredItems = [];
+      }
     },
   },
 };
@@ -150,6 +253,7 @@ export default {
   color: var(--black-text) !important;
   font-weight: 400 !important;
   font-size: 16px !important;
+  border-radius: 0px !important;
   font-family: var(--font-family-inter-bold) !important;
 }
 
@@ -159,9 +263,8 @@ export default {
 
 .active-item {
   background-color: var(--primary) !important;
-  border-top-right-radius: 38px;
-  border-bottom-right-radius: 38px;
   color: white;
+  border-radius: 0px !important;
   font-size: 16px !important;
   font-display: var(--font-family-inter-bold) !important;
 }

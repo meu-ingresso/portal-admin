@@ -11,6 +11,7 @@
 
       <RequiredUserDocModal
         :show-document-dialog="showDocumentDialog"
+        :has-document-info="hasDocumentInfo"
         @saved-user-data="handleSavedUserData"
         @close-document-dialog="closeDocumentDialog"
       />
@@ -19,9 +20,9 @@
 </template>
 
 <script>
-import { event, toast, userDocuments } from '@/store';
+import { event, toast, userDocuments, status } from '@/store';
 import { groupEventsBySession, logEventGroupingDiagnostics } from '~/utils/event-utils';
-
+import { isUserAdmin } from '@/utils/utils';
 export default {
   data() {
     return {
@@ -39,12 +40,19 @@ export default {
       return this.$cookies.get('user_id');
     },
 
-    userRole() {
-      return this.$cookies.get('user_role');
+    isAdmin() {
+      return isUserAdmin(this.$cookies);
     },
 
     events() {
-      return event.$eventList || [];
+      return event.$eventList.sort((a, b) => {
+        if (a.status.name === 'Publicado' && b.status.name !== 'Publicado') {
+          return -1;
+        } else if (a.status.name !== 'Publicado' && b.status.name === 'Publicado') {
+          return 1;
+        }
+        return 0;
+      }) || [];
     },
     groupedEvents() {
       return groupEventsBySession(this.events);
@@ -66,16 +74,20 @@ export default {
       return userDocuments.$documentInfo;
     },
     
-    hasRequiredIdentityDocs() {
+    hasRequiredDocuments() {
       return userDocuments.$hasRequiredDocuments;
     },
 
-    hasBankInfo() {
-      return userDocuments.$hasBankInfo;
+    hasPixInfo() {
+      return userDocuments.$hasPixInfo;
     },
 
-    hasRequiredDocsAndBankInfo() {
-      return this.hasRequiredIdentityDocs && this.hasBankInfo;
+    hasFiscalInfo() {
+      return userDocuments.$hasFiscalInfo;
+    },
+
+    hasRejectionReason() {
+      return userDocuments.$hasRejectionReason;
     },
   },
 
@@ -87,16 +99,30 @@ export default {
       this.diagnosticRun = true;
     }
 
-    // Check if we should show the document dialog
-    await this.checkDocumentStatus();         
+    const promises = [
+      this.checkDocumentStatus(),
+      this.getStatuses(),
+    ];
+
+    await Promise.all(promises);
   },
 
   methods: {
+
+
+    async getStatuses() {
+      try {
+        await status.fetchStatusByModule('event');
+      } catch (error) {
+        console.error('Erro ao carregar lista de status de eventos', error);
+      }
+    },
+
     async getData() {
       try {
         const { meta } = await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
         });
@@ -112,7 +138,7 @@ export default {
         this.currentPage = 1;
         await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           search,
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
@@ -128,7 +154,7 @@ export default {
         this.currentPage = 1;
         await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           search: this.currentSearch,
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
@@ -145,7 +171,7 @@ export default {
         this.currentPage += 1;
         await event.fetchEvents({
           page: this.currentPage,
-          sortBy: ['name'],
+          sortBy: ['start_date'],
           sortDesc: [false],
           search: this.currentSearch,
           status: this.currentFilter !== 'Todos' ? this.currentFilter : undefined,
@@ -170,21 +196,16 @@ export default {
         if (this.userId) {
 
           // Verifica se o usuário é dono de algum evento
-          const events = await event.fetchEventsByPromoterId(this.userId);
-          if (events) {
-
-            // Verifica se possui eventos com status Aguardando
-            const hasWaitingEvents = events.some(event => event?.status?.name === 'Aguardando');
-
-            if (hasWaitingEvents) {
-
-              const { hasRequiredDocuments, hasBankInfo } = await userDocuments.fetchDocumentStatus(this.userId);
-
-              if (!hasRequiredDocuments || !hasBankInfo) {
-                this.showDocumentDialog = true;
-              }
-            }
+          const hasEvents = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status'] });
+          if (hasEvents) {
+            await userDocuments.fetchDocumentStatus(this.userId);            
           }
+
+          setTimeout(() => {
+            if ((!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo || this.hasRejectionReason) && !this.isAdmin) {
+              this.showDocumentDialog = true;
+            }
+          }, 1000);
 
         } else {
           console.warn('Usuário não encontrado para verificar status de documentação');
@@ -219,15 +240,6 @@ export default {
       });
     },
 
-    goToCompleteCadastro() {
-      this.showDocumentDialog = false;
-      this.$router.push({
-        name: 'CompletarCadastro',
-        query: {
-          personType: this.hasDocumentInfo?.personType || 'PF'
-        }
-      });
-    },
   },
 };
 </script>

@@ -151,17 +151,21 @@
                     <td>
                       <v-tooltip bottom>
                         <template #activator="{ on, attrs }">
-                          <v-btn
-                            v-bind="attrs"
-                            x-small
-                            icon
-                            color="primary"
-                            v-on="on"
-                            @click="openTicketEditModal(ticket)">
-                            <v-icon small>mdi-pencil</v-icon>
-                          </v-btn>
+                          <div v-bind="attrs" v-on="on">
+                            <v-btn
+                              x-small
+                              :disabled="!is24HoursOrMoreBeforeEventStart"
+                              icon
+                              color="primary"
+                              @click="openTicketEditModal(ticket)">
+                              <v-icon small>mdi-pencil</v-icon>
+                            </v-btn>
+                          </div>
                         </template>
-                        Editar participante
+                        <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
+                        <span v-else>
+                          Não é possível editar participantes de eventos que já aconteceram ou estão a menos de 24 horas do início
+                        </span>
                       </v-tooltip>
                     </td>
                   </tr>
@@ -227,8 +231,8 @@
 <script>
 import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
-import { payment, eventCustomerTickets, toast } from '@/store';
-import { isMobileDevice, getPaymentMethod } from '@/utils/utils';
+import { payment, eventCustomerTickets, toast, permissions } from '@/store';
+import { isMobileDevice, getPaymentMethod, is24HoursOrMoreBeforeDate } from '@/utils/utils';
 
 export default {
 
@@ -255,6 +259,15 @@ export default {
   },
 
   computed: {
+
+    getUserEventPermissions() {
+      return permissions.$eventPermissions;
+    },
+
+    canCancelOrder() {
+      return Object.values(this.getUserEventPermissions).some(permissions => permissions.includes('cancel_event_orders'));
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -265,6 +278,11 @@ export default {
       );
 
       return filteredCustomerTicket?.ticket?.event;
+    },
+
+    is24HoursOrMoreBeforeEventStart() {
+      const event = this.getEvent;
+      return event?.start_date ? is24HoursOrMoreBeforeDate(event.start_date) : false;
     },
 
     isLoading() {

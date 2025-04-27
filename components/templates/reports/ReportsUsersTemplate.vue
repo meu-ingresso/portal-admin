@@ -1,88 +1,32 @@
 <template>
   <div class="reports-users">
     <v-row>
-
       <v-col cols="12">
         <div>
           <h3 class="template-title">Usuários</h3>
         </div>
       </v-col>
 
-      <v-col cols="12">
-        <v-data-table
-          :headers="headers"
-          :items="users"
-          :items-per-page="100"
-          :loading="isLoading"
-          :server-items-length="totalUsers"
-          :footer-props="{
-            itemsPerPageOptions: [100, 200, 500],
-            itemsPerPageText: 'Usuários por página',
-            pageText: '{0}-{1} de {2}',
-          }"
-          :no-data-text="'Nenhum usuário encontrado'"
-          :no-results-text="'Nenhum usuário encontrado'"
-          :loading-text="'Carregando...'"
-          class="elevation-1"
-          :options.sync="options"
-          @update:options="handleTableUpdate"
-        >
-          <!-- Campo de busca -->
-          <template #top>
-            <v-toolbar flat>
-              <v-row>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model="search"
-                    label="Buscar por nome ou email"
-                    prepend-inner-icon="mdi-magnify"
-                    clearable
-                    hide-details="auto"
-                    class="mr-4"
-                    @input="handleSearchChange" />
-                </v-col>
-              </v-row>
-            </v-toolbar>
-          </template>
-          
-          <template #[`item.created_at`]="{ item }">
-            {{ formatDateToCustomString(item.created_at) }}
-          </template>
-          
-          <template #[`item.full_name`]="{ item }">
-            {{ item.people?.first_name }} {{ item.people?.last_name }}
-          </template>
-          
-          <template #[`item.account_verified`]="{ item }">
-            <v-chip
-              :color="item.account_verified ? 'success' : 'error'"
-              small
-            >
-              {{ item.account_verified ? 'Verificada' : 'Não verificada' }}
-            </v-chip>
-          </template>
-          
-          <template #[`item.person_type`]="{ item }">
-            <v-chip
-              :color="getPersonTypeColor(item.people?.person_type)"
-              small
-            >
-              {{ item.people?.person_type }}
-            </v-chip>
-          </template>
-          
-          <template #[`item.actions`]="{ item }">
-            <v-btn
-              color="primary"
-              small
-              text
-              @click="viewOrders(item)"
-            >
-              <v-icon small left>mdi-cart</v-icon>
-              Ver pedidos
-            </v-btn>
-          </template>
-        </v-data-table>
+      <v-col cols="12" md="12" sm="12">
+        <v-tabs v-model="activeTab" background-color="white" grow class="custom-tabs">
+          <v-tab>
+            <v-icon left>mdi-account</v-icon>
+            Clientes
+          </v-tab>
+          <v-tab>
+            <v-icon left>mdi-account-group</v-icon>
+            Produtores
+          </v-tab>
+          <v-tab>
+            <v-icon left>mdi-account-tie</v-icon>
+            Equipe
+          </v-tab>
+        </v-tabs>
+
+        <!-- Componentes de cada aba -->
+        <ReportsClientsTable v-if="activeTab === 0" />
+        <ReportsOrganizersTable v-if="activeTab === 1" />
+        <ReportsTeamTable v-if="activeTab === 2" />
       </v-col>
     </v-row>
 
@@ -91,6 +35,14 @@
       :show.sync="showUserOrders"
       :user-id="selectedUserId"
       :user-name="selectedUserName" />
+
+    <!-- Modal de edição do usuário -->
+    <EditUserModal
+      v-if="showEditUserModal"
+      :show.sync="showEditUserModal"
+      :user="selectedUser"
+      @saved="handleUserSaved"
+    />
 
   </div>
 </template>
@@ -104,11 +56,11 @@ export default {
   data() {
     return {
       headers: [
-        { text: 'Data de Cadastro', value: 'created_at', sortable: true },
         { text: 'E-mail', value: 'email', sortable: true },
-        { text: 'Nome Completo', value: 'full_name', sortable: false },
-        { text: 'Conta Verificada', value: 'account_verified', sortable: false },
+        { text: 'Nome', value: 'full_name', sortable: false },
         { text: 'Tipo de Pessoa', value: 'person_type', sortable: false },
+        { text: 'Verificado', value: 'account_verified', sortable: false },
+        { text: 'Docs. Enviados', value: 'document_sent', sortable: false },
         { text: 'Ações', value: 'actions', sortable: false }
       ],
       users: [],
@@ -124,14 +76,21 @@ export default {
       searchTimeout: null,
       isLoadingInternal: false,
       showUserOrders: false,
+      showEditUserModal: false,
       selectedUserId: null,
       selectedUserName: '',
+      selectedUser: null,
+      activeTab: 0,
     };
   },
   
   computed: {
     isLoading() {
       return this.isLoadingInternal || loading.$isLoading;
+    },
+    isAdmin() {
+      const role = this.$cookies.get('user_role');
+      return role && role.name === 'Admin';
     },
   },
   
@@ -141,6 +100,18 @@ export default {
   
   methods: {
     formatDateToCustomString,
+
+    getDocumentSent(user) {
+
+      if (!user?.attachments) return false;
+
+      if (user?.people?.person_type === 'PF') {
+        return user.attachments.some(attachment => attachment.type === 'document_cnh') ||
+          (user.attachments.some(attachment => attachment.type === 'document_rg_front') && user.attachments.some(attachment => attachment.type === 'document_rg_back'));
+      } else {
+        return user.attachments.some(attachment => attachment.type === 'document_cnpj' || attachment.type === 'document_social_contract');
+      }   
+    },
     
     getPersonTypeColor(personType) {
       switch (personType) {
@@ -162,7 +133,7 @@ export default {
         search: this.search || undefined,
         sortBy: sortBy.length ? sortBy : ['created_at'],
         sortDesc: sortDesc.length ? sortDesc : [true],
-        preloads: ['people'],
+        preloads: ['people:address', 'attachments'],
       };
     },
     
@@ -230,6 +201,16 @@ export default {
       this.selectedUserName = `${user.people?.first_name} ${user.people?.last_name}`;
       this.showUserOrders = true;
     },
+
+    editUser(user) {
+      this.selectedUser = user;
+      this.showEditUserModal = true;
+    },
+
+    handleUserSaved() {
+      this.showEditUserModal = false;
+      this.loadUsers(true);
+    },
   },
 };
 </script>
@@ -237,5 +218,13 @@ export default {
 <style scoped>
 .reports-users {
   padding: 16px 0;
+}
+
+.custom-tabs {
+  margin-bottom: 16px;
+}
+
+:deep(.theme--light.v-tabs > .v-tabs-bar) {
+  background-color: var(--tertiary) !important;
 }
 </style> 

@@ -1,9 +1,5 @@
 <template>
   <div class="user-address-form">
-    <p class="text-subtitle-1 grey--text mb-4">
-      Informe seu endereço para emissão de nota fiscal e comprovantes.
-    </p>
-    
     <v-form ref="form">
       <!-- Campo de busca de endereço (linha inteira) -->
       <v-row>
@@ -118,6 +114,14 @@ import { userAddress } from '@/store';
 import { onFormatCEP } from '@/utils/formatters';
 
 export default {
+
+  props: {
+    peopleId: {
+      type: String,
+      required: true,
+    },
+  },
+
   data() {
     return {
       isFetchingAddress: false,
@@ -144,8 +148,16 @@ export default {
     };
   },
   computed: {
+    isLoading() {
+      return userAddress.$isLoading;
+    },
+
+    currentAddress() {
+      return userAddress.$address || {};
+    },
+
     isAddressFilled() {
-      const address = userAddress.$address;
+      const address = this.currentAddress;
       return (
         address.street &&
         address.neighborhood &&
@@ -157,7 +169,7 @@ export default {
     fullAddressText() {
       if (!this.isAddressFilled) return '';
       
-      const address = userAddress.$address;
+      const address = this.currentAddress;
       const { street, neighborhood, city, state, zipcode } = address;
       const number = this.localNumber || address.number;
       const complement = this.localComplement || address.complement;
@@ -170,18 +182,45 @@ export default {
       
       return fullAddress;
     },
+
   },
   watch: {
+    peopleId: {
+      immediate: true,
+      handler(newId) {
+        if (newId) {
+          userAddress.fetchUserAddress(newId);
+        }
+      }
+    },
+    currentAddress: {
+      immediate: true,
+      deep: true,
+      handler(newAddress) {
+        if (!newAddress) return;
+        
+        // Atualizar campos locais
+        this.localNumber = newAddress.number || '';
+        this.localComplement = newAddress.complement || '';
+        this.localZipcode = newAddress.zipcode || '';
+        this.isApiZipcode = newAddress.isApiZipcode || false;
+        
+        // Atualizar a query de busca do Google
+        if (newAddress.street && newAddress.neighborhood && newAddress.city) {
+          this.googleSearchQuery = `${newAddress.street}, ${newAddress.neighborhood}, ${newAddress.city}`;
+        }
+      }
+    },
     localNumber: {
       handler(newValue) {
-        if (newValue !== undefined && newValue !== userAddress.$address.number && newValue !== '') {
+        if (newValue !== undefined && newValue !== this.currentAddress.number && newValue !== '') {
           userAddress.updateAddress({ number: newValue });
         }
       },
     },
     localComplement: {
       handler(newValue) {
-        if (newValue !== undefined && newValue !== userAddress.$address.complement && newValue !== '') {
+        if (newValue !== undefined && newValue !== this.currentAddress.complement && newValue !== '') {
           userAddress.updateAddress({ complement: newValue });
         }
       },
@@ -191,31 +230,14 @@ export default {
         if (!newValue && this.isApiZipcode) {
           this.isApiZipcode = false;
           userAddress.updateAddress({ zipcode: '', isApiZipcode: false });
-        } else if (newValue !== undefined && newValue !== userAddress.$address.zipcode && newValue !== '') {
+        } else if (newValue !== undefined && newValue !== this.currentAddress.zipcode && newValue !== '') {
           userAddress.updateAddress({ zipcode: newValue });
         }
       },
     },
-    'userAddress.$address': {
-      deep: true,
-      handler(newData) {
-        // Atualizar campos locais se o endereço mudar externamente
-        this.localNumber = newData.number || '';
-        this.localComplement = newData.complement || '';
-        
-        // Se o CEP vier da API, atualizar o campo local e marcar como originário da API
-        if (newData.zipcode) {
-          this.localZipcode = newData.zipcode;
-          this.isApiZipcode = true;
-        } else {
-          this.isApiZipcode = false;
-        }
-      }
-    },
   },
   created() {
     this.loadGoogleMapsApi();
-    this.loadAddress();
   },
   mounted() {
     document.addEventListener('click', this.handleClickOutside);
@@ -224,25 +246,6 @@ export default {
     document.removeEventListener('click', this.handleClickOutside);
   },
   methods: {
-    loadAddress() {
-      if (userAddress.$address && userAddress.$address.zipcode) {
-        this.localZipcode = userAddress.$address.zipcode;
-        this.isApiZipcode = userAddress.$address.isApiZipcode || false;
-      }
-
-      if (userAddress.$address && userAddress.$address.number) {
-        this.localNumber = userAddress.$address.number;
-      }
-
-      if (userAddress.$address && userAddress.$address.complement) {
-        this.localComplement = userAddress.$address.complement;
-      }
-
-      if (userAddress.$address && userAddress.$address.street && userAddress.$address.neighborhood && userAddress.$address.city) {
-        this.googleSearchQuery = `${userAddress.$address.street}, ${userAddress.$address.neighborhood}, ${userAddress.$address.city}`;
-      }  
-    },
-
     validate() {
       return this.$refs.form ? this.$refs.form.validate() : true;
     },
@@ -257,7 +260,7 @@ export default {
       this.localZipcode = onFormatCEP(value);
       
       // Quando o usuário edita o CEP manualmente, atualizamos o estado no store
-      if (this.localZipcode !== userAddress.$address.zipcode) {
+      if (this.localZipcode !== this.currentAddress.zipcode) {
         userAddress.updateAddress({ 
           zipcode: this.localZipcode,
           isApiZipcode: false // Marcamos como não vindo da API, pois o usuário editou manualmente
@@ -451,10 +454,6 @@ export default {
 </script>
 
 <style scoped>
-.user-address-form {
-  margin-bottom: 16px;
-}
-
 .autocomplete-results {
   position: absolute;
   z-index: 10;

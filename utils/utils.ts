@@ -156,3 +156,66 @@ export const isUserManager = (cookies: any): boolean => {
 
   return role && role.name === 'Gerente';
 };
+
+/**
+ * Verifica se o momento atual é pelo menos 24 horas antes da data fornecida,
+ * considerando o fuso horário do Brasil.
+ * 
+ * @param date - Data a ser verificada (formato: '2025-03-31T22:00:00.000Z' ou similar)
+ * @returns true se o momento atual é pelo menos 24 horas antes da data fornecida
+ */
+export const is24HoursOrMoreBeforeDate = (date: string | Date): boolean => {
+  if (!date) return false;
+  
+  // Converte a data para um objeto Date (se ainda não for)
+  const eventDate = date instanceof Date ? date : new Date(date);
+  
+  // Obtém a data atual considerando o fuso horário do Brasil (UTC-3)
+  const now = new Date();
+  
+  // Verifica se a data já passou
+  if (eventDate.getTime() <= now.getTime()) {
+    return false; // Evento já aconteceu ou está acontecendo, não permite edição
+  }
+  
+  // Calcula a diferença em milissegundos
+  const oneDay = 24 * 60 * 60 * 1000; // 24 horas em milissegundos
+  
+  // Verifica se a diferença é maior ou igual a 24 horas
+  return eventDate.getTime() - now.getTime() >= oneDay;
+};
+
+export const extractNameFromEmail = (email: string): { firstName: string, lastName: string } => {
+
+  try {
+    if (!email || !email.includes('@')) {
+      return { firstName: '', lastName: '' };
+    }
+    
+    const localPart = email.split('@')[0];
+    
+    const cleanedPart = localPart.replace(/[0-9!#$%^&*()+=[\]{};':"\\|,<>/?]/g, '');
+    
+    const parts = cleanedPart.split(/[._-]/);
+
+    const formattedParts = parts
+      .filter(part => part.trim().length > 0)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase());
+    
+    if (formattedParts.length === 0) {
+      return { firstName: '', lastName: '' };
+    }
+    
+    if (formattedParts.length === 1) {
+      return { firstName: formattedParts[0], lastName: '' };
+    }
+    
+    const firstName = formattedParts[0];
+    const lastName = formattedParts[formattedParts.length - 1];
+    
+    return { firstName, lastName };
+  } catch (error) {
+    console.error('Erro ao extrair nome do e-mail:', error);
+    return { firstName: '', lastName: '' };
+  }
+};

@@ -80,6 +80,7 @@
         </v-stepper-items>
       </v-stepper>
     </v-card>
+    <Toast />
   </v-dialog>
 </template>
 
@@ -273,15 +274,20 @@ export default {
         this.isLoading = true;
         const response = await eventPdv.fetchPdvFromEventAndUserId({ eventId: this.eventId, userId: this.userId });
 
-        if (response.success && response.data) {
+        if (response.success && response.data && response.data.length > 0) {
+
+          const openPdv = response.data.find(pdv => pdv.status?.name === 'Disponível');
+
+          if (!openPdv) {
+            toast.setToast({ text: 'Nenhum PDV disponível encontrado.', type: 'info', time: 3000 });
+            return;
+          }
 
           // Sabendo que o usuário só tem um PDV, pegamos o primeiro
-          this.pdvId = response.data[0].id;
+          this.pdvId = openPdv.id;
 
-          response.data.forEach(pdv => {
-            pdv.pdvTickets.forEach(pdvTicket => {
-              this.pdvTickets.push(pdvTicket.ticket);
-            });
+          openPdv.pdvTickets.forEach(pdvTicket => {
+            this.pdvTickets.push(pdvTicket.ticket);
           });
         }
       } catch (error) {

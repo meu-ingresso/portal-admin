@@ -8,7 +8,7 @@
         </div>
       </v-col>
       <v-col cols="12">
-        <OrdersTable ref="ordersTable" />
+        <OrdersTable ref="ordersTable" :filter-user-id="isAdminOrManager ? null : userId" />
       </v-col>
     </v-row>
 

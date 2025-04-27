@@ -37,6 +37,12 @@ export const formatDateToUs = (date: string): String => {
   return moment(date, 'YYYY-MM-DD').format('YYYY-MM-DD');
 };
 
+export const formatMonth = (dateString: string): string => {
+  const date = new Date(dateString);
+  const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+  return months[date.getMonth()];
+};
+
 export const formatEuroValue = (value: number): string => {
   if (value === null || value === undefined) return '';
   return `€ ${value.toLocaleString('de-DE', {

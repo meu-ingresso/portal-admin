@@ -1,37 +1,33 @@
+import { EVENT_PERMISSIONS, PRODUCER_PERMISSIONS, requirePermissions } from './permissions-config';
+
 export const TopBar = [
   {
     icon: 'mdi-calendar-multiselect-outline',
     iconActive: 'mdi-calendar-multiselect',
     title: 'Eventos',
-    to: '/events',
-    needPermissions: false,
+    to: '/',
+    permissions: requirePermissions(EVENT_PERMISSIONS.VIEW),
   },
   {
     icon: 'mdi-home-outline',
     iconActive: 'mdi-home',
     title: 'Minha página',
     to: '/my-page',
-    needPermissions: true,
+    permissions: requirePermissions(PRODUCER_PERMISSIONS.VIEW),
   },
   {
     icon: 'mdi-account-outline',
     iconActive: 'mdi-account',
     title: 'Relatórios',
     to: '/reports',
-    needPermissions: true,
+    permissions: requirePermissions(EVENT_PERMISSIONS.EXPORT),
   },
-  // {
-  //     icon: 'mdi-cog-outline',
-  //     iconActive: 'mdi-cog',
-  //     title: 'Configurações',
-  //     to: '/settings',
-  //     needPermissions: true,
-  // },
   {
     icon: 'mdi-help-circle-outline',
     iconActive: 'mdi-help-circle',
     title: 'Central de Ajuda',
-    to: '/help-center',
-    needPermissions: true,
+    to: 'https://ajuda.meuingresso.com.br/',
+    target: '_blank',
+    permissions: [],
   },
 ];
