@@ -1167,13 +1167,15 @@ export default class EventTickets extends VuexModule {
       };
 
       // 6. Cria o novo ticket na API
-      const response = await $axios.$post('ticket', newTicket);
+      const response = await $axios.$post('ticket', {
+        data: [newTicket],
+      });
 
       if (!response.body || response.body.code !== 'CREATE_SUCCESS') {
         throw new Error(`Falha ao duplicar ingresso: ${newName}`);
       }
 
-      return response.body.result.id;
+      return response.body.result[0].id;
     } catch (error) {
       console.error('Erro ao duplicar ingresso:', error);
       throw error;
