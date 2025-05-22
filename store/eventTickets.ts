@@ -595,11 +595,7 @@ export default class EventTickets extends VuexModule {
         throw new Error(`Falha ao criar categoria de ingresso para o evento ${payload.eventId}`);
       }
 
-      this.context.commit('SET_TICKET_CATEGORIES', [...this.ticketCategories, {
-        text: payload.category,
-        value: payload.category,
-        id: response.body.result[0].id,
-      }]);
+      await this.fetchAndPopulateByEventId(payload.eventId);
     } catch (error) {
       console.error('Erro ao criar categoria de ingresso:', error);
       throw error;
@@ -966,6 +962,8 @@ export default class EventTickets extends VuexModule {
       // 1. Tratamento da categoria
       if (payload.ticket.category) {
         if (payload.ticket.category.id === '-1') {
+          console.log('[UPDATE SINGLE TICKET] - Categoria nova', payload.ticket.category);
+
           // Categoria nova, cria usando o novo formato
           const categoryPayload = {
             data: [
@@ -987,7 +985,21 @@ export default class EventTickets extends VuexModule {
 
           categoryId = categoryResponse.body.result[0].id;
         } else {
+          console.log('[UPDATE SINGLE TICKET] - Categoria existente', payload.ticket.category);
+
           categoryId = payload.ticket.category.id;
+
+          // Atualiza o nome da categoria
+          const categoryUpdatePayload = {
+            data: [
+              {
+                id: categoryId,
+                name: payload.ticket.category.text,
+              },
+            ],
+          };
+
+          await $axios.$patch('ticket-event-category', categoryUpdatePayload);
         }
       }
 
@@ -1085,31 +1097,17 @@ export default class EventTickets extends VuexModule {
 
       // 2. Atualiza o ticket com end_date atual e status Interrompido
       const response = await $axios.$patch('ticket', {
-        id: ticketId,
-        end_date: new Date().toISOString().replace('Z', '-0300'),
-        status_id: unavailableStatus.id,
+        data: [
+          {
+            id: ticketId,
+            end_date: new Date().toISOString().replace('Z', '-0300'),
+            status_id: unavailableStatus.id,
+          },
+        ],
       });
 
       if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
         throw new Error('Falha ao interromper vendas do ingresso');
-      }
-
-      // 3. Atualiza o ticket no state
-      const ticketIndex = this.ticketList.findIndex((t) => t.id === ticketId);
-      if (ticketIndex !== -1) {
-        const updatedTicket = {
-          ...this.ticketList[ticketIndex],
-          end_date: new Date().toISOString(),
-          status: {
-            id: unavailableStatus.id,
-            name: 'Indisponível',
-          },
-        };
-
-        this.context.commit('UPDATE_TICKET', {
-          index: ticketIndex,
-          ticket: updatedTicket,
-        });
       }
     } catch (error) {
       console.error('Erro ao interromper vendas:', error);

@@ -16,7 +16,7 @@
           <TicketRow :id="ticket.id" :disable-menu="disableMenu" :is-swapping="isSwapping" :name="ticket.name"
             :price="ticket.price" :status="ticket?.status?.name" :sold="ticket.total_sold"
             :total="ticket.total_quantity" :event-promoter="getEventPromoter" @click="handleEditTicket(ticket.id)"
-            @delete="handleDeleteTicket" @duplicate="handleDuplicateTicket" @stop-sales="handleStopSales" />
+            @delete="handleDeleteTicket" @duplicate="handleDuplicateTicket" @stop-sales="handleStopSales(ticket)" />
         </Draggable>
 
         <v-skeleton-loader v-if="isDuplicating" class="mx-auto" max-height="74" type="card"></v-skeleton-loader>
@@ -26,7 +26,7 @@
           :disable-menu="disableMenu" :disable-hover="disableHover" :name="ticket.name" :price="ticket.price"
           :status="ticket?.status?.name" :sold="ticket.total_sold" :total="ticket.total_quantity"
           :event-promoter="getEventPromoter" @delete="handleDeleteTicket" @click="handleEditTicket(ticket.id)"
-          @duplicate="handleDuplicateTicket" @stop-sales="handleStopSales" />
+          @duplicate="handleDuplicateTicket" @stop-sales="handleStopSales(ticket)" />
       </template>
     </v-col>
 
@@ -194,6 +194,17 @@ export default {
 
     async handleStopSales(ticket) {
       try {
+
+        if (!ticket || !ticket.id || !ticket.name) {
+          toast.setToast({
+            text: `Falha ao pausar venda do ingresso. Tente novamente.`,
+            type: 'danger',
+            time: 5000,
+          });
+          return;
+        }
+
+        console.log('[STOP SALES] - Ticket', ticket);
         await eventTickets.stopTicketSales(ticket.id);
         await eventTickets.fetchAndPopulateByEventId(this.eventId);
         toast.setToast({

@@ -24,15 +24,9 @@
 
         <div class="ticket-sold">{{ sold }} / {{ total }}</div>
 
-        <ActionsMenu
-          v-if="!disableMenu && canManageTicket"
-          class="ticket-actions-menu"
-          :show-delete="canManageTicket"
-          :show-duplicate="canManageTicket"
-          :show-stop-sales="canManageTicket"
-          icon="mdi-dots-horizontal"
-          @delete="handleMenuAction('delete')"
-          @duplicate="handleMenuAction('duplicate')"
+        <ActionsMenu v-if="!disableMenu && canManageTicket" class="ticket-actions-menu" :show-delete="canManageTicket"
+          :show-duplicate="canManageTicket" :show-stop-sales="canManageTicket && isTicketAvailable"
+          icon="mdi-dots-horizontal" @delete="handleMenuAction('delete')" @duplicate="handleMenuAction('duplicate')"
           @stop-sales="handleMenuAction('stop-sales')" />
       </div>
     </v-col>
@@ -41,13 +35,10 @@
     <v-card-text>
       <div class="first-ticket-column is-mobile">
         <div class="ticket-name">{{ name }}</div>
-        <ActionsMenu
-          v-if="!disableMenu && canManageTicket"
-          :show-delete="canManageTicket"
-          :show-duplicate="canManageTicket"
-          icon="mdi-dots-horizontal"
-          @delete="handleMenuAction('delete')"
-          @duplicate="handleMenuAction('duplicate')" />
+        <ActionsMenu v-if="!disableMenu && canManageTicket" :show-delete="canManageTicket"
+          :show-duplicate="canManageTicket" :show-stop-sales="canManageTicket && isTicketAvailable"
+          icon="mdi-dots-horizontal" @delete="handleMenuAction('delete')" @duplicate="handleMenuAction('duplicate')"
+          @stop-sales="handleMenuAction('stop-sales')" />
       </div>
 
       <div class="second-ticket-column is-mobile">
@@ -111,6 +102,10 @@ export default {
 
     canManageTicket() {
       return this.isAdmin || this.isEventPromoter;
+    },
+
+    isTicketAvailable() {
+      return this.status !== 'Indisponível' && this.status !== 'Interrompido' && this.status !== 'Esgotado';
     },
   },
 
