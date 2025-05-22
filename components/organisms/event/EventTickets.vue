@@ -10,65 +10,28 @@
     </v-col>
 
     <v-col cols="12" md="12" sm="12">
-      <Container
-        v-if="!disableHover"
-        :lock-axis="'y'"
-        :non-drag-area-selector="'.is-swapping'"
-        @drop="onDrop">
-        <Draggable
-          v-for="ticket in displayedTickets"
-          :key="ticket.id"
-          class="pt-4 draggable-ticket"
+      <Container v-if="!disableHover" :lock-axis="'y'" :non-drag-area-selector="'.is-swapping'" @drop="onDrop">
+        <Draggable v-for="ticket in displayedTickets" :key="ticket.id" class="pt-4 draggable-ticket"
           :class="{ 'is-swapping': isSwapping }">
-          <TicketRow
-            :id="ticket.id"
-            :disable-menu="disableMenu"
-            :is-swapping="isSwapping"
-            :name="ticket.name"
-            :price="ticket.price"
-            :status="ticket?.status?.name"
-            :sold="ticket.total_sold"
-            :total="ticket.total_quantity"
-            :event-promoter="getEventPromoter"
-            @click="handleEditTicket(ticket.id)"
-            @delete="handleDeleteTicket"
-            @duplicate="handleDuplicateTicket"
-            @stop-sales="handleStopSales" />
+          <TicketRow :id="ticket.id" :disable-menu="disableMenu" :is-swapping="isSwapping" :name="ticket.name"
+            :price="ticket.price" :status="ticket?.status?.name" :sold="ticket.total_sold"
+            :total="ticket.total_quantity" :event-promoter="getEventPromoter" @click="handleEditTicket(ticket.id)"
+            @delete="handleDeleteTicket" @duplicate="handleDuplicateTicket" @stop-sales="handleStopSales" />
         </Draggable>
 
-        <v-skeleton-loader
-          v-if="isDuplicating"
-          class="mx-auto"
-          max-height="74"
-          type="card"></v-skeleton-loader>
+        <v-skeleton-loader v-if="isDuplicating" class="mx-auto" max-height="74" type="card"></v-skeleton-loader>
       </Container>
       <template v-else>
-        <TicketRow
-          v-for="ticket in displayedTickets"
-          :id="ticket.id"
-          :key="ticket.id"
-          class="mt-1"
-          :disable-menu="disableMenu"
-          :disable-hover="disableHover"
-          :name="ticket.name"
-          :price="ticket.price"
-          :status="ticket?.status?.name"
-          :sold="ticket.total_sold"
-          :total="ticket.total_quantity"
-          :event-promoter="getEventPromoter"
-          @delete="handleDeleteTicket"
-          @click="handleEditTicket(ticket.id)"
-          @duplicate="handleDuplicateTicket"
-          @stop-sales="handleStopSales" />
+        <TicketRow v-for="ticket in displayedTickets" :id="ticket.id" :key="ticket.id" class="mt-1"
+          :disable-menu="disableMenu" :disable-hover="disableHover" :name="ticket.name" :price="ticket.price"
+          :status="ticket?.status?.name" :sold="ticket.total_sold" :total="ticket.total_quantity"
+          :event-promoter="getEventPromoter" @delete="handleDeleteTicket" @click="handleEditTicket(ticket.id)"
+          @duplicate="handleDuplicateTicket" @stop-sales="handleStopSales" />
       </template>
     </v-col>
 
     <!-- Modal de edição -->
-    <v-dialog
-      v-model="showEditDialog"
-      max-width="900px"
-      persistent
-      :fullscreen="isMobile">
+    <v-dialog v-model="showEditDialog" max-width="900px" persistent :fullscreen="isMobile">
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>Editar Ingresso</h3>
@@ -77,34 +40,18 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4">
-          <TicketForm
-            v-if="showEditDialog"
-            ref="ticketEditForm"
-            :edit-index="selectedTicketIndex"
-            :event-id="eventId"
+          <TicketForm v-if="showEditDialog" ref="ticketEditForm" :edit-index="selectedTicketIndex" :event-id="eventId"
             :nomenclature="'Ingresso'" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            :disabled="isLoading"
-            @click="handleCloseEditDialog" />
-          <DefaultButton
-            text="Salvar"
-            :is-loading="isLoading"
-            :disabled="isLoading"
-            @click="submitEdit" />
+          <DefaultButton outlined text="Cancelar" :disabled="isLoading" @click="handleCloseEditDialog" />
+          <DefaultButton text="Salvar" :is-loading="isLoading" :disabled="isLoading" @click="submitEdit" />
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- Modal de confirmação -->
-    <v-dialog
-      v-model="showConfirmDialog"
-      max-width="500px"
-      persistent
-      :fullscreen="isMobile">
+    <v-dialog v-model="showConfirmDialog" max-width="500px" persistent :fullscreen="isMobile">
       <v-card :tile="isMobile">
         <v-card-title v-if="!isLoading" class="d-flex justify-space-between align-center">
           <h3>Confirmar Exclusão</h3>
@@ -122,27 +69,13 @@
               <div class="pt-10">
                 <h2 class="pt-10">Excluindo ingresso...</h2>
               </div>
-              <Lottie
-                path="./animations/loading_default.json"
-                height="130"
-                width="200"
-                class="teste" />
+              <Lottie path="./animations/loading_default.json" height="130" width="200" class="teste" />
             </div>
           </template>
         </v-card-text>
-        <v-card-actions
-          v-if="!isLoading"
-          class="d-flex align-center justify-space-between py-5">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            :disabled="isLoading"
-            @click="handleCloseDialog" />
-          <DefaultButton
-            text="Excluir"
-            :is-loading="isLoading"
-            :disabled="isLoading"
-            @click="confirmDelete" />
+        <v-card-actions v-if="!isLoading" class="d-flex align-center justify-space-between py-5">
+          <DefaultButton outlined text="Cancelar" :disabled="isLoading" @click="handleCloseDialog" />
+          <DefaultButton text="Excluir" :is-loading="isLoading" :disabled="isLoading" @click="confirmDelete" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -305,7 +238,7 @@ export default {
       this.isLoading = true;
       try {
         const ticketForm = this.$refs.ticketEditForm;
-        const { success, error } = await ticketForm.handleSubmit(false);
+        const { success, error } = await ticketForm.handleSubmit(true);
         if (success) {
           this.showEditDialog = false;
           toast.setToast({
@@ -345,11 +278,11 @@ export default {
       if (this.customTickets) {
         const removedTicket = this.customTickets[dropResult.removedIndex];
         const addedTicket = this.customTickets[dropResult.addedIndex];
-        
+
         // Encontrar os índices reais no array completo de tickets
         const allTicketsRemovedIndex = this.getTickets.findIndex(t => t.id === removedTicket.id);
         const allTicketsAddedIndex = this.getTickets.findIndex(t => t.id === addedTicket.id);
-        
+
         if (allTicketsRemovedIndex !== -1 && allTicketsAddedIndex !== -1) {
           await eventTickets.swapTicketsOrder({
             removedIndex: allTicketsRemovedIndex,
