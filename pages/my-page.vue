@@ -52,8 +52,8 @@
         <!-- Bio Section -->
         <PageConfigSection icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
           :loading="isLoading" @save="handleSaveBio" @cancel="handleCancelBio">
-          <RichTextEditor ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
-            :actions="['bold', 'italic', 'list']" :disabled="isLoading" :max-length="255" />
+          <RichTextEditorV2 ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
+            :disabled="isLoading" :max-length="255" />
         </PageConfigSection>
 
         <!-- Social Links Section -->
@@ -92,6 +92,7 @@ import { user, userDocuments, toast, event } from '@/utils/store-util';
 import { formatRealValue } from '@/utils/formatters';
 
 export default {
+
   data() {
     return {
       isLoading: false,
