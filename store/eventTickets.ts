@@ -376,9 +376,13 @@ export default class EventTickets extends VuexModule {
       }
 
       if (categoriesToDelete.length > 0) {
-        await $axios.$delete('ticket-event-category', {
-          data: categoriesToDelete,
-        });
+         const categorieDeleteResponse = await Promise.all(categoriesToDelete.map(async (categoryId) => {
+          return await $axios.$delete(`ticket-event-category/${categoryId}`);
+         }));
+
+        if (categorieDeleteResponse.some((response) => response.body?.code !== 'DELETE_SUCCESS')) {
+          throw new Error('Falha ao deletar categorias de ingresso');
+        }
       }
 
       // 4. Prepara operações de tickets

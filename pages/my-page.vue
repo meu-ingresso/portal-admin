@@ -7,7 +7,7 @@
           <v-col cols="auto" class="mr-4">
             <div class="profile-image-container">
               <v-avatar size="80" class="profile-image">
-                <v-img :src="profileImageUrl || '/default_avatar.svg'" :aspect-ratio="1">
+                <v-img :src="getMyPageImage" :aspect-ratio="1">
                   <template #placeholder>
                     <v-icon size="32">mdi-account</v-icon>
                   </template>
@@ -29,11 +29,7 @@
           </v-col>
           <v-spacer></v-spacer>
           <v-col cols="auto">
-            <ButtonWithIcon
-              text="Compartilhar"
-              icon="mdi-share-variant"
-              @click="handleShare"
-            />
+            <ButtonWithIcon text="Compartilhar" icon="mdi-share-variant" @click="handleShare" />
           </v-col>
         </v-row>
       </v-card-text>
@@ -41,7 +37,7 @@
 
     <!-- Statistics Section -->
     <v-row class="center-row mb-6">
-      <v-col cols="12"> 
+      <v-col cols="12">
         <StatisticList :statistics="getStatistics" title="Análises da página" />
       </v-col>
     </v-row>
@@ -51,68 +47,34 @@
       <v-col cols="12">
         <div class="template-title mb-4">Configurações da página</div>
       </v-col>
-      
+
       <v-col cols="12">
         <!-- Bio Section -->
-        <PageConfigSection
-          icon="mdi-text"
-          title="Sobre"
-          subtitle="Crie uma bio para exibir aos clientes"
-          :loading="isLoading"
-          @save="handleSaveBio"
-          @cancel="handleCancelBio"
-        >
-          <RichTextEditor
-            ref="bioEditor"
-            v-model="biography"
-            placeholder="Apresente-se em poucas palavras..."
-            :actions="['bold', 'italic', 'list']"
-            :disabled="isLoading"
-          />
+        <PageConfigSection icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
+          :loading="isLoading" @save="handleSaveBio" @cancel="handleCancelBio">
+          <RichTextEditor ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
+            :actions="['bold', 'italic', 'list']" :disabled="isLoading" :max-length="255" />
         </PageConfigSection>
 
         <!-- Social Links Section -->
-        <PageConfigSection
-          icon="mdi-link-variant"
-          title="Links"
-          subtitle="Website & mídias sociais"
-          :loading="isLoading"
-          @save="handleSaveSocialLinks"
-          @cancel="handleCancelSocialLinks"
-        >
-          <SocialMediaLinks
-            v-model="socialLinks"
-            @change="handleSocialLinkChange"
-          />
+        <PageConfigSection icon="mdi-link-variant" title="Links" subtitle="Website & mídias sociais"
+          :loading="isLoading" @save="handleSaveSocialLinks" @cancel="handleCancelSocialLinks">
+          <SocialMediaLinks v-model="socialLinks" @change="handleSocialLinkChange" />
         </PageConfigSection>
 
         <!-- Contact Info Section -->
-        <PageConfigSection
-          icon="mdi-account-box-outline"
-          title="Informações de contato"
-          subtitle="E-mail e telefone para contato"
-          :loading="isLoading"
-          @save="handleSaveContactInfo"
-          @cancel="handleCancelContactInfo"
-        >
-          <ContactForm
-            ref="contactForm"
-            :contact-email.sync="contactEmail"
-            :contact-phone.sync="contactPhone"
-            :disabled="isLoading"
-          />
+        <PageConfigSection icon="mdi-account-box-outline" title="Informações de contato"
+          subtitle="E-mail e telefone para contato" :loading="isLoading" @save="handleSaveContactInfo"
+          @cancel="handleCancelContactInfo">
+          <ContactForm ref="contactForm" :contact-email.sync="contactEmail" :contact-phone.sync="contactPhone"
+            :disabled="isLoading" />
         </PageConfigSection>
       </v-col>
     </v-row>
 
     <!-- Hidden file input for profile image -->
-    <input
-      ref="fileInput"
-      type="file"
-      accept="image/*"
-      style="display: none"
-      @change="handleImageUpload($event.target.files[0])"
-    >
+    <input ref="fileInput" type="file" accept="image/*" style="display: none"
+      @change="handleImageUpload($event.target.files[0])">
 
     <!-- Loading Overlay -->
     <v-overlay :value="isLoading">
@@ -121,11 +83,7 @@
 
     <Toast />
 
-    <ShareProfileSidebar
-      :show="showShareSidebar"
-      :profile-url="profileUrl"
-      @update:show="showShareSidebar = $event"
-    />
+    <ShareProfileSidebar :show="showShareSidebar" :profile-url="profileUrl" @update:show="showShareSidebar = $event" />
   </v-container>
 </template>
 
@@ -183,16 +141,20 @@ export default {
           value: `${formatRealValue(this.events.reduce((sum, event) => sum + (event.totalizers.totalSalesAmount || 0), 0))}`,
         },
       ];
+    },
+
+    getMyPageImage() {
+      return this.profileImageUrl || require('~/assets/images/default_avatar.svg');
     }
   },
-  
+
   mounted() {
     this.fetchData();
   },
 
   methods: {
     formatRealValue,
-    
+
     async fetchData() {
       try {
         this.isLoading = true;
@@ -203,18 +165,18 @@ export default {
           ...event,
           link_online: event.attachments.find(attachment => attachment.name === 'link_online')?.url || '',
         }));
-        
+
         const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
         const profileImageDoc = userDocuments.$userAttachments.find(doc => doc.name === 'profile_image');
         const socialLinksDoc = userDocuments.$userAttachments.find(doc => doc.name === 'social_links');
         const contactInfoDoc = userDocuments.$userAttachments.find(doc => doc.name === 'contact_info');
-        
+
         this.biography = bioDoc?.value || '';
         this.userAlias = user.$user.alias;
         this.profileImageUrl = profileImageDoc?.value || '';
         this.socialLinks = socialLinksDoc ? JSON.parse(socialLinksDoc.value) : {};
         this.originalSocialLinks = { ...this.socialLinks };
-        
+
         if (contactInfoDoc) {
           const contactInfo = JSON.parse(contactInfoDoc.value);
           this.contactEmail = contactInfo.email || user.$user.email || '';
@@ -223,12 +185,12 @@ export default {
           this.contactEmail = user.$user.email || '';
           this.contactPhone = '';
         }
-        
+
         this.originalContactInfo = {
           email: this.contactEmail,
           phone: this.contactPhone,
         };
-        
+
       } catch (error) {
         console.error('Error fetching user data:', error);
         toast.setToast({ text: 'Erro ao carregar dados do usuário', type: 'error', time: 3000 });
@@ -240,9 +202,9 @@ export default {
     async handleImageUpload(file) {
       try {
         this.isLoading = true;
-        
+
         let profileImageDoc = userDocuments.$userAttachments.find(doc => doc.name === 'profile_image');
-        
+
         if (!profileImageDoc) {
           profileImageDoc = await userDocuments.createUserDocument({
             name: 'profile_image',
@@ -250,12 +212,12 @@ export default {
             userId: this.userId
           });
         }
-        
+
         const imageUrl = await userDocuments.uploadUserDocument({
           documentFile: file,
           attachmentId: profileImageDoc.id
         });
-        
+
         this.profileImageUrl = imageUrl;
         toast.setToast({ text: 'Foto de perfil atualizada com sucesso', type: 'success', time: 3000 });
       } catch (error) {
@@ -274,7 +236,7 @@ export default {
       try {
         this.isLoading = true;
         const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
-        
+
         if (bioDoc) {
           await userDocuments.updateUserAttachment({
             id: bioDoc.id,
@@ -288,7 +250,7 @@ export default {
             value: this.biography
           });
         }
-        
+
         toast.setToast({ text: 'Biografia atualizada com sucesso', type: 'success', time: 3000 });
       } catch (error) {
         console.error('Error saving bio:', error);
@@ -307,7 +269,7 @@ export default {
       try {
         this.isLoading = true;
         const socialLinksDoc = userDocuments.$userAttachments.find(doc => doc.name === 'social_links');
-        
+
         if (socialLinksDoc) {
           await userDocuments.updateUserAttachment({
             id: socialLinksDoc.id,
@@ -321,7 +283,7 @@ export default {
             value: JSON.stringify(this.socialLinks)
           });
         }
-        
+
         this.originalSocialLinks = { ...this.socialLinks };
         toast.setToast({ text: 'Links atualizados com sucesso', type: 'success', time: 3000 });
       } catch (error) {
@@ -344,15 +306,15 @@ export default {
           toast.setToast({ text: 'Por favor, corrija os erros no formulário antes de salvar', type: 'error', time: 3000 });
           return;
         }
-        
+
         this.isLoading = true;
         const contactInfoDoc = userDocuments.$userAttachments.find(doc => doc.name === 'contact_info');
-        
+
         const contactInfo = {
           email: this.contactEmail,
           phone: this.contactPhone,
         };
-        
+
         if (contactInfoDoc) {
           await userDocuments.updateUserAttachment({
             id: contactInfoDoc.id,
@@ -366,7 +328,7 @@ export default {
             value: JSON.stringify(contactInfo)
           });
         }
-        
+
         this.originalContactInfo = { ...contactInfo };
         toast.setToast({ text: 'Informações de contato atualizadas com sucesso', type: 'success', time: 3000 });
       } catch (error) {
