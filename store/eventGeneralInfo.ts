@@ -1,5 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { Event, EventAddress, ValidationResult, EventAttachment, EventApiResponse } from '~/models/event';
+import { Event, EventAddress, ValidationResult, EventAttachment, EventApiResponse, EventDate } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
@@ -581,13 +581,69 @@ export default class EventGeneralInfo extends VuexModule {
   }
 
   @Action
+  private async createEventDates(payload: { eventId: string; defaultDate: EventDate }) {
+    try {
+      if (!payload.defaultDate) return;
+      
+      // Corrigindo a lógica de filtro para considerar uma data como não padrão
+      // apenas se for completamente diferente da data padrão
+      const nonDefaultDates = this.info.event_dates.filter((date) => 
+        !(date.start_date === payload.defaultDate.start_date && 
+          date.start_time === payload.defaultDate.start_time && 
+          date.end_date === payload.defaultDate.end_date && 
+          date.end_time === payload.defaultDate.end_time)
+      );
+      
+      // Se não houver datas não padrão, não é necessário chamar a API
+      if (nonDefaultDates.length === 0) {
+        return [];
+      }
+
+      // Formatando as datas no mesmo padrão usado em updateEventBase
+      const formattedSessions = nonDefaultDates.map((date) => {
+        const startDateTime = `${date.start_date}T${date.start_time}:00.000Z`;
+        const endDateTime = `${date.end_date}T${date.end_time}:00.000Z`;
+        
+        const startDate = new Date(startDateTime);
+        const endDate = new Date(endDateTime);
+        
+        return {
+          start_date: startDate.toISOString().replace('Z', '-0300'),
+          end_date: endDate.toISOString().replace('Z', '-0300')
+        };
+      });
+
+      const eventDatesResponse = await $axios.$post('event/sessions', {
+        eventUuid: payload.eventId,
+        sessions: formattedSessions
+      });
+
+      if (!eventDatesResponse.body || eventDatesResponse.body.code !== 'CREATE_SUCCESS') {
+        throw new Error('Falha ao criar sessões de evento');
+      }
+
+      return eventDatesResponse.body.result;
+    } catch (error) {
+      console.error('Erro ao criar sessões de evento:', error);
+      throw error;
+    }
+  }
+
+  @Action
   public async updateEventBase(eventId: string) {
     try {
-      // Atualiza ou deleta endereço
-      if (this.info.event_type !== 'Online' && this.info.address?.id) {
+      
+      const isOnline = this.info.event_type === 'Online';
+      const hasAddress = this.info.address?.id;
+      
+      // Atualiza o endereço se existir
+      if (hasAddress) {
         await this.updateAddress();
-      } else if (this.info.event_type === 'Online' && !this.info.address?.deleted_at) {
-        await this.deleteAddress();
+
+        // Se o evento for online, deleta o endereço
+        if (isOnline) {
+          await this.deleteAddress();
+        }
       }
 
       // Obter evento principal (o que está sendo editado)
@@ -627,6 +683,8 @@ export default class EventGeneralInfo extends VuexModule {
         throw new Error('Falha ao atualizar evento base');
       }
 
+      // Cria as novas sessoes (datas) para o evento  
+      await this.createEventDates({ eventId, defaultDate: mainDate });
       // Atualiza ou deleta banner
       await this.handleEventBanner([eventId]);
 

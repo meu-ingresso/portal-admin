@@ -2,30 +2,23 @@
   <div class="rich-text-editor">
     <!-- Toolbar -->
     <div class="editor-toolbar pa-2" :class="{ 'grey lighten-4': !dark }">
-      <v-btn
-        v-for="(action, index) in enabledActions"
-        :key="index"
-        small
-        icon
-        :color="isActive(action.command) ? 'primary' : ''"
-        :disabled="disabled"
-        @click="executeAction(action)"
-      >
+      <v-btn v-for="(action, index) in enabledActions" :key="index" small icon
+        :color="isActive(action.command) ? 'primary' : ''" :disabled="disabled" @click="executeAction(action)">
         <v-icon small>{{ action.icon }}</v-icon>
       </v-btn>
     </div>
 
     <!-- Editor Content -->
-    <div
-      ref="editor"
-      class="editor-content pa-4"
-      :class="{ 'grey lighten-5': !dark, 'is-disabled': disabled }"
-      contenteditable="true"
-      :placeholder="placeholder"
-      @input="handleInput"
-      @keydown="handleKeydown"
-      @paste="handlePaste"
-    ></div>
+    <div ref="editor" class="editor-content pa-4" :class="{ 'grey lighten-5': !dark, 'is-disabled': disabled }"
+      contenteditable="true" :placeholder="placeholder" @input="handleInput" @keydown="handleKeydown"
+      @paste="handlePaste"></div>
+
+    <!-- Character Counter -->
+    <div v-if="maxLength > 0" class="character-counter pa-2" :class="{ 'grey lighten-4': !dark }">
+      <span :class="{ 'error--text': isOverLimit }">
+        {{ currentLength }}/{{ maxLength }} caracteres
+      </span>
+    </div>
   </div>
 </template>
 
@@ -68,6 +61,7 @@ export default {
     return {
       content: '',
       availableActions: DEFAULT_ACTIONS,
+      currentLength: 0,
     }
   },
 
@@ -81,6 +75,10 @@ export default {
           return enabledAction === commandName || enabledAction === alias
         })
       })
+    },
+
+    isOverLimit() {
+      return this.maxLength > 0 && this.currentLength > this.maxLength * 0.9
     }
   },
 
@@ -89,6 +87,7 @@ export default {
       handler(newValue) {
         if (this.$refs.editor && this.$refs.editor.innerHTML !== newValue) {
           this.$refs.editor.innerHTML = newValue
+          this.currentLength = this.$refs.editor.textContent?.length || 0
         }
       },
       immediate: true
@@ -97,6 +96,7 @@ export default {
 
   mounted() {
     this.$refs.editor.innerHTML = this.value
+    this.currentLength = this.$refs.editor.textContent?.length || 0
     this.setupEditor()
   },
 
@@ -108,13 +108,13 @@ export default {
 
     handleInput(event) {
       const html = event.target.innerHTML
-      
+      const text = event.target.textContent || ''
+
       if (html === '<br>') {
         event.target.innerHTML = ''
       }
 
       if (this.maxLength > 0) {
-        const text = event.target.textContent
         if (text.length > this.maxLength) {
           event.target.innerHTML = this.content
           return
@@ -122,6 +122,7 @@ export default {
       }
 
       this.content = html
+      this.currentLength = text.length
       this.$emit('input', html)
       this.$emit('change', html)
     },
@@ -134,9 +135,9 @@ export default {
 
     handlePaste(event) {
       event.preventDefault()
-      
+
       const text = event.clipboardData.getData('text/plain')
-      
+
       document.execCommand('insertText', false, text)
     },
 
@@ -156,6 +157,7 @@ export default {
     clear() {
       if (this.$refs.editor) {
         this.$refs.editor.innerHTML = ''
+        this.currentLength = 0
         this.$emit('input', '')
         this.$emit('change', '')
       }
@@ -199,6 +201,14 @@ export default {
   pointer-events: none;
 }
 
+.character-counter {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  display: flex;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
 /* Style for lists inside editor */
 .editor-content ul {
   padding-left: 24px;
@@ -218,7 +228,12 @@ export default {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+.rich-text-editor.theme--dark .character-counter {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .rich-text-editor.theme--dark .editor-content:empty:before {
   color: rgba(255, 255, 255, 0.38);
 }
-</style> 
+</style>
