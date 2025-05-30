@@ -43,58 +43,56 @@
 
       <!-- Conteúdo das tabs -->
       <v-col cols="12" md="8">
-        <v-tabs v-model="activeTab" background-color="white" grow class="mb-8">
-          <v-tab>Organizador</v-tab>
-          <v-tab>Configurações</v-tab>
-        </v-tabs>
 
-        <v-tabs-items v-model="activeTab" :class="{ 'bg-transparent': activeTab === 0 }">
-          <!-- Aba de Dados de Organizador -->
-          <v-tab-item class="bg-transparent">
-            <v-card tile flat class="mb-4 bg-transparent">
-              <v-card-text class="bg-transparent px-0 py-0">
-                <div v-if="(hasSubmittedDocuments && isOrganizer) || isAdmin">
-                  <UserOrganizerForm :readonly="true" :fiscal-info="fiscalInfo" />
-                </div>
-                <div v-else class="rounded-lg pa-6" style="background-color: #FFCDD2;">
-                  <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between">
-                    <div>
-                      <p class="text-body-1 font-weight-bold mb-2">
-                        Para ativar sua conta de organizador e receber seus lucros, complete seu cadastro.
-                      </p>
-                      <p class="mb-0">Após o cadastro completo, seus eventos podem ser publicados.</p>
-                    </div>
-                    <DefaultButton 
-                      color="error" 
-                      class="mt-4 mt-sm-0"
-                      text="Completar cadastro"
-                      @click="showDocumentDialog = true"
-                    />
+        <v-progress-circular v-if="isLoading" indeterminate color="primary" />
+
+        <template v-else>
+
+          <v-tabs v-model="activeTab" background-color="white" grow class="mb-8">
+            <v-tab>Organizador</v-tab>
+            <v-tab>Configurações</v-tab>
+          </v-tabs>
+
+          <v-tabs-items v-model="activeTab" :class="{ 'bg-transparent': activeTab === 0 }">
+            <!-- Aba de Dados de Organizador -->
+            <v-tab-item class="bg-transparent">
+              <v-card tile flat class="mb-4 bg-transparent">
+                <v-card-text class="bg-transparent px-0 py-0">
+                  <div v-if="(hasSubmittedDocuments && isOrganizer) || isAdmin">
+                    <UserOrganizerForm :readonly="true" :fiscal-info="fiscalInfo" />
                   </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-tab-item>
+                  <div v-else class="rounded-lg pa-6" style="background-color: #FFCDD2;">
+                    <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between">
+                      <div>
+                        <p class="text-body-1 font-weight-bold mb-2">
+                          Para ativar sua conta de organizador e receber seus lucros, complete seu cadastro.
+                        </p>
+                        <p class="mb-0">Após o cadastro completo, seus eventos podem ser publicados.</p>
+                      </div>
+                      <DefaultButton color="error" class="mt-4 mt-sm-0" text="Completar cadastro"
+                        @click="showDocumentDialog = true" />
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-tab-item>
 
-          <!-- Aba de Configurações -->
-          <v-tab-item>
-            <v-card tile flat class="mb-4">
-              <v-card-text>
-                <p class="text-center grey--text">Nenhuma configuração disponível no momento.</p>
-              </v-card-text>
-            </v-card>
-          </v-tab-item>
-        </v-tabs-items>
+            <!-- Aba de Configurações -->
+            <v-tab-item>
+              <v-card tile flat class="mb-4">
+                <v-card-text>
+                  <p class="text-center grey--text">Nenhuma configuração disponível no momento.</p>
+                </v-card-text>
+              </v-card>
+            </v-tab-item>
+          </v-tabs-items>
+        </template>
       </v-col>
     </v-row>
 
     <!-- Modais -->
-    <RequiredUserDocModal
-      :show-document-dialog="showDocumentDialog"
-      :has-document-info="fiscalInfo"
-      @close-document-dialog="showDocumentDialog = false"
-      @saved-user-data="onDocumentsSubmitted"
-    />
+    <RequiredUserDocModal :show-document-dialog="showDocumentDialog" :has-document-info="hasDocumentInfo"
+      @close-document-dialog="showDocumentDialog = false" @saved-user-data="onDocumentsSubmitted" />
 
     <v-dialog v-model="showSecurityDialog" max-width="500">
       <v-card>
@@ -106,10 +104,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text>
-          <UserSecurityForm
-            @saved="onSecurityFormSaved"
-            @cancel="showSecurityDialog = false" 
-          />
+          <UserSecurityForm @saved="onSecurityFormSaved" @cancel="showSecurityDialog = false" />
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -133,15 +128,16 @@ export default {
       activeTab: 0,
       showDocumentDialog: false,
       showSecurityDialog: false,
+      localUserId: null,
     };
   },
-  
+
   head() {
     return {
       title: 'Minha Conta'
     };
   },
-  
+
   computed: {
     userEmail() {
       return user?.$user?.email || '••••••••';
@@ -193,21 +189,25 @@ export default {
     userId() {
       return user.$user?.id;
     },
+
+    isLoading() {
+      return userDocuments.$isLoading;
+    },
   },
 
   watch: {
     userId: {
       immediate: true,
       handler(newValue) {
-        if (newValue) {
+        if (newValue && newValue !== this.localUserId) {
+          this.localUserId = newValue;
           userDocuments.fetchDocumentStatus(newValue);
         }
       }
     }
   },
-  
-  methods: {
 
+  methods: {
     async onDocumentsSubmitted() {
       try {
         await userDocuments.fetchDocumentStatus(this.userId);
@@ -236,4 +236,4 @@ export default {
 .user-profile-page {
   max-width: 1280px;
 }
-</style> 
+</style>
