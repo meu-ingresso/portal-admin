@@ -167,6 +167,14 @@ export default {
         neighborhood: [(v) => !!v || 'Bairro é obrigatório'],
         city: [(v) => !!v || 'Cidade é obrigatória'],
         state: [(v) => !!v || 'Estado é obrigatório'],
+        googleSearch: [
+          (_v) => {
+            if (!this.isAddressFilled) {
+              return 'É necessário buscar um endereço válido usando o campo de busca';
+            }
+            return true;
+          }
+        ],
       },
     };
   },
@@ -214,6 +222,12 @@ export default {
       if (!latitude || !longitude) return '';
       
       return `https://www.google.com/maps?q=${latitude},${longitude}`;
+    },
+
+    // Verifica se o evento é presencial ou híbrido (precisa de endereço)
+    needsAddress() {
+      const eventType = eventGeneralInfo.$info.event_type;
+      return ['Presencial', 'Híbrido'].includes(eventType);
     },
   },
 
@@ -310,12 +324,82 @@ export default {
     },
 
     validateForm() {
-      return this.$refs.form.validate();
+      // Validar o formulário base do Vuetify
+      const isVuetifyFormValid = this.$refs.form.validate();
+      
+      // Se o evento é online, não precisa de endereço completo
+      if (!this.needsAddress) {
+        this.isFormValid = isVuetifyFormValid;
+        return isVuetifyFormValid;
+      }
+      
+      // Para eventos presenciais/híbridos, verificar se o endereço está completo
+      const isAddressComplete = this.isAddressFilled && 
+        this.localLocationName && 
+        this.localNumber;
+      
+      // Se o endereço não estiver completo, marcar como inválido
+      if (!isAddressComplete) {
+        this.isFormValid = false;
+        return false;
+      }
+      
+      // Retornar o resultado da validação do Vuetify
+      this.isFormValid = isVuetifyFormValid;
+      return isVuetifyFormValid;
     },
 
     validate() {
-      this.validateForm();
-      return !this.isFormValid;
+      const isValid = this.validateForm();
+      
+      // Se o evento não precisa de endereço (Online), sempre validar como válido
+      if (!this.needsAddress) {
+        return {
+          hasErrors: false,
+          message: null
+        };
+      }
+      
+      // Para eventos presenciais/híbridos, validar se endereço está completo
+      if (!this.isAddressFilled) {
+        return {
+          hasErrors: true,
+          message: 'É necessário buscar e selecionar um endereço válido para eventos presenciais ou híbridos.'
+        };
+      }
+      
+      // Se local do evento não estiver preenchido
+      if (!this.localLocationName) {
+        return {
+          hasErrors: true,
+          message: 'O local do evento é obrigatório.'
+        };
+      }
+      
+      // Se número não estiver preenchido
+      if (!this.localNumber) {
+        return {
+          hasErrors: true,
+          message: 'O número do endereço é obrigatório.'
+        };
+      }
+      
+      return {
+        hasErrors: !isValid,
+        message: !isValid ? 'Verifique os campos obrigatórios do endereço.' : null
+      };
+    },
+
+    // Novo método para verificar se pode avançar para próximo step
+    canProceed() {
+      const validation = this.validate();
+      return !validation.hasErrors;
+    },
+
+    // Método para obter mensagem de erro específica
+    getValidationMessage() {
+      const validation = this.validate();
+      return validation.message;
     },
 
     handleClickOutside(event) {
@@ -429,6 +513,11 @@ export default {
         this.$nextTick(() => {
           this.showMap = true;
           this.initGoogleMap();
+          
+          // Atualizar estado de validação do formulário
+          this.$nextTick(() => {
+            this.validateForm();
+          });
         });
       } catch (error) {
         console.error('Erro ao buscar detalhes do endereço:', error);

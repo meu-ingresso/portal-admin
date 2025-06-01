@@ -10,13 +10,15 @@
         <!-- Nome do Evento -->
         <v-row>
           <v-col cols="12" md="12" sm="12" class="pb-0">
-            <v-text-field ref="name" v-model="formData.name" label="Nome do Evento*" outlined counter="60" dense
+            <v-text-field
+ref="name" v-model="formData.name" label="Nome do Evento*" outlined counter="60" dense
               placeholder="Digite o nome do evento" required :rules="validationRules.name" @input="onEventNameChange" />
           </v-col>
         </v-row>
 
         <!-- Alias do Evento -->
-        <v-row v-if="aliasValidation.isValid !== null && formData.alias.length > 0"
+        <v-row
+v-if="aliasValidation.isValid !== null && formData.alias.length > 0"
           :class="!isMobile ? 'eventAlias' : ''">
           <v-col cols="12" class="pt-0">
             <div class="d-flex align-center">
@@ -35,11 +37,13 @@
                   https://meuingresso.com.br/event/
                 </p>
 
-                <v-text-field v-if="editAlias" ref="aliasInput" v-model="formData.alias"
+                <v-text-field
+v-if="editAlias" ref="aliasInput" v-model="formData.alias"
                   :class="!isMobile ? 'alias-input' : 'alias-input-mobile'" dense
                   placeholder="Digite o identificador do evento" hide-details="auto" @input="onAliasChange" />
 
-                <v-icon v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
+                <v-icon
+v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
                   @click="handleSaveNewAlias">
                   mdi-check
                 </v-icon>
@@ -59,11 +63,13 @@
                   https://meuingresso.com.br/event/
                 </p>
 
-                <v-text-field v-if="editAlias" ref="aliasInput" v-model="formData.alias"
+                <v-text-field
+v-if="editAlias" ref="aliasInput" v-model="formData.alias"
                   :class="!isMobile ? 'alias-input' : 'alias-input-mobile'" dense
                   placeholder="Digite o identificador do evento" hide-details="auto" @input="onAliasChange" />
 
-                <v-icon v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
+                <v-icon
+v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
                   @click="handleSaveNewAlias">
                   mdi-check
                 </v-icon>
@@ -80,13 +86,15 @@
         <v-row class="mb-4">
           <!-- Categoria -->
           <v-col cols="12" md="4" sm="12">
-            <v-autocomplete ref="category" v-model="formData.category" label="Categoria*" :items="categories" outlined
+            <v-autocomplete
+ref="category" v-model="formData.category" label="Categoria*" :items="categories" outlined
               dense return-object hide-details="auto" required :rules="validationRules.category" />
           </v-col>
 
           <!-- Tipo do Evento -->
           <v-col cols="12" md="4" sm="12">
-            <v-autocomplete ref="event_type" v-model="formData.event_type" label="Tipo do Evento*" :items="types"
+            <v-autocomplete
+ref="event_type" v-model="formData.event_type" label="Tipo do Evento*" :items="types"
               outlined dense hide-details="auto" required :disabled="nomenclature === 'Doação'"
               :rules="validationRules.event_type" />
           </v-col>
@@ -97,14 +105,16 @@
           </v-col>
 
           <v-col v-if="isEventOnlineOrHibrido" cols="12" md="12" sm="12">
-            <v-text-field ref="link_online" v-model="formData.link_online" label="Link do Evento*" outlined dense
+            <v-text-field
+ref="link_online" v-model="formData.link_online" label="Link do Evento*" outlined dense
               placeholder="Digite o link do evento" hide-details="auto" :rules="validationRules.link_online" />
           </v-col>
 
           <!-- Descrição do Evento -->
           <v-col cols="12" md="12" sm="12">
 
-            <RichTextEditorV2 ref="bioEditor" v-model="formData.general_information"
+            <RichTextEditorV2
+ref="bioEditor" v-model="formData.general_information"
               placeholder="Digite uma descrição para o evento" :disabled="isImprovingDescription" :max-length="255"
               :enable-image-upload="true" :image-upload-handler="handleImageUpload" :max-image-size="2 * 1024 * 1024"
               :accepted-image-types="['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']"
@@ -112,7 +122,8 @@
               @image-upload-error="handleImageUploadError" />
 
             <div class="d-flex justify-end ma-0 pa-0">
-              <v-btn color="primary" text outlined class="mt-4" :disabled="isImprovingDescription"
+              <v-btn
+color="primary" text outlined class="mt-4" :disabled="isImprovingDescription"
                 @click="enhanceDescription">
                 <v-icon left> mdi-magic-staff </v-icon>
 
@@ -143,14 +154,16 @@
                   <v-icon small>mdi-close</v-icon>
                 </v-btn>
               </div>
-              <div v-if="imageDimensions && (imageDimensions.width !== 954 || imageDimensions.height !== 500)"
+              <div
+v-if="imageDimensions && (imageDimensions.width !== 954 || imageDimensions.height !== 500)"
                 class="image-dimensions-warning">
                 <v-icon small color="warning" left>mdi-alert</v-icon>
                 <span>{{ imageDimensions.width }}x{{ imageDimensions.height }}px</span>
               </div>
             </div>
             <input ref="hiddenFileInput" type="file" accept="image/*" class="d-none" @change="onFileSelected" />
-            <v-file-input v-if="!imagePreview" v-model="formData.banner" label="Selecionar imagem" accept="image/*"
+            <v-file-input
+v-if="!imagePreview" v-model="formData.banner" label="Selecionar imagem" accept="image/*"
               outlined hide-input dense prepend-icon="mdi-image-plus" hide-details="auto" show-size
               class="custom-file-input" @change="validateImageDimensions" />
           </v-col>
@@ -188,23 +201,27 @@
       <v-card-text>
         <v-row class="d-flex align-start">
           <v-col cols="12" md="6" sm="12">
-            <v-select v-model="formData.availability" label="Visibilidade" :items="availabilityOptions" persistent-hint
+            <v-select
+v-model="formData.availability" label="Visibilidade" :items="availabilityOptions" persistent-hint
               :hint="getHintByAvailability" outlined dense hide-details="auto" required />
           </v-col>
 
           <v-col cols="12" md="6" sm="12" class="d-flex align-center">
-            <v-select v-model="nomenclature" label="Nomenclatura" :items="nomenclatureOptions" outlined dense
+            <v-select
+v-model="nomenclature" label="Nomenclatura" :items="nomenclatureOptions" outlined dense
               hide-details="auto" required />
           </v-col>
 
           <v-col cols="12" md="6" sm="12">
             <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
-              <v-icon v-if="formData.absorb_service_fee" class="ma-0 pa-0" size="50" color="primary"
+              <v-icon
+v-if="formData.absorb_service_fee" class="ma-0 pa-0" size="50" color="primary"
                 @click="handleAbsorbServiceFee">
                 mdi-toggle-switch
               </v-icon>
 
-              <v-icon v-else-if="!formData.absorb_service_fee" class="ma-0 pa-0" size="50"
+              <v-icon
+v-else-if="!formData.absorb_service_fee" class="ma-0 pa-0" size="50"
                 @click="handleAbsorbServiceFee">
                 mdi-toggle-switch-off
               </v-icon>
@@ -231,7 +248,8 @@
 
           <v-col v-if="isAdmin" cols="12" md="6" sm="12">
             <div class="d-flex" :class="{ 'justify-space-between': isMobile }">
-              <v-icon v-if="formData.is_featured" class="ma-0 pa-0" size="50" color="primary"
+              <v-icon
+v-if="formData.is_featured" class="ma-0 pa-0" size="50" color="primary"
                 @click="handleToggleFeatured">
                 mdi-toggle-switch
               </v-icon>
@@ -318,10 +336,10 @@ export default {
         ],
       },
       imageDimensions: null,
-      // Controle de imagens temporárias para descrição do evento
-      tempUploadedImageAttachments: [], // IDs dos attachments de evento criados durante esta sessão
-      isEditingDescription: false, // Flag para controlar se está em modo de edição da descrição
-      originalDescription: '', // Para rastrear estado original da descrição
+      tempUploadedImageAttachments: [],
+      isEditingDescription: false,
+      originalDescription: '',
+      addressValidationMessage: '',
     };
   },
 
@@ -472,6 +490,12 @@ export default {
     canProceed(callback) {
       this.validateForm();
       if (this.formHasErrors) {
+
+        // Se houver erro específico do endereço, mostrar toast
+        if (this.addressValidationMessage !== '' && this.isEventPresencialOrHibrito) {
+          return callback(null, false, 'Existem campos inválidos no formulário: ' + this.addressValidationMessage);
+        }
+
         return callback(null, false, 'Existem campos inválidos no formulário.');
       }
 
@@ -612,6 +636,7 @@ export default {
     validateForm() {
       try {
         this.formHasErrors = false;
+        this.addressValidationMessage = '';
 
         Object.keys(this.generalInfoForm).forEach((f) => {
           if (!this.generalInfoForm[f]) {
@@ -627,8 +652,12 @@ export default {
           }
 
           if (this.isEventPresencialOrHibrito) {
-            if (f === 'address' && this.$refs.addressForm.validate(true)) {
-              this.formHasErrors = true;
+            if (f === 'address' && this.$refs.addressForm) {
+              const addressValidation = this.$refs.addressForm.validate();
+              if (addressValidation.hasErrors) {
+                this.formHasErrors = true;
+                this.addressValidationMessage = addressValidation.message;
+              }
             }
           }
 
@@ -639,7 +668,6 @@ export default {
           if (this.$refs.dateTimeForm) {
             const hasDateErrors = this.$refs.dateTimeForm.validate(true);
             if (hasDateErrors) {
-              console.log('hasDateErrors', hasDateErrors);
               this.formHasErrors = true;
             }
           }
