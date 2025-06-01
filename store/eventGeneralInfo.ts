@@ -918,36 +918,75 @@ export default class EventGeneralInfo extends VuexModule {
   private async updateEventStatus(payload: { eventId: string; statusName: string }) {
     this.context.commit('SET_LOADING_EVENT_STATUS', true);
 
-    const statusResponse = await status.fetchStatusByModuleAndName({
-      module: 'event',
-      name: payload.statusName,
-    });
+    try {
+      
 
-    const updateResponse = await $axios.$patch('event', {
-      data: [
-        {
-          id: payload.eventId,
+      const statusResponse = await status.fetchStatusByModuleAndName({
+        module: 'event',
+        name: payload.statusName,
+      });
+
+      if (!statusResponse) {
+        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        throw new Error('Status não encontrado.');
+      }
+
+
+      // Busca o grupo do evento atual
+      const { data } = await $axios.get(`/event-groups?whereHas[events][event_id][v]=${payload.eventId}&preloads[]=events:status`);
+
+      const response = handleGetResponse(data, 'Grupo do evento não encontrado', null, true);
+
+      const eventsInGroup = response.data[0]?.events;
+
+      if (!eventsInGroup) {
+        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        throw new Error('Grupo nao retornou eventos');
+      }
+
+      const onlyEmAnalise = eventsInGroup.filter((event) => event?.status?.name === 'Em Análise');
+
+      if (onlyEmAnalise.length === 0) {
+        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        throw new Error('Não há eventos em análise no grupo');
+      }
+
+      const eventsIdToUpdate = onlyEmAnalise.map((event) => event?.id);
+
+      if (!eventsIdToUpdate.includes(payload.eventId)) {
+        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        throw new Error('Evento nao pertence ao grupo');
+      }
+      
+      // Atualiza o status de todos os eventos do grupo
+      const updateResponse = await $axios.$patch('event', {
+        data: eventsIdToUpdate.map((eventId) => ({
+          id: eventId,
           status_id: statusResponse.id,
+        })),
+      });
+
+      if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
+        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        throw new Error('Failed to update status.');
+      }
+
+      this.context.commit('UPDATE_INFO', {
+        status: {
+          id: statusResponse.id,
+          name: statusResponse.name,
+          module: statusResponse.module,
         },
-      ],
-    });
+      });
 
-    if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
       this.context.commit('SET_LOADING_EVENT_STATUS', false);
-      throw new Error('Failed to update status.');
+
+      return updateResponse.body.result;
+      
+    } catch (error) {
+      this.context.commit('SET_LOADING_EVENT_STATUS', false);
+      throw error;
     }
-
-    this.context.commit('UPDATE_INFO', {
-      status: {
-        id: statusResponse.id,
-        name: statusResponse.name,
-        module: statusResponse.module,
-      },
-    });
-
-    this.context.commit('SET_LOADING_EVENT_STATUS', false);
-
-    return updateResponse.body.result;
   }
 
   @Action
