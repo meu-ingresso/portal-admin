@@ -1,10 +1,6 @@
 <template>
   <v-container class="event-stepper">
-    <Lottie
-      v-if="isLoading"
-      path="./animations/loading_default.json"
-      height="300"
-      width="300" />
+    <Lottie v-if="isLoading" path="./animations/loading_default.json" height="300" width="300" />
 
     <v-stepper v-else v-model="currentStep" flat class="bg-beige">
       <v-stepper-header class="bg-white no-box-shadow">
@@ -27,103 +23,49 @@
 
       <v-stepper-items class="pt-8">
         <!-- Step 1: Informações Gerais -->
-        <v-stepper-content
-          step="1"
-          class="bg-transparent px-0 py-0"
+        <v-stepper-content step="1" class="bg-transparent px-0 py-0"
           :class="{ 'fixed-height-content': isMobile, 'bg-beige px-6 py-6': currentStep > 1 }">
-          <Lottie
-            v-if="isLoadingGeneralInfo"
-            path="./animations/loading_default.json"
-            height="300"
-            width="300" />
+          <Lottie v-if="isLoadingGeneralInfo" path="./animations/loading_default.json" height="300" width="300" />
 
           <template v-else>
-            <StepGeneralInfo
-              ref="step-1"
-              :is-editing="isEditing"
-              :categories="categories"
-              :ratings="ratings"
+            <StepGeneralInfo ref="step-1" :is-editing="isEditing" :categories="categories" :ratings="ratings"
               :class="{ 'fixed-height-component': isMobile }" />
-            <StepActions
-              :is-first-step="true"
-              :is-editing="isEditing"
-              @previous="previousStep"
-              @next="nextStep" />
+            <StepActions :is-first-step="true" :is-editing="isEditing" @previous="previousStep" @next="nextStep" />
           </template>
         </v-stepper-content>
 
         <!-- Step 2: Tickets -->
-        <v-stepper-content
-          step="2"
-          class="bg-white px-6 py-6"
-          :class="{ 'fixed-height-content': isMobile }">
-          <Lottie
-            v-if="isLoadingTickets"
-            path="./animations/loading_default.json"
-            height="300"
-            width="300" />
+        <v-stepper-content step="2" class="bg-white px-6 py-6" :class="{ 'fixed-height-content': isMobile }">
+          <Lottie v-if="isLoadingTickets" path="./animations/loading_default.json" height="300" width="300" />
 
           <template v-else>
-            <StepTickets
-              ref="step-2"
-              :is-editing="isEditing"
-              :nomenclature="ticketStepperLabel"
-              :class="{ 'fixed-height-component': isMobile }"
-              @update:nomenclature="ticketStepperLabel = $event" />
+            <StepTickets ref="step-2" :is-editing="isEditing" :nomenclature="ticketStepperLabel"
+              :class="{ 'fixed-height-component': isMobile }" @update:nomenclature="ticketStepperLabel = $event" />
 
-            <StepActions
-              :is-editing="isEditing"
-              @previous="previousStep"
-              @next="nextStep" />
+            <StepActions :is-editing="isEditing" @previous="previousStep" @next="nextStep" />
           </template>
         </v-stepper-content>
 
         <!-- Step 3: Campos Personalizados -->
-        <v-stepper-content
-          step="3"
-          class="bg-white px-6 py-6"
-          :class="{ 'fixed-height-content': isMobile }">
-          <Lottie
-            v-if="isLoadingCustomFields"
-            path="./animations/loading_default.json"
-            height="300"
-            width="300" />
+        <v-stepper-content step="3" class="bg-white px-6 py-6" :class="{ 'fixed-height-content': isMobile }">
+          <Lottie v-if="isLoadingCustomFields" path="./animations/loading_default.json" height="300" width="300" />
 
           <template v-else>
-            <StepCustomFields
-              ref="step-3"
-              :is-editing="isEditing"
-              :class="{ 'fixed-height-component': isMobile }" />
+            <StepCustomFields ref="step-3" :is-editing="isEditing" :class="{ 'fixed-height-component': isMobile }" />
 
-            <StepActions
-              :is-editing="isEditing"
-              @previous="previousStep"
-              @next="nextStep" />
+            <StepActions :is-editing="isEditing" @previous="previousStep" @next="nextStep" />
           </template>
         </v-stepper-content>
 
         <!-- Step 4: Cupons -->
-        <v-stepper-content
-          step="4"
-          class="bg-white px-6 py-6"
-          :class="{ 'fixed-height-content': isMobile }">
-          <Lottie
-            v-if="isLoadingCoupons"
-            path="./animations/loading_default.json"
-            height="300"
-            width="300" />
+        <v-stepper-content step="4" class="bg-white px-6 py-6" :class="{ 'fixed-height-content': isMobile }">
+          <Lottie v-if="isLoadingCoupons" path="./animations/loading_default.json" height="300" width="300" />
 
           <template v-else>
-            <StepCoupons
-              ref="step-4"
-              :is-editing="isEditing"
-              :class="{ 'fixed-height-component': isMobile }" />
+            <StepCoupons ref="step-4" :is-editing="isEditing" :class="{ 'fixed-height-component': isMobile }" />
 
-            <StepActions
-              :is-last-step="true"
-              :is-editing="isEditing"
-              :has-submitted-documents="hasRequiredDocuments && hasPixInfo && hasFiscalInfo"
-              @previous="previousStep"
+            <StepActions :is-last-step="true" :is-editing="isEditing"
+              :has-submitted-documents="hasRequiredDocuments && hasPixInfo && hasFiscalInfo" @previous="previousStep"
               @submit="submitData" />
           </template>
         </v-stepper-content>
@@ -139,11 +81,7 @@
             <h2 class="pt-10">{{ progressTitle }}</h2>
           </div>
 
-          <Lottie
-            path="./animations/loading_default.json"
-            height="130"
-            width="200"
-            class="teste" />
+          <Lottie path="./animations/loading_default.json" height="130" width="200" class="teste" />
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -253,7 +191,7 @@ export default {
     hasOnlyDefaultCustomFields() {
       return eventCustomFields.$customFields.every((field) => field.is_default);
     },
-    
+
     hasRequiredDocuments() {
       return userDocuments.$hasRequiredDocuments;
     },
@@ -409,7 +347,28 @@ export default {
             eventGeneralInfo.setEventStatus(status);
           }
 
-          await eventPrincipal.createEvent();
+          const createdEventResults = await eventPrincipal.createEvent();
+
+          console.log('createdEventResults', createdEventResults);
+
+          // Migrar imagens da descrição de userDocuments para eventAttachments
+          if (this.$refs['step-1'] && this.$refs['step-1'].hasPendingUserDocuments()) {
+            console.log('Migrando imagens da descrição para o evento criado...');
+            try {
+              const mainEventId = createdEventResults.eventIds[0];
+              if (mainEventId) {
+                console.log('mainEventId', mainEventId);
+                await this.$refs['step-1'].migrateDescriptionImages(mainEventId);
+              }
+            } catch (error) {
+              toast.setToast({
+                text: `Erro ao migrar imagens da descrição: ${error.message}`,
+                type: 'error',
+                time: 5000,
+              });
+              console.error('Erro na migração de imagens da descrição:', error);
+            }
+          }
 
           let message = 'Evento salvo com sucesso!';
           if (status === 'draft') {
@@ -432,6 +391,16 @@ export default {
         }
       } catch (error) {
         console.error('Error', error);
+
+        // Limpar imagens temporárias em caso de erro na criação
+        if (!this.isEditing && this.$refs['step-1'] && this.$refs['step-1'].hasTemporaryImages()) {
+          try {
+            await this.$refs['step-1'].cancelDescriptionImages();
+            console.log('Imagens temporárias limpas após erro na criação do evento');
+          } catch (cleanupError) {
+            console.error('Erro na limpeza de imagens após falha:', cleanupError);
+          }
+        }
 
         toast.setToast({
           text: 'Ocorreu um erro ao salvar o evento. Tente novamente.',

@@ -1045,4 +1045,26 @@ export default class EventGeneralInfo extends VuexModule {
       this.context.commit('SET_LOADING', false);
     }
   }
+
+  @Action
+  public async uploadEventImage(payload: { attachmentIds: string[]; imageFile: File }) {
+    const formData = new FormData();
+    
+    payload.attachmentIds.forEach((attachmentId) => {
+      formData.append('attachment_ids[]', attachmentId);
+      formData.append('files[]', payload.imageFile);
+    });
+
+    const uploadResponse = await $axios.$post('upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    if (!uploadResponse.body || uploadResponse.body.code !== 'CREATE_SUCCESS') {
+      throw new Error('Failed to upload event image.');
+    }
+
+    return uploadResponse.body.result.map((result) => result.s3_url);
+  }
 }
