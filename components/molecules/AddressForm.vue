@@ -44,6 +44,20 @@
                   </v-list>
                 </div>
               </div>
+                    
+              <v-text-field
+                v-if="needsManualZipcode"
+                ref="zipcode"
+                v-model="localZipcode"
+                label="CEP*"
+                outlined
+                dense
+                hide-details="auto"
+                required
+                placeholder="00000-000"
+                :rules="rules.zipcode"
+                class="mb-4"
+                @input="onZipcodeInput" />
 
               <v-text-field
                 ref="location_name"
@@ -57,32 +71,34 @@
                 :rules="rules?.location_name"
                 class="mb-4" />
 
-              <template v-if="isAddressFilled">
-                <v-text-field
-                  ref="number"
-                  v-model="localNumber"
-                  label="Número*"
-                  type="number"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  min="0"
-                  required
-                  placeholder="Digite o número"
-                  :rules="rules?.number"
-                  class="mb-4"
-                  />
+              <v-text-field
+                v-if="needsManualNumber"
+                ref="number"
+                v-model="localNumber"
+                label="Número*"
+                type="number"
+                outlined
+                dense
+                hide-details="auto"
+                min="0"
+                required
+                placeholder="Digite o número"
+                :rules="rules?.number"
+                class="mb-4"
+                />
 
-                <v-text-field
-                  v-model="localComplement"
-                  label="Complemento"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  placeholder="Digite o complemento" 
-                  class="mb-4"
-                  />
-              </template>
+              <v-text-field
+                v-if="needsManualComplement"
+                v-model="localComplement"
+                label="Complemento"
+                outlined
+                dense
+                hide-details="auto"
+                placeholder="Digite o complemento" 
+                class="mb-4"
+                />
+
+
             </v-col>
 
             <!-- Lado direito: Exibição do endereço encontrado -->
@@ -149,6 +165,7 @@ export default {
       localLocationName: eventGeneralInfo.$info.address.location_name,
       localNumber: eventGeneralInfo.$info.address.number,
       localComplement: eventGeneralInfo.$info.address.complement,
+      localZipcode: eventGeneralInfo.$info.address.zipcode,
       isFormValid: false,
       googleSearchQuery: '',
       showMap: false,
@@ -160,6 +177,9 @@ export default {
       showAutocompleteResults: false,
       placesService: null,
       autocompleteDebounceTimeout: null,
+      needsManualZipcode: false,
+      needsManualNumber: false,
+      needsManualComplement: false,
       rules: {
         location_name: [(v) => !!v || 'Local do evento é obrigatório'],
         number: [(v) => !!v || 'Número é obrigatório'],
@@ -167,6 +187,19 @@ export default {
         neighborhood: [(v) => !!v || 'Bairro é obrigatório'],
         city: [(v) => !!v || 'Cidade é obrigatória'],
         state: [(v) => !!v || 'Estado é obrigatório'],
+        zipcode: [
+          (v) => {
+            // Se não tem CEP na store e campo manual está vazio, é obrigatório
+            if (!this.formData.zipcode && !v) {
+              return 'CEP é obrigatório';
+            }
+            // Se há valor no campo manual, validar formato
+            if (v && !/^\d{5}-?\d{3}$/.test(v)) {
+              return 'CEP deve ter o formato 00000-000';
+            }
+            return true;
+          }
+        ],
         googleSearch: [
           (_v) => {
             if (!this.isAddressFilled) {
@@ -182,10 +215,11 @@ export default {
   computed: {
     isAddressFilled() {
       return (
-        this.formData.street &&
-        this.formData.neighborhood &&
-        this.formData.city &&
-        this.formData.state
+        this.formData.street !== '' &&
+        this.formData.neighborhood !== '' &&
+        this.formData.city !== '' &&
+        this.formData.state !== '' &&
+        this.formData.zipcode !== ''
       );
     },
 
@@ -229,9 +263,11 @@ export default {
       const eventType = eventGeneralInfo.$info.event_type;
       return ['Presencial', 'Híbrido'].includes(eventType);
     },
+
   },
 
   watch: {
+
     localLocationName: {
       immediate: true,
       handler(newValue) {
@@ -256,13 +292,27 @@ export default {
         }
       },
     },
+    localZipcode: {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          const formatted = this.formatZipcode(newValue);
+          if (formatted !== newValue) {
+            this.localZipcode = formatted;
+            return;
+          }
+          
+          eventGeneralInfo.$info.address.zipcode = formatted;
+        } else {
+          eventGeneralInfo.$info.address.zipcode = '';
+        }
+      },
+    },
     isAddressFilled: {
       immediate: true,
       handler(filled) {
-        if (filled && this.googleApiLoaded) {
-          this.$nextTick(() => {
-            this.initGoogleMap();
-          });
+        if (filled) {
+          this.googleSearchQuery = this.fullAddressText;
         }
       }
     },
@@ -292,10 +342,12 @@ export default {
   },
 
   methods: {
+
     clearAddress() {
       this.localLocationName = '';
       this.localNumber = '';
       this.localComplement = '';
+      this.localZipcode = '';
       this.googleSearchQuery = '';
       this.showMap = false;
       this.autocompleteResults = [];
@@ -334,9 +386,10 @@ export default {
       }
       
       // Para eventos presenciais/híbridos, verificar se o endereço está completo
-      const isAddressComplete = this.isAddressFilled && 
-        this.localLocationName && 
-        this.localNumber;
+      const isAddressComplete = this.isAddressFilled &&
+        this.localLocationName &&
+        this.localNumber &&
+        this.localZipcode;
       
       // Se o endereço não estiver completo, marcar como inválido
       if (!isAddressComplete) {
@@ -402,6 +455,29 @@ export default {
       return validation.message;
     },
 
+    // Formatar CEP brasileiro (00000-000)
+    formatZipcode(value) {
+      if (!value) return '';
+      
+      // Remove tudo que não é número
+      const numbers = value.replace(/\D/g, '');
+      
+      // Limita a 8 dígitos
+      const limited = numbers.substring(0, 8);
+      
+      // Adiciona hífen se tem mais de 5 dígitos
+      if (limited.length > 5) {
+        return `${limited.substring(0, 5)}-${limited.substring(5)}`;
+      }
+      
+      return limited;
+    },
+
+    // Handler para input do CEP
+    onZipcodeInput(value) {
+      this.localZipcode = this.formatZipcode(value);
+    },
+
     handleClickOutside(event) {
       const autocompleteContainer = this.$el.querySelector('.autocomplete-container');
       if (autocompleteContainer && !autocompleteContainer.contains(event.target)) {
@@ -460,15 +536,20 @@ export default {
       this.googleSearchQuery = result.description;
       this.showAutocompleteResults = false;
 
+      this.localNumber = '';
+      this.localComplement = '';
+      this.localLocationName = '';
+      this.localZipcode = '';
+      this.needsManualZipcode = false;
+      this.needsManualNumber = false;
+      this.needsManualComplement = false;
+      
       try {
-        // Criar um serviço de Places se ainda não existir
         if (!this.placesService) {
-          // Precisamos de um elemento DOM para o PlacesService
           const mapDiv = document.createElement('div');
           this.placesService = new google.maps.places.PlacesService(mapDiv);
         }
 
-        // Obter detalhes do local selecionado
         const placeDetails = await new Promise((resolve, reject) => {
           this.placesService.getDetails(
             { placeId: result.place_id, fields: ['address_components', 'geometry', 'formatted_address'] },
@@ -485,10 +566,8 @@ export default {
         const position = placeDetails.geometry.location;
         const addressComponents = this.parseGoogleAddressComponents(placeDetails.address_components);
         
-        // Preservar o número apenas se vier do Google, caso contrário manter o que o usuário digitou
         const number = addressComponents.number || this.localNumber;
         
-        // Atualizar dados do endereço (sem sobrescrever localLocationName, que deve ser definido pelo usuário)
         eventGeneralInfo.updateGeneralInfoAddress({
           street: addressComponents.street || '',
           neighborhood: addressComponents.neighborhood || '',
@@ -497,15 +576,30 @@ export default {
           state_name: addressComponents.state_name || addressComponents.state || '',
           latitude: position.lat(),
           longitude: position.lng(),
-          zipcode: addressComponents.zipcode || '',
-          location_name: this.localLocationName, // Manter o valor inserido pelo usuário
-          number, // Usar o número do Google se disponível
-          complement: this.localComplement, // Sempre manter o complemento inserido pelo usuário
+          location_name: this.localLocationName,
+          number: number || '',
+          complement: this.localComplement || '',
         });
         
-        // Atualizar o número local se vier do Google
+        // Se o número não vier do Google, marcar como manual
         if (addressComponents.number) {
           this.localNumber = addressComponents.number;
+        } else {
+          this.needsManualNumber = true;
+        }
+
+        // Se o CEP não vier do Google, marcar como manual
+        if (addressComponents.zipcode) {
+          this.localZipcode = addressComponents.zipcode;
+        } else {  
+          this.needsManualZipcode = true;
+        }
+
+        // Se o complemento não vier do Google, marcar como manual
+        if (addressComponents.complement) {
+          this.localComplement = addressComponents.complement;
+        } else {
+          this.needsManualComplement = true;
         }
         
         // Forçar a atualização do mapa
@@ -514,7 +608,6 @@ export default {
           this.showMap = true;
           this.initGoogleMap();
           
-          // Atualizar estado de validação do formulário
           this.$nextTick(() => {
             this.validateForm();
           });
