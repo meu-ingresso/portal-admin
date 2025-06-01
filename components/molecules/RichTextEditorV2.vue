@@ -46,6 +46,23 @@ export default {
     options: {
       type: Object,
       default: () => ({})
+    },
+    // Novas props para upload de imagem
+    enableImageUpload: {
+      type: Boolean,
+      default: false
+    },
+    imageUploadHandler: {
+      type: Function,
+      default: null
+    },
+    maxImageSize: {
+      type: Number,
+      default: 5 * 1024 * 1024 // 5MB por padrão
+    },
+    acceptedImageTypes: {
+      type: Array,
+      default: () => ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     }
   },
   data() {
@@ -65,7 +82,7 @@ export default {
             [{ 'script': 'sub' }, { 'script': 'super' }],
             [{ 'indent': '-1' }, { 'indent': '+1' }],
             ['blockquote'],
-            ['link', /* 'image', 'video' */], // Imagem e vídeo podem precisar de tratamento especial para upload
+            ['link', ...(this.enableImageUpload ? ['image'] : [])], // Adiciona 'image' condicionalmente
             ['clean']
           ]
         },
@@ -147,6 +164,10 @@ export default {
       if (this.editorInstance) {
         this.editorInstance.root.dataset.placeholder = this.placeholder;
       }
+      // Configura o handler customizado de imagem se habilitado
+      if (this.enableImageUpload) {
+        this.setupImageHandler();
+      }
     },
     getPlainText() {
       return this.editorInstance?.getText() || '';
@@ -159,6 +180,91 @@ export default {
     },
     focus() {
       this.editorInstance?.focus();
+    },
+    setupImageHandler() {
+      if (!this.editorInstance) return;
+
+      // Substitui o handler padrão de imagem
+      const toolbar = this.editorInstance.getModule('toolbar');
+      toolbar.addHandler('image', this.handleImageSelection);
+    },
+    handleImageSelection() {
+      // Cria um input file temporário
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', this.acceptedImageTypes.join(','));
+      input.click();
+
+      input.onchange = () => {
+        const file = input.files[0];
+        if (file) {
+          this.handleImageFile(file);
+        }
+      };
+    },
+    async handleImageFile(file) {
+      try {
+        // Validações
+        if (!this.validateImageFile(file)) {
+          return;
+        }
+
+        // Emite evento de início do upload
+        this.$emit('image-upload-start', file);
+
+        let imageUrl;
+
+        if (this.imageUploadHandler && typeof this.imageUploadHandler === 'function') {
+          // Usa o handler customizado fornecido pelo pai
+          imageUrl = await this.imageUploadHandler(file);
+        } else {
+          // Fallback: converte para base64 (não recomendado para produção)
+          imageUrl = await this.fileToBase64(file);
+          console.warn('RichTextEditorV2: Usando base64 como fallback. Considere implementar um imageUploadHandler customizado.');
+        }
+
+        if (imageUrl) {
+          this.insertImage(imageUrl);
+          this.$emit('image-uploaded', { file, url: imageUrl });
+        }
+      } catch (error) {
+        console.error('Erro no upload da imagem:', error);
+        this.$emit('image-upload-error', { file, error });
+      }
+    },
+    validateImageFile(file) {
+      // Verifica tipo de arquivo
+      if (!this.acceptedImageTypes.includes(file.type)) {
+        this.$emit('image-upload-error', {
+          file,
+          error: `Tipo de arquivo não suportado. Aceitos: ${this.acceptedImageTypes.join(', ')}`
+        });
+        return false;
+      }
+
+      // Verifica tamanho do arquivo
+      if (file.size > this.maxImageSize) {
+        const maxSizeMB = (this.maxImageSize / (1024 * 1024)).toFixed(1);
+        this.$emit('image-upload-error', {
+          file,
+          error: `Arquivo muito grande. Tamanho máximo: ${maxSizeMB}MB`
+        });
+        return false;
+      }
+
+      return true;
+    },
+    insertImage(url) {
+      const range = this.editorInstance.getSelection();
+      this.editorInstance.insertEmbed(range?.index || 0, 'image', url);
+    },
+    fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
     }
   }
 }

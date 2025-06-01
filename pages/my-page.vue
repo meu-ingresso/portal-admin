@@ -46,14 +46,16 @@
     <v-row class="center-row">
       <v-col cols="12">
         <div class="template-title mb-4">Configurações da página</div>
-      </v-col>
 
-      <v-col cols="12">
         <!-- Bio Section -->
         <PageConfigSection icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
           :loading="isLoading" @save="handleSaveBio" @cancel="handleCancelBio">
           <RichTextEditorV2 ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
-            :disabled="isLoading" :max-length="255" />
+            :disabled="isLoading" :max-length="255" :enable-image-upload="false"
+            :image-upload-handler="handleImageUpload" :max-image-size="2 * 1024 * 1024"
+            :accepted-image-types="['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']"
+            @image-upload-start="handleImageUploadStart" @image-uploaded="handleImageUploaded"
+            @image-upload-error="handleImageUploadError" />
         </PageConfigSection>
 
         <!-- Social Links Section -->
@@ -88,11 +90,32 @@
 </template>
 
 <script>
+import RichTextEditorV2 from '@/components/molecules/RichTextEditorV2.vue';
 import { user, userDocuments, toast, event } from '@/utils/store-util';
 import { formatRealValue } from '@/utils/formatters';
 
 export default {
+  components: {
+    RichTextEditorV2,
+  },
 
+  // Adicionar listener para avisar sobre mudanças não salvas
+  beforeRouteLeave(_to, _from, next) {
+    if (this.isEditingBio && this.tempUploadedImages.length > 0) {
+      const answer = window.confirm(
+        'Você tem alterações não salvas. Suas imagens serão perdidas. Deseja continuar?'
+      );
+      if (answer) {
+        this.cleanupTemporaryImages().then(() => {
+          next();
+        });
+      } else {
+        next(false);
+      }
+    } else {
+      next();
+    }
+  },
   data() {
     return {
       isLoading: false,
@@ -106,6 +129,7 @@ export default {
       totalTickets: 0,
       totalRevenue: 0,
       biography: '',
+      originalBiography: '', // Para rastrear estado original
       socialLinks: {},
       originalSocialLinks: {},
       showShareSidebar: false,
@@ -116,7 +140,10 @@ export default {
         showEmail: false,
         phone: '',
         showPhone: false
-      }
+      },
+      // Controle de imagens temporárias
+      tempUploadedImages: [], // IDs das imagens enviadas durante esta sessão de edição
+      isEditingBio: false, // Flag para controlar se está em modo de edição
     };
   },
 
@@ -153,6 +180,14 @@ export default {
     this.fetchData();
   },
 
+  async beforeDestroy() {
+    // Cleanup automático de imagens temporárias ao sair da página
+    if (this.isEditingBio && this.tempUploadedImages.length > 0) {
+      console.log('Página sendo fechada, limpando imagens temporárias...');
+      await this.cleanupTemporaryImages();
+    }
+  },
+
   methods: {
     formatRealValue,
 
@@ -177,6 +212,9 @@ export default {
         this.profileImageUrl = profileImageDoc?.value || '';
         this.socialLinks = socialLinksDoc ? JSON.parse(socialLinksDoc.value) : {};
         this.originalSocialLinks = { ...this.socialLinks };
+
+        // Inicializar estado original da biografia
+        this.originalBiography = this.biography;
 
         if (contactInfoDoc) {
           const contactInfo = JSON.parse(contactInfoDoc.value);
@@ -204,26 +242,37 @@ export default {
       try {
         this.isLoading = true;
 
-        let profileImageDoc = userDocuments.$userAttachments.find(doc => doc.name === 'profile_image');
+        // Gerar nome temporário com timestamp e identificador
+        const timestamp = Date.now();
+        const tempName = `temp_${timestamp}_biography_${file.name}`;
 
-        if (!profileImageDoc) {
-          profileImageDoc = await userDocuments.createUserDocument({
-            name: 'profile_image',
-            type: 'image',
-            userId: this.userId
-          });
-        }
-
-        const imageUrl = await userDocuments.uploadUserDocument({
-          documentFile: file,
-          attachmentId: profileImageDoc.id
+        // Criar documento de imagem temporário
+        const imageDoc = await userDocuments.createUserDocument({
+          name: tempName,
+          type: 'image',
+          userId: this.userId
         });
 
-        this.profileImageUrl = imageUrl;
-        toast.setToast({ text: 'Foto de perfil atualizada com sucesso', type: 'success', time: 3000 });
+        // Upload da imagem
+        const imageUrl = await userDocuments.uploadUserDocument({
+          documentFile: file,
+          attachmentId: imageDoc.id
+        });
+
+        // Adicionar à lista de imagens temporárias desta sessão
+        this.tempUploadedImages.push({
+          id: imageDoc.id,
+          name: tempName,
+          url: imageUrl,
+          fileName: file.name,
+          uploadedAt: timestamp
+        });
+
+        return imageUrl;
+
       } catch (error) {
-        console.error('Error uploading image:', error);
-        toast.setToast({ text: 'Erro ao atualizar foto de perfil', type: 'error', time: 3000 });
+        console.error('Erro no upload da imagem:', error);
+        throw new Error('Falha no upload da imagem: ' + error.message);
       } finally {
         this.isLoading = false;
       }
@@ -236,6 +285,10 @@ export default {
     async handleSaveBio() {
       try {
         this.isLoading = true;
+
+        // Confirmar imagens temporárias antes de salvar
+        await this.makeImagesPermanent();
+
         const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
 
         if (bioDoc) {
@@ -252,6 +305,10 @@ export default {
           });
         }
 
+        // Atualizar estado original após salvamento bem-sucedido
+        this.originalBiography = this.biography;
+        this.isEditingBio = false;
+
         toast.setToast({ text: 'Biografia atualizada com sucesso', type: 'success', time: 3000 });
       } catch (error) {
         console.error('Error saving bio:', error);
@@ -261,9 +318,28 @@ export default {
       }
     },
 
-    handleCancelBio() {
-      const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
-      this.biography = bioDoc?.value || '';
+    async handleCancelBio() {
+      try {
+        // Limpar imagens temporárias antes de cancelar
+        await this.cleanupTemporaryImages();
+
+        // Restaurar conteúdo original
+        const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
+        this.biography = bioDoc?.value || '';
+        this.originalBiography = this.biography;
+        this.isEditingBio = false;
+
+        if (this.tempUploadedImages.length > 0) {
+          toast.setToast({
+            text: 'Edição cancelada. Imagens temporárias foram removidas.',
+            type: 'info',
+            time: 3000
+          });
+        }
+      } catch (error) {
+        console.error('Error canceling bio edit:', error);
+        toast.setToast({ text: 'Erro ao cancelar edição', type: 'error', time: 3000 });
+      }
     },
 
     async handleSaveSocialLinks() {
@@ -347,6 +423,82 @@ export default {
 
     handleSocialLinkChange({ type, value }) {
       console.log(`Social link changed: ${type} = ${value}`);
+    },
+
+    handleImageUploadStart(file) {
+      console.log('Iniciando upload da imagem:', file.name);
+      this.isEditingBio = true; // Marca que está editando
+    },
+
+    handleImageUploaded({ file, url }) {
+      console.log('Imagem enviada com sucesso:', file.name, url);
+      toast.setToast({
+        text: `Imagem "${file.name}" enviada com sucesso`,
+        type: 'success',
+        time: 3000
+      });
+    },
+
+    handleImageUploadError({ file, error }) {
+      console.error('Erro no upload da imagem:', file?.name, error);
+      toast.setToast({
+        text: `Erro ao enviar imagem: ${error}`,
+        type: 'error',
+        time: 3000
+      });
+    },
+
+    // Método para deletar imagens temporárias
+    async cleanupTemporaryImages() {
+      if (this.tempUploadedImages.length === 0) return;
+
+      try {
+        console.log('Limpando imagens temporárias:', this.tempUploadedImages.length);
+
+        const deletePromises = this.tempUploadedImages.map(async (image) => {
+          try {
+            await userDocuments.deleteUserAttachment(image.id);
+            console.log(`Imagem temporária deletada: ${image.fileName}`);
+          } catch (error) {
+            console.error(`Erro ao deletar imagem ${image.fileName}:`, error);
+          }
+        });
+
+        await Promise.allSettled(deletePromises);
+        this.tempUploadedImages = [];
+
+      } catch (error) {
+        console.error('Erro na limpeza de imagens temporárias:', error);
+      }
+    },
+
+    // Método para marcar imagens como permanentes (renomear para nome definitivo)
+    async makeImagesPermanent() {
+      if (this.tempUploadedImages.length === 0) return;
+
+      try {
+        const updatePromises = this.tempUploadedImages.map(async (image) => {
+          try {
+            // Gerar nome permanente removendo o prefixo 'temp_' e timestamp
+            const permanentName = `biography_image_${Date.now()}_${image.fileName}`;
+
+            await userDocuments.updateUserAttachment({
+              id: image.id,
+              name: permanentName
+            });
+
+            console.log(`Imagem confirmada: ${image.fileName} -> ${permanentName}`);
+          } catch (error) {
+            console.error(`Erro ao confirmar imagem ${image.fileName}:`, error);
+          }
+        });
+
+        await Promise.allSettled(updatePromises);
+        this.tempUploadedImages = [];
+
+      } catch (error) {
+        console.error('Erro ao confirmar imagens:', error);
+      }
     }
   }
 }
