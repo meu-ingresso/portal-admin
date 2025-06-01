@@ -8,11 +8,7 @@
             Adicione {{ nomenclature?.toLowerCase() }} para o evento.
           </p>
         </template>
-        <ButtonWithIcon
-          class="mt-2"
-          :text="getNomenclature"
-          direction="left"
-          @click="openNewTicketModal" />
+        <ButtonWithIcon class="mt-2" :text="getNomenclature" direction="left" @click="openNewTicketModal" />
       </v-col>
     </v-row>
 
@@ -32,14 +28,8 @@
             </div>
 
             <!-- Linhas Reordenáveis -->
-            <Container
-              :lock-axis="'y'"
-              :non-drag-area-selector="'.actions'"
-              @drop="onDrop">
-              <Draggable
-                v-for="(ticket, index) in getNonDeletedTickets"
-                :key="index"
-                class="table-row"
+            <Container :lock-axis="'y'" :non-drag-area-selector="'.actions'" @drop="onDrop">
+              <Draggable v-for="(ticket, index) in getNonDeletedTickets" :key="index" class="table-row"
                 :class="{ 'table-row-deleted': ticket._deleted }">
                 <div class="table-cell hover-icon">
                   <v-icon>mdi-drag-vertical</v-icon>
@@ -67,13 +57,13 @@
                         <span class="info-label">Início:</span>
                         <span class="info-value">{{
                           formatDateTime(ticket.start_date, ticket.start_time)
-                        }}</span>
+                          }}</span>
                       </div>
                       <div class="info-row">
                         <span class="info-label">Fim:</span>
                         <span class="info-value">{{
                           formatDateTime(ticket.end_date, ticket.end_time)
-                        }}</span>
+                          }}</span>
                       </div>
                       <div class="info-row">
                         <span class="info-label">Vendidos:</span>
@@ -83,14 +73,8 @@
                   </v-tooltip>
                 </div>
                 <div class="table-cell actions">
-                  <ActionsMenu
-                    :index="index"
-                    :show-edit="true"
-                    :show-duplicate="true"
-                    :show-delete="true"
-                    @edit="openEditModal(index)"
-                    @duplicate="duplicateTicket"
-                    @delete="handleRemoveTicket" />
+                  <ActionsMenu :index="index" :show-edit="true" :show-duplicate="true" :show-delete="true"
+                    @edit="openEditModal(index)" @duplicate="duplicateTicket(index)" @delete="handleRemoveTicket" />
                 </div>
               </Draggable>
             </Container>
@@ -105,24 +89,13 @@
             </div>
 
             <!-- Linhas Reordenáveis -->
-            <Container
-              :lock-axis="'y'"
-              :non-drag-area-selector="'.actions'"
-              @drop="onDrop">
-              <Draggable
-                v-for="(ticket, index) in tickets"
-                :key="index"
-                class="table-row"
+            <Container :lock-axis="'y'" :non-drag-area-selector="'.actions'" @drop="onDrop">
+              <Draggable v-for="(ticket, index) in tickets" :key="index" class="table-row"
                 :class="{ 'table-row-deleted': ticket._deleted }">
                 <div class="table-cell">{{ ticket.name ? ticket.name : '-' }}</div>
                 <div class="table-cell actions">
-                  <ActionsMenu
-                    :index="index"
-                    :show-edit="true"
-                    :show-duplicate="true"
-                    :show-delete="true"
-                    @edit="openEditModal(ticket, $event)"
-                    @duplicate="duplicateTicket"
+                  <ActionsMenu :index="index" :show-edit="true" :show-duplicate="true" :show-delete="true"
+                    @edit="openEditModal(ticket, $event)" @duplicate="duplicateTicket(index)"
                     @delete="handleRemoveTicket" />
                 </div>
               </Draggable>
@@ -133,11 +106,7 @@
     </v-row>
 
     <!-- Modal de Novo Ingresso -->
-    <v-dialog
-      v-model="newTicketModal"
-      max-width="960px"
-      :fullscreen="isMobile"
-      persistent>
+    <v-dialog v-model="newTicketModal" max-width="960px" :fullscreen="isMobile" persistent>
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>{{ getNewItemModalTitle }}</h3>
@@ -146,10 +115,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
-          <TicketForm
-            v-if="newTicketModal"
-            ref="newTicketForm"
-            :nomenclature="getNomenclature" />
+          <TicketForm v-if="newTicketModal" ref="newTicketForm" :nomenclature="getNomenclature" />
         </v-card-text>
         <v-card-actions class="d-flex align-center py-5">
           <v-spacer />
@@ -170,10 +136,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
-          <TicketForm
-            v-if="editModal"
-            ref="editTicketForm"
-            :nomenclature="getNomenclature"
+          <TicketForm v-if="editModal" ref="editTicketForm" :nomenclature="getNomenclature"
             :edit-index="selectedTicketIndex" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
@@ -314,33 +277,50 @@ export default {
     },
 
     duplicateTicket(index) {
-      const ticketToDuplicate = { ...this.getNonDeletedTickets[index] };
-      const baseName = `Cópia de ${ticketToDuplicate.name}`;
-      let newName = baseName;
+      try {
 
-      if (this.getNonDeletedTickets.some((ticket) => ticket.name === baseName)) {
-        let counter = 2;
-        while (this.getNonDeletedTickets.some((ticket) => ticket.name === newName)) {
-          newName = `${baseName} (${counter})`;
-          counter++;
+        const ticket = this.getNonDeletedTickets[index];
+
+        if (!ticket || ticket._deleted || !ticket.name) {
+          throw new Error('Ingresso não encontrado');
         }
+
+        const ticketToDuplicate = { ...ticket };
+        const baseName = `Cópia de ${ticketToDuplicate.name}`;
+        let newName = baseName;
+
+        if (this.getNonDeletedTickets.some((ticket) => ticket.name === baseName)) {
+          let counter = 2;
+          while (this.getNonDeletedTickets.some((ticket) => ticket.name === newName)) {
+            newName = `${baseName} (${counter})`;
+            counter++;
+          }
+        }
+
+        ticketToDuplicate.name = newName;
+
+        eventTickets.addTicket({
+          ...ticketToDuplicate,
+          id: '-1',
+          display_order: ticketToDuplicate.display_order
+            ? ticketToDuplicate.display_order + 1
+            : null,
+        });
+
+        toast.setToast({
+          text: `Ingresso "${newName}" duplicado com sucesso!`,
+          type: 'success',
+          time: 5000,
+        });
+
+      } catch (error) {
+        console.error('Erro ao duplicar ingresso:', error);
+        toast.setToast({
+          text: `Erro ao duplicar ingresso: ${error.message}`,
+          type: 'error',
+          time: 5000,
+        });
       }
-
-      ticketToDuplicate.name = newName;
-
-      eventTickets.addTicket({
-        ...ticketToDuplicate,
-        id: '-1',
-        display_order: ticketToDuplicate.display_order
-          ? ticketToDuplicate.display_order + 1
-          : null,
-      });
-
-      toast.setToast({
-        text: `Ingresso "${newName}" duplicado com sucesso!`,
-        type: 'success',
-        time: 5000,
-      });
     },
 
     handleUpdateTicket(ticket, index) {
@@ -540,6 +520,7 @@ export default {
 .step-tickets {
   margin: 0 auto;
 }
+
 .tax-container {
   max-width: 200px;
 }
