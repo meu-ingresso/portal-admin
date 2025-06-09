@@ -87,19 +87,19 @@ export default {
     },
 
     getUserToken() {
-      return this.$store.state.auth.token;
+      return this.$auth.token;
     },
 
     getUserLogged() {
-      return this.$store.state.auth.loggedIn;
+      return this.$auth.loggedIn;
     },
 
     getUserId() {
-      return this.$store.state.auth.user?.auth?.id;
+      return this.$auth.user?.auth?.id;
     },
 
     getUserRole() {
-      return this.$store.state.auth.user?.auth?.role;
+      return this.$auth.user?.auth?.role;
     },
 
     topBarItems() {

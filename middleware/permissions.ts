@@ -26,8 +26,8 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, store }) => 
 
   // Obter as informações do usuário do auth store
   const user = store.state.auth.user?.auth;
-  const userId = user.id;
-  const userRole = user.role;
+  const userId = user?.id;
+  const userRole = user?.role;
 
   console.log(store.state)
 

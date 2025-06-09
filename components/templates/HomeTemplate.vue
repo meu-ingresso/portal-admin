@@ -60,7 +60,7 @@ export default {
     },
 
     userRole() {
-      return this.$store.state.auth.user?.auth?.role;
+      return this.$auth.user?.auth?.role;
     },
 
     userHasPermission() {

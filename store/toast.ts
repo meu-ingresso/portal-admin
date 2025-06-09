@@ -37,9 +37,6 @@ export const mutations = {
     state.toast.toastType = data.type;
     state.toast.show = true;
     state.toast.toastTime = data.time;
-    setTimeout(() => {
-      state.toast.show = false;
-    }, state.toast.toastTime);
   },
 
   CLOSE_TOAST(state: ToastState) {
@@ -53,6 +50,11 @@ export const mutations = {
 export const actions = {
   setToast({ commit }: any, { text, text2, type, time }: UpdatePayload) {
     commit('SET_TOAST', { text, text2, type, time });
+    
+    // Configurar auto-close usando setTimeout na action, não na mutation
+    setTimeout(() => {
+      commit('CLOSE_TOAST');
+    }, time);
   },
 
   closeToast({ commit }: any) {

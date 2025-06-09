@@ -33,15 +33,15 @@ export default {
     },
 
     userRole() {
-      return this.$store.state.auth.user?.auth?.role;
+      return this.$auth.user?.auth?.role;
     },
 
     userId() {
-      return this.$store.state.auth.user?.auth?.id;
+      return this.$auth.user?.auth?.id;
     },
 
     isAdminOrManager() {
-      const role = this.$store.state.auth.user?.auth?.role;
+      const role = this.$auth.user?.auth?.role;
       return role && (role.name === 'Admin' || role.name === 'Manager');
     },
 
