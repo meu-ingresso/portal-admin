@@ -16,38 +16,24 @@
       <v-col cols="12" md="12" sm="12">
         <!-- Estado vazio -->
         <template v-if="members.length === 0">
-          <EmptyState
-            title="Ainda não há convidados nesta lista"
-            subtitle="Uma vez adicionados, seus convidados aparecerão aqui"
-            icon="mdi-account-group-outline">
+          <EmptyState title="Ainda não há convidados nesta lista"
+            subtitle="Uma vez adicionados, seus convidados aparecerão aqui" icon="mdi-account-group-outline">
             <template #action>
-              <DefaultButton
-                text="Adicionar Convidado"
-                icon="mdi-plus"
-                class="mt-6"
-                @click="openMemberForm" />
+              <DefaultButton text="Adicionar Convidado" icon="mdi-plus" class="mt-6" @click="openMemberForm" />
             </template>
           </EmptyState>
         </template>
 
         <!-- Listagem de membros -->
         <template v-else>
-          <v-data-table
-            :headers="headers"
-            :items="members"
-            :server-items-length="meta.total"
-            :options.sync="options"
+          <v-data-table :headers="headers" :items="members" :server-items-length="meta.total" :options.sync="options"
             :footer-props="{
               itemsPerPageOptions: [50, 100, 200],
               itemsPerPageText: 'Convidados por página',
               pageText: '{0}-{1} de {2}',
               itemsPerPageAllText: 'Todos',
-            }"
-            :no-data-text="'Nenhum registro encontrado'"
-            :no-results-text="'Nenhum registro encontrado'"
-            :loading-text="'Carregando...'"
-            class="guest-table"
-            @update:options="handleTableUpdate">
+            }" :no-data-text="'Nenhum registro encontrado'" :no-results-text="'Nenhum registro encontrado'"
+            :loading-text="'Carregando...'" class="guest-table" @update:options="handleTableUpdate">
             <!-- Nome completo -->
             <template #[`item.full_name`]="{ item }">
               {{ item.first_name }} {{ item.last_name }}
@@ -76,47 +62,25 @@
             <!-- Conteúdo scrollável -->
             <v-card-text class="form-content">
               <v-form v-if="showForm" ref="form" v-model="isFormValid">
-                <div
-                  v-for="(guest, index) in newGuests"
-                  :key="index"
-                  class="guest-form-row"
+                <div v-for="(guest, index) in newGuests" :key="index" class="guest-form-row"
                   :class="{ 'guest-form-row--even': index % 2 === 0 }">
                   <v-row>
                     <!-- Nome -->
                     <v-col cols="12" md="5" sm="12">
-                      <v-text-field
-                        v-model="guest.first_name"
-                        label="Nome"
-                        required
-                        hide-details="auto"
-                        :rules="validationRules.firstName"
-                        dense
-                        outlined />
+                      <v-text-field v-model="guest.first_name" label="Nome" required hide-details="auto"
+                        :rules="validationRules.firstName" dense outlined />
                     </v-col>
 
                     <!-- Sobrenome -->
                     <v-col cols="12" md="4" sm="12">
-                      <v-text-field
-                        v-model="guest.last_name"
-                        label="Sobrenome"
-                        required
-                        hide-details="auto"
-                        :rules="validationRules.lastName"
-                        dense
-                        outlined />
+                      <v-text-field v-model="guest.last_name" label="Sobrenome" required hide-details="auto"
+                        :rules="validationRules.lastName" dense outlined />
                     </v-col>
 
                     <!-- Quantidade -->
                     <v-col cols="9" md="2" sm="9">
-                      <v-text-field
-                        v-model="guest.quantity"
-                        label="Qtd."
-                        type="number"
-                        required
-                        hide-details="auto"
-                        :rules="validationRules.quantity"
-                        dense
-                        outlined />
+                      <v-text-field v-model="guest.quantity" label="Qtd." type="number" required hide-details="auto"
+                        :rules="validationRules.quantity" dense outlined />
                     </v-col>
 
                     <!-- Botão de remover -->
@@ -141,15 +105,8 @@
             <!-- Footer -->
             <div :class="['form-actions', { 'form-actions--mobile': isMobile }]">
               <div class="d-flex align-center justify-space-between py-4 px-4 w-100">
-                <DefaultButton
-                  text="Cancelar"
-                  outlined
-                  :disabled="isSaving"
-                  @click="closeForm" />
-                <DefaultButton
-                  text="Adicionar"
-                  :is-loading="isSaving"
-                  :disabled="isSaving || !isFormValid"
+                <DefaultButton text="Cancelar" outlined :disabled="isSaving" @click="closeForm" />
+                <DefaultButton text="Adicionar" :is-loading="isSaving" :disabled="isSaving || !isFormValid"
                   @click="saveMembers" />
               </div>
             </div>
@@ -157,13 +114,9 @@
         </v-dialog>
 
         <!-- Dialog de confirmação de remoção -->
-        <ConfirmDialog
-          v-model="showDeleteDialog"
-          title="Remover convidado"
+        <ConfirmDialog v-model="showDeleteDialog" title="Remover convidado"
           :message="`Deseja remover ${selectedMember?.first_name} ${selectedMember?.last_name} da lista?`"
-          confirm-text="Excluir"
-          :loading="isDeleting"
-          @confirm="confirmDelete" />
+          confirm-text="Excluir" :loading="isDeleting" @confirm="confirmDelete" />
       </v-col>
     </template>
   </v-row>
@@ -171,7 +124,6 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { eventGuests, toast } from '@/store';
 import { formatDateTimeWithTimezone } from '@/utils/formatters';
 
 export default {
@@ -246,23 +198,23 @@ export default {
     },
 
     currentGuestList() {
-      return eventGuests.$guestLists.find((list) => list.id === this.listId);
+      return this.$store.getters['eventGuests/$guestLists'].find((list) => list.id === this.listId);
     },
 
     members() {
-      return eventGuests.$guestListMembers;
+      return this.$store.getters['eventGuests/$guestListMembers'];
     },
 
     meta() {
-      return eventGuests.$metaGuestListMember;
+      return this.$store.getters['eventGuests/$metaGuestListMember'];
     },
 
     isLoading() {
-      return eventGuests.$isLoading;
+      return this.$store.getters['eventGuests/$isLoading'];
     },
 
     isDeleting() {
-      return eventGuests.$isDeleting;
+      return this.$store.getters['eventGuests/$isDeleting'];
     },
 
     totalGuests() {
@@ -270,7 +222,7 @@ export default {
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id;
     },
   },
 
@@ -279,7 +231,7 @@ export default {
   },
 
   beforeDestroy() {
-    eventGuests.resetGuestListMembers();
+    this.$store.dispatch('eventGuests/resetGuestListMembers');
   },
 
   methods: {
@@ -321,14 +273,14 @@ export default {
         this.isSaving = true;
 
         for (const guest of this.newGuests) {
-          await eventGuests.createGuestListMember({
+          await this.$store.dispatch('eventGuests/createGuestListMember', {
             ...guest,
             guest_list_id: this.listId,
             added_by: this.userId,
           });
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Convidados adicionados com sucesso!',
           type: 'success',
         });
@@ -343,7 +295,7 @@ export default {
 
         await this.fetchMembers(true);
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao adicionar convidados',
           type: 'error',
         });
@@ -361,14 +313,14 @@ export default {
       if (!this.selectedMember) return;
 
       try {
-        await eventGuests.fetchDeleteGuestListMember(this.selectedMember.id);
-        toast.setToast({
+        await this.$store.dispatch('eventGuests/fetchDeleteGuestListMember', this.selectedMember.id);
+        this.$store.dispatch('toast/setToast', {
           text: 'Convidado removido com sucesso!',
           type: 'success',
         });
         this.fetchMembers(true);
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao remover convidado',
           type: 'error',
         });
@@ -414,7 +366,7 @@ export default {
     async fetchMembers(force = false) {
       const query = this.buildQueryParams();
       if (this.isQueryDifferent(query, force)) {
-        await eventGuests.fetchGuestListMemberAndPopulateByQuery(query);
+        await this.$store.dispatch('eventGuests/fetchGuestListMemberAndPopulateByQuery', query);
       }
     },
 

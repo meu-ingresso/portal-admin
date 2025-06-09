@@ -12,15 +12,9 @@
       </v-row>
       <v-row v-else>
         <v-col cols="12" class="d-flex justify-center">
-          <EmptyState
-            title="Nenhum evento cadastrado"
-            subtitle="Quando criados, eles vão aparecer aqui">
+          <EmptyState title="Nenhum evento cadastrado" subtitle="Quando criados, eles vão aparecer aqui">
             <template v-if="userHasPermission" #action>
-              <DefaultButton
-                text="Criar evento"
-                icon="mdi-plus"
-                class="mt-6"
-                @click="handleCreateEvent" />
+              <DefaultButton text="Criar evento" icon="mdi-plus" class="mt-6" @click="handleCreateEvent" />
             </template>
           </EmptyState>
         </v-col>
@@ -29,13 +23,7 @@
 
     <template v-else>
       <v-row>
-        <v-col
-          v-for="n in 3"
-          :key="n"
-          cols="12"
-          md="4"
-          sm="12"
-          class="d-flex justify-center">
+        <v-col v-for="n in 3" :key="n" cols="12" md="4" sm="12" class="d-flex justify-center">
           <v-skeleton-loader width="100%" type="card" />
         </v-col>
       </v-row>
@@ -44,7 +32,6 @@
 </template>
 
 <script>
-import { event } from '@/store';
 export default {
   props: {
     events: { type: Array, required: true },
@@ -52,15 +39,28 @@ export default {
 
   computed: {
     isLoadingEvents() {
-      return event.$isLoading;
+      return this.$store.getters['event/$isLoading'];
     },
 
     getTitle() {
-      return 'Bem-vindo, ' + this.$cookies.get('username');
+      const user = this.$store.state.auth.user;
+      if (!user?.auth?.people) return 'Bem-vindo';
+
+      const people = user.auth.people;
+      const personType = people.person_type;
+
+      let name = 'Usuário';
+      if (personType === 'PF') {
+        name = people.first_name || 'Usuário';
+      } else {
+        name = people.social_name || people.fantasy_name || 'Usuário';
+      }
+
+      return `Bem-vindo, ${name}`;
     },
 
     userRole() {
-      return this.$cookies.get('user_role');
+      return this.$store.state.auth.user?.auth?.role;
     },
 
     userHasPermission() {

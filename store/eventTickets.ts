@@ -1,4 +1,3 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import {
   CategoryApiResponse,
   CategoryOption,
@@ -7,7 +6,6 @@ import {
   ValidationResult,
 } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
-import { status } from '@/utils/store-util';
 import { splitDateTime } from '~/utils/formatters';
 import { getUniqueCategories } from '~/utils/utils';
 import {
@@ -16,143 +14,129 @@ import {
   getNextDisplayOrder,
 } from '~/utils/ticketCategoryHelpers';
 import { handleGetResponse } from '~/utils/responseHelpers';
-@Module({
-  name: 'eventTickets',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventTickets extends VuexModule {
-  private ticketList: Ticket[] = [];
 
-  private ticketCategories: CategoryOption[] = [];
+interface EventTicketsState {
+  ticketList: Ticket[];
+  ticketCategories: CategoryOption[];
+  isLoading: boolean;
+}
 
-  private isLoading: boolean = false;
-
-  private mockTicketList: Ticket[] = [
-    {
-      name: 'Ingresso Normal',
-      price: '100',
-      total_quantity: 100,
-      total_sold: 50,
-      min_purchase: 1,
-      max_purchase: '10',
-      start_date: '2025-02-01',
-      start_time: '10:00',
-      end_date: '2025-02-01',
-      end_time: '12:00',
-      availability: 'Publico',
-      category: {
-        id: null,
-        value: 'Ingresso Normal',
-        text: 'Ingresso Normal',
-      },
-      visible: true,
-      status: {
-        id: '1',
-        name: 'Em análise',
-        module: 'event',
-        description: 'Em análise do ingresso',
-      },
+const mockTicketList: Ticket[] = [
+  {
+    name: 'Ingresso Normal',
+    price: '100',
+    total_quantity: 100,
+    total_sold: 50,
+    min_purchase: 1,
+    max_purchase: '10',
+    start_date: '2025-02-01',
+    start_time: '10:00',
+    end_date: '2025-02-01',
+    end_time: '12:00',
+    availability: 'Publico',
+    category: {
+      id: null,
+      value: 'Ingresso Normal',
+      text: 'Ingresso Normal',
     },
-    {
-      name: 'Ingresso Vip',
-      price: '200',
-      total_quantity: 50,
-      total_sold: 20,
-      min_purchase: 1,
-      max_purchase: '5',
-      start_date: '2025-02-01',
-      start_time: '10:00',
-      end_date: '2025-02-01',
-      end_time: '12:00',
-      availability: 'Publico',
-      category: {
-        id: null,
-        value: 'Ingresso Vip',
-        text: 'Ingresso Vip',
-      },
-      visible: true,
-      status: {
-        id: '1',
-        name: 'Em análise',
-        module: 'event',
-        description: 'Em análise do ingresso',
-      },
+    visible: true,
+    status: {
+      id: '1',
+      name: 'Em análise',
+      module: 'event',
+      description: 'Em análise do ingresso',
     },
-  ];
+  },
+  {
+    name: 'Ingresso Vip',
+    price: '200',
+    total_quantity: 50,
+    total_sold: 20,
+    min_purchase: 1,
+    max_purchase: '5',
+    start_date: '2025-02-01',
+    start_time: '10:00',
+    end_date: '2025-02-01',
+    end_time: '12:00',
+    availability: 'Publico',
+    category: {
+      id: null,
+      value: 'Ingresso Vip',
+      text: 'Ingresso Vip',
+    },
+    visible: true,
+    status: {
+      id: '1',
+      name: 'Em análise',
+      module: 'event',
+      description: 'Em análise do ingresso',
+    },
+  },
+];
 
-  constructor(module: VuexModule<ThisType<EventTickets>, EventTickets>) {
-    super(module);
-    this.ticketList = process.env.USE_MOCK_DATA === 'true' ? this.mockTicketList : [];
-    this.ticketCategories =
-      process.env.USE_MOCK_DATA === 'true'
-        ? this.ticketList.map((ticket) => ticket.category)
-        : [];
-  }
+export const state = (): EventTicketsState => {
+  const ticketList = process.env.USE_MOCK_DATA === 'true' ? mockTicketList : [];
+  const ticketCategories = process.env.USE_MOCK_DATA === 'true'
+    ? ticketList.map((ticket) => ticket.category)
+    : [];
+  
+  return {
+    ticketList,
+    ticketCategories,
+    isLoading: false,
+  };
+};
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $isLoading: (state: EventTicketsState) => state.isLoading,
+  $tickets: (state: EventTicketsState) => state.ticketList,
+  $ticketCategories: (state: EventTicketsState) => state.ticketCategories.filter((category) => !category._deleted),
+  $deletedCategories: (state: EventTicketsState) => state.ticketCategories.filter((category) => category._deleted),
+};
 
-  public get $tickets() {
-    return this.ticketList;
-  }
+export const mutations = {
+  SET_LOADING(state: EventTicketsState, payload: boolean) {
+    state.isLoading = payload;
+  },
 
-  public get $ticketCategories() {
-    return this.ticketCategories.filter((category) => !category._deleted);
-  }
+  SET_TICKETS(state: EventTicketsState, tickets: Ticket[]) {
+    state.ticketList = tickets;
+  },
 
-  public get $deletedCategories() {
-    return this.ticketCategories.filter((category) => category._deleted);
-  }
-
-  @Mutation
-  private SET_LOADING(payload: boolean) {
-    this.isLoading = payload;
-  }
-
-  @Mutation
-  private SET_TICKETS(tickets: Ticket[]) {
-    this.ticketList = tickets;
-  }
-
-  @Mutation
-  private SET_TICKET_CATEGORIES(categories: CategoryApiResponse[]) {
-    this.ticketCategories = categories.map((category) => ({
+  SET_TICKET_CATEGORIES(state: EventTicketsState, categories: CategoryApiResponse[]) {
+    state.ticketCategories = categories.map((category) => ({
       id: category.id,
       value: category.name,
       text: category.name,
       _deleted: category.deleted_at !== null,
     }));
-  }
+  },
 
-  @Mutation
-  private ADD_TICKET(ticket: Ticket) {
-    this.ticketList = [...this.ticketList, ticket];
-    this.ticketCategories = getUniqueCategories(this.ticketList);
-  }
+  ADD_TICKET(state: EventTicketsState, ticket: Ticket) {
+    state.ticketList = [...state.ticketList, ticket];
+    state.ticketCategories = getUniqueCategories(state.ticketList);
+  },
 
-  @Mutation
-  private UPDATE_TICKET({ index, ticket }: { index: number; ticket: Ticket }) {
-    const updatedList = [...this.ticketList];
-    const oldTicket = this.ticketList[index];
+  UPDATE_TICKET(state: EventTicketsState, { index, ticket }: { index: number; ticket: Ticket }) {
+    const updatedList = [...state.ticketList];
+    const oldTicket = state.ticketList[index];
 
     // Se a categoria mudou, marca a antiga como deletada (se não estiver em uso)
     if (
       oldTicket.category &&
       (!ticket.category || oldTicket.category.value !== ticket.category.value)
     ) {
-      const categoryStillInUse = this.ticketList.some(
+      const categoryStillInUse = state.ticketList.some(
         (t, i) => i !== index && t.category?.value === oldTicket.category?.value
       );
 
       if (!categoryStillInUse) {
-        const categoryIndex = this.ticketCategories.findIndex(
+        const categoryIndex = state.ticketCategories.findIndex(
           (cat) => cat.value === oldTicket.category?.value
         );
         if (categoryIndex !== -1) {
-          this.ticketCategories[categoryIndex] = {
-            ...this.ticketCategories[categoryIndex],
+          state.ticketCategories[categoryIndex] = {
+            ...state.ticketCategories[categoryIndex],
             _deleted: true,
           };
         }
@@ -160,89 +144,87 @@ export default class EventTickets extends VuexModule {
     }
 
     updatedList[index] = { ...ticket };
-    this.ticketList = updatedList;
+    state.ticketList = updatedList;
 
     // Atualiza lista de categorias mantendo as marcadas como deletadas
     const activeCategories = getUniqueCategories(updatedList);
-    this.ticketCategories = [
+    state.ticketCategories = [
       ...activeCategories,
-      ...this.ticketCategories.filter((cat) => cat._deleted),
+      ...state.ticketCategories.filter((cat) => cat._deleted),
     ];
-  }
+  },
 
-  @Mutation
-  private REMOVE_TICKET(index: number) {
-    const removedTicket = this.ticketList[index];
-    this.ticketList.splice(index, 1);
+  REMOVE_TICKET(state: EventTicketsState, index: number) {
+    const removedTicket = state.ticketList[index];
+    state.ticketList.splice(index, 1);
 
     // Se a categoria do ticket removido não está mais em uso, marca como deletada
     if (removedTicket.category) {
-      const categoryStillInUse = this.ticketList.some(
+      const categoryStillInUse = state.ticketList.some(
         (ticket) => ticket.category?.value === removedTicket.category?.value
       );
 
       if (!categoryStillInUse) {
-        const categoryIndex = this.ticketCategories.findIndex(
+        const categoryIndex = state.ticketCategories.findIndex(
           (cat) => cat.value === removedTicket.category?.value
         );
         if (categoryIndex !== -1) {
-          this.ticketCategories[categoryIndex] = {
-            ...this.ticketCategories[categoryIndex],
+          state.ticketCategories[categoryIndex] = {
+            ...state.ticketCategories[categoryIndex],
             _deleted: true,
           };
         }
       }
     }
-  }
+  },
 
-  @Mutation
-  private SWAP_TICKETS(payload: { removedIndex: number; addedIndex: number }) {
-    const ticketList = [...this.ticketList];
+  SWAP_TICKETS(state: EventTicketsState, payload: { removedIndex: number; addedIndex: number }) {
+    const ticketList = [...state.ticketList];
     const [removedTicket] = ticketList.splice(payload.removedIndex, 1);
     ticketList.splice(payload.addedIndex, 0, removedTicket);
-    this.ticketList = ticketList;
-  }
+    state.ticketList = ticketList;
+  },
+};
 
-  @Action
-  public setTickets(tickets: Ticket[]) {
-    this.context.commit('SET_TICKETS', tickets);
-  }
+export const actions = {
+  setTickets({ commit }: any, tickets: Ticket[]) {
+    commit('SET_TICKETS', tickets);
+  },
 
-  @Action
-  public setTicketCategories(categories: CategoryApiResponse[]) {
-    this.context.commit('SET_TICKET_CATEGORIES', categories);
-  }
+  setTicketCategories({ commit }: any, categories: CategoryApiResponse[]) {
+    commit('SET_TICKET_CATEGORIES', categories);
+  },
 
-  @Action
-  public addTicket(ticket: Ticket) {
-    this.context.commit('ADD_TICKET', ticket);
-  }
+  addTicket({ commit }: any, ticket: Ticket) {
+    commit('ADD_TICKET', ticket);
+  },
 
-  @Action
-  public updateTicket(payload: { index: number; ticket: Ticket }) {
-    this.context.commit('UPDATE_TICKET', payload);
-  }
+  updateTicket({ commit }: any, payload: { index: number; ticket: Ticket }) {
+    commit('UPDATE_TICKET', payload);
+  },
 
-  @Action
-  public removeTicket(index: number) {
-    this.context.commit('REMOVE_TICKET', index);
-  }
+  removeTicket({ commit }: any, index: number) {
+    commit('REMOVE_TICKET', index);
+  },
 
-  @Action
-  public async createTickets(eventIds: string[]): Promise<Record<string, string>[]> {
+  async createTickets({ state, dispatch }: any, eventIds: string[]): Promise<Record<string, string>[]> {
     try {
       // Array para armazenar os mapas de tickets para cada evento
       const ticketMaps: Record<string, string>[] = [];
       
-      const statusResponse = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'À Venda',
-      });
+      // Buscar status diretamente
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=ticket&where[name][v]=À Venda`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Status "À Venda" não encontrado');
+      }
+
+      const statusData = statusResponse.body.result.data[0];
 
       // Cria todas as categorias em uma única chamada
-      const categoryMaps = await this.createCategories({
+      const categoryMaps = await dispatch('createCategories', {
         eventIds,
-        tickets: this.ticketList,
+        tickets: state.ticketList,
       });
 
       // Processa cada evento individualmente
@@ -253,7 +235,7 @@ export default class EventTickets extends VuexModule {
 
         // Prepara o payload com todos os tickets para este evento
         const ticketsPayload = {
-          data: this.ticketList.map((ticket, index) => {
+          data: state.ticketList.map((ticket: Ticket, index: number) => {
             const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
             const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
 
@@ -266,7 +248,7 @@ export default class EventTickets extends VuexModule {
               total_quantity: ticket.total_quantity,
               remaining_quantity: ticket.total_quantity,
               price: parseFloat(ticket.price),
-              status_id: statusResponse.id,
+              status_id: statusData.id,
               start_date: startDate.toISOString().replace('Z', '-0300'),
               end_date: endDate.toISOString().replace('Z', '-0300'),
               availability: ticket.availability,
@@ -298,15 +280,18 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao criar ingressos:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async updateTickets(eventId: string) {
+  async updateTickets({ state }: any, eventId: string) {
     try {
-      const statusNewTicketResponse = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'À Venda',
-      });
+      // Buscar status diretamente
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=ticket&where[name][v]=À Venda`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Status "À Venda" não encontrado');
+      }
+
+      const statusNewTicketResponse = statusResponse.body.result.data[0];
 
       // 1. Busca as categorias existentes
       const categoriesResponse = await $axios.$get(
@@ -327,15 +312,15 @@ export default class EventTickets extends VuexModule {
       const categoryMap = new Map<string, string>();
 
       // Identifica mudanças necessárias nas categorias
-      const categoryChanges = getCategoryChanges(existingCategories, this.ticketList);
+      const categoryChanges = getCategoryChanges(existingCategories, state.ticketList);
 
       // Mapeia categorias existentes
-      existingCategories.forEach((cat) => {
+      existingCategories.forEach((cat: any) => {
         categoryMap.set(cat.name, cat.id);
       });
 
       // Organiza operações de categoria
-      this.ticketList.forEach((ticket) => {
+      state.ticketList.forEach((ticket: Ticket) => {
         if (ticket.category && ticket.category.id === '-1') {
           if (!categoriesToCreate.find((c) => c.name === ticket.category.text)) {
             // Nova categoria
@@ -343,7 +328,7 @@ export default class EventTickets extends VuexModule {
               event_id: eventId,
               name: ticket.category.text,
             });
-          } else if (categoryChanges.toUpdate.find((c) => c.id === ticket.category?.id)) {
+          } else if (categoryChanges.toUpdate.find((c: any) => c.id === ticket.category?.id)) {
             // Categoria para atualizar
             categoriesToUpdate.push({
               id: ticket.category.id,
@@ -391,10 +376,10 @@ export default class EventTickets extends VuexModule {
       const ticketsToDelete: string[] = [];
 
       // Gera display_orders válidos
-      const displayOrders = getNextDisplayOrder(this.ticketList);
+      const displayOrders = getNextDisplayOrder(state.ticketList);
 
       // Organiza operações de tickets
-      this.ticketList.forEach((ticket, index) => {
+      state.ticketList.forEach((ticket: Ticket, index: number) => {
         const startDateTime = `${ticket.start_date}T${ticket.start_time}:00.000Z`;
         const endDateTime = `${ticket.end_date}T${ticket.end_time}:00.000Z`;
         const startDate = new Date(startDateTime);
@@ -451,12 +436,11 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao atualizar ingressos:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async fetchAndPopulateByEventId(eventId: string) {
+  async fetchAndPopulateByEventId({ commit }: any, eventId: string) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const promises = [      
         $axios.$get(
@@ -485,7 +469,7 @@ export default class EventTickets extends VuexModule {
         (a: TicketApiResponse, b: TicketApiResponse) => a.display_order - b.display_order
       );
       
-      this.context.commit('SET_TICKET_CATEGORIES', categoriesResult.data);
+      commit('SET_TICKET_CATEGORIES', categoriesResult.data);
 
       const ticketsToCommit = orderedTickets.map((ticket: any) => {
         const category = {
@@ -519,7 +503,7 @@ export default class EventTickets extends VuexModule {
         };
       });
 
-      this.context.commit('SET_TICKETS', ticketsToCommit);
+      commit('SET_TICKETS', ticketsToCommit);
 
       return { success: true, data: ticketsToCommit };
 
@@ -527,16 +511,15 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao buscar ingressos:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public validateTickets(): ValidationResult {
+  validateTickets({ state }: any): ValidationResult {
     const errors: string[] = [];
     const ticketNames = new Set<string>();
 
-    this.ticketList.forEach((ticket, index) => {
+    state.ticketList.forEach((ticket: Ticket, index: number) => {
       // Validação de nome duplicado
       if (ticketNames.has(ticket.name)) {
         errors.push(`Ticket "${ticket.name}" está duplicado`);
@@ -574,16 +557,14 @@ export default class EventTickets extends VuexModule {
       isValid: errors.length === 0,
       errors,
     };
-  }
+  },
 
-  @Action
-  public reset() {
-    this.context.commit('SET_TICKETS', []);
-    this.context.commit('SET_TICKET_CATEGORIES', []);
-  }
+  reset({ commit }: any) {
+    commit('SET_TICKETS', []);
+    commit('SET_TICKET_CATEGORIES', []);
+  },
 
-  @Action
-  public async createTicketCategory(payload: {
+  async createTicketCategory({ dispatch }: any, payload: {
     eventId: string;
     category: string;
   }): Promise<void> {
@@ -599,15 +580,14 @@ export default class EventTickets extends VuexModule {
         throw new Error(`Falha ao criar categoria de ingresso para o evento ${payload.eventId}`);
       }
 
-      await this.fetchAndPopulateByEventId(payload.eventId);
+      await dispatch('fetchAndPopulateByEventId', payload.eventId);
     } catch (error) {
       console.error('Erro ao criar categoria de ingresso:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  private async createCategories(payload: {
+  async createCategories(_: any, payload: {
     eventIds: string[];
     tickets: Ticket[];
   }): Promise<Map<string, string>[]> {
@@ -654,10 +634,9 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao criar categorias:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async swapTicketsOrder(payload: {
+  async swapTicketsOrder({ commit, state }: any, payload: {
     removedIndex: number;
     addedIndex: number;
     persist: boolean;
@@ -665,16 +644,16 @@ export default class EventTickets extends VuexModule {
     const { removedIndex, addedIndex, persist } = payload;
 
     // Encontra os tickets na lista completa
-    const movedTicket = this.ticketList[removedIndex];
-    const targetTicket = this.ticketList[addedIndex];
+    const movedTicket = state.ticketList[removedIndex];
+    const targetTicket = state.ticketList[addedIndex];
 
     // Encontra os índices reais
-    const movedRealIndex = this.ticketList.findIndex(
-      (t) => t.id === movedTicket.id || (t.name === movedTicket.name && !t.id)
+    const movedRealIndex = state.ticketList.findIndex(
+      (t: Ticket) => t.id === movedTicket.id || (t.name === movedTicket.name && !t.id)
     );
 
-    const targetRealIndex = this.ticketList.findIndex(
-      (t) => t.id === targetTicket.id || (t.name === targetTicket.name && !t.id)
+    const targetRealIndex = state.ticketList.findIndex(
+      (t: Ticket) => t.id === targetTicket.id || (t.name === targetTicket.name && !t.id)
     );
 
     // Troca os display_orders
@@ -683,7 +662,7 @@ export default class EventTickets extends VuexModule {
 
     if (persist) {
       try {
-        this.context.commit('UPDATE_TICKET', {
+        commit('UPDATE_TICKET', {
           index: movedRealIndex,
           ticket: {
             ...movedTicket,
@@ -691,7 +670,7 @@ export default class EventTickets extends VuexModule {
           },
         });
 
-        this.context.commit('UPDATE_TICKET', {
+        commit('UPDATE_TICKET', {
           index: targetRealIndex,
           ticket: {
             ...targetTicket,
@@ -699,10 +678,10 @@ export default class EventTickets extends VuexModule {
           },
         });
 
-        this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
+        commit('SWAP_TICKETS', { removedIndex, addedIndex });
 
         // Atualiza o display_order de todos os tickets
-        const updateData = this.ticketList.map((ticket: Ticket, index: number) => {
+        const updateData = state.ticketList.map((ticket: Ticket, index: number) => {
           return {
             id: ticket.id,
             display_order: index + 1,
@@ -715,7 +694,7 @@ export default class EventTickets extends VuexModule {
       }
     } else {
       // Atualiza o estado local apenas
-      this.context.commit('UPDATE_TICKET', {
+      commit('UPDATE_TICKET', {
         index: movedRealIndex,
         ticket: {
           ...movedTicket,
@@ -723,7 +702,7 @@ export default class EventTickets extends VuexModule {
         },
       });
 
-      this.context.commit('UPDATE_TICKET', {
+      commit('UPDATE_TICKET', {
         index: targetRealIndex,
         ticket: {
           ...targetTicket,
@@ -731,12 +710,11 @@ export default class EventTickets extends VuexModule {
         },
       });
 
-      this.context.commit('SWAP_TICKETS', { removedIndex, addedIndex });
+      commit('SWAP_TICKETS', { removedIndex, addedIndex });
     }
-  }
+  },
 
-  @Action
-  public async fetchDeleteTicket(ticketId: string): Promise<void> {
+  async fetchDeleteTicket({ commit, state }: any, ticketId: string): Promise<void> {
     try {
       // 1. Buscar ticket com categoria
       const ticketResponse = await $axios.$get(
@@ -757,14 +735,13 @@ export default class EventTickets extends VuexModule {
       }
 
       // 2. Buscar e atualizar para status "Indisponível" antes de deletar
-      const unavailableStatus = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'Indisponível',
-      });
-
-      if (!unavailableStatus) {
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=ticket&where[name][v]=Indisponível`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
         throw new Error('Status "Indisponível" não encontrado');
       }
+
+      const unavailableStatus = statusResponse.body.result.data[0];
 
       await $axios.$patch('ticket', {
         id: ticketId,
@@ -815,12 +792,12 @@ export default class EventTickets extends VuexModule {
       }
 
       // 5. Atualizar o state
-      const ticketIndex = this.ticketList.findIndex((t) => t.id === ticketId);
+      const ticketIndex = state.ticketList.findIndex((t: Ticket) => t.id === ticketId);
       if (ticketIndex !== -1) {
-        this.context.commit('UPDATE_TICKET', {
+        commit('UPDATE_TICKET', {
           index: ticketIndex,
           ticket: {
-            ...this.ticketList[ticketIndex],
+            ...state.ticketList[ticketIndex],
             _deleted: new Date().toISOString(),
           },
         });
@@ -829,20 +806,18 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao remover ingresso:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async inactivateTicket(ticketId: string): Promise<void> {
+  async inactivateTicket(_: any, ticketId: string): Promise<void> {
     try {
       // Busca o status "Indisponível"
-      const unavailableStatus = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'Indisponível',
-      });
-
-      if (!unavailableStatus) {
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=ticket&where[name][v]=Indisponível`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
         throw new Error('Status "Indisponível" não encontrado');
       }
+
+      const unavailableStatus = statusResponse.body.result.data[0];
 
       // Atualiza o ticket com end_date atual e status
       const response = await $axios.$patch('ticket', {
@@ -858,25 +833,23 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao inativar ingresso:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async createSingleTicket(payload: {
+  async createSingleTicket({ commit, state }: any, payload: {
     eventId: string;
     ticket: Ticket;
   }): Promise<string> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       // Busca o status "À Venda"
-      const statusResponse = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'À Venda',
-      });
-
-      if (!statusResponse) {
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=ticket&where[name][v]=À Venda`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
         throw new Error('Status "À Venda" não encontrado');
       }
+
+      const statusData = statusResponse.body.result.data[0];
 
       let categoryId = null;
 
@@ -906,7 +879,7 @@ export default class EventTickets extends VuexModule {
       }
 
       // Obtém o próximo display_order
-      const nextOrder = getNextDisplayOrder(this.ticketList, true) as number;
+      const nextOrder = getNextDisplayOrder(state.ticketList, true) as number;
 
       // Combina data e hora em uma única string ISO
       const startDateTime = `${payload.ticket.start_date}T${payload.ticket.start_time}:00.000Z`;
@@ -925,7 +898,7 @@ export default class EventTickets extends VuexModule {
             total_quantity: payload.ticket.total_quantity,
             remaining_quantity: payload.ticket.total_quantity,
             price: parseFloat(payload.ticket.price),
-            status_id: statusResponse.id,
+            status_id: statusData.id,
             start_date: startDate.toISOString().replace('Z', '-0300'),
             end_date: endDate.toISOString().replace('Z', '-0300'),
             availability: payload.ticket.availability,
@@ -949,18 +922,17 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao criar ingresso:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async updateSingleTicket(payload: {
+  async updateSingleTicket({ commit, state }: any, payload: {
     ticketId: string;
     ticket: Ticket;
     eventId: string;
   }): Promise<boolean> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
       let categoryId = null;
 
       // 1. Tratamento da categoria
@@ -1041,7 +1013,7 @@ export default class EventTickets extends VuexModule {
         throw new Error(`Falha ao atualizar ingresso: ${payload.ticket.name}`);
       }
 
-      const oldTicket = this.ticketList.find((t) => t.id === payload.ticketId);
+      const oldTicket = state.ticketList.find((t: Ticket) => t.id === payload.ticketId);
 
       // 5. Se a categoria antiga não está mais em uso, pode deletá-la
       if (
@@ -1051,8 +1023,8 @@ export default class EventTickets extends VuexModule {
       ) {
         // Busca outros tickets que usam a categoria antiga
         const oldCategoryId = oldTicket.category.id;
-        const ticketsWithOldCategory = this.ticketList.filter(
-          (t) =>
+        const ticketsWithOldCategory = state.ticketList.filter(
+          (t: Ticket) =>
             t.category?.id === oldCategoryId && t.id !== payload.ticketId && !t._deleted
         );
 
@@ -1080,24 +1052,22 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao atualizar ingresso:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async stopTicketSales(ticketId: string): Promise<void> {
+  async stopTicketSales({ commit }: any, ticketId: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       // 1. Busca o status "Interrompido"
-      const unavailableStatus = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'Interrompido',
-      });
-
-      if (!unavailableStatus) {
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=ticket&where[name][v]=Interrompido`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
         throw new Error('Status "Interrompido" não encontrado');
       }
+
+      const unavailableStatus = statusResponse.body.result.data[0];
 
       // 2. Atualiza o ticket com end_date atual e status Interrompido
       const response = await $axios.$patch('ticket', {
@@ -1117,39 +1087,37 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao interromper vendas:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async duplicateTicket(payload: {
+  async duplicateTicket({ commit, state }: any, payload: {
     ticketId: string;
     eventId: string;
   }): Promise<string> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       // 1. Encontra o ticket original
-      const originalTicket = this.ticketList.find((t) => t.id === payload.ticketId);
+      const originalTicket = state.ticketList.find((t: Ticket) => t.id === payload.ticketId);
       if (!originalTicket) {
         throw new Error('Ticket original não encontrado');
       }
 
       // 2. Gera nome único para o novo ticket
-      const newName = generateUniqueName(originalTicket.name, this.ticketList);
+      const newName = generateUniqueName(originalTicket.name, state.ticketList);
 
       // 3. Busca próximo display_order disponível
-      const nextOrder = getNextDisplayOrder(this.ticketList, true) as number;
+      const nextOrder = getNextDisplayOrder(state.ticketList, true) as number;
 
       // 4. Busca o status "À Venda"
-      const availableStatus = await status.fetchStatusByModuleAndName({
-        module: 'ticket',
-        name: 'À Venda',
-      });
-
-      if (!availableStatus) {
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=ticket&where[name][v]=À Venda`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
         throw new Error('Status "À Venda" não encontrado');
       }
+
+      const availableStatus = statusResponse.body.result.data[0];
 
       // 5. Prepara o novo ticket
       const newTicket = {
@@ -1182,7 +1150,7 @@ export default class EventTickets extends VuexModule {
       console.error('Erro ao duplicar ingresso:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
-}
+  },
+}; 

@@ -1,46 +1,42 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleGetResponse } from '~/utils/responseHelpers';
 
-@Module({
-  name: 'status',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Status extends VuexModule {
-  private statusData: { [key: string]: any[] } = {};
-  private isLoading: boolean = false;
+interface StatusState {
+  statusData: { [key: string]: any[] };
+  isLoading: boolean;
+}
 
-  public get $getStatusByModule() {
-    return (module: string) => this.statusData[module] || [];
-  }
+export const state = (): StatusState => ({
+  statusData: {},
+  isLoading: false,
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $getStatusByModule: (state: StatusState) => (module: string) => state.statusData[module] || [],
+  $isLoading: (state: StatusState) => state.isLoading,
+};
 
-  @Mutation
-  private SET_STATUS_BY_MODULE({ module, data }: { module: string; data: any[] }) {
-    this.statusData = {
-      ...this.statusData,
+export const mutations = {
+  SET_STATUS_BY_MODULE(state: StatusState, { module, data }: { module: string; data: any[] }) {
+    state.statusData = {
+      ...state.statusData,
       [module]: data,
     };
-  }
+  },
 
-  @Mutation
-  private SET_IS_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
+  SET_IS_LOADING(state: StatusState, value: boolean) {
+    state.isLoading = value;
+  },
+};
 
-  @Action
-  public setLoading(value: boolean) {
-    this.context.commit('SET_IS_LOADING', value);
-  }
+export const actions = {
+  setLoading({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING', value);
+  },
 
-  @Action
-  public async fetchStatusByModule(module: string) {
+  async fetchStatusByModule({ commit, dispatch }: any, module: string) {
     try {
-      this.setLoading(true);
+      dispatch('setLoading', true);
 
       const response = await $axios.$get(`statuses?where[module][v]=${module}&orderBy[]=name:asc`);
 
@@ -51,22 +47,21 @@ export default class Status extends VuexModule {
       const data = response.body.result.data;
 
       // Salva os status no estado
-      this.context.commit('SET_STATUS_BY_MODULE', { module, data });
+      commit('SET_STATUS_BY_MODULE', { module, data });
 
-      this.setLoading(false);
+      dispatch('setLoading', false);
 
       return { success: true, data };
     } catch (error) {
-      this.setLoading(false);
+      dispatch('setLoading', false);
       console.error(`[STATUS] Error fetching status for module "${module}":`, error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async fetchStatusByModuleAndName(payload: { module: string, name: string }) {
+  async fetchStatusByModuleAndName({ dispatch }: any, payload: { module: string, name: string }) {
     try {
-      this.setLoading(true);
+      dispatch('setLoading', true);
 
       const response = await $axios.$get(
         `statuses?where[module][v]=${payload.module}&where[name][v]=${payload.name}`
@@ -79,7 +74,7 @@ export default class Status extends VuexModule {
       console.error(`[STATUS] Error fetching status for module "${payload.module}" and name "${payload.name}":`, error);
       throw error;
     } finally {
-      this.setLoading(false);
+      dispatch('setLoading', false);
     }
-  }
-}
+  },
+};

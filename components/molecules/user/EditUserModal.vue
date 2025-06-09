@@ -328,7 +328,6 @@
 <script>
 import { isMobileDevice } from '@/utils/utils';
 import { formatDateToCustomString, formatDateTimeWithTimezone } from '@/utils/formatters';
-import { user, userDocuments, toast, userAddress, event } from '@/store';
 
 export default {
   props: {
@@ -392,19 +391,19 @@ export default {
     },
 
     isLoadingDocumentsAndFiscalInfo() {
-      return userDocuments.$isLoading;
+      return this.$store.getters['userDocuments/$isLoading'];
     },
 
     userAttachments() {
-      return userDocuments.$userAttachments;
+      return this.$store.getters['userDocuments/$userAttachments'];
     },
 
     pixInfo() {
-      return userDocuments.$pixInfo;
+      return this.$store.getters['userDocuments/$pixInfo'];
     },
 
     fiscalInfo() {
-      return userDocuments.$fiscalInfo;
+      return this.$store.getters['userDocuments/$fiscalInfo'];
     },
 
     documentAttachments() {
@@ -427,7 +426,7 @@ export default {
     },
 
     addressData() {
-      return userAddress.$address;
+      return this.$store.getters['userAddress/$address'];
     }
   },
 
@@ -525,17 +524,17 @@ export default {
         this.updateFiscalData(this.fiscalInfo);
       }
 
-      userAddress.updateAddress({
+      this.$store.dispatch('userAddress/updateAddress', {
         ...this.formData.address
       });      
     },
 
     async fetchUserDocuments() {
       try {
-        await userDocuments.fetchDocumentStatus(this.user.id);
+        await this.$store.dispatch('userDocuments/fetchDocumentStatus', this.user.id);
       } catch (error) {
         console.error('Erro ao buscar documentos do usuário:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao carregar documentos',
           type: 'error'
         });
@@ -594,12 +593,12 @@ export default {
         // Salva dados fiscais
         const fiscalInfoDoc = this.userAttachments.find(att => att.name === 'fiscal_info');
         if (fiscalInfoDoc) {
-          await userDocuments.updateUserAttachment({
+          await this.$store.dispatch('userDocuments/updateUserAttachment', {
             id: fiscalInfoDoc.id,
             value: JSON.stringify(fiscalInfo)
           });
         } else {
-          await userDocuments.createUserDocument({
+          await this.$store.dispatch('userDocuments/createUserDocument', {
             name: 'fiscal_info',
             type: 'json',
             userId: this.user.id,
@@ -609,7 +608,7 @@ export default {
 
         // Atualiza endereço
         if (this.user.people.address_id) {
-          await userAddress.updateUserAddress({ 
+          await this.$store.dispatch('userAddress/updateUserAddress', { 
             addressId: this.user.people.address_id, 
             data: this.addressData 
           });
@@ -617,24 +616,24 @@ export default {
           this.formData.address.street && 
           this.formData.address.zipcode
         ) {
-          const newAddressId = await userAddress.createUserAddress(this.addressData);
+          const newAddressId = await this.$store.dispatch('userAddress/createUserAddress', this.addressData);
           peopleData.address_id = newAddressId;
         }
 
         // Atualiza os dados de people apenas se houver mudança no endereço
         if (Object.keys(peopleData).length > 1) {
-          await user.updatePeople(peopleData);
+          await this.$store.dispatch('user/updatePeople', peopleData);
         }
 
         // Atualiza os dados de pix
         if (this.pixInfo && this.pixInfo.id) {
-          await userDocuments.updateUserAttachment({
+          await this.$store.dispatch('userDocuments/updateUserAttachment', {
             id: this.pixInfo.id,
             type: this.formData.pix.type,
             value: this.formData.pix.key
           });
         } else if (this.formData.pix.key) {
-          await userDocuments.createUserDocument({
+          await this.$store.dispatch('userDocuments/createUserDocument', {
             name: 'pix_key',
             type: this.formData.pix.type,
             value: this.formData.pix.key,
@@ -642,7 +641,7 @@ export default {
           });
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Usuário atualizado com sucesso!',
           type: 'success',
           time: 3000,
@@ -652,7 +651,7 @@ export default {
         this.closeModal();
       } catch (error) {
         console.error('Erro ao atualizar usuário:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao atualizar usuário',
           type: 'error',
           time: 3000,
@@ -686,16 +685,16 @@ export default {
         
         // Remove cada documento
         for (const attachment of this.documentAttachments) {
-          await userDocuments.deleteUserDocument({ attachmentId: attachment.id });
+          await this.$store.dispatch('userDocuments/deleteUserDocument', { attachmentId: attachment.id });
         }
 
-        await event.updatePromoterEventsFromStatusToStatus({
+        await this.$store.dispatch('event/updatePromoterEventsFromStatusToStatus', {
           userId: this.user.id,
           fromStatus: 'Em Análise',
           toStatus: 'Aguardando'
         });
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Documentos removidos com sucesso!',
           type: 'success',
           time: 3000,
@@ -704,7 +703,7 @@ export default {
         this.showConfirmClear = false;
       } catch (error) {
         console.error('Erro ao limpar documentos:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao limpar documentos',
           type: 'error',
           time: 3000,
@@ -721,7 +720,7 @@ export default {
         // Limpa apenas os dados fiscais
         const fiscalInfoDoc = this.userAttachments.find(att => att.name === 'fiscal_info');
         if (fiscalInfoDoc) {
-          await userDocuments.deleteUserDocument({ attachmentId: fiscalInfoDoc.id });
+          await this.$store.dispatch('userDocuments/deleteUserDocument', { attachmentId: fiscalInfoDoc.id });
         }
 
         // Reseta o formulário fiscal
@@ -735,7 +734,7 @@ export default {
           tradeName: '',
         };
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Dados fiscais limpos com sucesso!',
           type: 'success',
           time: 3000,
@@ -744,7 +743,7 @@ export default {
         this.showConfirmClearData = false;
       } catch (error) {
         console.error('Erro ao limpar dados fiscais:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao limpar dados fiscais',
           type: 'error',
           time: 3000,
@@ -760,9 +759,9 @@ export default {
       try {
         this.isSaving = true;
         
-        await userDocuments.deleteUserDocument({ attachmentId: this.selectedDocument.id });
+        await this.$store.dispatch('userDocuments/deleteUserDocument', { attachmentId: this.selectedDocument.id });
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Documento removido com sucesso!',
           type: 'success',
           time: 3000,
@@ -772,7 +771,7 @@ export default {
         this.selectedDocument = null;
       } catch (error) {
         console.error('Erro ao excluir documento:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao excluir documento',
           type: 'error',
           time: 3000,

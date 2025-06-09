@@ -1,28 +1,17 @@
 <template>
-    <div>
-      <EventsTemplate
-        :events="events"
-        :grouped-events="groupedEvents"
-        :show-sessions-indicator="true"
-        :pagination-meta="paginationMeta"
-        @update-search="handleSearchEvents"
-        @update-filter="handleFilterChange"
-        @load-more="handleLoadMore" />
+  <div>
+    <EventsTemplate :events="events" :grouped-events="groupedEvents" :show-sessions-indicator="true"
+      :pagination-meta="paginationMeta" @update-search="handleSearchEvents" @update-filter="handleFilterChange"
+      @load-more="handleLoadMore" />
 
-      <RequiredUserDocModal
-        :show-document-dialog="showDocumentDialog"
-        :has-document-info="hasDocumentInfo"
-        @saved-user-data="handleSavedUserData"
-        @close-document-dialog="closeDocumentDialog"
-      />
-      <Toast />
-    </div>
+    <RequiredUserDocModal :show-document-dialog="showDocumentDialog" :has-document-info="hasDocumentInfo"
+      @saved-user-data="handleSavedUserData" @close-document-dialog="closeDocumentDialog" />
+    <Toast />
+  </div>
 </template>
 
 <script>
-import { event, toast, userDocuments, status } from '@/store';
 import { groupEventsBySession, logEventGroupingDiagnostics } from '~/utils/event-utils';
-import { isUserAdmin } from '@/utils/utils';
 export default {
   data() {
     return {
@@ -37,29 +26,29 @@ export default {
   computed: {
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id;
     },
 
     isAdmin() {
-      return isUserAdmin(this.$cookies);
+      return this.$store.state.auth.user?.auth?.role?.name === 'Admin';
     },
 
     events() {
-      return event.$eventList.sort((a, b) => {
+      return [...(this.$store.getters['event/$eventList'] || [])].sort((a, b) => {
         if (a.status.name === 'Publicado' && b.status.name !== 'Publicado') {
           return -1;
         } else if (a.status.name !== 'Publicado' && b.status.name === 'Publicado') {
           return 1;
         }
         return 0;
-      }) || [];
+      });
     },
     groupedEvents() {
       return groupEventsBySession(this.events);
     },
 
     paginationMeta() {
-      return event.$paginationMeta || {
+      return this.$store.getters['event/$paginationMeta'] || {
         current_page: 1,
         last_page: 1,
         per_page: 12,
@@ -71,29 +60,29 @@ export default {
     },
 
     hasDocumentInfo() {
-      return userDocuments.$documentInfo;
+      return this.$store.getters['userDocuments/$documentInfo'];
     },
-    
+
     hasRequiredDocuments() {
-      return userDocuments.$hasRequiredDocuments;
+      return this.$store.getters['userDocuments/$hasRequiredDocuments'];
     },
 
     hasPixInfo() {
-      return userDocuments.$hasPixInfo;
+      return this.$store.getters['userDocuments/$hasPixInfo'];
     },
 
     hasFiscalInfo() {
-      return userDocuments.$hasFiscalInfo;
+      return this.$store.getters['userDocuments/$hasFiscalInfo'];
     },
 
     hasRejectionReason() {
-      return userDocuments.$hasRejectionReason;
+      return this.$store.getters['userDocuments/$hasRejectionReason'];
     },
   },
 
   async mounted() {
     await this.getData();
-    
+
     if (process.env.NODE_ENV === 'development' && !this.diagnosticRun) {
       this.logGroupedEvents();
       this.diagnosticRun = true;
@@ -112,7 +101,7 @@ export default {
 
     async getStatuses() {
       try {
-        await status.fetchStatusByModule('event');
+        await this.$store.dispatch('status/fetchStatusByModule', 'event');
       } catch (error) {
         console.error('Erro ao carregar lista de status de eventos', error);
       }
@@ -120,7 +109,7 @@ export default {
 
     async getData() {
       try {
-        const { meta } = await event.fetchEvents({
+        const { meta } = await this.$store.dispatch('event/fetchEvents', {
           page: this.currentPage,
           sortBy: ['start_date'],
           sortDesc: [false],
@@ -136,7 +125,7 @@ export default {
       try {
         this.currentSearch = search;
         this.currentPage = 1;
-        await event.fetchEvents({
+        await this.$store.dispatch('event/fetchEvents', {
           page: this.currentPage,
           sortBy: ['start_date'],
           sortDesc: [false],
@@ -152,7 +141,7 @@ export default {
       try {
         this.currentFilter = filter.name;
         this.currentPage = 1;
-        await event.fetchEvents({
+        await this.$store.dispatch('event/fetchEvents', {
           page: this.currentPage,
           sortBy: ['start_date'],
           sortDesc: [false],
@@ -166,10 +155,10 @@ export default {
 
     async handleLoadMore() {
       if (!this.hasMorePages) return;
-      
+
       try {
         this.currentPage += 1;
-        await event.fetchEvents({
+        await this.$store.dispatch('event/fetchEvents', {
           page: this.currentPage,
           sortBy: ['start_date'],
           sortDesc: [false],
@@ -196,9 +185,9 @@ export default {
         if (this.userId) {
 
           // Verifica se o usuário é dono de algum evento
-          const hasEvents = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status'] });
+          const hasEvents = await this.$store.dispatch('event/fetchEventsByPromoterId', { promoterId: this.userId, preloads: ['status'] });
           if (hasEvents) {
-            await userDocuments.fetchDocumentStatus(this.userId);            
+            await this.$store.dispatch('userDocuments/fetchDocumentStatus', this.userId);
           }
 
           setTimeout(() => {
@@ -212,7 +201,7 @@ export default {
         }
       } catch (error) {
         console.error('Erro ao verificar status de documentação:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Não foi possível verificar seu status de documentação',
           type: 'danger',
           time: 5000,
@@ -222,7 +211,7 @@ export default {
 
     closeDocumentDialog() {
       this.showDocumentDialog = false;
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: 'Você pode completar seu cadastro a qualquer momento pelo menu de perfil.',
         type: 'info',
         time: 5000,
@@ -233,7 +222,7 @@ export default {
       // Atualiza os dados dos eventos pois foram alterados os status de "Aguardando" para "Em análise"
       this.getData();
       this.showDocumentDialog = false;
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: 'Informações salvas com sucesso!',
         type: 'success',
         time: 5000,

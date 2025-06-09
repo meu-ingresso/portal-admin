@@ -6,11 +6,7 @@
           <h3>Cupons</h3>
           <p class="subtitle-2">Adicione cupons de desconto para o evento.</p>
         </template>
-        <ButtonWithIcon
-          class="mt-2"
-          text="Cupom"
-          direction="left"
-          @click="openNewCouponModal" />
+        <ButtonWithIcon class="mt-2" text="Cupom" direction="left" @click="openNewCouponModal" />
       </v-col>
     </v-row>
 
@@ -25,10 +21,7 @@
           <div class="table-cell">Ações</div>
         </div>
 
-        <div
-          v-for="(coupon, index) in getNonDeletedCoupons"
-          :key="index"
-          class="table-row">
+        <div v-for="(coupon, index) in getNonDeletedCoupons" :key="index" class="table-row">
           <div class="table-cell">{{ coupon.code }}</div>
           <div class="table-cell">
             {{
@@ -49,21 +42,19 @@
               <div class="ticket-info-tooltip">
                 <div class="info-row">
                   <span class="info-label">Utilizados:</span>
-                  <span class="info-value"
-                    >{{ coupon.uses }} / {{ coupon.max_uses }}</span
-                  >
+                  <span class="info-value">{{ coupon.uses }} / {{ coupon.max_uses }}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">Início:</span>
                   <span class="info-value">{{
                     formatDateTime(coupon.start_date, coupon.start_time)
-                  }}</span>
+                    }}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">Término:</span>
                   <span class="info-value">{{
                     formatDateTime(coupon.end_date, coupon.end_time)
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </v-tooltip>
@@ -82,11 +73,7 @@
     </template>
 
     <!-- Modal de Novo Cupom -->
-    <v-dialog
-      v-model="newCouponModal"
-      max-width="960px"
-      :fullscreen="isMobile"
-      persistent>
+    <v-dialog v-model="newCouponModal" max-width="960px" :fullscreen="isMobile" persistent>
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>Novo Cupom</h3>
@@ -116,11 +103,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
-          <CouponForm
-            v-if="editModal"
-            ref="editCouponForm"
-            :edit-index="selectedCouponIndex"
-            :tickets="getTickets" />
+          <CouponForm v-if="editModal" ref="editCouponForm" :edit-index="selectedCouponIndex" :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
           <DefaultButton outlined text="Cancelar" @click="editModal = false" />
@@ -153,7 +136,7 @@
 <script>
 import { formatDateToBr } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
-import { toast, eventTickets, eventCoupons } from '@/store';
+
 export default {
   data() {
     return {
@@ -172,11 +155,11 @@ export default {
     },
 
     getNonDeletedTickets() {
-      return eventTickets.$tickets.filter((ticket) => !ticket._deleted);
+      return this.$store.getters['eventTickets/$tickets'].filter((ticket) => !ticket._deleted);
     },
 
     getTickets() {
-      return eventTickets.$tickets.map((ticket, index) => {
+      return this.$store.getters['eventTickets/$tickets'].map((ticket, index) => {
         return {
           id: ticket.id === '-1' ? index : ticket.id,
           name: ticket.name,
@@ -187,7 +170,7 @@ export default {
     },
 
     getNonDeletedCoupons() {
-      return eventCoupons.$coupons.filter((coupon) => !coupon._deleted);
+      return this.$store.getters['eventCoupons/$coupons'].filter((coupon) => !coupon._deleted);
     },
   },
 
@@ -215,8 +198,8 @@ export default {
     },
 
     confirmRemoveCoupon() {
-      eventCoupons.removeCoupon(this.couponIdxToRemove);
-      toast.setToast({
+      this.$store.dispatch('eventCoupons/removeCoupon', this.couponIdxToRemove);
+      this.$store.dispatch('toast/setToast', {
         text: 'Cupom removido com sucesso.',
         type: 'success',
         time: 5000,

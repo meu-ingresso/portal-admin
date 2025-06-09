@@ -85,7 +85,7 @@
 <script>
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
-import { eventTickets, toast, eventGeneralInfo } from '@/store';
+
 export default {
   components: { Container, Draggable },
 
@@ -115,10 +115,10 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
     getTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
     getEventPromoter() {
-      return eventGeneralInfo.$info?.promoter_id;
+      return this.$store.getters['eventGeneralInfo/$info']?.promoter_id;
     },
     // Use customTickets if provided, otherwise use all tickets
     displayedTickets() {
@@ -160,28 +160,28 @@ export default {
       try {
         this.isDuplicating = true;
 
-        const newTicketId = await eventTickets.duplicateTicket({
+        const newTicketId = await this.$store.dispatch('eventTickets/duplicateTicket', {
           ticketId,
           eventId: this.eventId,
         });
 
         if (newTicketId) {
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Ingresso duplicado com sucesso!`,
             type: 'success',
             time: 5000,
           });
 
-          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+          await this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.eventId);
         } else {
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Falha ao duplicar ingresso. Tente novamente.`,
             type: 'danger',
             time: 5000,
           });
         }
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Falha ao duplicar ingresso. Tente novamente.`,
           type: 'danger',
           time: 5000,
@@ -196,7 +196,7 @@ export default {
       try {
 
         if (!ticket || !ticket.id || !ticket.name) {
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Falha ao pausar venda do ingresso. Tente novamente.`,
             type: 'danger',
             time: 5000,
@@ -205,15 +205,15 @@ export default {
         }
 
         console.log('[STOP SALES] - Ticket', ticket);
-        await eventTickets.stopTicketSales(ticket.id);
-        await eventTickets.fetchAndPopulateByEventId(this.eventId);
-        toast.setToast({
+        await this.$store.dispatch('eventTickets/stopTicketSales', ticket.id);
+        await this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.eventId);
+        this.$store.dispatch('toast/setToast', {
           text: `Venda do ingresso "${ticket.name}" pausada com sucesso!`,
           type: 'success',
           time: 5000,
         });
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Falha ao pausar venda do ingresso. Tente novamente.`,
           type: 'danger',
           time: 5000,
@@ -225,16 +225,16 @@ export default {
     async confirmDelete() {
       try {
         this.isLoading = true;
-        await eventTickets.fetchDeleteTicket(this.selectedTicket.id);
-        await eventTickets.fetchAndPopulateByEventId(this.eventId);
-        toast.setToast({
+        await this.$store.dispatch('eventTickets/fetchDeleteTicket', this.selectedTicket.id);
+        await this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.eventId);
+        this.$store.dispatch('toast/setToast', {
           text: `Ingresso excluído com sucesso!`,
           type: 'success',
           time: 5000,
         });
         this.handleCloseDialog();
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Falha ao excluir ingresso. Tente novamente.`,
           type: 'danger',
           time: 5000,
@@ -252,14 +252,14 @@ export default {
         const { success, error } = await ticketForm.handleSubmit(true);
         if (success) {
           this.showEditDialog = false;
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Ingresso atualizado com sucesso!`,
             type: 'success',
             time: 5000,
           });
         } else {
           console.log('[EDIÇÃO - TicketForm] Erro de validação', error);
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Erro ao atualizar ingresso`,
             type: 'error',
             time: 5000,
@@ -267,7 +267,7 @@ export default {
         }
       } catch (error) {
         console.error('Erro ao enviar formulário:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Erro ao atualizar ingresso`,
           type: 'error',
           time: 5000,
@@ -295,7 +295,7 @@ export default {
         const allTicketsAddedIndex = this.getTickets.findIndex(t => t.id === addedTicket.id);
 
         if (allTicketsRemovedIndex !== -1 && allTicketsAddedIndex !== -1) {
-          await eventTickets.swapTicketsOrder({
+          await this.$store.dispatch('eventTickets/swapTicketsOrder', {
             removedIndex: allTicketsRemovedIndex,
             addedIndex: allTicketsAddedIndex,
             persist: true,
@@ -303,7 +303,7 @@ export default {
         }
       } else {
         // Comportamento original
-        await eventTickets.swapTicketsOrder({
+        await this.$store.dispatch('eventTickets/swapTicketsOrder', {
           removedIndex: dropResult.removedIndex,
           addedIndex: dropResult.addedIndex,
           persist: true,

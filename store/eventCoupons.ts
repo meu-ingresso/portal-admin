@@ -1,103 +1,86 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { BatchOperations, Coupon, CouponApiResponse, CouponTicketApiResponse, TicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
-import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
 import { handleGetResponse } from '~/utils/responseHelpers';
 import { getCouponTicketRelationChanges, prepareCouponPayload, shouldUpdateCoupon } from '~/utils/couponHelpers';
-@Module({
-  name: 'eventCoupons',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventCoupons extends VuexModule {
 
-  private isLoading: boolean = false;
+interface EventCouponsState {
+  isLoading: boolean;
+  couponList: Coupon[];
+}
 
-  private couponList: Coupon[] = [];
+const mockCouponList: Coupon[] = [
+  {
+    code: '123456',
+    discount_type: 'PERCENTAGE',
+    discount_value: '10',
+    max_uses: 100,
+    start_date: '2025-02-01',
+    start_time: '10:00',
+    end_date: '2025-02-02',
+    end_time: '10:00',
+    tickets: [{ name: 'Ingresso Normal', id: '123456' }, { name: 'Ingresso Vip', id: '123457' }],
+  },
+];
 
-  private mockCouponList: Coupon[] = [
-    {
-      code: '123456',
-      discount_type: 'PERCENTAGE',
-      discount_value: '10',
-      max_uses: 100,
-      start_date: '2025-02-01',
-      start_time: '10:00',
-      end_date: '2025-02-02',
-      end_time: '10:00',
-      tickets: [{ name: 'Ingresso Normal', id: '123456' }, { name: 'Ingresso Vip', id: '123457' }],
-    },
-  ];
+export const state = (): EventCouponsState => ({
+  isLoading: false,
+  couponList: process.env.USE_MOCK_DATA === 'true' ? mockCouponList : [],
+});
 
-  constructor(module: VuexModule<ThisType<EventCoupons>, EventCoupons>) {
-    super(module);
-    this.couponList = process.env.USE_MOCK_DATA === 'true' ? this.mockCouponList : this.couponList;
-  }
+export const getters = {
+  $coupons: (state: EventCouponsState) => state.couponList,
+  $isLoading: (state: EventCouponsState) => state.isLoading,
+};
 
-  public get $coupons() {
-    return this.couponList;
-  }
+export const mutations = {
+  SET_LOADING(state: EventCouponsState, loading: boolean) {
+    state.isLoading = loading;
+  },
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+  SET_COUPONS(state: EventCouponsState, coupons: Coupon[]) {
+    state.couponList = coupons;
+  },
 
-  @Mutation
-  private SET_LOADING(loading: boolean) {
-    this.isLoading = loading;
-  }
+  ADD_COUPON(state: EventCouponsState, coupon: Coupon) {
+    state.couponList = [...state.couponList, coupon];
+  },
 
-  @Mutation
-  private SET_COUPONS(coupons: Coupon[]) {
-    this.couponList = coupons;
-  }
-
-  @Mutation
-  private ADD_COUPON(coupon: Coupon) {
-    this.couponList = [...this.couponList, coupon];
-  }
-
-  @Mutation
-  private UPDATE_COUPON({ index, coupon }: { index: number; coupon: Coupon }) {
-    const updatedList = [...this.couponList];
+  UPDATE_COUPON(state: EventCouponsState, { index, coupon }: { index: number; coupon: Coupon }) {
+    const updatedList = [...state.couponList];
     updatedList[index] = { ...coupon };
-    this.couponList = updatedList;
-  }
+    state.couponList = updatedList;
+  },
 
-  @Mutation
-  private REMOVE_COUPON(index: number) {
-    const updatedList = [...this.couponList];
+  REMOVE_COUPON(state: EventCouponsState, index: number) {
+    const updatedList = [...state.couponList];
     updatedList[index]._deleted = true;
-    this.couponList = updatedList;
-  }
+    state.couponList = updatedList;
+  },
+};
 
-  @Action
-  public setCoupons(coupons: Coupon[]) {
-    this.context.commit('SET_COUPONS', coupons);
-  }
+export const actions = {
+  setCoupons({ commit }: any, coupons: Coupon[]) {
+    commit('SET_COUPONS', coupons);
+  },
 
-  @Action
-  public addCoupon(coupon: Coupon) {
-    this.context.commit('ADD_COUPON', coupon);
-  }
+  addCoupon({ commit }: any, coupon: Coupon) {
+    commit('ADD_COUPON', coupon);
+  },
 
-  @Action
-  public updateCoupon(payload: { index: number; coupon: Coupon }) {
-    this.context.commit('UPDATE_COUPON', payload);
-  }
+  updateCoupon({ commit }: any, payload: { index: number; coupon: Coupon }) {
+    commit('UPDATE_COUPON', payload);
+  },
 
-  @Action
-  public removeCoupon(index: number) {
-    this.context.commit('REMOVE_COUPON', index);
-  }
+  removeCoupon({ commit }: any, index: number) {
+    commit('REMOVE_COUPON', index);
+  },
 
-  @Action
-  public validateCoupons(): ValidationResult {
+  validateCoupons({ state }: any): ValidationResult {
     const errors: string[] = [];
     const couponCodes = new Set<string>();
 
-    this.couponList.forEach((coupon, index) => {
+    state.couponList.forEach((coupon: Coupon, index: number) => {
       // Validação de código duplicado
       if (couponCodes.has(coupon.code)) {
         errors.push(`Cupom com código "${coupon.code}" está duplicado`);
@@ -152,10 +135,9 @@ export default class EventCoupons extends VuexModule {
       isValid: errors.length === 0,
       errors,
     };
-  }
+  },
 
-  @Action
-  private async executeBatchOperations(operations: BatchOperations): Promise<void> {
+  async executeBatchOperations(_: any, operations: BatchOperations): Promise<void> {
     const apiCalls = [];
 
     if (operations.couponsToCreate.length > 0) {
@@ -183,23 +165,21 @@ export default class EventCoupons extends VuexModule {
     }
 
     await Promise.all(apiCalls);
-  }
+  },
 
-
-  @Action
-  public async createCoupons(eventIds: string[]): Promise<void> {
+  async createCoupons({ state, dispatch }: any, eventIds: string[]): Promise<void> {
     try {
-      if (!this.couponList.length) {
+      if (!state.couponList.length) {
         console.log('Nenhum cupom para criar');
         return;
       }
 
-      const statusId = await this.getDefaultStatusId();
+      const statusId = await dispatch('getDefaultStatusId');
 
       // Processar cada evento individualmente
       for (const eventId of eventIds) {
         // Preparar payload para criação em lote
-        const couponsToCreate = this.couponList.map(coupon => 
+        const couponsToCreate = state.couponList.map((coupon: Coupon) => 
           prepareCouponPayload(coupon, eventId, statusId)
         );
 
@@ -212,17 +192,17 @@ export default class EventCoupons extends VuexModule {
           throw new Error(`Falha ao criar cupons para o evento ${eventId}`);
         }
 
-        if (this.couponList.some(c => c.tickets && c.tickets.length > 0)) {
-          const ticketsFromEvent = await this.getEventTickets(eventId);
+        if (state.couponList.some((c: Coupon) => c.tickets && c.tickets.length > 0)) {
+          const ticketsFromEvent = await dispatch('getEventTickets', eventId);
 
           // Criar relações com tickets
           const ticketRelationsToCreate: any[] = [];
           
           couponResponse.body.result.forEach((createdCoupon: CouponApiResponse) => {
-            const originalCoupon = this.couponList.find(c => c.code === createdCoupon.code);
+            const originalCoupon = state.couponList.find((c: Coupon) => c.code === createdCoupon.code);
             if (originalCoupon && originalCoupon.tickets) {
               originalCoupon.tickets.forEach(ticket => {
-                const couponTicketId = ticketsFromEvent.find(t => t.name === ticket.name)?.id;
+                const couponTicketId = ticketsFromEvent.find((t: TicketApiResponse) => t.name === ticket.name)?.id;
 
                 if (couponTicketId) {
                   ticketRelationsToCreate.push({
@@ -248,14 +228,11 @@ export default class EventCoupons extends VuexModule {
       console.error('Erro ao criar cupons:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async fetchAndPopulateByEventId(eventId: string) {
-
+  async fetchAndPopulateByEventId({ commit }: any, eventId: string) {
     try {
-
-      this.context.commit('SET_LOADING', true); 
+      commit('SET_LOADING', true); 
 
       const response = await $axios.$get(`coupons?where[event_id][v]=${eventId}`);
       const resultCoupons = handleGetResponse(response, 'Cupons não encontrados', eventId, true);
@@ -289,7 +266,7 @@ export default class EventCoupons extends VuexModule {
 
       const coupons = await Promise.all(couponPromises);
 
-      this.context.commit('SET_COUPONS', coupons);
+      commit('SET_COUPONS', coupons);
 
       return coupons;
 
@@ -297,27 +274,24 @@ export default class EventCoupons extends VuexModule {
       console.error('Erro ao buscar cupons:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public reset() {
-    this.context.commit('SET_COUPONS', []);
-  }
+  reset({ commit }: any) {
+    commit('SET_COUPONS', []);
+  },
 
-
-  @Action
-  public async updateEventCoupons(eventId: string): Promise<void> {
+  async updateEventCoupons({ commit, state, dispatch }: any, eventId: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       // 1. Buscar cupons e tickets existentes
       const couponsResponse = await $axios.$get(`coupons?where[event_id][v]=${eventId}`);
 
       const { data: existingCoupons } = handleGetResponse(couponsResponse, 'Cupons não encontrados', eventId, true);
 
-      const existingTickets = await this.getEventTickets(eventId);
+      const existingTickets = await dispatch('getEventTickets', eventId);
 
       const operations: BatchOperations = {
         couponsToCreate: [],
@@ -327,10 +301,10 @@ export default class EventCoupons extends VuexModule {
         ticketRelationsToDelete: [],
       };
 
-      const statusId = await this.getDefaultStatusId();
+      const statusId = await dispatch('getDefaultStatusId');
 
       // 2. Processar cada cupom
-      for (const coupon of this.couponList) {
+      for (const coupon of state.couponList) {
         const existingCoupon = existingCoupons.find(
           (c: CouponApiResponse) => c.id === coupon.id
         );
@@ -380,34 +354,38 @@ export default class EventCoupons extends VuexModule {
       }
 
       // 3. Executar todas as operações em lote
-      await this.executeBatchOperations(operations);
+      await dispatch('executeBatchOperations', operations);
 
     } catch (error) {
       console.error('Erro ao atualizar cupons:', error);
       throw new Error(`Falha ao atualizar cupons: ${error.message}`);
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
+  async getDefaultStatusId(_: any): Promise<string> {
+    try {
+      const response = await $axios.$get(`statuses?where[module][v]=coupon&where[name][v]=Disponível`);
 
-  @Action
-  private async getDefaultStatusId(): Promise<string> {
-    const statusResponse = await status.fetchStatusByModuleAndName({ 
-      module: 'coupon', 
-      name: 'Disponível' 
-    });
-    return statusResponse.id;
-  }
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Status "Disponível" não encontrado');
+      }
 
-  @Action
-  public async updateSingleCoupon(payload: { 
+      return response.body.result.data[0].id;
+    } catch (error) {
+      console.error('Erro ao buscar status padrão:', error);
+      throw error;
+    }
+  },
+
+  async updateSingleCoupon({ commit, state, dispatch }: any, payload: { 
     couponId: string,
     coupon: Coupon,
     eventId: string 
   }): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const operations: BatchOperations = {
         couponsToCreate: [],
@@ -418,8 +396,7 @@ export default class EventCoupons extends VuexModule {
       };
 
       // 1. Preparar atualização do cupom
-
-      const statusId = await this.getDefaultStatusId();
+      const statusId = await dispatch('getDefaultStatusId');
 
       operations.couponsToUpdate.push({
         id: payload.couponId,
@@ -442,7 +419,7 @@ export default class EventCoupons extends VuexModule {
         true
       );
 
-      const existingTickets = await this.getEventTickets(payload.eventId);
+      const existingTickets = await dispatch('getEventTickets', payload.eventId);
 
       const relationChanges = getCouponTicketRelationChanges(
         existingTicketRelations,
@@ -459,7 +436,7 @@ export default class EventCoupons extends VuexModule {
       );
 
       // 3. Executar todas as operações
-      await this.executeBatchOperations(operations);
+      await dispatch('executeBatchOperations', operations);
 
       // 7. Atualizar o state
       const updatedCoupon = {
@@ -467,9 +444,9 @@ export default class EventCoupons extends VuexModule {
         id: payload.couponId
       };
 
-      const couponIndex = this.couponList.findIndex(c => c.id === payload.couponId);
+      const couponIndex = state.couponList.findIndex((c: Coupon) => c.id === payload.couponId);
       if (couponIndex !== -1) {
-        this.context.commit('UPDATE_COUPON', {
+        commit('UPDATE_COUPON', {
           index: couponIndex,
           coupon: updatedCoupon
         });
@@ -479,27 +456,19 @@ export default class EventCoupons extends VuexModule {
       console.error('Erro ao atualizar cupom:', error);
       throw new Error(`Falha ao atualizar cupom: ${error.message}`);
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async createSingleCoupon(payload: { 
+  async createSingleCoupon({ commit, dispatch }: any, payload: { 
     eventId: string, 
     coupon: Coupon 
   }): Promise<string> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       // 1. Buscar o status "Disponível"
-      const availableStatus = await status.fetchStatusByModuleAndName({ 
-        module: 'coupon', 
-        name: 'Disponível' 
-      });
-
-      if (!availableStatus) {
-        throw new Error('Status "Disponível" não encontrado');
-      }
+      const statusId = await dispatch('getDefaultStatusId');
 
       // 2. Preparar dados do cupom
       const startDateTime = `${payload.coupon.start_date}T${payload.coupon.start_time}:00.000Z`;
@@ -513,7 +482,7 @@ export default class EventCoupons extends VuexModule {
         data: [
           {
             event_id: payload.eventId,
-            status_id: availableStatus.id,
+            status_id: statusId,
             code: payload.coupon.code,
             discount_type: payload.coupon.discount_type,
             discount_value: parseFloat(payload.coupon.discount_value.replace(',', '.')),
@@ -528,7 +497,6 @@ export default class EventCoupons extends VuexModule {
         throw new Error('Falha ao criar cupom');
       }
 
-      // 
       const couponId = couponResponse.body.result[0].id;
 
       // 5. Criar relações com tickets se existirem
@@ -554,12 +522,12 @@ export default class EventCoupons extends VuexModule {
         id: couponId,
         uses: 0,
         status: {
-          id: availableStatus.id,
+          id: statusId,
           name: 'Disponível'
         }
       };
 
-      this.context.commit('ADD_COUPON', createdCoupon);
+      commit('ADD_COUPON', createdCoupon);
 
       return couponId;
 
@@ -567,14 +535,13 @@ export default class EventCoupons extends VuexModule {
       console.error('Erro ao criar cupom:', error);
       throw new Error(`Falha ao criar cupom: ${error.message}`);
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchDeleteCoupon(couponId: string): Promise<void> {
+  async fetchDeleteCoupon({ commit, state }: any, couponId: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       // 1. Buscar relações existentes com tickets
       const ticketRelationsResponse = await $axios.$get(
@@ -604,24 +571,22 @@ export default class EventCoupons extends VuexModule {
       }
 
       // 4. Remover do state
-      const couponIndex = this.couponList.findIndex(c => c.id === couponId);
+      const couponIndex = state.couponList.findIndex((c: Coupon) => c.id === couponId);
       if (couponIndex !== -1) {
-        this.context.commit('REMOVE_COUPON', couponIndex);
+        commit('REMOVE_COUPON', couponIndex);
       }
 
     } catch (error) {
       console.error('Erro ao deletar cupom:', error);
       throw new Error(`Falha ao deletar cupom: ${error.message}`);
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  private async getEventTickets(eventId: string): Promise<TicketApiResponse[]> {
+  async getEventTickets(_: any, eventId: string): Promise<TicketApiResponse[]> {
     const response = await $axios.$get(`tickets?where[event_id][v]=${eventId}`);
     const { data } = handleGetResponse(response, 'Tickets não encontrados', eventId, true);
     return data;
-  }
-
-} 
+  },
+}; 

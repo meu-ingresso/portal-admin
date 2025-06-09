@@ -47,8 +47,6 @@
 </template>
 
 <script>
-import { user, auth } from '@/store';
-
 export default {
   name: 'UserProfileForm',
   
@@ -72,7 +70,8 @@ export default {
 
   computed: {
     hasChanges() {
-      const { people, email } = user.$user;
+      const currentUser = this.$store.getters['user/$user'];
+      const { people, email } = currentUser;
       return (
         this.firstName !== people.first_name || 
         this.lastName !== people.last_name ||
@@ -87,7 +86,8 @@ export default {
 
   methods: {
     loadUserData() {
-      const { people, email } = user.$user;
+      const currentUser = this.$store.getters['user/$user'];
+      const { people, email } = currentUser;
       this.firstName = people.first_name || '';
       this.lastName = people.last_name || '';
       this.email = email || '';
@@ -101,12 +101,12 @@ export default {
           return;
         }
 
-        const userId = user.$user.id;
-        const peopleId = user.$user.people_id;
-        const currentUser = user.$user;
+        const currentUser = this.$store.getters['user/$user'];
+        const userId = currentUser.id;
+        const peopleId = currentUser.people_id;
         
         // Update user email
-        await user.updateUser({
+        await this.$store.dispatch('user/updateUser', {
           id: userId,
           people_id: peopleId,
           email: this.email,
@@ -118,14 +118,14 @@ export default {
         });
         
         // Update people information
-        await user.updatePeople({
+        await this.$store.dispatch('user/updatePeople', {
           id: peopleId,
           first_name: this.firstName,
           last_name: this.lastName,
         });
 
         // Update username in auth store and cookies
-        auth.updateUserName({ 
+        await this.$store.dispatch('auth/updateUserName', { 
           first: this.firstName, 
           last: this.lastName 
         });

@@ -91,7 +91,6 @@
 
 <script>
 import RichTextEditorV2 from '@/components/molecules/RichTextEditorV2.vue';
-import { user, userDocuments, toast, event } from '@/utils/store-util';
 import { formatRealValue } from '@/utils/formatters';
 
 export default {
@@ -149,7 +148,7 @@ export default {
 
   computed: {
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id;
     },
     profileUrl() {
       return `${window.location.origin}/p/${this.userAlias}`;
@@ -194,21 +193,27 @@ export default {
     async fetchData() {
       try {
         this.isLoading = true;
-        await userDocuments.fetchDocumentStatus(this.userId);
-        const resultEvents = await event.fetchEventsByPromoterId({ promoterId: this.userId, preloads: ['status', 'tickets', 'attachments'] });
+        await this.$store.dispatch('userDocuments/fetchDocumentStatus', this.userId);
+        const resultEvents = await this.$store.dispatch('event/fetchEventsByPromoterId', {
+          promoterId: this.userId,
+          preloads: ['status', 'tickets', 'attachments']
+        });
 
         this.events = resultEvents.map(event => ({
           ...event,
           link_online: event.attachments.find(attachment => attachment.name === 'link_online')?.url || '',
         }));
 
-        const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
-        const profileImageDoc = userDocuments.$userAttachments.find(doc => doc.name === 'profile_image');
-        const socialLinksDoc = userDocuments.$userAttachments.find(doc => doc.name === 'social_links');
-        const contactInfoDoc = userDocuments.$userAttachments.find(doc => doc.name === 'contact_info');
+        const userAttachments = this.$store.getters['userDocuments/$userAttachments'];
+        const userInfo = this.$store.getters['user/$user'];
+
+        const bioDoc = userAttachments.find(doc => doc.name === 'biography');
+        const profileImageDoc = userAttachments.find(doc => doc.name === 'profile_image');
+        const socialLinksDoc = userAttachments.find(doc => doc.name === 'social_links');
+        const contactInfoDoc = userAttachments.find(doc => doc.name === 'contact_info');
 
         this.biography = bioDoc?.value || '';
-        this.userAlias = user.$user.alias;
+        this.userAlias = userInfo.alias;
         this.profileImageUrl = profileImageDoc?.value || '';
         this.socialLinks = socialLinksDoc ? JSON.parse(socialLinksDoc.value) : {};
         this.originalSocialLinks = { ...this.socialLinks };
@@ -218,10 +223,10 @@ export default {
 
         if (contactInfoDoc) {
           const contactInfo = JSON.parse(contactInfoDoc.value);
-          this.contactEmail = contactInfo.email || user.$user.email || '';
+          this.contactEmail = contactInfo.email || userInfo.email || '';
           this.contactPhone = contactInfo.phone || '';
         } else {
-          this.contactEmail = user.$user.email || '';
+          this.contactEmail = userInfo.email || '';
           this.contactPhone = '';
         }
 
@@ -232,7 +237,10 @@ export default {
 
       } catch (error) {
         console.error('Error fetching user data:', error);
-        toast.setToast({ text: 'Erro ao carregar dados do usuário', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Erro ao carregar dados do usuário',
+          toastType: 'error'
+        });
       } finally {
         this.isLoading = false;
       }
@@ -247,14 +255,14 @@ export default {
         const tempName = `temp_${timestamp}_biography_${file.name}`;
 
         // Criar documento de imagem temporário
-        const imageDoc = await userDocuments.createUserDocument({
+        const imageDoc = await this.$store.dispatch('userDocuments/createUserDocument', {
           name: tempName,
           type: 'image',
           userId: this.userId
         });
 
         // Upload da imagem
-        const imageUrl = await userDocuments.uploadUserDocument({
+        const imageUrl = await this.$store.dispatch('userDocuments/uploadUserDocument', {
           documentFile: file,
           attachmentId: imageDoc.id
         });
@@ -289,15 +297,16 @@ export default {
         // Confirmar imagens temporárias antes de salvar
         await this.makeImagesPermanent();
 
-        const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
+        const userAttachments = this.$store.getters['userDocuments/$userAttachments'];
+        const bioDoc = userAttachments.find(doc => doc.name === 'biography');
 
         if (bioDoc) {
-          await userDocuments.updateUserAttachment({
+          await this.$store.dispatch('userDocuments/updateUserAttachment', {
             id: bioDoc.id,
             value: this.biography
           });
         } else {
-          await userDocuments.createUserDocument({
+          await this.$store.dispatch('userDocuments/createUserDocument', {
             name: 'biography',
             type: 'text',
             userId: this.userId,
@@ -309,10 +318,16 @@ export default {
         this.originalBiography = this.biography;
         this.isEditingBio = false;
 
-        toast.setToast({ text: 'Biografia atualizada com sucesso', type: 'success', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Biografia atualizada com sucesso',
+          toastType: 'success'
+        });
       } catch (error) {
         console.error('Error saving bio:', error);
-        toast.setToast({ text: 'Erro ao atualizar biografia', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Erro ao atualizar biografia',
+          toastType: 'error'
+        });
       } finally {
         this.isLoading = false;
       }
@@ -324,36 +339,40 @@ export default {
         await this.cleanupTemporaryImages();
 
         // Restaurar conteúdo original
-        const bioDoc = userDocuments.$userAttachments.find(doc => doc.name === 'biography');
+        const userAttachments = this.$store.getters['userDocuments/$userAttachments'];
+        const bioDoc = userAttachments.find(doc => doc.name === 'biography');
         this.biography = bioDoc?.value || '';
         this.originalBiography = this.biography;
         this.isEditingBio = false;
 
         if (this.tempUploadedImages.length > 0) {
-          toast.setToast({
-            text: 'Edição cancelada. Imagens temporárias foram removidas.',
-            type: 'info',
-            time: 3000
+          this.$store.dispatch('toast/show', {
+            toastText: 'Edição cancelada. Imagens temporárias foram removidas.',
+            toastType: 'info'
           });
         }
       } catch (error) {
         console.error('Error canceling bio edit:', error);
-        toast.setToast({ text: 'Erro ao cancelar edição', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Erro ao cancelar edição',
+          toastType: 'error'
+        });
       }
     },
 
     async handleSaveSocialLinks() {
       try {
         this.isLoading = true;
-        const socialLinksDoc = userDocuments.$userAttachments.find(doc => doc.name === 'social_links');
+        const userAttachments = this.$store.getters['userDocuments/$userAttachments'];
+        const socialLinksDoc = userAttachments.find(doc => doc.name === 'social_links');
 
         if (socialLinksDoc) {
-          await userDocuments.updateUserAttachment({
+          await this.$store.dispatch('userDocuments/updateUserAttachment', {
             id: socialLinksDoc.id,
             value: JSON.stringify(this.socialLinks)
           });
         } else {
-          await userDocuments.createUserDocument({
+          await this.$store.dispatch('userDocuments/createUserDocument', {
             name: 'social_links',
             type: 'json',
             userId: this.userId,
@@ -362,10 +381,16 @@ export default {
         }
 
         this.originalSocialLinks = { ...this.socialLinks };
-        toast.setToast({ text: 'Links atualizados com sucesso', type: 'success', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Links atualizados com sucesso',
+          toastType: 'success'
+        });
       } catch (error) {
         console.error('Error saving social links:', error);
-        toast.setToast({ text: 'Erro ao atualizar links', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Erro ao atualizar links',
+          toastType: 'error'
+        });
       } finally {
         this.isLoading = false;
       }
@@ -380,12 +405,16 @@ export default {
         // Verificar se o formulário é válido antes de salvar
         const contactForm = this.$refs.contactForm;
         if (!contactForm || !contactForm.isFormValid()) {
-          toast.setToast({ text: 'Por favor, corrija os erros no formulário antes de salvar', type: 'error', time: 3000 });
+          this.$store.dispatch('toast/show', {
+            toastText: 'Por favor, corrija os erros no formulário antes de salvar',
+            toastType: 'error'
+          });
           return;
         }
 
         this.isLoading = true;
-        const contactInfoDoc = userDocuments.$userAttachments.find(doc => doc.name === 'contact_info');
+        const userAttachments = this.$store.getters['userDocuments/$userAttachments'];
+        const contactInfoDoc = userAttachments.find(doc => doc.name === 'contact_info');
 
         const contactInfo = {
           email: this.contactEmail,
@@ -393,12 +422,12 @@ export default {
         };
 
         if (contactInfoDoc) {
-          await userDocuments.updateUserAttachment({
+          await this.$store.dispatch('userDocuments/updateUserAttachment', {
             id: contactInfoDoc.id,
             value: JSON.stringify(contactInfo)
           });
         } else {
-          await userDocuments.createUserDocument({
+          await this.$store.dispatch('userDocuments/createUserDocument', {
             name: 'contact_info',
             type: 'json',
             userId: this.userId,
@@ -407,10 +436,16 @@ export default {
         }
 
         this.originalContactInfo = { ...contactInfo };
-        toast.setToast({ text: 'Informações de contato atualizadas com sucesso', type: 'success', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Informações de contato atualizadas com sucesso',
+          toastType: 'success'
+        });
       } catch (error) {
         console.error('Error saving contact info:', error);
-        toast.setToast({ text: 'Erro ao atualizar informações de contato', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/show', {
+          toastText: 'Erro ao atualizar informações de contato',
+          toastType: 'error'
+        });
       } finally {
         this.isLoading = false;
       }
@@ -432,19 +467,17 @@ export default {
 
     handleImageUploaded({ file, url }) {
       console.log('Imagem enviada com sucesso:', file.name, url);
-      toast.setToast({
-        text: `Imagem "${file.name}" enviada com sucesso`,
-        type: 'success',
-        time: 3000
+      this.$store.dispatch('toast/show', {
+        toastText: `Imagem "${file.name}" enviada com sucesso`,
+        toastType: 'success'
       });
     },
 
     handleImageUploadError({ file, error }) {
       console.error('Erro no upload da imagem:', file?.name, error);
-      toast.setToast({
-        text: `Erro ao enviar imagem: ${error}`,
-        type: 'error',
-        time: 3000
+      this.$store.dispatch('toast/show', {
+        toastText: `Erro ao enviar imagem: ${error}`,
+        toastType: 'error'
       });
     },
 
@@ -457,7 +490,7 @@ export default {
 
         const deletePromises = this.tempUploadedImages.map(async (image) => {
           try {
-            await userDocuments.deleteUserAttachment(image.id);
+            await this.$store.dispatch('userDocuments/deleteUserAttachment', image.id);
             console.log(`Imagem temporária deletada: ${image.fileName}`);
           } catch (error) {
             console.error(`Erro ao deletar imagem ${image.fileName}:`, error);
@@ -482,7 +515,7 @@ export default {
             // Gerar nome permanente removendo o prefixo 'temp_' e timestamp
             const permanentName = `biography_image_${Date.now()}_${image.fileName}`;
 
-            await userDocuments.updateUserAttachment({
+            await this.$store.dispatch('userDocuments/updateUserAttachment', {
               id: image.id,
               name: permanentName
             });

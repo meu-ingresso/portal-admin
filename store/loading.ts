@@ -1,24 +1,23 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-
-@Module({
-  name: 'loading',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Loading extends VuexModule {
-  private isLoading = false;
-
-  public get $isLoading() {
-    return this.isLoading;
-  }
-
-  @Mutation
-  private SET_IS_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
-
-  @Action
-  public setIsLoading(value: boolean) {
-    this.context.commit('SET_IS_LOADING', value);
-  }
+interface LoadingState {
+  isLoading: boolean;
 }
+
+export const state = (): LoadingState => ({
+  isLoading: false,
+});
+
+export const getters = {
+  $isLoading: (state: LoadingState) => state.isLoading,
+};
+
+export const mutations = {
+  SET_IS_LOADING(state: LoadingState, value: boolean) {
+    state.isLoading = value;
+  },
+};
+
+export const actions = {
+  setIsLoading({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING', value);
+  },
+};

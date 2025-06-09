@@ -2,16 +2,9 @@
   <div class="event-details-wrapper">
     <!-- Estado vazio -->
     <template v-if="getCoupons?.length === 0">
-      <EmptyState
-        title="Ainda não há cupons"
-        subtitle="Uma vez criados, seus cupons aparecerão aqui"
-        icon="mdi-ticket">
+      <EmptyState title="Ainda não há cupons" subtitle="Uma vez criados, seus cupons aparecerão aqui" icon="mdi-ticket">
         <template #action>
-          <DefaultButton
-            text="Adicionar"
-            icon="mdi-plus"
-            class="mt-6"
-            @click="openAddCouponModal" />
+          <DefaultButton text="Adicionar" icon="mdi-plus" class="mt-6" @click="openAddCouponModal" />
         </template>
       </EmptyState>
     </template>
@@ -30,23 +23,11 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4">
-          <CouponForm
-            v-if="showAddDialog"
-            ref="couponForm"
-            :event-id="getEvent.id"
-            :tickets="getTickets" />
+          <CouponForm v-if="showAddDialog" ref="couponForm" :event-id="getEvent.id" :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            :disabled="isAddingCoupon"
-            @click="handleCloseAddDialog" />
-          <DefaultButton
-            text="Salvar"
-            :is-loading="isAddingCoupon"
-            :disabled="isAddingCoupon"
-            @click="submitAdd" />
+          <DefaultButton outlined text="Cancelar" :disabled="isAddingCoupon" @click="handleCloseAddDialog" />
+          <DefaultButton text="Salvar" :is-loading="isAddingCoupon" :disabled="isAddingCoupon" @click="submitAdd" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -55,7 +36,6 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { eventGeneralInfo, eventCoupons, eventTickets, toast } from '@/store';
 
 export default {
   data() {
@@ -71,7 +51,7 @@ export default {
     },
 
     getTickets() {
-      return eventTickets.$tickets.map((ticket) => {
+      return this.$store.getters['eventTickets/$tickets'].map((ticket) => {
         return {
           id: ticket.id,
           name: ticket.name,
@@ -81,11 +61,11 @@ export default {
     },
 
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     getCoupons() {
-      return eventCoupons.$coupons;
+      return this.$store.getters['eventCoupons/$coupons'];
     },
 
     getStatistics() {
@@ -127,7 +107,7 @@ export default {
         const { success } = await couponForm.handleSubmit(true);
         if (success) {
           this.showAddDialog = false;
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Cupom adicionado com sucesso!`,
             type: 'success',
             time: 5000,

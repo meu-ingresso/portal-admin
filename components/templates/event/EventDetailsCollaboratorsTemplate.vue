@@ -1,22 +1,18 @@
 <template>
   <div class="event-details-wrapper">
-    <EventCollaborator
-      :event-id="getEvent.id"
-      :collaborators="collaborators"/>
+    <EventCollaborator :event-id="getEvent.id" :collaborators="collaborators" />
   </div>
 </template>
 
 <script>
-import { eventGeneralInfo, eventCollaborators } from '@/store';
-
 export default {
 
   computed: {
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
     collaborators() {
-      return eventCollaborators.$collaborators;
+      return this.$store.getters['eventCollaborators/$collaborators'];
     },
   },
 

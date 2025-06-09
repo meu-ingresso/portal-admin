@@ -1,4 +1,3 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleDeleteResponse, handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 
@@ -15,14 +14,26 @@ export interface AddressPayload {
   isApiZipcode?: boolean;
 }
 
-@Module({
-  name: 'address',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Address extends VuexModule {
-  private isLoading: boolean = false;
-  private address = {
+interface AddressState {
+  isLoading: boolean;
+  address: {
+    id: string;
+    street: string;
+    number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipcode: string;
+    latitude: number | null;
+    longitude: number | null;
+    deleted_at: string | null;
+  };
+}
+
+export const state = (): AddressState => ({
+  isLoading: false,
+  address: {
     id: '',
     street: '',
     number: '',
@@ -34,34 +45,29 @@ export default class Address extends VuexModule {
     latitude: null,
     longitude: null,
     deleted_at: null,
-  };
+  },
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $isLoading: (state: AddressState) => state.isLoading,
+  $address: (state: AddressState) => state.address,
+  $addressIsValid: (state: AddressState) => {
+    const { street, number, neighborhood, city, state: addressState, zipcode } = state.address;
+    return street && number && neighborhood && city && addressState && zipcode;
+  },
+};
 
-  public get $address() {
-    return this.address;
-  }
+export const mutations = {
+  SET_LOADING(state: AddressState, payload: boolean) {
+    state.isLoading = payload;
+  },
 
-  public get $addressIsValid() {
-    const { street, number, neighborhood, city, state, zipcode } = this.address;
-    return street && number && neighborhood && city && state && zipcode;
-  }
+  SET_ADDRESS(state: AddressState, payload: any) {
+    state.address = { ...state.address, ...payload };
+  },
 
-  @Mutation
-  private SET_LOADING(payload: boolean) {
-    this.isLoading = payload;
-  }
-
-  @Mutation
-  private SET_ADDRESS(payload: any) {
-    this.address = { ...this.address, ...payload };
-  }
-
-  @Mutation
-  private RESET_ADDRESS() {
-    this.address = {
+  RESET_ADDRESS(state: AddressState) {
+    state.address = {
       id: '',
       street: '',
       number: '',
@@ -74,22 +80,21 @@ export default class Address extends VuexModule {
       longitude: null,
       deleted_at: null,
     };
-  }
+  },
+};
 
-  @Action
-  public updateAddress(payload: Partial<AddressPayload>) {
-    this.context.commit('SET_ADDRESS', payload);
-  }
+export const actions = {
+  updateAddress({ commit }: any, payload: Partial<AddressPayload>) {
+    commit('SET_ADDRESS', payload);
+  },
 
-  @Action
-  public resetAddress() {
-    this.context.commit('RESET_ADDRESS');
-  }
+  resetAddress({ commit }: any) {
+    commit('RESET_ADDRESS');
+  },
 
-  @Action
-  public async fetchGetAddress(addressId: string) {
+  async fetchGetAddress({ commit, state }: any, addressId: string) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       if (!addressId) {
         throw new Error('ID de endereço não encontrado');
@@ -101,24 +106,23 @@ export default class Address extends VuexModule {
       if (data && data.length > 0 && data[0].address) {
         const address = data[0].address;
 
-        this.context.commit('SET_ADDRESS', {
+        commit('SET_ADDRESS', {
           ...address,
         });
       }
 
-      return this.address;
+      return state.address;
     } catch (error) {
       console.error('Erro ao buscar endereço:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchCreateAddress(payload: AddressPayload) {
+  async fetchCreateAddress({ commit }: any, payload: AddressPayload) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const addressResponse = await $axios.$post('address', {
         data: [
@@ -147,14 +151,13 @@ export default class Address extends VuexModule {
       console.error('Erro ao criar endereço:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchUpdateAddress(payload: { addressId: string, payload: Partial<AddressPayload> }) {
+  async fetchUpdateAddress({ commit }: any, payload: { addressId: string, payload: Partial<AddressPayload> }) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const addressResponse = await $axios.$patch('address', {
         data: [
@@ -172,15 +175,13 @@ export default class Address extends VuexModule {
       console.error('Erro ao atualizar endereço:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-
-  @Action
-  public async fetchDeleteAddress(addressId: string) {
+  async fetchDeleteAddress({ commit }: any, addressId: string) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$delete(`address/${addressId}`);
       const { data } = handleDeleteResponse(response, 'Falha ao deletar endereço', null);
@@ -190,7 +191,7 @@ export default class Address extends VuexModule {
       console.error('Erro ao deletar endereço:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
-} 
+  },
+}; 

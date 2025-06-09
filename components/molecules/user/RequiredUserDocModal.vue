@@ -1,20 +1,10 @@
 <template>
   <div class="required-doc-wrapper">
     <!-- Overlay for closing drawer -->
-    <div 
-      v-if="showDocumentDialog" 
-      class="drawer-overlay"
-      @click="closeDocumentDialog"
-    ></div>
-    
-    <v-navigation-drawer
-      :value="showDocumentDialog"
-      fixed
-      right
-      :width="isMobile ? '100%' : '600'"
-      class="doc-drawer"
-      @input="$emit('update:showDocumentDialog', $event)"
-    >
+    <div v-if="showDocumentDialog" class="drawer-overlay" @click="closeDocumentDialog"></div>
+
+    <v-navigation-drawer :value="showDocumentDialog" fixed right :width="isMobile ? '100%' : '600'" class="doc-drawer"
+      @input="$emit('update:showDocumentDialog', $event)">
       <v-sheet class="d-flex flex-column fill-height">
         <!-- Drawer Header -->
         <v-toolbar flat dense class="flex-shrink-0 drawer-header">
@@ -34,7 +24,7 @@
             <div>
               <p class="text-subtitle-1 font-weight-medium mb-2">NOTAS FISCAIS</p>
               <p class="text-body-2 mb-0">
-                A partir de agora, <strong>todas as notas fiscais</strong> dos seus eventos e conteúdos digitais, em 
+                A partir de agora, <strong>todas as notas fiscais</strong> dos seus eventos e conteúdos digitais, em
                 andamento e futuros, <strong>serão emitidas para os dados cadastrados</strong> nessa etapa.
               </p>
             </div>
@@ -57,35 +47,20 @@
           <v-stepper v-model="currentStep" class="elevation-0">
             <!-- Stepper Header -->
             <v-stepper-header class="stepper-header-sticky">
-              <v-stepper-step 
-                :complete="currentStep > 1" 
-                :step="1" 
-                :editable="isStepComplete(1)"
-                @click="isStepComplete(1) && (currentStep = 1)"
-              >
+              <v-stepper-step :complete="currentStep > 1" :step="1" :editable="isStepComplete(1)"
+                @click="isStepComplete(1) && (currentStep = 1)">
                 Dados Pessoais
               </v-stepper-step>
-              <v-stepper-step 
-                :complete="currentStep > 2" 
-                :step="2" 
-                :editable="isStepComplete(1)"
-                @click="isStepComplete(1) && (currentStep = 2)"
-              >
+              <v-stepper-step :complete="currentStep > 2" :step="2" :editable="isStepComplete(1)"
+                @click="isStepComplete(1) && (currentStep = 2)">
                 Endereço
               </v-stepper-step>
-              <v-stepper-step 
-                :complete="currentStep > 3" 
-                :step="3" 
-                :editable="isStepComplete(1) && isStepComplete(2)"
-                @click="isStepComplete(1) && isStepComplete(2) && (currentStep = 3)"
-              >
+              <v-stepper-step :complete="currentStep > 3" :step="3" :editable="isStepComplete(1) && isStepComplete(2)"
+                @click="isStepComplete(1) && isStepComplete(2) && (currentStep = 3)">
                 Chave PIX
               </v-stepper-step>
-              <v-stepper-step 
-                :step="4" 
-                :editable="isStepComplete(1) && isStepComplete(2) && isStepComplete(3)"
-                @click="isStepComplete(1) && isStepComplete(2) && isStepComplete(3) && (currentStep = 4)"
-              >
+              <v-stepper-step :step="4" :editable="isStepComplete(1) && isStepComplete(2) && isStepComplete(3)"
+                @click="isStepComplete(1) && isStepComplete(2) && isStepComplete(3) && (currentStep = 4)">
                 Documentos
               </v-stepper-step>
             </v-stepper-header>
@@ -94,32 +69,16 @@
               <!-- Step 1: Personal Information -->
               <v-stepper-content step="1" class="pa-4 no-border no-margin">
                 <v-container>
-                  <PersonTypeSelector 
-                    :model-value="personType" 
-                    @update:modelValue="personType = $event" 
-                  />
+                  <PersonTypeSelector :model-value="personType" @update:modelValue="personType = $event" />
                   <p class="text-body-1 grey--text text--darken-2 mb-6">
                     Os dados devem ser de acordo com seu documento oficial, sem abreviatura.
                   </p>
-                  <PhysicalPersonForm
-                    v-if="personType === 'PF'"
-                    :cpf="cpf"
-                    :first-name="firstName"
-                    :last-name="lastName"
-                    :form-submitted="formSubmitted"
-                    @update:cpf="cpf = $event"
-                    @update:firstName="firstName = $event"
-                    @update:lastName="lastName = $event" />
-                  <LegalPersonForm
-                    v-else 
-                    :cnpj="cnpj"
-                    :company-name="companyName"
-                    :trade-name="tradeName"
-                    :form-submitted="formSubmitted"
-                    @update:cnpj="cnpj = $event"
-                    @update:companyName="companyName = $event"
-                    @update:tradeName="tradeName = $event"
-                  />
+                  <PhysicalPersonForm v-if="personType === 'PF'" :cpf="cpf" :first-name="firstName"
+                    :last-name="lastName" :form-submitted="formSubmitted" @update:cpf="cpf = $event"
+                    @update:firstName="firstName = $event" @update:lastName="lastName = $event" />
+                  <LegalPersonForm v-else :cnpj="cnpj" :company-name="companyName" :trade-name="tradeName"
+                    :form-submitted="formSubmitted" @update:cnpj="cnpj = $event"
+                    @update:companyName="companyName = $event" @update:tradeName="tradeName = $event" />
                 </v-container>
               </v-stepper-content>
 
@@ -139,12 +98,8 @@
                   <p class="text-body-1 grey--text text--darken-2 mb-6">
                     Informe sua chave PIX para receber os valores das vendas.
                   </p>
-                  <PixKeyForm
-                    :pix-key-type="pixKeyType"
-                    :pix-key="bankInfo.pixKey"
-                    :form-submitted="formSubmitted"
-                    @update:pixKeyType="pixKeyType = $event"
-                    @update:pixKey="bankInfo.pixKey = $event" />
+                  <PixKeyForm :pix-key-type="pixKeyType" :pix-key="bankInfo.pixKey" :form-submitted="formSubmitted"
+                    @update:pixKeyType="pixKeyType = $event" @update:pixKey="bankInfo.pixKey = $event" />
                 </v-container>
               </v-stepper-content>
 
@@ -154,34 +109,21 @@
                   <p class="text-body-1 grey--text text--darken-2 mb-6">
                     Envie os documentos necessários para validação da sua conta:
                   </p>
-                  <DocumentUploadForm
-                    v-model="documentUploadData"
-                    :person-type="personType"
-                    @update:modelValue="updateDocumentUploadData"
-                    @error="handleDocumentError"
-                  />
+                  <DocumentUploadForm v-model="documentUploadData" :person-type="personType"
+                    @update:modelValue="updateDocumentUploadData" @error="handleDocumentError" />
                 </v-container>
               </v-stepper-content>
             </v-stepper-items>
           </v-stepper>
         </div>
-        
+
         <!-- Fixed Action Bar -->
         <v-sheet class="drawer-actions pa-2">
           <v-container>
             <div class="d-flex" :class="currentStep === 1 ? 'justify-end' : 'justify-space-between'">
-              <DefaultButton
-                v-if="currentStep > 1"
-                outlined
-                text="Voltar"
-                @click="previousStep"
-              />
-              <DefaultButton 
-                :text="primaryActionText"
-                :disabled="!isStepValid || (currentStep === 4 && isUploading)"
-                :is-loading="currentStep === 4 && isUploading"
-                @click="handlePrimaryAction"
-              />
+              <DefaultButton v-if="currentStep > 1" outlined text="Voltar" @click="previousStep" />
+              <DefaultButton :text="primaryActionText" :disabled="!isStepValid || (currentStep === 4 && isUploading)"
+                :is-loading="currentStep === 4 && isUploading" @click="handlePrimaryAction" />
             </div>
           </v-container>
         </v-sheet>
@@ -192,7 +134,6 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { toast, userDocuments, event, user, userAddress } from '@/store';
 import { onFormatCPF, onFormatCNPJ } from '@/utils/formatters';
 import { PRODUCER_ROLE } from '@/utils/permissions-config';
 
@@ -261,11 +202,11 @@ export default {
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id;
     },
 
     people() {
-      return user.$people;
+      return this.$store.getters['user/$people'];
     },
 
     stepTitle() {
@@ -288,7 +229,7 @@ export default {
     },
 
     isStep2Valid() {
-      return userAddress.$addressIsValid;
+      return this.$store.getters['userAddress/$addressIsValid'];
     },
 
     isStep3Valid() {
@@ -310,7 +251,7 @@ export default {
     },
 
     currentAddress() {
-      return userAddress.$address;
+      return this.$store.getters['userAddress/$address'];
     },
 
     primaryActionText() {
@@ -370,7 +311,7 @@ export default {
 
     validatePixKey(pixKey) {
       if (!pixKey) return false;
-      
+
       const validations = {
         cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
         cnpj: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
@@ -394,9 +335,9 @@ export default {
 
     nextStep() {
       this.formSubmitted = true;
-      
+
       if (!this.isStepValid) return;
-      
+
       if (this.currentStep < 4) {
         this.currentStep += 1;
         this.formSubmitted = false;
@@ -429,11 +370,11 @@ export default {
         await this.uploadSingleDocument('CNH', DOCUMENT_TYPE_MAPPING.CNH, pfDocuments[0]);
       } else if (documentType === DOCUMENT_TYPES.PF.RG && pfDocuments.length > 0) {
         const uploads = [];
-        
+
         if (pfDocuments[0]) {
           uploads.push(this.uploadSingleDocument('RG - Frente', DOCUMENT_TYPE_MAPPING.RG_FRONT, pfDocuments[0]));
         }
-        
+
         if (pfDocuments[1]) {
           uploads.push(this.uploadSingleDocument('RG - Verso', DOCUMENT_TYPE_MAPPING.RG_BACK, pfDocuments[1]));
         }
@@ -449,18 +390,18 @@ export default {
       const isContrato = documentType === DOCUMENT_TYPES.PJ.CONTRATO;
       const docType = isContrato ? DOCUMENT_TYPE_MAPPING.CONTRATO_SOCIAL : DOCUMENT_TYPE_MAPPING.CNPJ;
       const docName = isContrato ? 'Contrato Social' : 'Cartão CNPJ';
-      
+
       await this.uploadSingleDocument(docName, docType, pjDocument);
     },
 
     async uploadSingleDocument(name, type, file) {
-      const document = await userDocuments.createUserDocument({
+      const document = await this.$store.dispatch('userDocuments/createUserDocument', {
         name,
         type,
         userId: this.userId
       });
-      
-      await userDocuments.uploadUserDocument({
+
+      await this.$store.dispatch('userDocuments/uploadUserDocument', {
         documentFile: file,
         attachmentId: document.id,
       });
@@ -469,7 +410,7 @@ export default {
     // Métodos de Gerenciamento de Estado
     async saveUserData() {
       if (!this.isStepValid) return;
-      
+
       try {
         this.isUploading = true;
 
@@ -483,7 +424,7 @@ export default {
 
         await this.updateUserRole();
         await this.updateEventStatus();
-        
+
         this.showSuccessMessage();
         this.$emit('saved-user-data');
 
@@ -497,16 +438,16 @@ export default {
 
     async handleAccountVerification() {
       try {
-        const verificationStatus = await userDocuments.getAccountVerificationStatus(this.userId);
+        const verificationStatus = await this.$store.dispatch('userDocuments/getAccountVerificationStatus', this.userId);
         if (verificationStatus) {
-          await userDocuments.deleteUserDocument({
+          await this.$store.dispatch('userDocuments/deleteUserDocument', {
             attachmentId: verificationStatus.id
           });
         }
 
-        const rejectionReason = await userDocuments.getRejectionReason(this.userId);
+        const rejectionReason = await this.$store.dispatch('userDocuments/getRejectionReason', this.userId);
         if (rejectionReason) {
-          await userDocuments.deleteUserDocument({
+          await this.$store.dispatch('userDocuments/deleteUserDocument', {
             attachmentId: rejectionReason.id
           });
         }
@@ -519,24 +460,24 @@ export default {
       let addressId = this.currentAddress?.id;
 
       if (addressId) {
-        await userAddress.updateUserAddress({
+        await this.$store.dispatch('userAddress/updateUserAddress', {
           addressId,
           data: { ...this.currentAddress }
         });
       } else {
-        addressId = await userAddress.createUserAddress({
+        addressId = await this.$store.dispatch('userAddress/createUserAddress', {
           ...this.currentAddress
         });
       }
 
-      await user.updatePeople({
+      await this.$store.dispatch('user/updatePeople', {
         id: this.people.id,
         address_id: addressId
       });
     },
 
     async updateEventStatus() {
-      await event.updatePromoterEventsFromStatusToStatus({
+      await this.$store.dispatch('event/updatePromoterEventsFromStatusToStatus', {
         userId: this.userId,
         fromStatus: 'Aguardando',
         toStatus: 'Em Análise'
@@ -545,10 +486,10 @@ export default {
 
     async updateUserRole() {
       try {
-        const { success, data } = await user.getRoleByName(PRODUCER_ROLE);
+        const { success, data } = await this.$store.dispatch('user/getRoleByName', PRODUCER_ROLE);
         if (!success) throw new Error('Erro ao buscar o cargo de produtor');
-        
-        await user.updateUser({
+
+        await this.$store.dispatch('user/updateUser', {
           id: this.userId,
           role_id: data.id
         });
@@ -568,7 +509,7 @@ export default {
     },
 
     showSuccessMessage() {
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: 'Informações salvas com sucesso!',
         type: 'success',
         time: 5000,
@@ -576,7 +517,7 @@ export default {
     },
 
     handleError(message) {
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: message,
         type: 'error',
         time: 5000,
@@ -605,14 +546,14 @@ export default {
 
     // Métodos de Carregamento de Dados
     async fetchDocumentStatus() {
-      await userDocuments.fetchDocumentStatus(this.userId);
-      const rejectionDoc = userDocuments.$userAttachments.find(att => att.name === 'documents_rejection');
+      await this.$store.dispatch('userDocuments/fetchDocumentStatus', this.userId);
+      const rejectionDoc = this.$store.getters['userDocuments/$userAttachments'].find(att => att.name === 'documents_rejection');
       this.rejectionReason = rejectionDoc?.value || '';
     },
 
     loadPersonalInfo() {
       try {
-        const personalInfoDoc = userDocuments.$userAttachments.find(att => att.name === 'fiscal_info');
+        const personalInfoDoc = this.$store.getters['userDocuments/$userAttachments'].find(att => att.name === 'fiscal_info');
         if (personalInfoDoc?.value) {
           try {
             const personalInfo = JSON.parse(personalInfoDoc.value);
@@ -631,7 +572,7 @@ export default {
 
     updatePersonalInfoFromJson(personalInfo) {
       this.personType = personalInfo.personType || 'PF';
-      
+
       if (this.personType === 'PF') {
         this.cpf = personalInfo.cpf || '';
         this.firstName = personalInfo.firstName || '';
@@ -656,7 +597,7 @@ export default {
     },
 
     loadPixInfo() {
-      const pixInfo = userDocuments.$userAttachments.find(att => att.name === 'pix_key');
+      const pixInfo = this.$store.getters['userDocuments/$userAttachments'].find(att => att.name === 'pix_key');
       if (pixInfo) {
         this.bankInfo.pixKey = pixInfo.value || '';
         this.pixKeyType = pixInfo.type || 'cpf';
@@ -667,7 +608,7 @@ export default {
     detectPixKeyType() {
       const pixKey = this.bankInfo.pixKey;
       if (!pixKey) return;
-      
+
       const keyTypes = {
         cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
         cnpj: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
@@ -686,7 +627,7 @@ export default {
     },
 
     async savePixInformation() {
-      await userDocuments.savePixInformation({
+      await this.$store.dispatch('userDocuments/savePixInformation', {
         userId: this.userId,
         pixKey: this.bankInfo.pixKey,
         pixKeyType: this.pixKeyType
@@ -696,31 +637,31 @@ export default {
     async savePersonalInfoAsJson() {
       const personalInfo = {
         personType: this.personType,
-        ...(this.personType === 'PF' 
+        ...(this.personType === 'PF'
           ? {
-              cpf: this.cpf,
-              firstName: this.firstName,
-              lastName: this.lastName
-            }
+            cpf: this.cpf,
+            firstName: this.firstName,
+            lastName: this.lastName
+          }
           : {
-              cnpj: this.cnpj,
-              companyName: this.companyName,
-              tradeName: this.tradeName
-            }
+            cnpj: this.cnpj,
+            companyName: this.companyName,
+            tradeName: this.tradeName
+          }
         )
       };
 
-      const personalInfoDoc = userDocuments.$userAttachments.find(
+      const personalInfoDoc = this.$store.getters['userDocuments/$userAttachments'].find(
         att => att.name === 'fiscal_info'
       );
-      
+
       if (personalInfoDoc) {
-        await userDocuments.updateUserAttachment({
+        await this.$store.dispatch('userDocuments/updateUserAttachment', {
           id: personalInfoDoc.id,
           value: JSON.stringify(personalInfo)
         });
       } else {
-        await userDocuments.createUserDocument({
+        await this.$store.dispatch('userDocuments/createUserDocument', {
           name: 'fiscal_info',
           type: 'json',
           userId: this.userId,
@@ -770,7 +711,8 @@ export default {
 .drawer-scrollable-content {
   flex-grow: 1;
   overflow-y: auto;
-  padding-bottom: 80px; /* Space for fixed actions */
+  padding-bottom: 80px;
+  /* Space for fixed actions */
 }
 
 .drawer-actions {

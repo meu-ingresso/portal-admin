@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-disable camelcase */
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload as BaseSearchPayload, PeoplePayload, UserWithRelations, RolePayload, UserPayload } from '@/models';
 import { handleGetResponse, handleUpdateResponse, handleDeleteResponse } from '~/utils/responseHelpers';
@@ -16,176 +15,97 @@ interface ExtendedSearchPayload extends BaseSearchPayload {
   includeEventCount?: boolean;
 }
 
-@Module({ name: 'user', stateFactory: true, namespaced: true })
-export default class User extends VuexModule {
-  private user: UserWithRelations = {
+interface UserState {
+  user: UserWithRelations;
+  copyUser: UserWithRelations;
+  userList: any[];
+  roleList: any[];
+}
+
+const defaultUser: UserWithRelations = {
+  id: '',
+  people_id: '',
+  email: '',
+  alias: '',
+  role_id: '',
+  account_verified: false,
+  created_at: '',
+  updated_at: '',
+  deleted_at: '',
+  people: {
     id: '',
-    people_id: '',
+    first_name: '',
+    last_name: '',
+    person_type: 'PF',
+    tax: '',
+    phone: '',
     email: '',
-    alias: '',
-    role_id: '',
-    account_verified: false,
     created_at: '',
     updated_at: '',
-    deleted_at: '',
-    people: {
+    address: {
       id: '',
-      first_name: '',
-      last_name: '',
-      person_type: 'PF',
-      tax: '',
-      phone: '',
-      email: '',
-      created_at: '',
-      updated_at: '',
-      address: {
-        id: '',
-        street: '',
-        number: '',
-        neighborhood: '',
-        zipcode: '',
-        city: '',
-        state: '',
-      },
+      street: '',
+      number: '',
+      neighborhood: '',
+      zipcode: '',
+      city: '',
+      state: '',
     },
-    role: {
-      id: '',
-      name: '',
-      description: '',
-      created_at: '',
-      updated_at: '',
-    },
-    attachments: [],
-  };
-
-  private copyUser: UserWithRelations = {
+  },
+  role: {
     id: '',
-    people_id: '',
-    email: '',
-    alias: '',
-    role_id: '',
-    account_verified: false,
+    name: '',
+    description: '',
     created_at: '',
     updated_at: '',
-    deleted_at: '',
-    people: {
-      id: '',
-      first_name: '',
-      last_name: '',
-      person_type: 'PF',
-      tax: '',
-      phone: '',
-      email: '',
-      created_at: '',
-      updated_at: '',
-      address: {
-        id: '',
-        street: '',
-        number: '',
-        neighborhood: '',
-        zipcode: '',
-        city: '',
-        state: '',
-      },
-    },
-    role: {
-      id: '',
-      name: '',
-      description: '',
-    },
-    attachments: [],
-  };
+  },
+  attachments: [],
+};
 
-  private userList = [];
+export const state = (): UserState => ({
+  user: { ...defaultUser },
+  copyUser: { ...defaultUser },
+  userList: [],
+  roleList: [],
+});
 
-  private roleList = [];
+export const getters = {
+  $user: (state: UserState) => state.user,
+  $people: (state: UserState) => state.user.people,
+  $userList: (state: UserState) => state.userList,
+  $roleList: (state: UserState) => state.roleList,
+};
 
-  public get $user() {
-    return this.user;
-  }
+export const mutations = {
+  SET_USER(state: UserState, payload: UserWithRelations) {
+    state.user = payload;
+    state.copyUser = { ...payload };
+  },
 
-  public get $people() {
-    return this.user.people;
-  }
+  SET_USER_LIST(state: UserState, data: UserWithRelations[]) {
+    state.userList = data;
+  },
 
-  public get $userList() {
-    return this.userList;
-  }
+  SET_ROLE_LIST(state: UserState, data: RolePayload[]) {
+    state.roleList = data;
+  },
 
-  public get $roleList() {
-    return this.roleList;
-  }
+  RESET(state: UserState) {
+    state.user = { ...defaultUser };
+    state.copyUser = { ...defaultUser };
+  },
+};
 
-  @Mutation
-  private SET_USER(payload: UserWithRelations) {
-    this.user = payload;
-    this.copyUser = { ...this.user };
-  }
-
-  @Mutation
-  private SET_USER_LIST(data: UserWithRelations[]) {
-    this.userList = data;
-  }
-
-  @Mutation
-  private SET_ROLE_LIST(data: RolePayload[]) {
-    this.roleList = data;
-  }
-
-  @Mutation
-  private RESET() {
-    this.user = {
-      id: '',
-      people_id: '',
-      email: '',
-      alias: '',
-      role_id: '',
-      account_verified: false,
-      created_at: '',
-      updated_at: '',
-      deleted_at: '',
-      people: {
-        id: '',
-        first_name: '',
-        last_name: '',
-        person_type: 'PF',
-        tax: '',
-        phone: '',
-        email: '',
-        created_at: '',
-        updated_at: '',
-        address: {
-          id: '',
-          street: '',
-          number: '',
-          neighborhood: '',
-          zipcode: '',
-          city: '',
-          state: '',
-        },
-      },
-      role: {
-        id: '',
-        name: '',
-        description: '',
-      },
-      attachments: [],
-    };
-    this.copyUser = { ...this.user };
-  }
-
-  @Action
-  public async getById(payload: { user_id: string, commit?: boolean }) {
-
+export const actions = {
+  async getById({ commit }: any, payload: { user_id: string, commit?: boolean }) {
     try {
-
       const response = await $axios.$get(`users?where[id][v]=${payload.user_id}&preloads[]=people:address&preloads[]=role&preloads[]=attachments`);
       
       const result = handleGetResponse(response, 'Usuário não encontrado', null, true);
 
       if (result && result.data) {
         if (payload.commit) {
-          this.context.commit('SET_USER', result.data[0]);
+          commit('SET_USER', result.data[0]);
         }
 
         return result.data[0];
@@ -197,24 +117,22 @@ export default class User extends VuexModule {
       console.error('Erro ao buscar usuário por ID:', error);
       return null;
     }
-  }
+  },
 
-  @Action
-  public async getAllUsers() {
+  async getAllUsers({ commit }: any) {
     const response = await $axios
       .$get('users?preloads[]=people:address&preloads[]=role&preloads[]=attachments&limit=9999');
     
     const responseResult = handleGetResponse(response, 'Usuários não encontrados', null, true);
 
     if (responseResult && responseResult.data) {
-      this.context.commit('SET_USER_LIST', responseResult.data);
+      commit('SET_USER_LIST', responseResult.data);
     }
 
     return response;
-  }
+  },
 
-  @Action
-  public async getUsers({ 
+  async getUsers({ commit }: any, { 
     page = 1, 
     limit = 12, 
     search, 
@@ -262,7 +180,7 @@ export default class User extends VuexModule {
       const result = handleGetResponse(response, 'Usuários não encontrados', null, true);
 
       if (result && result.data) {
-        this.context.commit('SET_USER_LIST', result.data);
+        commit('SET_USER_LIST', result.data);
       }
 
       return {
@@ -285,10 +203,9 @@ export default class User extends VuexModule {
         code: 'SEARCH_NOTFOUND'
       };
     }
-  }
+  },
 
-  @Action
-  public async getUsersByRole({ 
+  async getUsersByRole({ commit }: any, { 
     page = 1, 
     limit = 50, 
     search, 
@@ -387,7 +304,7 @@ export default class User extends VuexModule {
       const result = handleGetResponse(response, 'Usuários não encontrados', null, true);
 
       if (result && result.data) {
-        this.context.commit('SET_USER_LIST', result.data);
+        commit('SET_USER_LIST', result.data);
       }
 
       return {
@@ -410,17 +327,16 @@ export default class User extends VuexModule {
         code: 'SEARCH_NOTFOUND'
       };
     }
-  }
+  },
 
-  @Action
-  public async getRoles() {
+  async getRoles({ commit }: any) {
     return await $axios
       .$get('roles')
       .then((response) => {
         if (response.body && response.body.code !== 'SEARCH_SUCCESS')
           throw new Error(response);
 
-        this.context.commit('SET_ROLE_LIST', response.body.result.data);
+        commit('SET_ROLE_LIST', response.body.result.data);
 
         return response;
       })
@@ -431,11 +347,9 @@ export default class User extends VuexModule {
           total: 0,
         };
       });
-  }
+  },
 
-  @Action
-  public async updatePeople(payload: PeoplePayload) {
-
+  async updatePeople(_: any, payload: PeoplePayload) {
     try {
       const updatedPeople = await $axios.$patch('people', {
         data: [
@@ -451,12 +365,10 @@ export default class User extends VuexModule {
     } catch (error) {
       return error;
     }
-  }
+  },
 
-  @Action
-  public async updateUser(payload: UserPayload) {
+  async updateUser(_: any, payload: UserPayload) {
     try {
-
       const response = await $axios.$patch('user', {
         data: [
           {
@@ -473,16 +385,13 @@ export default class User extends VuexModule {
       console.error('Erro ao atualizar usuário:', error);
       return error;
     }
+  },
 
-  }
+  reset({ commit }: any) {
+    commit('RESET');
+  },
 
-  @Action
-  public reset() {
-    this.context.commit('RESET');
-  }
-
-  @Action
-  public async createUser(payload: {
+  async createUser(_: any, payload: {
     email: string;
     role_id: string;
     people_id?: string;
@@ -547,10 +456,9 @@ export default class User extends VuexModule {
         error: error.message || 'Erro desconhecido'
       };
     }
-  }
+  },
 
-  @Action
-  public async getRoleByName(roleName: string) {
+  async getRoleByName(_: any, roleName: string) {
     try {
       const response = await $axios.$get('roles?where[name][v]=' + encodeURIComponent(roleName));
       
@@ -575,11 +483,9 @@ export default class User extends VuexModule {
         error: error.message || 'Erro desconhecido'
       };
     }
-  }
+  },
 
-
-  @Action
-  public async deleteUser(payload: { user_id: string }) {
+  async deleteUser(_: any, payload: { user_id: string }) {
     try {
       const response = await $axios.$delete(`user/${payload.user_id}`);
 
@@ -590,10 +496,9 @@ export default class User extends VuexModule {
       console.error('Erro ao deletar usuário:', error);
       return error;
     }
-  }
+  },
 
-  @Action
-  public async findUserByEmail(email: string) {
+  async findUserByEmail(_: any, email: string) {
     try {
       const response = await $axios.$get(`users?where[email][v]=${encodeURIComponent(email)}`);
       
@@ -618,5 +523,5 @@ export default class User extends VuexModule {
         error: error.message || 'Erro desconhecido'
       };
     }
-  }
-}
+  },
+};

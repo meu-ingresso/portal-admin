@@ -1,6 +1,4 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { toast } from '@/store';
 import { EventCollaboratorApiResponse } from '@/models/event';
 import { handleGetResponse } from '~/utils/responseHelpers';
 
@@ -12,51 +10,50 @@ interface CollaboratorFilters {
   search?: string;
 }
 
-@Module({
-  name: 'eventCollaborators',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventCollaborators extends VuexModule {
-  private isLoading: boolean = false;
-  private collaborators: EventCollaboratorApiResponse[] = [];
-  private meta = {
+interface EventCollaboratorsState {
+  isLoading: boolean;
+  collaborators: EventCollaboratorApiResponse[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
+export const state = (): EventCollaboratorsState => ({
+  isLoading: false,
+  collaborators: [],
+  meta: {
     total: 0,
     page: 1,
     limit: 10,
-  };
+  },
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $isLoading: (state: EventCollaboratorsState) => state.isLoading,
+  $collaborators: (state: EventCollaboratorsState) => state.collaborators,
+  $meta: (state: EventCollaboratorsState) => state.meta,
+};
 
-  public get $collaborators() {
-    return this.collaborators;
-  }
+export const mutations = {
+  SET_LOADING(state: EventCollaboratorsState, payload: boolean) {
+    state.isLoading = payload;
+  },
 
-  public get $meta() {
-    return this.meta;
-  }
+  SET_COLLABORATORS(state: EventCollaboratorsState, payload: EventCollaboratorApiResponse[]) {
+    state.collaborators = payload;
+  },
 
-  @Mutation
-  private SET_LOADING(payload: boolean) {
-    this.isLoading = payload;
-  }
+  SET_META(state: EventCollaboratorsState, payload: any) {
+    state.meta = payload;
+  },
+};
 
-  @Mutation
-  private SET_COLLABORATORS(payload: EventCollaboratorApiResponse[]) {
-    this.collaborators = payload;
-  }
-
-  @Mutation
-  private SET_META(payload: any) {
-    this.meta = payload;
-  }
-
-  @Action
-  public async fetchCollaborators(params: CollaboratorFilters): Promise<EventCollaboratorApiResponse[]> {
+export const actions = {
+  async fetchCollaborators({ commit, dispatch }: any, params: CollaboratorFilters): Promise<EventCollaboratorApiResponse[]> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const queryParams: any = {
         preloads: [
@@ -78,24 +75,23 @@ export default class EventCollaborators extends VuexModule {
       const response = await $axios.$get(`event-collaborators`, { params: queryParams });
       const { data, meta } = handleGetResponse(response, 'Erro ao carregar colaboradores', params.eventId, true);
 
-      this.context.commit('SET_COLLABORATORS', data || []);
-      this.context.commit('SET_META', meta);
+      commit('SET_COLLABORATORS', data || []);
+      commit('SET_META', meta);
       return data || [];
     } catch (error) {
       console.error('Error fetching collaborators:', error);
-      toast.setToast({
+      dispatch('toast/setToast', {
         text: 'Erro ao carregar colaboradores',
         type: 'error',
         time: 5000,
-      });
+      }, { root: true });
       return [];
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async validateEmails(emails: string[]): Promise<{ [email: string]: boolean }> {
+  async validateEmails(_: any, emails: string[]): Promise<{ [email: string]: boolean }> {
     try {
       const validationResults: { [email: string]: boolean } = {};
       
@@ -122,19 +118,18 @@ export default class EventCollaborators extends VuexModule {
       console.error('Error validating emails:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async addCollaborators(payload: { 
+  async addCollaborators({ commit, dispatch }: any, payload: { 
     eventId: string;
     collaborators: { email: string; role: string }[];
   }): Promise<{ success: boolean, invalidEmails?: string[] }> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
       
       // First validate all emails
       const emails = payload.collaborators.map(c => c.email);
-      const emailValidationResults = await this.validateEmails(emails);
+      const emailValidationResults = await dispatch('validateEmails', emails);
       
       // Gather invalid emails
       const invalidEmails = Object.entries(emailValidationResults)
@@ -175,35 +170,34 @@ export default class EventCollaborators extends VuexModule {
       return { success: true };
     } catch (error) {
       console.error('Error adding collaborators:', error);
-      toast.setToast({
+      dispatch('toast/setToast', {
         text: error.response?.data?.message || 'Erro ao adicionar colaboradores',
         type: 'error',
         time: 5000,
-      });
+      }, { root: true });
       return { success: false };
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async deleteCollaborator(payload: { id: string; eventId: string }): Promise<boolean> {
+  async deleteCollaborator({ commit, dispatch }: any, payload: { id: string; eventId: string }): Promise<boolean> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
       
       await $axios.$delete(`event-collaborator/${payload.id}`);
       
       return true;
     } catch (error) {
       console.error('Error deleting collaborator:', error);
-      toast.setToast({
+      dispatch('toast/setToast', {
         text: error.response?.data?.message || 'Erro ao remover colaborador',
         type: 'error',
         time: 5000,
-      });
+      }, { root: true });
       return false;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
-} 
+  },
+}; 

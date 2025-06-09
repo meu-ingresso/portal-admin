@@ -1,24 +1,18 @@
 <template>
   <div>
     <v-container>
-      <ReportsDrawer 
-        :drawer="drawer" 
-        :selected-event="selectedEvent" 
-        :selected-view="$route.meta.template" />
+      <ReportsDrawer :drawer="drawer" :selected-event="selectedEvent" :selected-view="$route.meta.template" />
 
-      <ReportsLoading
-        v-if="isLoading || isLoadingEvents"
-        :message="loadingMessage" />
+      <ReportsLoading v-if="isLoading || isLoadingEvents" :message="loadingMessage" />
 
       <div v-else-if="!hasEvents">
         <ValueNoExists text="Nenhum evento encontrado" />
       </div>
 
       <div v-else class="reports-page">
-        <div v-if="currentTemplate !== 'users'" class="d-flex justify-space-between" :class="{ 'flex-column': isMobile }">
-          <ReportsHeader 
-            :selected-event="selectedEvent" 
-            :grouped-events="groupedEvents"
+        <div v-if="currentTemplate !== 'users'" class="d-flex justify-space-between"
+          :class="{ 'flex-column': isMobile }">
+          <ReportsHeader :selected-event="selectedEvent" :grouped-events="groupedEvents"
             @change-event="onChangeEvent" />
         </div>
 
@@ -34,11 +28,6 @@
 </template>
 
 <script>
-import {
-  eventGeneralInfo,
-  eventTickets,
-  loading,
-} from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 import { groupEventsBySession } from '@/utils/event-utils';
 
@@ -59,25 +48,25 @@ export default {
     },
 
     isLoading() {
-      return loading.$isLoading;
+      return this.$store.getters['loading/$isLoading'];
     },
 
     isLoadingEvents() {
-      return eventGeneralInfo.$isLoading;
+      return this.$store.getters['eventGeneralInfo/$isLoading'];
     },
 
     getEvents() {
-      return eventGeneralInfo.$eventList || [];
+      return this.$store.getters['eventGeneralInfo/$eventList'] || [];
     },
 
     groupedEvents() {
       const grouped = groupEventsBySession(this.getEvents);
-    
+
       return grouped;
     },
 
     getTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
 
     currentRouter() {
@@ -109,11 +98,11 @@ export default {
     },
 
     userRole() {
-      return this.$cookies.get('user_role');
+      return this.$store.state.auth.user?.auth?.role;
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id;
     },
 
     isAdmin() {
@@ -123,9 +112,9 @@ export default {
 
     upcomingGroupedEvents() {
       if (!this.groupedEvents) return [];
-      
+
       const now = new Date();
-      
+
       return this.groupedEvents
         .filter(event => {
           const endDate = new Date(event.end_date);
@@ -140,9 +129,9 @@ export default {
 
     pastGroupedEvents() {
       if (!this.groupedEvents) return [];
-      
+
       const now = new Date();
-      
+
       return this.groupedEvents
         .filter(event => {
           const endDate = new Date(event.end_date);
@@ -151,7 +140,7 @@ export default {
         .sort((a, b) => {
           const aEnd = new Date(a.end_date);
           const bEnd = new Date(b.end_date);
-          return bEnd - aEnd; 
+          return bEnd - aEnd;
         });
     },
   },
@@ -185,10 +174,10 @@ export default {
   methods: {
     async fetchEvents() {
       try {
-        loading.setIsLoading(true);
+        this.$store.dispatch('loading/setIsLoading', true);
         this.loadingMessage = 'Buscando eventos...';
 
-        await eventGeneralInfo.fetchEvents({
+        await this.$store.dispatch('eventGeneralInfo/fetchEvents', {
           preloads: ['rating', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups']
         });
 
@@ -202,7 +191,7 @@ export default {
         console.error('Erro ao buscar eventos:', error);
         this.hasEvents = false;
       } finally {
-        loading.setIsLoading(false);
+        this.$store.dispatch('loading/setIsLoading', false);
       }
     },
 
@@ -221,44 +210,44 @@ export default {
         if (this.selectedEvent.groups && this.selectedEvent.groups.length > 0) {
           this.currentGroupId = this.selectedEvent.groups[0].id;
         }
-        
+
         this.loadEventData(this.selectedEvent.id);
       }
     },
-    
+
     isEventFromCurrentGroup(event) {
-      return event && 
-             event.groups && 
-             event.groups.length > 0 && 
-             event.groups[0].id === this.currentGroupId;
+      return event &&
+        event.groups &&
+        event.groups.length > 0 &&
+        event.groups[0].id === this.currentGroupId;
     },
 
     async loadEventData(eventId) {
       if (!eventId) return;
-      
+
       try {
-        loading.setIsLoading(true);
+        this.$store.dispatch('loading/setIsLoading', true);
         this.loadingMessage = 'Carregando dados do evento...';
-        
+
         // Load detailed event data
-        await eventGeneralInfo.fetchAndPopulateByEventId(eventId);
-        await eventTickets.fetchAndPopulateByEventId(eventId);
-        
+        await this.$store.dispatch('eventGeneralInfo/fetchAndPopulateByEventId', eventId);
+        await this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', eventId);
+
       } catch (error) {
         console.error('Erro ao carregar dados do evento:', error);
       } finally {
-        loading.setIsLoading(false);
+        this.$store.dispatch('loading/setIsLoading', false);
       }
     },
 
     onChangeEvent(event) {
       // Verificar se estamos alterando para uma sessão do mesmo grupo ou para um novo evento
-      const isSessionChange = this.currentGroupId && 
-                             event.groups && 
-                             event.groups.length > 0 && 
-                             event.groups[0].id === this.currentGroupId &&
-                             event.id !== this.selectedEvent?.id;
-      
+      const isSessionChange = this.currentGroupId &&
+        event.groups &&
+        event.groups.length > 0 &&
+        event.groups[0].id === this.currentGroupId &&
+        event.id !== this.selectedEvent?.id;
+
       // Se estiver mudando para uma sessão do mesmo evento, mantenha o grupo atual
       if (isSessionChange) {
         // Mantém o currentGroupId inalterado
@@ -266,7 +255,7 @@ export default {
         // Atualiza para um novo grupo
         this.currentGroupId = event.groups[0].id;
       }
-      
+
       this.selectedEvent = event;
       this.loadEventData(event.id);
     }
@@ -280,4 +269,4 @@ export default {
   max-width: 72rem;
   margin: 0 auto;
 }
-</style> 
+</style>

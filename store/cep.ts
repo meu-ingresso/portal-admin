@@ -1,31 +1,30 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 
-@Module({
-  name: 'cep',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Cep extends VuexModule {
-  private isLoading: boolean = false;
+interface CepState {
+  isLoading: boolean;
+}
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const state = (): CepState => ({
+  isLoading: false,
+});
 
-  @Mutation
-  private SET_IS_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
+export const getters = {
+  $isLoading: (state: CepState) => state.isLoading,
+};
 
-  @Action
-  public setLoading(value: boolean) {
-    this.context.commit('SET_IS_LOADING', value);
-  }
+export const mutations = {
+  SET_IS_LOADING(state: CepState, value: boolean) {
+    state.isLoading = value;
+  },
+};
 
-  @Action
-  public async fetchCep(cep: string) {
-    this.setLoading(true);
+export const actions = {
+  setLoading({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING', value);
+  },
+
+  async fetchCep({ dispatch }: any, cep: string) {
+    dispatch('setLoading', true);
 
     try {
       const response = await $axios.$get(`https://brasilapi.com.br/api/cep/v2/${cep}`, { timeout: 5000 });
@@ -38,7 +37,7 @@ export default class Cep extends VuexModule {
         throw new Error('CEP não encontrado na API BrasilAPI');
       }
 
-      this.setLoading(false);
+      dispatch('setLoading', false);
 
       return {
         street: response.street,
@@ -59,7 +58,7 @@ export default class Cep extends VuexModule {
         ) {
           throw new Error('CEP não encontrado na API ViaCEP');
         }
-        this.setLoading(false);
+        dispatch('setLoading', false);
         return {
           street: response.logradouro,
           neighborhood: response.bairro,
@@ -68,7 +67,7 @@ export default class Cep extends VuexModule {
           state_name: response.estado,
         };
       } catch (error) {
-        this.setLoading(false);
+        dispatch('setLoading', false);
         return {
           street: null,
           neighborhood: null,
@@ -77,5 +76,5 @@ export default class Cep extends VuexModule {
         };
       }
     }
-  }
-}
+  },
+};

@@ -1,248 +1,207 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { EventGuestList, EventGuestListMember, ResultMeta } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleGetResponse, handleDeleteResponse } from '~/utils/responseHelpers';
-@Module({
-  name: 'eventGuests',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventGuests extends VuexModule {
 
-  private isLoading: boolean = false;
+interface EventGuestsState {
+  isLoading: boolean;
+  isDeleting: boolean;
+  guestList: EventGuestList[];
+  guestListMembers: EventGuestListMember[];
+  metaGuestList: ResultMeta;
+  metaGuestListMember: ResultMeta;
+}
 
-  private isDeleting: boolean = false;
+const mockGuestList: EventGuestList[] = [
+  {
+    id: '123456',
+    event_id: '123456',
+    name: 'John Doe',
+    created_by: '123456',
+    created_at: '2025-02-01',
+    updated_at: '2025-02-01',
+    deleted_at: '2025-02-01',
+  },
+];
 
-  private guestList: EventGuestList[] = [];
+const mockGuestListMembers: EventGuestListMember[] = [
+  {
+    id: '123456',
+    guest_list_id: '123456',
+    first_name: 'John',
+    last_name: 'Doe',
+    quantity: 1,
+    added_by: '123456',
+    validated: false,
+    validated_by: '123456',
+    validated_at: '2025-02-01',
+    created_at: '2025-02-01',
+    updated_at: '2025-02-01',
+    deleted_at: '2025-02-01',
+  },
+];
 
-  private guestListMembers: EventGuestListMember[] = [];
-
-  private metaGuestList: ResultMeta = {
+export const state = (): EventGuestsState => ({
+  isLoading: false,
+  isDeleting: false,
+  guestList: process.env.USE_MOCK_DATA === 'true' ? mockGuestList : [],
+  guestListMembers: process.env.USE_MOCK_DATA === 'true' ? mockGuestListMembers : [],
+  metaGuestList: {
     total: 0,
     perPage: 50,
     currentPage: 1,
     lastPage: 1,
     firstPage: 1
-  };
-
-  private metaGuestListMember: ResultMeta = {
+  },
+  metaGuestListMember: {
     total: 0,
     perPage: 50,
     currentPage: 1,
     lastPage: 1,
     firstPage: 1
-  };
+  },
+});
 
-  private mockGuestList: EventGuestList[] = [
-    {
-      id: '123456',
-      event_id: '123456',
-      name: 'John Doe',
-      created_by: '123456',
-      created_at: '2025-02-01',
-      updated_at: '2025-02-01',
-      deleted_at: '2025-02-01',
-    },
-  ];
+export const getters = {
+  $guestLists: (state: EventGuestsState) => state.guestList,
+  $guestListMembers: (state: EventGuestsState) => state.guestListMembers,
+  $metaGuestList: (state: EventGuestsState) => state.metaGuestList,
+  $metaGuestListMember: (state: EventGuestsState) => state.metaGuestListMember,
+  $isLoading: (state: EventGuestsState) => state.isLoading,
+  $isDeleting: (state: EventGuestsState) => state.isDeleting,
+};
 
-  private mockGuestListMembers: EventGuestListMember[] = [
-    {
-      id: '123456',
-      guest_list_id: '123456',
-      first_name: 'John',
-      last_name: 'Doe',
-      quantity: 1,
-      added_by: '123456',
-      validated: false,
-      validated_by: '123456',
-      validated_at: '2025-02-01',
-      created_at: '2025-02-01',
-      updated_at: '2025-02-01',
-      deleted_at: '2025-02-01',
-    },
-  ];
+export const mutations = {
+  SET_LOADING(state: EventGuestsState, loading: boolean) {
+    state.isLoading = loading;
+  },
 
-  constructor(module: VuexModule<ThisType<EventGuests>, EventGuests>) {
-    super(module);
-    this.guestList = process.env.USE_MOCK_DATA === 'true' ? this.mockGuestList : this.guestList;
-    this.guestListMembers = process.env.USE_MOCK_DATA === 'true' ? this.mockGuestListMembers : this.guestListMembers;
-  }
+  SET_META_GUEST_LIST(state: EventGuestsState, meta: ResultMeta) {
+    state.metaGuestList = meta;
+  },
 
-  public get $guestLists() {
-    return this.guestList;
-  }
+  SET_META_GUEST_LIST_MEMBER(state: EventGuestsState, meta: ResultMeta) {
+    state.metaGuestListMember = meta;
+  },
 
-  public get $guestListMembers() {
-    return this.guestListMembers;
-  }
+  SET_DELETING(state: EventGuestsState, deleting: boolean) {
+    state.isDeleting = deleting;
+  },
 
-  public get $metaGuestList() {
-    return this.metaGuestList;
-  }
+  SET_GUEST_LIST_MEMBERS(state: EventGuestsState, guestListMembers: EventGuestListMember[]) {
+    state.guestListMembers = guestListMembers;
+  },
 
-  public get $metaGuestListMember() {
-    return this.metaGuestListMember;
-  }
+  SET_GUEST_LISTS(state: EventGuestsState, guestLists: EventGuestList[]) {
+    state.guestList = guestLists;
+  },
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+  ADD_GUEST_LIST_MEMBER(state: EventGuestsState, guestListMember: EventGuestListMember) {
+    state.guestListMembers = [...state.guestListMembers, guestListMember];
+  },
 
-  public get $isDeleting() {
-    return this.isDeleting;
-  }
-
-  @Mutation
-  private SET_LOADING(loading: boolean) {
-    this.isLoading = loading;
-  }
-
-  @Mutation
-  private SET_META_GUEST_LIST(meta: ResultMeta) {
-    this.metaGuestList = meta;
-  }
-
-  @Mutation
-  private SET_META_GUEST_LIST_MEMBER(meta: ResultMeta) {
-    this.metaGuestListMember = meta;
-  }
-
-  @Mutation
-  private SET_DELETING(deleting: boolean) {
-    this.isDeleting = deleting;
-  }
-
-  @Mutation
-  private SET_GUEST_LIST_MEMBERS(guestListMembers: EventGuestListMember[]) {
-    this.guestListMembers = guestListMembers;
-  }
-
-  @Mutation
-  private SET_GUEST_LISTS(guestLists: EventGuestList[]) {
-    this.guestList = guestLists;
-  }
-
-  @Mutation
-  private ADD_GUEST_LIST_MEMBER(guestListMember: EventGuestListMember) {
-    this.guestListMembers = [...this.guestListMembers, guestListMember];
-  }
-
-  @Mutation
-  private UPDATE_GUEST_LIST_MEMBER({ index, guestListMember }: { index: number; guestListMember: EventGuestListMember }) {
-    const updatedList = [...this.guestListMembers];
+  UPDATE_GUEST_LIST_MEMBER(state: EventGuestsState, { index, guestListMember }: { index: number; guestListMember: EventGuestListMember }) {
+    const updatedList = [...state.guestListMembers];
     updatedList[index] = { ...guestListMember };
-    this.guestListMembers = updatedList;
-  }
+    state.guestListMembers = updatedList;
+  },
 
-  @Mutation
-  private UPDATE_GUEST_LIST({ index, guestList }: { index: number; guestList: EventGuestList }) {
-    const updatedList = [...this.guestList];
+  UPDATE_GUEST_LIST(state: EventGuestsState, { index, guestList }: { index: number; guestList: EventGuestList }) {
+    const updatedList = [...state.guestList];
     updatedList[index] = { ...guestList };
-    this.guestList = updatedList;
-  }
+    state.guestList = updatedList;
+  },
 
-  @Mutation
-  private REMOVE_GUEST_LIST_MEMBER(index: number) {
-    const updatedList = [...this.guestListMembers];
+  REMOVE_GUEST_LIST_MEMBER(state: EventGuestsState, index: number) {
+    const updatedList = [...state.guestListMembers];
     updatedList[index].deleted_at = new Date().toISOString();
-    this.guestListMembers = updatedList;
-  }
+    state.guestListMembers = updatedList;
+  },
 
-  @Mutation
-  private REMOVE_GUEST_LIST(index: number) {
-    const updatedList = [...this.guestList];
+  REMOVE_GUEST_LIST(state: EventGuestsState, index: number) {
+    const updatedList = [...state.guestList];
     updatedList[index].deleted_at = new Date().toISOString();
-    this.guestList = updatedList;
-  }
+    state.guestList = updatedList;
+  },
   
-  @Mutation
-  private RESET_GUEST_LIST_MEMBERS() {
-    this.guestListMembers = [];
-    this.metaGuestListMember = {
+  RESET_GUEST_LIST_MEMBERS(state: EventGuestsState) {
+    state.guestListMembers = [];
+    state.metaGuestListMember = {
       total: 0,
       perPage: 50,
       currentPage: 1,
       lastPage: 1,
       firstPage: 1
     };
-  }
+  },
+};
 
-  @Action
-  public resetGuestListMembers() {
-    this.context.commit('RESET_GUEST_LIST_MEMBERS');
-  }
+export const actions = {
+  resetGuestListMembers({ commit }: any) {
+    commit('RESET_GUEST_LIST_MEMBERS');
+  },
 
-  @Action
-  public setGuestLists(guestLists: EventGuestList[]) {
-    this.context.commit('SET_GUEST_LISTS', guestLists);
-  }
+  setGuestLists({ commit }: any, guestLists: EventGuestList[]) {
+    commit('SET_GUEST_LISTS', guestLists);
+  },
 
-  @Action
-  public addGuestList(guestList: EventGuestList) {
-    this.context.commit('ADD_GUEST_LIST', guestList);
-  }
+  addGuestList({ commit }: any, guestList: EventGuestList) {
+    commit('ADD_GUEST_LIST', guestList);
+  },
 
-  @Action
-  public updateGuestList(payload: { index: number; guestList: EventGuestList }) {
-    this.context.commit('UPDATE_GUEST_LIST', payload);
-  }
+  updateGuestList({ commit }: any, payload: { index: number; guestList: EventGuestList }) {
+    commit('UPDATE_GUEST_LIST', payload);
+  },
 
-  @Action
-  public removeGuestList(index: number) {
-    this.context.commit('REMOVE_GUEST_LIST', index);
-  }
+  removeGuestList({ commit }: any, index: number) {
+    commit('REMOVE_GUEST_LIST', index);
+  },
 
-  @Action
-  public async fetchGuestListAndPopulateByQuery(query: string): Promise<void> {
+  async fetchGuestListAndPopulateByQuery({ commit }: any, query: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
       
       const response = await $axios.$get(`guest-lists?${query}`);
       const result = handleGetResponse(response, 'Lista de convidados não encontrada', null, true);
 
       if (result.meta) {
-        this.context.commit('SET_META_GUEST_LIST', result.meta);
+        commit('SET_META_GUEST_LIST', result.meta);
       }
       
-      this.context.commit('SET_GUEST_LISTS', result.data || []);
+      commit('SET_GUEST_LISTS', result.data || []);
     } catch (error) {
       console.error('Erro ao buscar lista de convidados:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchGuestListMemberAndPopulateByQuery(query: string): Promise<void> {
+  async fetchGuestListMemberAndPopulateByQuery({ commit }: any, query: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$get(`guest-list-members?${query}`);
       const result = handleGetResponse(response, 'Lista de convidados não encontrada', null, true);
 
       if (result.meta) {
-        this.context.commit('SET_META_GUEST_LIST_MEMBER', result.meta);
+        commit('SET_META_GUEST_LIST_MEMBER', result.meta);
       }
       
-      this.context.commit('SET_GUEST_LIST_MEMBERS', result.data || []);
+      commit('SET_GUEST_LIST_MEMBERS', result.data || []);
     } catch (error) {
       console.error('Erro ao buscar lista de convidados:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async createGuestList(payload: {
+  async createGuestList(_: any, payload: {
     event_id: string;
     name: string;
     created_by: string;
   }): Promise<string> {
     try {
-      // this.context.commit('SET_LOADING', true);
-
       const response = await $axios.$post('guest-list', {
         data: [
           {
@@ -261,13 +220,10 @@ export default class EventGuests extends VuexModule {
     } catch (error) {
       console.error('Erro ao criar lista de convidados:', error);
       throw error;
-    } finally {
-      // this.context.commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async createGuestListMember(payload: {
+  async createGuestListMember({ commit }: any, payload: {
     guest_list_id: string;
     first_name: string;
     last_name: string;
@@ -275,7 +231,7 @@ export default class EventGuests extends VuexModule {
     added_by: string;
   }): Promise<string> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$post('guest-list-member', {
         data: [
@@ -298,60 +254,57 @@ export default class EventGuests extends VuexModule {
       console.error('Erro ao criar convidado:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchDeleteGuestList(guestListId: string): Promise<void> {
+  async fetchDeleteGuestList({ commit, state }: any, guestListId: string): Promise<void> {
     try {
-      this.context.commit('SET_DELETING', true);
+      commit('SET_DELETING', true);
 
-        const response = await $axios.$delete(`guest-list/${guestListId}`);
+      const response = await $axios.$delete(`guest-list/${guestListId}`);
       
       if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
         throw new Error('Falha ao remover lista de convidados');
       }
 
-      const guestListIndex = this.guestList.findIndex(g => g.id === guestListId);
+      const guestListIndex = state.guestList.findIndex((g: EventGuestList) => g.id === guestListId);
       if (guestListIndex !== -1) {
-        this.context.commit('REMOVE_GUEST_LIST', guestListIndex); 
+        commit('REMOVE_GUEST_LIST', guestListIndex); 
       }
     } catch (error) {
       console.error('Erro ao remover lista de convidados:', error);
       throw error;
     } finally {
-      this.context.commit('SET_DELETING', false);
+      commit('SET_DELETING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchDeleteGuestListMember(guestListMemberId: string): Promise<void> {
+  async fetchDeleteGuestListMember({ commit, state }: any, guestListMemberId: string): Promise<void> {
     try {
-      this.context.commit('SET_DELETING', true);
+      commit('SET_DELETING', true);
 
-        const response = await $axios.$delete(`guest-list-member/${guestListMemberId}`);
+      const response = await $axios.$delete(`guest-list-member/${guestListMemberId}`);
       
       if (!response.body || response.body.code !== 'DELETE_SUCCESS') {
         throw new Error('Falha ao remover convidado');
       }
 
-      const guestListMemberIndex = this.guestListMembers.findIndex(g => g.id === guestListMemberId);
+      const guestListMemberIndex = state.guestListMembers.findIndex((g: EventGuestListMember) => g.id === guestListMemberId);
       if (guestListMemberIndex !== -1) {
-        this.context.commit('REMOVE_GUEST_LIST_MEMBER', guestListMemberIndex); 
+        commit('REMOVE_GUEST_LIST_MEMBER', guestListMemberIndex); 
       }
     } catch (error) {
       console.error('Erro ao remover convidado:', error);
       throw error;
     } finally {
-      this.context.commit('SET_DELETING', false);
+      commit('SET_DELETING', false);
     }
-  }
+  },
 
-  @Action
-  public async validateGuestListMember(payload: Array<{ id: string, quantity: number }>): Promise<void> {
+  async validateGuestListMember({ commit }: any, payload: Array<{ id: string, quantity: number }>): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$post(`guest-list-member-validated`, {
         data: payload.map(validation => ({
@@ -370,17 +323,16 @@ export default class EventGuests extends VuexModule {
       console.error('Erro ao validar convidado:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchUpdateGuestList(payload: { 
+  async fetchUpdateGuestList({ commit, state }: any, payload: { 
     id: string, 
     name: string
   }): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$patch(`guest-list`, {
         data: [
@@ -396,8 +348,8 @@ export default class EventGuests extends VuexModule {
       }
 
       // Atualiza o estado local
-      this.context.commit('UPDATE_GUEST_LIST', {
-        index: this.guestList.findIndex(g => g.id === payload.id),
+      commit('UPDATE_GUEST_LIST', {
+        index: state.guestList.findIndex((g: EventGuestList) => g.id === payload.id),
         guestList: {
           id: payload.id,
           name: payload.name
@@ -408,24 +360,22 @@ export default class EventGuests extends VuexModule {
       console.error('Erro ao atualizar lista de convidados:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public clearGuestListMembers() {
-    this.context.commit('SET_GUEST_LIST_MEMBERS', []);
-    this.context.commit('SET_META_GUEST_LIST_MEMBER', {
+  clearGuestListMembers({ commit }: any) {
+    commit('SET_GUEST_LIST_MEMBERS', []);
+    commit('SET_META_GUEST_LIST_MEMBER', {
       total: 0,
       perPage: 10,
       currentPage: 1,
       lastPage: 1,
       firstPage: 1
     });
-  }
+  },
 
-  @Action
-  public async deleteGuestListMemberValidated(guestListMemberId: string) {
+  async deleteGuestListMemberValidated(_: any, guestListMemberId: string) {
     try {
       const response = await $axios.$delete(`guest-list-member-validated/${guestListMemberId}`);
 
@@ -436,5 +386,5 @@ export default class EventGuests extends VuexModule {
       console.error('Erro ao remover check-in de convidado:', error);
       throw error;
     }
-  }
-} 
+  },
+}; 

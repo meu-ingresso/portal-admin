@@ -1,17 +1,12 @@
 <template>
   <v-chip :color="color" text-color="white" class="status-badge">
-    <v-skeleton-loader
-      v-if="$isLoading && isHeader"
-      type="chip"
-      class="status-badge-skeleton" />
+    <v-skeleton-loader v-if="$isLoading && isHeader" type="chip" class="status-badge-skeleton" />
 
     <span v-else>{{ text }}</span>
   </v-chip>
 </template>
 
 <script>
-import { eventGeneralInfo } from '@/store';
-
 export default {
   props: {
     text: { type: String, required: true },
@@ -21,7 +16,7 @@ export default {
 
   computed: {
     $isLoading() {
-      return eventGeneralInfo.$isLoadingEventStatus;
+      return this.$store.getters['eventGeneralInfo/$isLoadingEventStatus'];
     },
 
     color() {

@@ -32,8 +32,8 @@
 </template>
 
 <script>
-import { user, toast } from '@/store';
 import { extractNameFromEmail } from '@/utils/utils';
+
 export default {
   props: {
     show: {
@@ -90,7 +90,7 @@ export default {
       
       // Validação adicional
       if (!this.formData.email || !this.formData.role) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Preencha todos os campos obrigatórios',
           type: 'error',
           time: 3000,
@@ -102,14 +102,14 @@ export default {
       
       try {
         // Verificar se o usuário já existe pelo email
-        const userResult = await user.findUserByEmail(this.formData.email);
+        const userResult = await this.$store.dispatch('user/findUserByEmail', this.formData.email);
         
         if (!userResult.success) {
           throw new Error(userResult.error);
         }
         
         // Obter o ID do cargo selecionado
-        const roleResult = await user.getRoleByName(this.formData.role);
+        const roleResult = await this.$store.dispatch('user/getRoleByName', this.formData.role);
         
         if (!roleResult.success) {
           throw new Error(roleResult.error);
@@ -119,12 +119,12 @@ export default {
         
         if (userResult.exists) {
           // Usuário existe, atualizar o cargo
-          await user.updateUser({
+          await this.$store.dispatch('user/updateUser', {
             id: userResult.data.id,
             role_id: roleId,
           });
           
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Cargo do usuário atualizado com sucesso!',
             type: 'success',
             time: 3000,
@@ -134,7 +134,7 @@ export default {
           const { firstName, lastName } = extractNameFromEmail(this.formData.email);
           
           // Usuário não existe, criar um novo
-          const createResult = await user.createUser({
+          const createResult = await this.$store.dispatch('user/createUser', {
             email: this.formData.email,
             role_id: roleId,
             firstName: firstName || 'Primeiro Nome',
@@ -145,7 +145,7 @@ export default {
             throw new Error(createResult.error);
           }
           
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Novo membro da equipe criado com sucesso!',
             type: 'success',
             time: 3000,
@@ -158,7 +158,7 @@ export default {
         
       } catch (error) {
         console.error('Erro ao adicionar membro da equipe:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao adicionar membro da equipe: ' + (error.message || 'Erro desconhecido'),
           type: 'error',
           time: 5000,

@@ -1,123 +1,115 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { status } from '@/utils/store-util';
 import { handleGetResponse } from '~/utils/responseHelpers';
 import { PDVApiResponse, StatusApiResponse } from '~/models/event';
-@Module({
-  name: 'eventPdv',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventPdv extends VuexModule {
-  private pdvList: PDVApiResponse[] = [];
-  private isLoading: boolean = false;
-  private selectedPdv: PDVApiResponse | null = null;
-  private statusDefault: any = null;
-  private statuses: StatusApiResponse[] = [];
 
-  public get $pdvs() {
-    return this.pdvList;
-  }
+interface EventPdvState {
+  pdvList: PDVApiResponse[];
+  isLoading: boolean;
+  selectedPdv: PDVApiResponse | null;
+  statusDefault: any;
+  statuses: StatusApiResponse[];
+}
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const state = (): EventPdvState => ({
+  pdvList: [],
+  isLoading: false,
+  selectedPdv: null,
+  statusDefault: null,
+  statuses: [],
+});
 
-  public get $selectedPdv() {
-    return this.selectedPdv;
-  }
+export const getters = {
+  $pdvs: (state: EventPdvState) => state.pdvList,
+  $isLoading: (state: EventPdvState) => state.isLoading,
+  $selectedPdv: (state: EventPdvState) => state.selectedPdv,
+  $statusDefault: (state: EventPdvState) => state.statusDefault,
+  $statuses: (state: EventPdvState) => state.statuses,
+};
 
-  public get $statusDefault() {
-    return this.statusDefault;
-  }
+export const mutations = {
+  SET_PDVS(state: EventPdvState, pdvs: PDVApiResponse[]) {
+    state.pdvList = pdvs;
+  },
 
-  public get $statuses() {
-    return this.statuses;
-  }
+  SET_SELECTED_PDV(state: EventPdvState, pdv: PDVApiResponse | null) {
+    state.selectedPdv = pdv;
+  },
 
-  @Mutation
-  private SET_PDVS(pdvs: PDVApiResponse[]) {
-    this.pdvList = pdvs;
-  }
+  SET_IS_LOADING(state: EventPdvState, value: boolean) {
+    state.isLoading = value;
+  },
 
-  @Mutation
-  private SET_SELECTED_PDV(pdv: PDVApiResponse | null) {
-    this.selectedPdv = pdv;
-  }
+  SET_STATUS_DEFAULT(state: EventPdvState, statusData: any) {
+    state.statusDefault = statusData;
+  },
 
-  @Mutation
-  private SET_IS_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
+  SET_STATUSES(state: EventPdvState, statuses: StatusApiResponse[]) {
+    state.statuses = statuses;
+  },
 
-  @Mutation
-  private SET_STATUS_DEFAULT(statusData: any) {
-    this.statusDefault = statusData;
-  }
+  ADD_PDV(state: EventPdvState, pdv: PDVApiResponse) {
+    state.pdvList = [...state.pdvList, pdv];
+  },
 
-  @Mutation
-  private SET_STATUSES(statuses: StatusApiResponse[]) {
-    this.statuses = statuses;
-  }
-
-  @Mutation
-  private ADD_PDV(pdv: PDVApiResponse) {
-    this.pdvList = [...this.pdvList, pdv];
-  }
-
-  @Mutation
-  private UPDATE_PDV(payload: { id: string; pdv: Partial<PDVApiResponse> }) {
+  UPDATE_PDV(state: EventPdvState, payload: { id: string; pdv: Partial<PDVApiResponse> }) {
     const { id, pdv } = payload;
-    this.pdvList = this.pdvList.map((item) => {
+    state.pdvList = state.pdvList.map((item) => {
       if (item.id === id) {
         return { ...item, ...pdv };
       }
       return item;
     });
-  }
+  },
 
-  @Mutation
-  private REMOVE_PDV(id: string) {
-    this.pdvList = this.pdvList.filter((pdv) => pdv.id !== id);
-  }
+  REMOVE_PDV(state: EventPdvState, id: string) {
+    state.pdvList = state.pdvList.filter((pdv) => pdv.id !== id);
+  },
+};
 
-  @Action
-  public setIsLoading(value: boolean) {
-    this.context.commit('SET_IS_LOADING', value);
-  }
+export const actions = {
+  setIsLoading({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING', value);
+  },
 
-  @Action
-  public setPdvs(pdvs: PDVApiResponse[]) {
-    this.context.commit('SET_PDVS', pdvs);
-  }
+  setPdvs({ commit }: any, pdvs: PDVApiResponse[]) {
+    commit('SET_PDVS', pdvs);
+  },
 
-  @Action
-  public setSelectedPdv(pdv: PDVApiResponse | null) {
-    this.context.commit('SET_SELECTED_PDV', pdv);
-  }
+  setSelectedPdv({ commit }: any, pdv: PDVApiResponse | null) {
+    commit('SET_SELECTED_PDV', pdv);
+  },
 
-  @Action
-  public async fetchStatuses() {
-    const response = await status.fetchStatusByModule('pdv');
-
-    if (response && response.data) {  
-      this.context.commit('SET_STATUSES', response.data);
-      this.context.commit('SET_STATUS_DEFAULT', response.data.find((status: StatusApiResponse) => status.name.toLowerCase() === 'disponível' || status.name.toLowerCase() === 'disponivel'));
-
-      return response.data;
-    }
-
-    return [];
-  }
-
-  @Action
-  public async fetchAndPopulateByEventId(eventId: string) {
+  async fetchStatuses({ commit }: any) {
     try {
-      this.setIsLoading(true);
+      const response = await $axios.$get(`statuses?where[module][v]=pdv&orderBy[]=name:asc`);
+
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error('Falha ao buscar status do módulo: pdv.');
+      }
+
+      const data = response.body.result.data;
+      
+      if (data) {  
+        commit('SET_STATUSES', data);
+        commit('SET_STATUS_DEFAULT', data.find((status: StatusApiResponse) => status.name.toLowerCase() === 'disponível' || status.name.toLowerCase() === 'disponivel'));
+
+        return data;
+      }
+
+      return [];
+    } catch (error) {
+      console.error('[PDV] Error fetching statuses:', error);
+      return [];
+    }
+  },
+
+  async fetchAndPopulateByEventId({ dispatch, getters }: any, eventId: string) {
+    try {
+      dispatch('setIsLoading', true);
 
       // Buscar os statuses disponíveis se não estão carregados
-      if (this.$statuses.length === 0) {
-        await this.fetchStatuses();
+      if (getters.$statuses.length === 0) {
+        await dispatch('fetchStatuses');
       }
 
       // Buscar os PDVs do evento, usuarios e ingressos associados
@@ -142,7 +134,7 @@ export default class EventPdv extends VuexModule {
           return { ...pdv, users: pdvUser, tickets: pdvTicket };
         });
 
-        this.setPdvs(pdvs as PDVApiResponse[]);
+        dispatch('setPdvs', pdvs as PDVApiResponse[]);
 
         return { success: true, data: pdvs };
       }
@@ -150,17 +142,16 @@ export default class EventPdv extends VuexModule {
       return { success: true, data: [] };
     } catch (error) {
       console.error('[PDV] Error fetching PDVs:', error);
-      this.setPdvs([]);
+      dispatch('setPdvs', []);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async createPdv(pdvData: Omit<PDVApiResponse, 'id'>) {
+  async createPdv({ commit, dispatch }: any, pdvData: Omit<PDVApiResponse, 'id'>) {
     try {
-      this.setIsLoading(true);
+      dispatch('setIsLoading', true);
       
       const payload = {
         data: [pdvData]
@@ -170,7 +161,7 @@ export default class EventPdv extends VuexModule {
       
       if (response && response.body && response.body.code === 'CREATE_SUCCESS') {
         const newPdv = response.body.result[0];
-        this.context.commit('ADD_PDV', newPdv);
+        commit('ADD_PDV', newPdv);
         return { success: true, data: newPdv };
       }
       
@@ -179,14 +170,13 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error creating PDV:', error);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async updatePdv(payload: {data: Partial<PDVApiResponse> }) {
+  async updatePdv({ commit, dispatch }: any, payload: {data: Partial<PDVApiResponse> }) {
     try {
-      this.setIsLoading(true);
+      dispatch('setIsLoading', true);
       
       const { data } = payload;
       
@@ -197,7 +187,7 @@ export default class EventPdv extends VuexModule {
       const response = await $axios.$patch('pdv', updatePayload);
       
       if (response && response.body && response.body.code === 'UPDATE_SUCCESS') {
-        this.context.commit('UPDATE_PDV', { id: data.id, pdv: data });
+        commit('UPDATE_PDV', { id: data.id, pdv: data });
         return { success: true };
       }
       
@@ -206,19 +196,18 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error updating PDV:', error);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async deletePdv(id: string) {
+  async deletePdv({ commit, dispatch }: any, id: string) {
     try {
-      this.setIsLoading(true);
+      dispatch('setIsLoading', true);
       
       const response = await $axios.$delete(`pdv/${id}`);
       
       if (response && response.body && response.body.code === 'DELETE_SUCCESS') {
-        this.context.commit('REMOVE_PDV', id);
+        commit('REMOVE_PDV', id);
         return { success: true };
       }
       
@@ -227,14 +216,13 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error deleting PDV:', error);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async associateUsers(payload: { pdvId: string; userIds: string[] }) {
+  async associateUsers({ dispatch, getters }: any, payload: { pdvId: string; userIds: string[] }) {
     try {
-      this.setIsLoading(true);
+      dispatch('setIsLoading', true);
       
       const { pdvId, userIds } = payload;
       
@@ -247,7 +235,7 @@ export default class EventPdv extends VuexModule {
       
       if (response && response.body && response.body.code === 'CREATE_SUCCESS') {
         // Atualizar o PDV na lista após associar usuários
-        await this.fetchAndPopulateByEventId(this.$pdvs.find(pdv => pdv.id === pdvId)?.event_id || '');
+        await dispatch('fetchAndPopulateByEventId', getters.$pdvs.find((pdv: PDVApiResponse) => pdv.id === pdvId)?.event_id || '');
         return { success: true, data: response.body.result.data };
       }
       
@@ -256,14 +244,13 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error associating users:', error);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async associateTickets(payload: { pdvId: string; ticketIds: string[] }) {
+  async associateTickets({ dispatch, getters }: any, payload: { pdvId: string; ticketIds: string[] }) {
     try {
-      this.setIsLoading(true);
+      dispatch('setIsLoading', true);
       
       const { pdvId, ticketIds } = payload;
       
@@ -276,7 +263,7 @@ export default class EventPdv extends VuexModule {
       
       if (response && response.body && response.body.code === 'CREATE_SUCCESS') {
         // Atualizar o PDV na lista após associar ingressos
-        await this.fetchAndPopulateByEventId(this.$pdvs.find(pdv => pdv.id === pdvId)?.event_id || '');
+        await dispatch('fetchAndPopulateByEventId', getters.$pdvs.find((pdv: PDVApiResponse) => pdv.id === pdvId)?.event_id || '');
         return { success: true, data: response.body.result.data };
       }
       
@@ -285,22 +272,21 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error associating tickets:', error);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async removeUserAssociation(pdvUserId: string) {
+  async removeUserAssociation({ dispatch, state }: any, pdvUserId: string) {
     try {
-      this.setIsLoading(true);
+      dispatch('setIsLoading', true);
       
       const response = await $axios.$delete(`pdv-user/${pdvUserId}`);
       
       if (response && response.body && response.body.code === 'DELETE_SUCCESS') {
         // Atualiza a lista de PDVs para refletir a remoção
-        const pdv = this.pdvList.find(p => p.users?.some(u => u.id === pdvUserId));
+        const pdv = state.pdvList.find((p: PDVApiResponse) => p.users?.some((u: any) => u.id === pdvUserId));
         if (pdv && pdv.event_id) {
-          await this.fetchAndPopulateByEventId(pdv.event_id);
+          await dispatch('fetchAndPopulateByEventId', pdv.event_id);
         }
         return { success: true };
       }
@@ -310,22 +296,21 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error removing user association:', error);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async removeTicketAssociation(pdvTicketId: string) {
+  async removeTicketAssociation({ dispatch, state }: any, pdvTicketId: string) {
     try {
-      this.setIsLoading(true);
+      dispatch('setIsLoading', true);
       
       const response = await $axios.$delete(`pdv-ticket/${pdvTicketId}`);
       
       if (response && response.body && response.body.code === 'DELETE_SUCCESS') {
         // Atualiza a lista de PDVs para refletir a remoção
-        const pdv = this.pdvList.find(p => p.tickets?.some(t => t.id === pdvTicketId));
+        const pdv = state.pdvList.find((p: PDVApiResponse) => p.tickets?.some((t: any) => t.id === pdvTicketId));
         if (pdv && pdv.event_id) {
-          await this.fetchAndPopulateByEventId(pdv.event_id);
+          await dispatch('fetchAndPopulateByEventId', pdv.event_id);
         }
         return { success: true };
       }
@@ -335,12 +320,11 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error removing ticket association:', error);
       return { success: false, error };
     } finally {
-      this.setIsLoading(false);
+      dispatch('setIsLoading', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchPdvFromEventAndUserId(payload: { eventId: string; userId: string }) {
+  async fetchPdvFromEventAndUserId(_: any, payload: { eventId: string; userId: string }) {
     const { eventId, userId } = payload;
 
     const preloads = [
@@ -372,12 +356,11 @@ export default class EventPdv extends VuexModule {
       console.error('[PDV] Error fetching PDV from event and user:', error);
       return { success: false, error };
     }
-  }
+  },
 
-  @Action
-  public reset() {
-    this.context.commit('SET_PDVS', []);
-    this.context.commit('SET_SELECTED_PDV', null);
-    this.context.commit('SET_STATUS_DEFAULT', null);
-  }
-} 
+  reset({ commit }: any) {
+    commit('SET_PDVS', []);
+    commit('SET_SELECTED_PDV', null);
+    commit('SET_STATUS_DEFAULT', null);
+  },
+}; 

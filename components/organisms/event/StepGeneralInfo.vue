@@ -10,15 +10,13 @@
         <!-- Nome do Evento -->
         <v-row>
           <v-col cols="12" md="12" sm="12" class="pb-0">
-            <v-text-field
-ref="name" v-model="formData.name" label="Nome do Evento*" outlined counter="60" dense
+            <v-text-field ref="name" v-model="formData.name" label="Nome do Evento*" outlined counter="60" dense
               placeholder="Digite o nome do evento" required :rules="validationRules.name" @input="onEventNameChange" />
           </v-col>
         </v-row>
 
         <!-- Alias do Evento -->
-        <v-row
-v-if="aliasValidation.isValid !== null && formData.alias.length > 0"
+        <v-row v-if="aliasValidation.isValid !== null && formData.alias.length > 0"
           :class="!isMobile ? 'eventAlias' : ''">
           <v-col cols="12" class="pt-0">
             <div class="d-flex align-center">
@@ -37,13 +35,11 @@ v-if="aliasValidation.isValid !== null && formData.alias.length > 0"
                   https://meuingresso.com.br/event/
                 </p>
 
-                <v-text-field
-v-if="editAlias" ref="aliasInput" v-model="formData.alias"
+                <v-text-field v-if="editAlias" ref="aliasInput" v-model="formData.alias"
                   :class="!isMobile ? 'alias-input' : 'alias-input-mobile'" dense
                   placeholder="Digite o identificador do evento" hide-details="auto" @input="onAliasChange" />
 
-                <v-icon
-v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
+                <v-icon v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
                   @click="handleSaveNewAlias">
                   mdi-check
                 </v-icon>
@@ -63,13 +59,11 @@ v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
                   https://meuingresso.com.br/event/
                 </p>
 
-                <v-text-field
-v-if="editAlias" ref="aliasInput" v-model="formData.alias"
+                <v-text-field v-if="editAlias" ref="aliasInput" v-model="formData.alias"
                   :class="!isMobile ? 'alias-input' : 'alias-input-mobile'" dense
                   placeholder="Digite o identificador do evento" hide-details="auto" @input="onAliasChange" />
 
-                <v-icon
-v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
+                <v-icon v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
                   @click="handleSaveNewAlias">
                   mdi-check
                 </v-icon>
@@ -86,15 +80,13 @@ v-if="editAlias" class="ml-2 cursor-pointer" color="primary" size="22"
         <v-row class="mb-4">
           <!-- Categoria -->
           <v-col cols="12" md="4" sm="12">
-            <v-autocomplete
-ref="category" v-model="formData.category" label="Categoria*" :items="categories" outlined
+            <v-autocomplete ref="category" v-model="formData.category" label="Categoria*" :items="categories" outlined
               dense return-object hide-details="auto" required :rules="validationRules.category" />
           </v-col>
 
           <!-- Tipo do Evento -->
           <v-col cols="12" md="4" sm="12">
-            <v-autocomplete
-ref="event_type" v-model="formData.event_type" label="Tipo do Evento*" :items="types"
+            <v-autocomplete ref="event_type" v-model="formData.event_type" label="Tipo do Evento*" :items="types"
               outlined dense hide-details="auto" required :disabled="nomenclature === 'Doação'"
               :rules="validationRules.event_type" />
           </v-col>
@@ -105,16 +97,14 @@ ref="event_type" v-model="formData.event_type" label="Tipo do Evento*" :items="t
           </v-col>
 
           <v-col v-if="isEventOnlineOrHibrido" cols="12" md="12" sm="12">
-            <v-text-field
-ref="link_online" v-model="formData.link_online" label="Link do Evento*" outlined dense
+            <v-text-field ref="link_online" v-model="formData.link_online" label="Link do Evento*" outlined dense
               placeholder="Digite o link do evento" hide-details="auto" :rules="validationRules.link_online" />
           </v-col>
 
           <!-- Descrição do Evento -->
           <v-col cols="12" md="12" sm="12">
 
-            <RichTextEditorV2
-ref="bioEditor" v-model="formData.general_information"
+            <RichTextEditorV2 ref="bioEditor" v-model="formData.general_information"
               placeholder="Digite uma descrição para o evento" :disabled="isImprovingDescription" :max-length="255"
               :enable-image-upload="true" :image-upload-handler="handleImageUpload" :max-image-size="2 * 1024 * 1024"
               :accepted-image-types="['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']"
@@ -122,8 +112,7 @@ ref="bioEditor" v-model="formData.general_information"
               @image-upload-error="handleImageUploadError" />
 
             <div class="d-flex justify-end ma-0 pa-0">
-              <v-btn
-color="primary" text outlined class="mt-4" :disabled="isImprovingDescription"
+              <v-btn color="primary" text outlined class="mt-4" :disabled="isImprovingDescription"
                 @click="enhanceDescription">
                 <v-icon left> mdi-magic-staff </v-icon>
 
@@ -154,16 +143,14 @@ color="primary" text outlined class="mt-4" :disabled="isImprovingDescription"
                   <v-icon small>mdi-close</v-icon>
                 </v-btn>
               </div>
-              <div
-v-if="imageDimensions && (imageDimensions.width !== 954 || imageDimensions.height !== 500)"
+              <div v-if="imageDimensions && (imageDimensions.width !== 954 || imageDimensions.height !== 500)"
                 class="image-dimensions-warning">
                 <v-icon small color="warning" left>mdi-alert</v-icon>
                 <span>{{ imageDimensions.width }}x{{ imageDimensions.height }}px</span>
               </div>
             </div>
             <input ref="hiddenFileInput" type="file" accept="image/*" class="d-none" @change="onFileSelected" />
-            <v-file-input
-v-if="!imagePreview" v-model="formData.banner" label="Selecionar imagem" accept="image/*"
+            <v-file-input v-if="!imagePreview" v-model="formData.banner" label="Selecionar imagem" accept="image/*"
               outlined hide-input dense prepend-icon="mdi-image-plus" hide-details="auto" show-size
               class="custom-file-input" @change="validateImageDimensions" />
           </v-col>
@@ -201,27 +188,23 @@ v-if="!imagePreview" v-model="formData.banner" label="Selecionar imagem" accept=
       <v-card-text>
         <v-row class="d-flex align-start">
           <v-col cols="12" md="6" sm="12">
-            <v-select
-v-model="formData.availability" label="Visibilidade" :items="availabilityOptions" persistent-hint
+            <v-select v-model="formData.availability" label="Visibilidade" :items="availabilityOptions" persistent-hint
               :hint="getHintByAvailability" outlined dense hide-details="auto" required />
           </v-col>
 
           <v-col cols="12" md="6" sm="12" class="d-flex align-center">
-            <v-select
-v-model="nomenclature" label="Nomenclatura" :items="nomenclatureOptions" outlined dense
+            <v-select v-model="nomenclature" label="Nomenclatura" :items="nomenclatureOptions" outlined dense
               hide-details="auto" required />
           </v-col>
 
           <v-col cols="12" md="6" sm="12">
             <div class="d-flex" :class="{ 'justify-space-between mb-4': isMobile }">
-              <v-icon
-v-if="formData.absorb_service_fee" class="ma-0 pa-0" size="50" color="primary"
+              <v-icon v-if="formData.absorb_service_fee" class="ma-0 pa-0" size="50" color="primary"
                 @click="handleAbsorbServiceFee">
                 mdi-toggle-switch
               </v-icon>
 
-              <v-icon
-v-else-if="!formData.absorb_service_fee" class="ma-0 pa-0" size="50"
+              <v-icon v-else-if="!formData.absorb_service_fee" class="ma-0 pa-0" size="50"
                 @click="handleAbsorbServiceFee">
                 mdi-toggle-switch-off
               </v-icon>
@@ -248,8 +231,7 @@ v-else-if="!formData.absorb_service_fee" class="ma-0 pa-0" size="50"
 
           <v-col v-if="isAdmin" cols="12" md="6" sm="12">
             <div class="d-flex" :class="{ 'justify-space-between': isMobile }">
-              <v-icon
-v-if="formData.is_featured" class="ma-0 pa-0" size="50" color="primary"
+              <v-icon v-if="formData.is_featured" class="ma-0 pa-0" size="50" color="primary"
                 @click="handleToggleFeatured">
                 mdi-toggle-switch
               </v-icon>
@@ -286,7 +268,6 @@ v-if="formData.is_featured" class="ma-0 pa-0" size="50" color="primary"
 
 <script>
 import Debounce from '@/utils/Debounce';
-import { event, toast, openAI, eventGeneralInfo, userDocuments } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
@@ -351,7 +332,7 @@ export default {
 
 
     formData() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     generalInfoForm() {
@@ -366,7 +347,7 @@ export default {
     },
 
     isValidatingAlias() {
-      return event.$isLoadingAlias;
+      return this.$store.getters['event/$isLoadingAlias'];
     },
 
     isMobile() {
@@ -397,11 +378,11 @@ export default {
     },
 
     userRole() {
-      return this.$cookies.get('user_role');
+      return this.$store.state.auth.user?.auth?.role;
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id;
     },
 
     isAdmin() {
@@ -470,7 +451,7 @@ export default {
         event_description: this.formData.general_information,
       };
 
-      const result = await openAI.improveDescription(payload);
+      const result = await this.$store.dispatch('openAI/improveDescription', payload);
 
       if (result?.body?.code === 'IMPROVE_SUCCESS') {
         this.formData.general_information = result.body.result;
@@ -555,7 +536,7 @@ export default {
           return;
         }
 
-        const response = await event.validateAlias(alias);
+        const response = await this.$store.dispatch('event/validateAlias', alias);
         this.setAliasValidation(response.is_valid, response.alias);
       } catch (error) {
         console.error('Erro ao validar alias:', error);
@@ -613,7 +594,7 @@ export default {
         // Verifica se as dimensões são exatamente as recomendadas
         if (img.width !== 954 || img.height !== 500) {
           const message = `A imagem tem ${img.width}x${img.height}px. As dimensões recomendadas são 954x500px.`;
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: message,
             type: 'warning',
             time: 5000,
@@ -727,7 +708,7 @@ export default {
       const tempName = `temp_${timestamp}_event_description_${file.name}`;
 
       // Criar attachment de evento temporário
-      const attachmentIds = await eventGeneralInfo.createEventAttachment({
+      const attachmentIds = await this.$store.dispatch('eventGeneralInfo/createEventAttachment', {
         eventIds: [this.formData.id],
         name: tempName,
         type: 'image',
@@ -735,13 +716,13 @@ export default {
       });
 
       // Upload da imagem
-      const imageUrls = await eventGeneralInfo.uploadEventImage({
+      const imageUrls = await this.$store.dispatch('eventGeneralInfo/uploadEventImage', {
         attachmentIds,
         imageFile: file
       });
 
       // Atualizar o attachment com a URL real
-      await eventGeneralInfo.updateEventAttachment({
+      await this.$store.dispatch('eventGeneralInfo/updateEventAttachment', {
         attachmentIds,
         url: imageUrls
       });
@@ -765,14 +746,14 @@ export default {
       const tempName = `temp_${timestamp}_event_description_${file.name}`;
 
       // Criar documento de usuário temporário
-      const imageDoc = await userDocuments.createUserDocument({
+      const imageDoc = await this.$store.dispatch('userDocuments/createUserDocument', {
         name: tempName,
         type: 'image',
         userId: this.userId
       });
 
       // Upload da imagem
-      const imageUrl = await userDocuments.uploadUserDocument({
+      const imageUrl = await this.$store.dispatch('userDocuments/uploadUserDocument', {
         documentFile: file,
         attachmentId: imageDoc.id
       });
@@ -797,7 +778,7 @@ export default {
 
     handleImageUploaded({ file, url }) {
       console.log('Imagem da descrição enviada com sucesso:', file.name, url);
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: `Imagem "${file.name}" enviada com sucesso`,
         type: 'success',
         time: 3000
@@ -806,7 +787,7 @@ export default {
 
     handleImageUploadError({ file, error }) {
       console.error('Erro no upload da imagem da descrição:', file?.name, error);
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: `Erro ao enviar imagem: ${error}`,
         type: 'error',
         time: 3000
@@ -823,9 +804,9 @@ export default {
         const deletePromises = this.tempUploadedImageAttachments.map(async (attachment) => {
           try {
             if (attachment.type === 'eventAttachment') {
-              await eventGeneralInfo.deleteEventAttachment(attachment.id);
+              await this.$store.dispatch('eventGeneralInfo/deleteEventAttachment', attachment.id);
             } else if (attachment.type === 'userDocument') {
-              await userDocuments.deleteUserDocument({ attachmentId: attachment.id });
+              await this.$store.dispatch('userDocuments/deleteUserDocument', { attachmentId: attachment.id });
             }
             console.log(`Attachment temporário da descrição deletado: ${attachment.fileName} [${attachment.type}]`);
           } catch (error) {
@@ -857,14 +838,14 @@ export default {
               // Como não temos método para renomear, vamos criar novo e deletar antigo
               const eventId = this.formData.id || tempAttachment.eventId;
 
-              const permanentAttachmentIds = await eventGeneralInfo.createEventAttachment({
+              const permanentAttachmentIds = await this.$store.dispatch('eventGeneralInfo/createEventAttachment', {
                 eventIds: [eventId],
                 name: permanentName,
                 type: 'image',
                 url: tempAttachment.url
               });
 
-              await eventGeneralInfo.deleteEventAttachment(tempAttachment.id);
+              await this.$store.dispatch('eventGeneralInfo/deleteEventAttachment', tempAttachment.id);
 
               newPermanentAttachments.push({
                 id: permanentAttachmentIds[0],
@@ -913,7 +894,7 @@ export default {
             const permanentName = `event_description_image_${Date.now()}_${userDoc.fileName}`;
 
             // Criar eventAttachment com a URL do userDocument
-            const eventAttachmentIds = await eventGeneralInfo.createEventAttachment({
+            const eventAttachmentIds = await this.$store.dispatch('eventGeneralInfo/createEventAttachment', {
               eventIds: [eventId],
               name: permanentName,
               type: 'image',
@@ -921,7 +902,7 @@ export default {
             });
 
             // Deletar userDocument temporário
-            await userDocuments.deleteUserDocument({ attachmentId: userDoc.id });
+            await this.$store.dispatch('userDocuments/deleteUserDocument', { attachmentId: userDoc.id });
 
             migratedAttachments.push({
               id: eventAttachmentIds[0],
@@ -959,7 +940,7 @@ export default {
       try {
         if (this.tempUploadedImageAttachments.length > 0) {
           await this.cleanupTemporaryDescriptionImages();
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Edição cancelada. Imagens temporárias foram removidas.',
             type: 'info',
             time: 3000

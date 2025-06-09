@@ -8,28 +8,14 @@
     </v-col>
 
     <v-col cols="12" md="12" sm="12">
-      <CouponRow
-        v-for="coupon in getCoupons"
-        :id="coupon.id"
-        :key="coupon.id"
-        :code="coupon.code"
-        :discount-type="coupon.discount_type"
-        :discount-value="coupon.discount_value"
-        :max-uses="coupon.max_uses"
-        :uses="coupon.uses"
-        :tickets="coupon.tickets"
-        :event-tickets="getTickets"
-        :event-promoter="getEventPromoter"
-        @click="handleEditCoupon(coupon.id)"
-        @delete="handleDeleteCoupon" />
+      <CouponRow v-for="coupon in getCoupons" :id="coupon.id" :key="coupon.id" :code="coupon.code"
+        :discount-type="coupon.discount_type" :discount-value="coupon.discount_value" :max-uses="coupon.max_uses"
+        :uses="coupon.uses" :tickets="coupon.tickets" :event-tickets="getTickets" :event-promoter="getEventPromoter"
+        @click="handleEditCoupon(coupon.id)" @delete="handleDeleteCoupon" />
     </v-col>
 
     <!-- Modal de edição -->
-    <v-dialog
-      v-model="showEditDialog"
-      max-width="900px"
-      persistent
-      :fullscreen="isMobile">
+    <v-dialog v-model="showEditDialog" max-width="900px" persistent :fullscreen="isMobile">
       <v-card :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center">
           <h3>Editar Cupom</h3>
@@ -38,42 +24,26 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4">
-          <CouponForm
-            v-if="showEditDialog"
-            ref="couponEditForm"
-            :edit-index="selectedCouponIndex"
-            :event-id="eventId"
+          <CouponForm v-if="showEditDialog" ref="couponEditForm" :edit-index="selectedCouponIndex" :event-id="eventId"
             :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            :disabled="isLoading"
-            @click="handleCloseEditDialog" />
-          <DefaultButton
-            text="Salvar"
-            :is-loading="isLoading"
-            :disabled="isLoading"
-            @click="submitEdit" />
+          <DefaultButton outlined text="Cancelar" :disabled="isLoading" @click="handleCloseEditDialog" />
+          <DefaultButton text="Salvar" :is-loading="isLoading" :disabled="isLoading" @click="submitEdit" />
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- Dialog de confirmação de remoção -->
-    <ConfirmDialog
-      v-model="showConfirmDialog"
-      title="Remover Cupom"
-      :message="`Deseja remover o cupom ${selectedCoupon?.code}?`"
-      confirm-text="Excluir"
-      :loading="isLoading"
+    <ConfirmDialog v-model="showConfirmDialog" title="Remover Cupom"
+      :message="`Deseja remover o cupom ${selectedCoupon?.code}?`" confirm-text="Excluir" :loading="isLoading"
       @confirm="confirmDelete" />
   </v-row>
 </template>
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { eventCoupons, toast, eventTickets, eventGeneralInfo } from '@/store';
+
 export default {
   props: {
     eventId: { type: String, required: true },
@@ -93,10 +63,10 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
     getCoupons() {
-      return eventCoupons.$coupons;
+      return this.$store.getters['eventCoupons/$coupons'];
     },
     getTickets() {
-      return eventTickets.$tickets.map((ticket) => {
+      return this.$store.getters['eventTickets/$tickets'].map((ticket) => {
         return {
           id: ticket.id,
           name: ticket.name,
@@ -105,7 +75,7 @@ export default {
       });
     },
     getEventPromoter() {
-      return eventGeneralInfo.$info?.promoter_id;
+      return this.$store.getters['eventGeneralInfo/$info']?.promoter_id;
     },
   },
   methods: {
@@ -152,7 +122,7 @@ export default {
           this.isLoading = false;
 
           this.handleCloseEditDialog();
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Cupom atualizado com sucesso!`,
             type: 'success',
             time: 5000,
@@ -175,21 +145,21 @@ export default {
       try {
         this.isLoading = true;
 
-        await eventCoupons.fetchDeleteCoupon(this.selectedCoupon.id);
+        await this.$store.dispatch('eventCoupons/fetchDeleteCoupon', this.selectedCoupon.id);
         this.$emit('deleted', this.selectedCoupon.id);
         this.handleCloseDialog();
 
         // Notifica o usuário
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Cupom "${this.selectedCoupon.code}" removido com sucesso!`,
           type: 'success',
           time: 5000,
         });
 
-        await eventCoupons.fetchAndPopulateByEventId(this.eventId);
+        await this.$store.dispatch('eventCoupons/fetchAndPopulateByEventId', this.eventId);
       } catch (error) {
         console.error('Erro ao remover cupom:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Falha ao remover cupom. Tente novamente.`,
           type: 'danger',
           time: 5000,

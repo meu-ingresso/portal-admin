@@ -15,16 +15,10 @@
       <v-col cols="12" md="12" sm="12">
         <!-- Estado vazio -->
         <template v-if="guestLists.length === 0">
-          <EmptyState
-            title="Ainda não há listas de convidados"
-            subtitle="Uma vez criadas, suas listas de convidados aparecerão aqui"
-            icon="mdi-account-group-outline">
+          <EmptyState title="Ainda não há listas de convidados"
+            subtitle="Uma vez criadas, suas listas de convidados aparecerão aqui" icon="mdi-account-group-outline">
             <template #action>
-              <DefaultButton
-                text="Adicionar"
-                icon="mdi-plus"
-                class="mt-6"
-                @click="openGuestListForm" />
+              <DefaultButton text="Adicionar" icon="mdi-plus" class="mt-6" @click="openGuestListForm" />
             </template>
           </EmptyState>
         </template>
@@ -32,11 +26,7 @@
         <!-- Listas de convidados -->
         <template v-else>
           <div class="guest-lists-container">
-            <div
-              v-for="list in guestLists"
-              :key="list.id"
-              class="guest-list-card"
-              @click="navigateToMembers(list.id)">
+            <div v-for="list in guestLists" :key="list.id" class="guest-list-card" @click="navigateToMembers(list.id)">
               <div class="guest-list-content">
                 <div class="guest-list-main">
                   <h3 class="guest-list-name">{{ list.name }}</h3>
@@ -52,13 +42,8 @@
                       {{ getValidatedCount(list) }} / {{ getTotalMembers(list) }}
                     </span>
                   </div>
-                  <ActionsMenu
-                    :show-duplicate="false"
-                    :show-stop-sales="false"
-                    :show-edit="true"
-                    :show-delete="true"
-                    @edit="() => editGuestList(list)"
-                    @delete="() => deleteGuestList(list)" />
+                  <ActionsMenu :show-duplicate="false" :show-stop-sales="false" :show-edit="true" :show-delete="true"
+                    @edit="() => editGuestList(list)" @delete="() => deleteGuestList(list)" />
                 </div>
               </div>
             </div>
@@ -66,10 +51,7 @@
         </template>
 
         <template v-if="isSaving">
-          <v-skeleton-loader
-            class="mx-auto"
-            max-height="74"
-            type="card"></v-skeleton-loader>
+          <v-skeleton-loader class="mx-auto" max-height="74" type="card"></v-skeleton-loader>
         </template>
 
         <!-- Dialog do formulário -->
@@ -90,40 +72,23 @@
 
             <v-card-text class="px-4 py-2">
               <v-form v-if="showForm" ref="form" v-model="isFormValid">
-                <v-text-field
-                  v-model="formData.name"
-                  label="Nome da lista"
-                  placeholder="Exemplo: Família, Amigos, Trabalho, etc."
-                  required
-                  hide-details="auto"
-                  :rules="validationRules.name"
-                  dense
-                  outlined />
+                <v-text-field v-model="formData.name" label="Nome da lista"
+                  placeholder="Exemplo: Família, Amigos, Trabalho, etc." required hide-details="auto"
+                  :rules="validationRules.name" dense outlined />
               </v-form>
             </v-card-text>
 
             <v-card-actions class="d-flex align-center justify-space-between py-5">
-              <DefaultButton
-                text="Cancelar"
-                outlined
-                :disabled="isSaving"
-                @click="closeForm" />
-              <DefaultButton
-                :text="isEditing ? 'Atualizar' : 'Criar lista'"
-                :is-loading="isSaving"
-                :disabled="isSaving || !isFormValid"
-                @click="saveGuestList" />
+              <DefaultButton text="Cancelar" outlined :disabled="isSaving" @click="closeForm" />
+              <DefaultButton :text="isEditing ? 'Atualizar' : 'Criar lista'" :is-loading="isSaving"
+                :disabled="isSaving || !isFormValid" @click="saveGuestList" />
             </v-card-actions>
           </v-card>
         </v-dialog>
 
         <!-- Dialog de confirmação de remoção -->
-        <ConfirmDialog
-          v-model="showDeleteDialog"
-          title="Remover lista de convidados"
-          :message="`Deseja remover a lista '${selectedList?.name}'?`"
-          confirm-text="Excluir"
-          :loading="isDeleting"
+        <ConfirmDialog v-model="showDeleteDialog" title="Remover lista de convidados"
+          :message="`Deseja remover a lista '${selectedList?.name}'?`" confirm-text="Excluir" :loading="isDeleting"
           @confirm="confirmDelete" />
       </v-col>
     </template>
@@ -132,7 +97,6 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { eventGuests, toast } from '@/store';
 import { formatDateTimeWithTimezone } from '@/utils/formatters';
 export default {
   data() {
@@ -160,16 +124,16 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
     guestLists() {
-      return eventGuests.$guestLists;
+      return this.$store.getters['eventGuests/$guestLists'];
     },
     isLoading() {
-      return eventGuests.$isLoading;
+      return this.$store.getters['eventGuests/$isLoading'];
     },
     isDeleting() {
-      return eventGuests.$isDeleting;
+      return this.$store.getters['eventGuests/$isDeleting'];
     },
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id;
     },
   },
 
@@ -231,21 +195,21 @@ export default {
       try {
         this.isSaving = true;
         if (this.isEditing) {
-          await eventGuests.fetchUpdateGuestList({
+          await this.$store.dispatch('eventGuests/fetchUpdateGuestList', {
             id: this.formData.id,
             name: this.formData.name,
           });
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Lista atualizada com sucesso!',
             type: 'success',
           });
         } else {
-          await eventGuests.createGuestList({
+          await this.$store.dispatch('eventGuests/createGuestList', {
             event_id: this.$route.params.id,
             name: this.formData.name,
             created_by: this.userId,
           });
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Lista criada com sucesso!',
             type: 'success',
           });
@@ -253,7 +217,7 @@ export default {
         this.closeForm();
         this.fetchGuestLists();
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Erro ao ${this.isEditing ? 'atualizar' : 'criar'} lista`,
           type: 'error',
         });
@@ -266,14 +230,14 @@ export default {
       if (!this.selectedList) return;
 
       try {
-        await eventGuests.fetchDeleteGuestList(this.selectedList.id);
-        toast.setToast({
+        await this.$store.dispatch('eventGuests/fetchDeleteGuestList', this.selectedList.id);
+        this.$store.dispatch('toast/setToast', {
           text: 'Lista excluída com sucesso!',
           type: 'success',
         });
         this.fetchGuestLists();
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao excluir lista',
           type: 'error',
         });
@@ -284,7 +248,7 @@ export default {
     },
 
     async fetchGuestLists() {
-      await eventGuests.fetchGuestListAndPopulateByQuery(
+      await this.$store.dispatch('eventGuests/fetchGuestListAndPopulateByQuery',
         `where[event_id][v]=${this.$route.params.id}&preloads[]=members:guestListMemberValidated`
       );
     },
@@ -293,8 +257,6 @@ export default {
 </script>
 
 <style scoped>
-
-
 .guest-lists-container {
   display: flex;
   flex-direction: column;

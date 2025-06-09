@@ -1,49 +1,25 @@
 <template>
-  <v-navigation-drawer
-    v-if="getSidebar && !isMobile"
-    v-model="$_drawer"
-    :mini-variant="$_miniVariant"
-    clipped
-    app
+  <v-navigation-drawer v-if="getSidebar && !isMobile" v-model="$_drawer" :mini-variant="$_miniVariant" clipped app
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
     <v-list class="py-0">
       <v-list-item class="event-detail-image">
         <div class="image-container">
-          <v-img
-            v-if="selectedEventBanner || cachedBanner?.url"
-            class="image"
+          <v-img v-if="selectedEventBanner || cachedBanner?.url" class="image"
             :src="selectedEventBanner || cachedBanner?.url">
           </v-img>
 
-          <div
-            v-else
-            class="d-flex justify-center align-center"
+          <div v-else class="d-flex justify-center align-center"
             :style="{ margin: '0 auto', height: '100%', width: '100%' }">
-            <v-progress-circular
-              indeterminate
-              color="primary"
-              size="48"
-              class="progress-circular" />
+            <v-progress-circular indeterminate color="primary" size="48" class="progress-circular" />
           </div>
 
           <!-- Botão de edição -->
-          <v-btn
-            v-if="canEditEvent"
-            icon
-            small
-            color="white"
-            class="edit-button"
-            @click="showEditMenu">
+          <v-btn v-if="canEditEvent" icon small color="white" class="edit-button" @click="showEditMenu">
             <v-icon>mdi-cog</v-icon>
           </v-btn>
 
           <!-- Menu de opções -->
-          <v-menu
-            v-model="showMenu"
-            :position-x="menuX"
-            :position-y="menuY"
-            absolute
-            offset-y>
+          <v-menu v-model="showMenu" :position-x="menuX" :position-y="menuY" absolute offset-y>
             <v-list>
               <v-list-item @click="editEvent">
                 <v-list-item-icon class="mr-2">
@@ -80,18 +56,10 @@
       <div v-for="(item, i) in getSidebar" :key="i" class="event-drawer-item">
         <v-tooltip v-if="$_miniVariant" right>
           <template #activator="{ on, attrs }">
-            <v-list-item
-              :to="item.to"
-              router
-              exact
-              :class="{ 'active-item': item.to === currentPath }">
+            <v-list-item :to="item.to" router exact :class="{ 'active-item': item.to === currentPath }">
               <v-list-item-action v-if="item.icon" class="text-center">
-                <v-icon
-                  v-if="$route.meta.prefix === item.to || $route.path === item.to"
-                  v-bind="attrs"
-                  v-on="on"
-                  >{{ item.iconActive }}</v-icon
-                >
+                <v-icon v-if="$route.meta.prefix === item.to || $route.path === item.to" v-bind="attrs" v-on="on">{{
+                  item.iconActive }}</v-icon>
 
                 <v-icon v-else v-bind="attrs" v-on="on">{{ item.icon }}</v-icon>
               </v-list-item-action>
@@ -104,16 +72,12 @@
           <span> {{ item.title }} </span>
         </v-tooltip>
 
-        <v-list-item
-          v-if="!$_miniVariant"
-          :to="item.to"
-          router
-          exact
+        <v-list-item v-if="!$_miniVariant" :to="item.to" router exact
           :class="{ 'active-item': item.to === currentPath }">
           <v-list-item-action v-if="item.icon" class="text-center">
             <v-icon v-if="$route.meta.prefix === item.to || $route.path === item.to">{{
               item.iconActive
-            }}</v-icon>
+              }}</v-icon>
             <v-icon v-else>{{ item.icon }}</v-icon>
           </v-list-item-action>
 
@@ -126,28 +90,16 @@
       </div>
     </v-list>
 
-    <ConfirmDialog
-      v-model="confirmationDialog.visible"
-      :title="confirmationDialog.title"
-      :message="confirmationDialog.message"
-      confirm-text="Confirmar"
-      :loading="isChangingStatus"
-      @confirm="handleConfirmation"
-      @cancel="confirmationDialog.visible = false" />
+    <ConfirmDialog v-model="confirmationDialog.visible" :title="confirmationDialog.title"
+      :message="confirmationDialog.message" confirm-text="Confirmar" :loading="isChangingStatus"
+      @confirm="handleConfirmation" @cancel="confirmationDialog.visible = false" />
   </v-navigation-drawer>
 
-  <v-select
-    v-else-if="getSelectItems && isMobile"
-    v-model="selectedItem"
-    outlined
-    dense
-    return-object
-    hide-details
+  <v-select v-else-if="getSelectItems && isMobile" v-model="selectedItem" outlined dense return-object hide-details
     :items="getSelectItems" />
 </template>
 
 <script>
-import { loading, eventGeneralInfo, toast, permissions } from '@/store';
 import { eventsSideBar } from '@/utils/events-sidebar';
 import { isMobileDevice } from '@/utils/utils';
 
@@ -189,7 +141,7 @@ export default {
       );
     },
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     isMobile() {
@@ -225,7 +177,7 @@ export default {
     },
 
     isLoading() {
-      return loading.$isLoading;
+      return this.$store.getters['loading/$isLoading'];
     },
 
     getSelectItems() {
@@ -244,7 +196,11 @@ export default {
     },
 
     getUsername() {
-      return this.$cookies.get('username');
+      const user = this.$store.state.auth.user;
+      if (!user?.auth?.people) return '';
+
+      const person = user.auth.people;
+      return person.type === 'PF' ? person.name : person.fantasy_name;
     },
 
     $_miniVariant: {
@@ -310,7 +266,7 @@ export default {
             url: this.selectedEventBanner,
           };
         }
-        
+
         this.updateSidebar();
       },
     },
@@ -323,8 +279,8 @@ export default {
   methods: {
     async updateSidebar() {
       const eventId = this.routerParams.id;
-      const userId = this.$cookies.get('user_id');
-      const userRole = this.$cookies.get('user_role');
+      const userId = this.$store.state.auth.user?.auth?.id;
+      const userRole = this.$store.state.auth.user?.auth?.role;
 
       if (!eventId || !userId || !userRole) {
         this.filteredSidebar = [];
@@ -344,9 +300,12 @@ export default {
       }
 
       // Verificar se já temos as permissões deste evento em cache
-      if (!permissions.$eventPermissions[eventId] || !permissions.$isCacheValid) {
+      const eventPermissions = this.$store.getters['permissions/$eventPermissions'];
+      const isCacheValid = this.$store.getters['permissions/$isCacheValid'];
+
+      if (!eventPermissions[eventId] || !isCacheValid) {
         // Carregar as permissões do evento se não existirem no cache
-        await permissions.loadEventPermissions({
+        await this.$store.dispatch('permissions/loadEventPermissions', {
           userId,
           eventId,
           roleId: userRole.id
@@ -354,7 +313,7 @@ export default {
       }
 
       // Se o usuário tem a permissão especial '*', permite tudo
-      if (permissions.$eventPermissions[eventId]?.includes('*')) {
+      if (eventPermissions[eventId]?.includes('*')) {
         this.filteredSidebar = items;
         return;
       }
@@ -364,28 +323,28 @@ export default {
         if (!item.permissions || item.permissions.length === 0) {
           return true;
         }
-        
+
         // Verificar se o usuário tem pelo menos uma das permissões necessárias
-        return item.permissions.some(permission => 
-          permissions.$eventPermissions[eventId]?.includes(permission)
+        return item.permissions.some(permission =>
+          eventPermissions[eventId]?.includes(permission)
         );
       });
     },
 
     async requestPublication() {
-      const response = await eventGeneralInfo.updateEventStatus({
+      const response = await this.$store.dispatch('eventGeneralInfo/updateEventStatus', {
         eventId: this.getEvent.id,
         statusName: 'Em Análise',
       });
 
       if (response.length > 0) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Solicitação de publicação enviada com sucesso!',
           type: 'success',
           time: 5000,
         });
       } else {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao solicitar publicação!',
           type: 'error',
           time: 5000,
@@ -433,14 +392,14 @@ export default {
       try {
         this.isChangingStatus = true;
 
-        await eventGeneralInfo.updateEventStatus({
+        await this.$store.dispatch('eventGeneralInfo/updateEventStatus', {
           eventId: this.getEvent.id,
           statusName: 'Cancelado',
         });
 
         this.isChangingStatus = false;
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Evento cancelado com sucesso!',
           type: 'success',
           time: 5000,
@@ -451,7 +410,7 @@ export default {
         console.error(error);
         this.isChangingStatus = false;
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Falha ao cancelar o evento. Tente novamente.',
           type: 'danger',
           time: 5000,
@@ -461,7 +420,7 @@ export default {
 
     async refresh() {
       try {
-        await eventGeneralInfo.fetchEventInfo(this.getEvent.id);
+        await this.$store.dispatch('eventGeneralInfo/fetchAndPopulateByEventId', this.getEvent.id);
       } catch (error) {
         console.error('Erro ao carregar evento:', error);
       }

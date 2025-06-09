@@ -1,12 +1,11 @@
 import { Middleware } from '@nuxt/types';
-import { permissions, user } from '@/utils/store-util';
 
 /**
  * Middleware para verificar permissões de acesso a rotas
  * Verifica se o usuário tem as permissões necessárias para acessar a rota
  * com base em meta.permissions e verificações específicas para promotores e colaboradores
  */
-const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }) => {
+const permissionsMiddleware: Middleware = async ({ route, redirect, store }) => {
 
 
   // Se a rota é a de login, não é necessário verificar permissões
@@ -14,18 +13,10 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }
     return;
   }
 
-  // Verifica se temos os dados do usuário logado na store de user
-  if (!store.state.user.user || store.state.user.user.id === '') {
-    console.log("Buscando dados do usuário no banco de dados...")
-    const responseUser = await user.getById({
-      user_id: app.$cookies.get('user_id'),
-      commit: true
-    });
-
-    if (!responseUser) {
-      console.log("Usuário não encontrado, redirecionando para login...")
-      return redirect('/login');
-    }
+  // Verifica se o usuário está logado usando o auth store
+  if (!store.state.auth.loggedIn || !store.state.auth.user) {
+    // console.log("[middleware/permissions.ts] Usuário não está logado, redirecionando para login...")
+    return redirect('/login');
   }
 
   // Se a rota não tem configuração de permissões, permite o acesso
@@ -33,14 +24,15 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }
     return;
   }
 
-  // Obter as informações do usuário dos cookies
-  const userId = app.$cookies.get('user_id');
-  const userRole = app.$cookies.get('user_role');
+  // Obter as informações do usuário do auth store
+  const user = store.state.auth.user?.auth;
+  const userId = user.id;
+  const userRole = user.role;
 
-  // Se não houver usuário ou role, redirecionar para login
-  if (!userId || !userRole) {
-    return redirect('/login');
-  }
+  console.log(store.state)
+
+  console.log("[middleware/permissions.ts] Verificando permissões para a rota:", route.path);
+  console.log("[middleware/permissions.ts] Usuário:", userId, "Papel:", userRole);
 
   // Se a rota só requer autenticação (sem permissões específicas), permite o acesso
   if (route.meta[0]?.requiresAuth && !route.meta[0]?.permissions) {
@@ -81,8 +73,11 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }
       eventId = eventIdMatch[1]; // ID do evento
       
       // Carregar permissões do evento se ainda não foram carregadas ou cache expirou
-      if (!permissions.$eventPermissions[eventId] || !permissions.$isCacheValid) {
-        await permissions.loadEventPermissions({
+      const eventPermissions = store.getters['permissions/$eventPermissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (!eventPermissions[eventId] || !isCacheValid) {
+        await store.dispatch('permissions/loadEventPermissions', {
           userId,
           eventId,
           roleId: userRole.id
@@ -91,7 +86,7 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }
 
       // Verificar permissões para o evento
       const hasPermission = requiredPermissions.length === 0 || 
-        await permissions.checkEventPermissions({
+        await store.dispatch('permissions/checkEventPermissions', {
           eventId,
           permissions: requiredPermissions
         });
@@ -112,8 +107,11 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }
       }
     } else {
       // Carregar permissões gerais do usuário se ainda não foram carregadas ou cache expirou
-      if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
-        await permissions.loadUserPermissions({
+      const permissions = store.getters['permissions/$permissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (permissions.length === 0 || !isCacheValid) {
+        await store.dispatch('permissions/loadUserPermissions', {
           userId,
           roleId: userRole.id
         });
@@ -121,7 +119,7 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, app, store }
 
       // Verificar permissões gerais
       const hasPermission = requiredPermissions.length === 0 || 
-        await permissions.checkPermissions(requiredPermissions);
+        await store.dispatch('permissions/checkPermissions', requiredPermissions);
 
       if (!hasPermission) {
         // Redirecionar para a página inicial se não tem permissão

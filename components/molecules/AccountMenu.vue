@@ -5,12 +5,7 @@
         <div :class="isMobile ? '' : 'avatar'">
           <v-avatar color="grey" :size="isMobile ? '32' : '48'">
             <div class="white--text">
-              <template v-if="!isUpdatingUserName">
-                {{ getInitials(getUsername) }}
-              </template>
-              <template v-else>
-                <v-skeleton-loader type="avatar-circle" />
-              </template>
+              {{ getInitials(getUsername) }}
             </div>
           </v-avatar>
           <v-icon class="chevronDown"> mdi-chevron-down </v-icon>
@@ -20,20 +15,9 @@
 
     <v-list>
       <v-list-item>
-        <v-list-item-title
-          class="account-menu-items cursor-pointer"
-          @click="userEdit(getUserId)">
-
-          <template v-if="!isUpdatingUserName">
-            <v-icon> mdi-account </v-icon>
-            {{ getUsername }}
-          </template>
-
-          <template v-else>
-            <v-skeleton-loader type="avatar-circle" />
-          </template>
-
-   
+        <v-list-item-title class="account-menu-items cursor-pointer" @click="userEdit(getUserId)">
+          <v-icon> mdi-account </v-icon>
+          {{ getUsername }}
         </v-list-item-title>
       </v-list-item>
       <v-list-item>
@@ -48,13 +32,25 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { auth } from '@/store';
+
 import { isMobileDevice } from '@/utils/utils';
 
 export default Vue.extend({
   computed: {
     getUsername() {
-      return this.$cookies.get('username');
+      const user = this.$store.state.auth.user;
+      if (!user?.auth?.people) return 'Sem nome';
+
+      const people = user.auth.people;
+      const personType = people.person_type;
+
+      if (personType === 'PF') {
+        const fullName = `${people.first_name} ${people.last_name}`;
+        return fullName !== 'null null' ? fullName : 'Sem nome';
+      } else {
+        const fullName = `${people.social_name} ${people.fantasy_name}`;
+        return fullName !== 'null null' ? fullName : 'Sem nome';
+      }
     },
 
     getPhoto() {
@@ -62,15 +58,11 @@ export default Vue.extend({
     },
 
     getUserId(): string {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.auth?.id || '';
     },
 
     isMobile() {
       return isMobileDevice(this.$vuetify);
-    },
-
-    isUpdatingUserName() {
-      return auth.$isUpdatingUserName;
     },
   },
 
@@ -87,10 +79,14 @@ export default Vue.extend({
       return firstInitial + lastInitial;
     },
 
-    onLogout() {
-      auth.destroy();
-
-      this.$router.replace('/login');
+    async onLogout() {
+      try {
+        await this.$auth.logout();
+        this.$router.replace('/login');
+      } catch (error) {
+        // console.error('Erro no logout:', error);
+        this.$router.replace('/login');
+      }
     },
   },
 });

@@ -25,7 +25,7 @@ export default {
 
   css: ['~/assets/css/vuetify.css', '~/assets/css/main.css', '~/assets/scss/components/data-table.scss'],
 
-  plugins: ['~/plugins/accessor', '~/plugins/axios'],
+  plugins: ['~/plugins/accessor', '~/plugins/axios', '~/plugins/auth'],
 
   components: [
     {
@@ -63,7 +63,7 @@ export default {
       },
     },
   },
-  modules: ['@nuxtjs/axios', 'cookie-universal-nuxt', '@nuxtjs/toast'],
+  modules: ['@nuxtjs/axios', 'cookie-universal-nuxt', '@nuxtjs/toast', '@nuxtjs/auth-next'],
 
   toast: {
     position: 'top-right',
@@ -76,6 +76,33 @@ export default {
   axios: {
     baseUrl: `${process.env.API_HOST}/v1`,
     withCredentials: true,
+  },
+
+  auth: {
+    strategies: {
+      local: {
+        token: {
+          property: 'body.result.token.token',
+          global: true,
+          type: 'Bearer'
+        },
+        user: {
+          property: 'body.result',
+          autoFetch: true
+        },
+        endpoints: {
+          login: { url: '/login', method: 'post' },
+          logout: { url: '/logout', method: 'get' },
+          user: { url: '/auth/me', method: 'get' }
+        }
+      }
+    },
+    redirect: {
+      login: '/login',
+      logout: '/',
+      callback: '/login',
+      home: '/'
+    }
   },
 
   router: {
