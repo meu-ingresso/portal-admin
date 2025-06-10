@@ -39,9 +39,9 @@ export default Vue.extend({
   computed: {
     getUsername() {
       const user = this.$store.state.auth.user;
-      if (!user?.auth?.people) return 'Sem nome';
+      if (!user?.people) return 'Sem nome';
 
-      const people = user.auth.people;
+      const people = user.people;
       const personType = people.person_type;
 
       if (personType === 'PF') {
@@ -58,7 +58,7 @@ export default Vue.extend({
     },
 
     getUserId(): string {
-      return this.$store.state.auth.user?.auth?.id || '';
+      return this.$store.state.auth.user?.id || '';
     },
 
     isMobile() {

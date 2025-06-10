@@ -78,7 +78,7 @@ export default {
     },
 
     isAdminOrManager() {
-      const userRole = this.$store.state.auth.user?.auth?.role;
+      const userRole = this.$store.state.auth.user?.role;
       return userRole && (userRole.name === 'Admin' || userRole.name === 'Gerente');
     },
 
@@ -95,11 +95,11 @@ export default {
     },
 
     getUserId() {
-      return this.$auth.user?.auth?.id;
+      return this.$auth.user?.id;
     },
 
     getUserRole() {
-      return this.$auth.user?.auth?.role;
+      return this.$auth.user?.role;
     },
 
     topBarItems() {

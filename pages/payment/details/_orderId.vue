@@ -377,8 +377,8 @@ export default {
         const eventId = this.getEvent?.id;
 
         if (eventId) {
-          const userId = this.$store.state.auth.user?.auth?.id;
-          const roleId = this.$store.state.auth.user?.auth?.role?.id;
+          const userId = this.$store.state.auth.user?.id;
+          const roleId = this.$store.state.auth.user?.role?.id;
 
           if (eventId && userId && roleId) {
             await this.$store.dispatch('permissions/loadEventPermissions', {

@@ -202,7 +202,7 @@ export default {
     },
 
     userId() {
-      return this.$auth.user?.auth?.id;
+      return this.$auth.user?.id;
     },
 
     people() {

@@ -114,7 +114,7 @@ export default {
   computed: {
 
     userId() {
-      return this.$store.state.auth.user?.auth?.id;
+      return this.$store.state.auth.user?.id;
     },
 
     isMobile() {

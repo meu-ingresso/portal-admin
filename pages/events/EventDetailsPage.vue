@@ -117,11 +117,11 @@ export default {
     },
 
     userRole() {
-      return this.$store.state.auth.user?.auth?.role;
+      return this.$store.state.auth.user?.role;
     },
 
     userId() {
-      return this.$auth.user?.auth?.id;
+      return this.$auth.user?.id;
     },
 
     isAdmin() {

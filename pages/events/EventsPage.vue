@@ -26,11 +26,11 @@ export default {
   computed: {
 
     userId() {
-      return this.$store.state.auth.user?.auth?.id;
+      return this.$store.state.auth.user?.id;
     },
 
     isAdmin() {
-      return this.$store.state.auth.user?.auth?.role?.name === 'Admin';
+      return this.$store.state.auth.user?.role?.name === 'Admin';
     },
 
     events() {

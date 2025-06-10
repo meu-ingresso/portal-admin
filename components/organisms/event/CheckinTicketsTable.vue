@@ -225,7 +225,7 @@ export default {
       return this.$store.getters['eventCustomerTickets/$isLoading'];
     },
     userId() {
-      return this.$store.state.auth.user?.auth?.id;
+      return this.$store.state.auth.user?.id;
     },
     eventId() {
       return this.$route.params.id;

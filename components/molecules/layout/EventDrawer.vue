@@ -77,7 +77,7 @@
           <v-list-item-action v-if="item.icon" class="text-center">
             <v-icon v-if="$route.meta.prefix === item.to || $route.path === item.to">{{
               item.iconActive
-              }}</v-icon>
+            }}</v-icon>
             <v-icon v-else>{{ item.icon }}</v-icon>
           </v-list-item-action>
 
@@ -279,8 +279,8 @@ export default {
   methods: {
     async updateSidebar() {
       const eventId = this.routerParams.id;
-      const userId = this.$store.state.auth.user?.auth?.id;
-      const userRole = this.$store.state.auth.user?.auth?.role;
+      const userId = this.$store.state.auth.user?.id;
+      const userRole = this.$store.state.auth.user?.role;
 
       if (!eventId || !userId || !userRole) {
         this.filteredSidebar = [];

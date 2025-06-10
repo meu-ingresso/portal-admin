@@ -139,16 +139,16 @@ export default {
 
   computed: {
     userEmail() {
-      return this.$auth.user?.auth?.email || '••••••••';
+      return this.$auth.user?.email || '••••••••';
     },
 
     isOrganizer() {
-      const roleName = this.$auth.user?.auth?.role?.name;
+      const roleName = this.$auth.user?.role?.name;
       return roleName === PRODUCER_ROLE;
     },
 
     isAdmin() {
-      const roleName = this.$auth.user?.auth?.role?.name;
+      const roleName = this.$auth.user?.role?.name;
       return roleName === ADMIN_ROLE;
     },
 
@@ -186,7 +186,7 @@ export default {
     },
 
     userId() {
-      return this.$auth.user?.auth?.id;
+      return this.$auth.user?.id;
     },
 
     isLoading() {

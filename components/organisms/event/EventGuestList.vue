@@ -133,7 +133,7 @@ export default {
       return this.$store.getters['eventGuests/$isDeleting'];
     },
     userId() {
-      return this.$store.state.auth.user?.auth?.id;
+      return this.$store.state.auth.user?.id;
     },
   },
 

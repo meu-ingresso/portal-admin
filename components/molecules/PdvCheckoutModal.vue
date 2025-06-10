@@ -102,11 +102,11 @@ export default {
   computed: {
 
     userId() {
-      return this.$auth.user?.auth?.id;
+      return this.$auth.user?.id;
     },
 
     isAdminOrManager() {
-      const role = this.$auth.user?.auth?.role;
+      const role = this.$auth.user?.role;
       return role && (role.name === 'Admin' || role.name === 'Manager');
     },
 

@@ -64,7 +64,7 @@ export default {
 
   methods: {
     loadUserData() {
-      const currentUser = this.$auth.user?.auth;
+      const currentUser = this.$auth.user;
       const { people, email } = currentUser || {};
       this.firstName = people?.first_name || '';
       this.lastName = people?.last_name || '';
@@ -79,7 +79,7 @@ export default {
           return;
         }
 
-        const currentUser = this.$auth.user?.auth;
+        const currentUser = this.$auth.user;
         const userId = currentUser?.id;
         const peopleId = currentUser?.people_id;
 

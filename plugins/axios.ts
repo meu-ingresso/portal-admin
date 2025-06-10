@@ -1,6 +1,6 @@
 import { Plugin } from '@nuxt/types';
 
-const axiosPlugin: Plugin = ({ app, store, redirect }) => {
+const axiosPlugin: Plugin = ({ app, redirect }) => {
   app.$axios.onRequest((config) => {
     const tokenObj = app.$cookies.get('token');
 
@@ -9,17 +9,14 @@ const axiosPlugin: Plugin = ({ app, store, redirect }) => {
 
   app.$axios.onError((error) => {
     if (error.response?.status === 401) {
+
+      // Se o erro for 401, redirecionar para a página de login
+      if (app.$auth) {
+        app.$auth.logout();
+      }
+      // Limpar o token do cookie
       app.$cookies.remove('token');
-      app.$cookies.remove('user_id');
-      app.$cookies.remove('user_role');
-      app.$cookies.remove('user_email');
-      app.$cookies.remove('user_logged');
-      app.$cookies.remove('people_id');
-
-      store.dispatch('auth/update', { token: null });
-
-      console.log('[plugins/axios.ts] Token inválido, removendo cookies e redirecionando para login...');
-
+      // Redirecionar para a página de login
       return redirect('/login');
     }
   });

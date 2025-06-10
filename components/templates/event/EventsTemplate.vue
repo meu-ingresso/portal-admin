@@ -67,15 +67,15 @@ export default {
   computed: {
 
     getUserRole() {
-      return this.$store.state.auth.user?.auth?.role;
+      return this.$store.state.auth.user?.role;
     },
 
     getUserId() {
-      return this.$store.state.auth.user?.auth?.id;
+      return this.$store.state.auth.user?.id;
     },
 
     isAdminOrManager() {
-      const userRole = this.$store.state.auth.user?.auth?.role;
+      const userRole = this.$store.state.auth.user?.role;
       return userRole && (userRole.name === 'Admin' || userRole.name === 'Gerente');
     },
 

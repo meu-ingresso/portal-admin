@@ -35,7 +35,7 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
     userRole() {
-      return this.$store.state.auth.user?.auth?.role;
+      return this.$store.state.auth.user?.role;
     },
     isAdmin() {
       const role = this.userRole;

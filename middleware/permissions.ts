@@ -25,14 +25,9 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, store }) => 
   }
 
   // Obter as informações do usuário do auth store
-  const user = store.state.auth.user?.auth;
+  const user = store.state.auth.user;
   const userId = user?.id;
   const userRole = user?.role;
-
-  console.log(store.state)
-
-  console.log("[middleware/permissions.ts] Verificando permissões para a rota:", route.path);
-  console.log("[middleware/permissions.ts] Usuário:", userId, "Papel:", userRole);
 
   // Se a rota só requer autenticação (sem permissões específicas), permite o acesso
   if (route.meta[0]?.requiresAuth && !route.meta[0]?.permissions) {

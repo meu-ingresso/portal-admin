@@ -87,7 +87,7 @@ export default {
           type: 'Bearer'
         },
         user: {
-          property: 'body.result',
+          property: 'body.result.auth',
           autoFetch: true
         },
         endpoints: {

@@ -235,7 +235,7 @@ export default {
       return this.isLoadingInternal || this.$store.getters['loading/$isLoading'];
     },
     isAdmin() {
-      const role = this.$auth.user?.auth?.role;
+      const role = this.$auth.user?.role;
       return role && role.name === 'Admin';
     },
     activeFiltersCount() {
