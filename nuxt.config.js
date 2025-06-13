@@ -105,6 +105,16 @@ export default {
     }
   },
 
+  cookie: {
+    prefix: 'auth.',
+    options: {
+      domain: '.meuingresso.com.br',
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+    }
+  },
+
   router: {
     base: process.env.ROUTE || '/',
     middleware: ['event', 'permissions'],
