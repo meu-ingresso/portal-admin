@@ -1,5 +1,3 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-
 interface UpdatePayload {
   text: string;
   text2?: string;
@@ -7,52 +5,59 @@ interface UpdatePayload {
   time: number;
 }
 
-@Module({
-  name: 'toast',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Toast extends VuexModule {
-  private toast = {
+interface ToastState {
+  toast: {
+    toastText: string;
+    toastText2: string;
+    toastType: string;
+    toastTime: number;
+    show: boolean;
+  };
+}
+
+export const state = (): ToastState => ({
+  toast: {
     toastText: '',
     toastText2: '',
     toastType: '',
     toastTime: 3000,
     show: false,
-  };
+  },
+});
 
-  public get $single() {
-    return this.toast;
-  }
+export const getters = {
+  $single: (state: ToastState) => state.toast,
+};
 
-  @Mutation
-  private SET_TOAST(data: UpdatePayload) {
-    this.toast.toastText = data.text;
-    this.toast.toastText2 = '';
-    if (data.text2) this.toast.toastText2 = data.text2;
-    this.toast.toastType = data.type;
-    this.toast.show = true;
-    this.toast.toastTime = data.time;
+export const mutations = {
+  SET_TOAST(state: ToastState, data: UpdatePayload) {
+    state.toast.toastText = data.text;
+    state.toast.toastText2 = '';
+    if (data.text2) state.toast.toastText2 = data.text2;
+    state.toast.toastType = data.type;
+    state.toast.show = true;
+    state.toast.toastTime = data.time;
+  },
+
+  CLOSE_TOAST(state: ToastState) {
+    state.toast.toastText = '';
+    state.toast.toastText2 = '';
+    state.toast.toastType = '';
+    state.toast.show = false;
+  },
+};
+
+export const actions = {
+  setToast({ commit }: any, { text, text2, type, time }: UpdatePayload) {
+    commit('SET_TOAST', { text, text2, type, time });
+    
+    // Configurar auto-close usando setTimeout na action, não na mutation
     setTimeout(() => {
-      this.toast.show = false;
-    }, this.toast.toastTime);
-  }
+      commit('CLOSE_TOAST');
+    }, time);
+  },
 
-  @Mutation
-  private CLOSE_TOAST() {
-    this.toast.toastText = '';
-    this.toast.toastText2 = '';
-    this.toast.toastType = '';
-    this.toast.show = false;
-  }
-
-  @Action
-  public setToast({ text, text2, type, time }: UpdatePayload) {
-    this.context.commit('SET_TOAST', { text, text2, type, time });
-  }
-
-  @Action
-  public closeToast() {
-    this.context.commit('CLOSE_TOAST');
-  }
-}
+  closeToast({ commit }: any) {
+    commit('CLOSE_TOAST');
+  },
+};

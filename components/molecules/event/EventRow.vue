@@ -113,7 +113,7 @@ import {
   formatRealValue,
   formatDateToCustomString,
 } from '@/utils/formatters';
-import { toast, event, eventGeneralInfo } from '@/store';
+
 export default {
   props: {
     event: { type: Object, required: true },
@@ -199,7 +199,7 @@ export default {
 
         this.isChangingStatus = false;
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Evento ${action} com sucesso!`,
           type: 'success',
           time: 5000,
@@ -211,7 +211,7 @@ export default {
 
         this.isChangingStatus = false;
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Falha ao ${action} o evento. Tente novamente.`,
           type: 'danger',
           time: 5000,
@@ -221,7 +221,7 @@ export default {
 
     async refresh() {
       try {
-        await event.fetchEvents({
+        await this.$store.dispatch('event/fetchEvents', {
           sortBy: ['name'],
           sortDesc: [false],
         });
@@ -235,7 +235,7 @@ export default {
     },
     async approveEvent() {
       try {
-        await eventGeneralInfo.updateEventStatus({
+        await this.$store.dispatch('eventGeneralInfo/updateEventStatus', {
           eventId: this.event.id,
           statusName: 'Publicado',
         });
@@ -247,7 +247,7 @@ export default {
     },
     async rejectEvent() {
       try {
-        await eventGeneralInfo.updateEventStatus({
+        await this.$store.dispatch('eventGeneralInfo/updateEventStatus', {
           eventId: this.event.id,
           statusName: 'Reprovado',
         });
@@ -258,7 +258,7 @@ export default {
     async deleteEvent() {
       try {
         this.isDeleting = true;
-        await event.deleteEvent({ eventId: this.event.id });
+        await this.$store.dispatch('event/deleteEvent', { eventId: this.event.id });
         this.isDeleting = false;
       } catch (error) {
         this.isDeleting = false;

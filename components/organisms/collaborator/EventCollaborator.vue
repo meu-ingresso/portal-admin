@@ -2,15 +2,9 @@
   <div>
 
     <template v-if="showEmptyState">
-      <EmptyState
-        title="Sem colaboradores"
-        subtitle="Após o convite, os colaboradores vão aparecer aqui">
+      <EmptyState title="Sem colaboradores" subtitle="Após o convite, os colaboradores vão aparecer aqui">
         <template #action>
-          <DefaultButton
-            text="Adicionar colaborador"
-            icon="mdi-plus"
-            class="mt-6"
-            @click="handleShowModal" />
+          <DefaultButton text="Adicionar colaborador" icon="mdi-plus" class="mt-6" @click="handleShowModal" />
         </template>
       </EmptyState>
     </template>
@@ -24,22 +18,13 @@
       </v-col>
 
       <v-col cols="12">
-        <v-data-table
-          :headers="headers"
-          :items="collaborators"
-          :loading="isLoading"
-          :server-items-length="meta.total"
-          :options.sync="options"
-          :footer-props="{
+        <v-data-table :headers="headers" :items="collaborators" :loading="isLoading" :server-items-length="meta.total"
+          :options.sync="options" :footer-props="{
             itemsPerPageOptions: [10, 25, 50],
             itemsPerPageText: 'Colaboradores por página',
             pageText: '{0}-{1} de {2}',
-          }"
-          :no-data-text="'Nenhum colaborador encontrado'"
-          :no-results-text="'Nenhum colaborador encontrado'"
-          :loading-text="'Carregando...'"
-          @update:options="handleTableUpdate"
-          >
+          }" :no-data-text="'Nenhum colaborador encontrado'" :no-results-text="'Nenhum colaborador encontrado'"
+          :loading-text="'Carregando...'" @update:options="handleTableUpdate">
 
           <!-- Slot para filtros -->
           <template #top>
@@ -47,13 +32,8 @@
               <v-row>
                 <v-col cols="6">
                   <!-- Campo de busca -->
-                  <v-text-field
-                    v-model="filters.search"
-                    label="Buscar por nome ou email"
-                    prepend-inner-icon="mdi-magnify"
-                    clearable
-                    hide-details="auto"
-                    class="mr-4"
+                  <v-text-field v-model="filters.search" label="Buscar por nome ou email"
+                    prepend-inner-icon="mdi-magnify" clearable hide-details="auto" class="mr-4"
                     @input="handleFiltersChange" />
                 </v-col>
               </v-row>
@@ -75,13 +55,7 @@
           <template #[`item.actions`]="{ item }">
             <v-tooltip bottom>
               <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  color="error"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="handleDeleteCollaborator(item)">
+                <v-btn icon small color="error" v-bind="attrs" v-on="on" @click="handleDeleteCollaborator(item)">
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </template>
@@ -92,26 +66,17 @@
       </v-col>
     </v-row>
 
-    <CollaboratorModal
-      :show="showDialog"
-      :event-id="eventId"
-      @update:show="showDialog = $event"
-      @close="handleCloseModal"
-      @added="handleAddedCollaborator" />
+    <CollaboratorModal :show="showDialog" :event-id="eventId" @update:show="showDialog = $event"
+      @close="handleCloseModal" @added="handleAddedCollaborator" />
 
-    <ConfirmDialog
-      v-model="showConfirmDialog"
-      title="Remover Colaborador"
-      :message="`Deseja remover o colaborador ${selectedCollaborator?.user?.email}?`"
-      confirm-text="Excluir"
-      :loading="isLoading"
-      @confirm="confirmDelete" />
+    <ConfirmDialog v-model="showConfirmDialog" title="Remover Colaborador"
+      :message="`Deseja remover o colaborador ${selectedCollaborator?.user?.email}?`" confirm-text="Excluir"
+      :loading="isLoading" @confirm="confirmDelete" />
   </div>
 </template>
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { toast, eventCollaborators } from '@/store';
 
 export default {
 
@@ -174,7 +139,7 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
     meta() {
-      return eventCollaborators.$meta;
+      return this.$store.getters['eventCollaborators/$meta'];
     },
   },
 
@@ -200,7 +165,7 @@ export default {
 
     buildQueryParams() {
       const { page, itemsPerPage, sortBy, sortDesc } = this.options;
-      
+
       const sort = sortBy.length
         ? sortBy.map((field, index) => (sortDesc[index] ? '-' : '') + field).join(',')
         : '-created_at';
@@ -219,7 +184,7 @@ export default {
         const query = this.buildQueryParams();
         if (this.isQueryDifferent(query, force)) {
           this.isLoading = true;
-          await eventCollaborators.fetchCollaborators(query);
+          await this.$store.dispatch('eventCollaborators/fetchCollaborators', query);
           this.isLoading = false;
         }
       } catch (error) {
@@ -269,24 +234,24 @@ export default {
 
       try {
         this.isLoading = true;
-        
-        const success = await eventCollaborators.deleteCollaborator({
+
+        const success = await this.$store.dispatch('eventCollaborators/deleteCollaborator', {
           id: this.selectedCollaborator.id,
           eventId: this.eventId,
         });
 
         if (success) {
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Colaborador "${this.selectedCollaborator.user.email}" removido com sucesso!`,
             type: 'success',
             time: 5000,
           });
-          
+
           this.loadItems(true);
         }
       } catch (error) {
         console.error('Erro ao remover colaborador:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Falha ao remover colaborador. Tente novamente.`,
           type: 'error',
           time: 5000,

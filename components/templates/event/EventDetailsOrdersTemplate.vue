@@ -13,20 +13,13 @@
     </v-row>
 
     <!-- Modal de PDV -->
-    <PdvCheckoutModal 
-      v-if="showPdvModal"
-      :show.sync="showPdvModal" 
-      :event-id="$route.params.id"
+    <PdvCheckoutModal v-if="showPdvModal" :show.sync="showPdvModal" :event-id="$route.params.id"
       @order-created="refreshOrders" />
   </div>
 </template>
 
 <script>
-import {
-  eventCollaborators, 
-} from '@/store';
 import { PDV_ROLE } from '@/utils/permissions-config';
-import { isUserAdmin, isUserManager } from '@/utils/utils';
 export default {
   data() {
     return {
@@ -36,19 +29,20 @@ export default {
 
   computed: {
     getCollaborators() {
-      return eventCollaborators.$collaborators;
+      return this.$store.getters['eventCollaborators/$collaborators'];
     },
 
     userRole() {
-      return this.$cookies.get('user_role');
+      return this.$auth.user?.role;
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$auth.user?.id;
     },
 
     isAdminOrManager() {
-      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+      const role = this.$auth.user?.role;
+      return role && (role.name === 'Admin' || role.name === 'Manager');
     },
 
     canCreatePaymentPDV() {

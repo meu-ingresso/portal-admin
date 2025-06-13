@@ -1,4 +1,3 @@
-import { status, payment, user, eventCheckout } from '@/store';
 import { prepareCustomTicketsPayload, prepareTicketFieldsPayloadWithMappedValues } from '@/utils/eventCheckoutHelpers';
 
 // Serviço como um objeto literal JavaScript puro
@@ -30,19 +29,19 @@ export default {
       const paymentId = paymentData[0].id;
       
       // 2. Obter status necessários
-      const ticketAvailableStatus = await status.fetchStatusByModuleAndName({ 
+      const ticketAvailableStatus = await context.$store.dispatch('status/fetchStatusByModuleAndName', { 
         module: 'customer_ticket', 
         name: 'Disponível' 
       });
       if (!ticketAvailableStatus) throw new Error('Status de ingresso disponível não encontrado');
       
       // 3. Obter profile_id do usuário
-      let peopleID = context.$cookies.get('people_id');
+      let peopleID = context.$store.state.auth.user?.auth?.people?.id;
       if (!peopleID) {
-        const userId = context.$cookies.get('user_id');
+        const userId = context.$store.state.auth.user?.auth?.id;
         if (!userId) throw new Error('ID do usuário não encontrado');
 
-        const userResponse = await user.getById({ user_id: userId, commit: false });
+        const userResponse = await context.$store.dispatch('user/getById', { user_id: userId, commit: false });
         if (!userResponse || !userResponse?.people || !userResponse?.people?.id) {
           throw new Error('Dados do usuário não encontrados');
         }
@@ -61,7 +60,7 @@ export default {
       });
       
       // 5. Enviar para a API e obter resposta com IDs
-      const customerTicketsResponse = await eventCheckout.createCustomerTicket(customerTicketsPayload);
+      const customerTicketsResponse = await context.$store.dispatch('eventCheckout/createCustomerTicket', customerTicketsPayload);
       if (!customerTicketsResponse) throw new Error('Falha ao criar tickets');
       
       // 6. Criar campos de tickets (se existirem campos de checkout)
@@ -74,7 +73,7 @@ export default {
         );
         
         if (ticketFieldsPayload.data.length > 0) {
-          await eventCheckout.createTicketFields(ticketFieldsPayload);
+          await context.$store.dispatch('eventCheckout/createTicketFields', ticketFieldsPayload);
         }
       }
       
@@ -84,7 +83,7 @@ export default {
         total_sold: ticket.quantity
       }));
       
-      await eventCheckout.updateEventTicketsTotalSold(ticketsSoldPayload);
+      await context.$store.dispatch('eventCheckout/updateEventTicketsTotalSold', ticketsSoldPayload);
       
       return true;
     } catch (error) {
@@ -102,13 +101,13 @@ export default {
    */
   async createPayment(context, totalAmount, netAmount, pdvId = null) {
     try {
-      const paymentApprovedStatus = await status.fetchStatusByModuleAndName({ 
+      const paymentApprovedStatus = await context.$store.dispatch('status/fetchStatusByModuleAndName', { 
         module: 'payment', 
         name: 'Aprovado' 
       });
       if (!paymentApprovedStatus) throw new Error('Status de pagamento aprovado não encontrado');
       
-      const userId = context.$cookies.get('user_id');
+      const userId = context.$store.state.auth.user?.auth?.id;
       if (!userId) throw new Error('ID do usuário não encontrado');
 
       const paymentPayload = {
@@ -124,7 +123,7 @@ export default {
         paymentPayload.pdv_id = pdvId;
       } 
 
-      return payment.createPayment([paymentPayload]);
+      return context.$store.dispatch('payment/createPayment', [paymentPayload]);
     } catch (error) {
       console.error('Erro ao criar pagamento:', error);
       throw error;

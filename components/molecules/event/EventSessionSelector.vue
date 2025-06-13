@@ -60,7 +60,6 @@
 
 <script>
 import { formatDateToCustomString, formatHourToBr } from '@/utils/formatters';
-import { eventGeneralInfo } from '@/store';
 
 export default {
   name: 'EventSessionSelector',
@@ -95,7 +94,7 @@ export default {
 
   computed: {
     currentEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     isMobile() {
@@ -111,7 +110,7 @@ export default {
 
       const currentGroupId = this.currentEvent.groups[0].id;
       
-      return eventGeneralInfo.$eventList
+      return this.$store.getters['eventGeneralInfo/$eventList']
         .filter(event => 
           event.groups?.length && 
           event.groups[0].id === currentGroupId

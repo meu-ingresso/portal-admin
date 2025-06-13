@@ -2,16 +2,10 @@
   <div class="event-details-wrapper">
     <!-- Estado vazio -->
     <template v-if="getPdvs?.length === 0">
-      <EmptyState
-        title="Ainda não há PDVs"
-        subtitle="Uma vez criados, seus PDVs aparecerão aqui"
+      <EmptyState title="Ainda não há PDVs" subtitle="Uma vez criados, seus PDVs aparecerão aqui"
         icon="mdi-point-of-sale">
         <template #action>
-          <DefaultButton
-            text="Adicionar"
-            icon="mdi-plus"
-            class="mt-6"
-            @click="openAddPdvModal" />
+          <DefaultButton text="Adicionar" icon="mdi-plus" class="mt-6" @click="openAddPdvModal" />
         </template>
       </EmptyState>
     </template>
@@ -22,25 +16,15 @@
         <div class="template-title">
           PDVs
         </div>
-        <DefaultButton
-          text="Adicionar"
-          icon="mdi-plus"
-          @click="openAddPdvModal" />
+        <DefaultButton text="Adicionar" icon="mdi-plus" @click="openAddPdvModal" />
       </div>
 
       <!-- Tabela de PDVs -->
-      <v-data-table
-        :headers="headers"
-        :items="getPdvs"
-        :items-per-page="10"
-        class="pdv-table"
-        :loading="isLoading"
-        no-data-text="Nenhum PDV encontrado"
-        :footer-props="{
+      <v-data-table :headers="headers" :items="getPdvs" :items-per-page="10" class="pdv-table" :loading="isLoading"
+        no-data-text="Nenhum PDV encontrado" :footer-props="{
           'items-per-page-options': [5, 10, 15, 20],
           'items-per-page-text': 'PDVs por página',
-        }"
-        @click:row="(item) => openEditPdvModal(item)">
+        }" @click:row="(item) => openEditPdvModal(item)">
 
         <template #[`item.status`]="{ item }">
           <span>{{ item.status?.name || 'Status não definido' }}</span>
@@ -101,26 +85,17 @@
           <div class="d-flex justify-center">
             <v-tooltip bottom>
               <template #activator="{ on }">
-                <v-btn 
-                  icon 
-                  color="primary"
-                  class="mr-2"
-                  :loading="item.isLoading"
-                  @click.stop="togglePdvStatus(item)"
+                <v-btn icon color="primary" class="mr-2" :loading="item.isLoading" @click.stop="togglePdvStatus(item)"
                   v-on="on">
                   <v-icon>{{ getPdvStatusIcon(item) }}</v-icon>
                 </v-btn>
               </template>
               {{ getPdvStatusTooltip(item) }}
             </v-tooltip>
-            
+
             <v-tooltip bottom>
               <template #activator="{ on }">
-                <v-btn 
-                  icon 
-                  color="error"
-                  @click.stop="openDeletePdvModal(item)"
-                  v-on="on">
+                <v-btn icon color="error" @click.stop="openDeletePdvModal(item)" v-on="on">
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </template>
@@ -142,48 +117,20 @@
         </v-card-title>
         <v-card-text>
           <v-form ref="addPdvForm" v-model="addPdvFormValid" lazy-validation>
-            <v-text-field
-              v-model="newPdv.name"
-              label="Nome do PDV"
-              :rules="[v => !!v || 'Nome é obrigatório']"
-              required
-              outlined
-              dense
-            ></v-text-field>
-            
-            <AdvancedAutocomplete
-              v-model="selectedUsers"
-              :items="availableUsers"
-              :disabled-tooltip-text="`Este usuário já está associado a outro PDV`"
-              label="Usuários (opcional)"
-              item-text="name"
-              item-value="id"
-              item-subtitle="email"
-              more-label="usuários"
-            />
-            
-            <AdvancedAutocomplete
-              v-model="selectedTickets"
-              :items="getTickets"
-              label="Ingressos (opcional)"
-              item-text="name"
-              item-value="id"
-              more-label="ingressos"
-            />
+            <v-text-field v-model="newPdv.name" label="Nome do PDV" :rules="[v => !!v || 'Nome é obrigatório']" required
+              outlined dense></v-text-field>
+
+            <AdvancedAutocomplete v-model="selectedUsers" :items="availableUsers"
+              :disabled-tooltip-text="`Este usuário já está associado a outro PDV`" label="Usuários (opcional)"
+              item-text="name" item-value="id" item-subtitle="email" more-label="usuários" />
+
+            <AdvancedAutocomplete v-model="selectedTickets" :items="getTickets" label="Ingressos (opcional)"
+              item-text="name" item-value="id" more-label="ingressos" />
           </v-form>
         </v-card-text>
-         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            text="Cancelar"
-            outlined
-            @click="closeAddPdvModal"
-          />
-          <DefaultButton
-            text="Salvar"
-            color="primary"
-            :loading="isSubmitting"
-            @click="savePdv"
-          />
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+          <DefaultButton text="Cancelar" outlined @click="closeAddPdvModal" />
+          <DefaultButton text="Salvar" color="primary" :loading="isSubmitting" @click="savePdv" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -201,54 +148,26 @@
           <v-form ref="editPdvForm" v-model="editPdvFormValid" lazy-validation>
             <v-row>
               <v-col cols="12" md="12">
-                <v-text-field
-                  v-model="editingPdv.name"
-                  label="Nome do PDV"
-                  :rules="[v => !!v || 'Nome é obrigatório']"
-                  required
-                  outlined
-                  dense
-                />
+                <v-text-field v-model="editingPdv.name" label="Nome do PDV" :rules="[v => !!v || 'Nome é obrigatório']"
+                  required outlined dense />
               </v-col>
-            
+
               <v-col cols="12" md="12">
-                <AdvancedAutocomplete
-                  v-model="editUserSelection"
-                  :items="availableUsers"
-                  :disabled-tooltip-text="`Este usuário já está associado a outro PDV`"
-                  label="Usuários associados"
-                  item-text="name"
-                  item-value="id"
-                  item-subtitle="email"
-                  more-label="usuários"
-                />
+                <AdvancedAutocomplete v-model="editUserSelection" :items="availableUsers"
+                  :disabled-tooltip-text="`Este usuário já está associado a outro PDV`" label="Usuários associados"
+                  item-text="name" item-value="id" item-subtitle="email" more-label="usuários" />
               </v-col>
-      
+
               <v-col cols="12" md="12">
-                <AdvancedAutocomplete
-                  v-model="editTicketSelection"
-                  :items="getTickets"
-                  label="Ingressos associados"
-                  item-text="name"
-                  item-value="id"
-                  more-label="ingressos"
-                />
+                <AdvancedAutocomplete v-model="editTicketSelection" :items="getTickets" label="Ingressos associados"
+                  item-text="name" item-value="id" more-label="ingressos" />
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            text="Cancelar"
-            outlined
-            @click="closeEditPdvModal"
-          />
-          <DefaultButton
-            text="Atualizar"
-            color="primary"
-            :loading="isSubmitting"
-            @click="updatePdv"
-          />
+          <DefaultButton text="Cancelar" outlined @click="closeEditPdvModal" />
+          <DefaultButton text="Atualizar" color="primary" :loading="isSubmitting" @click="updatePdv" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -260,29 +179,13 @@
           Adicionar Usuários
         </v-card-title>
         <v-card-text>
-          <AdvancedAutocomplete
-            v-model="userToAdd"
-            :items="availableUsers"
-            :disabled-tooltip-text="`Este usuário já está associado a outro PDV`"
-            label="Selecione os usuários"
-            item-text="name" 
-            item-value="id"
-            item-subtitle="email"
-            more-label="usuários"
-          />
+          <AdvancedAutocomplete v-model="userToAdd" :items="availableUsers"
+            :disabled-tooltip-text="`Este usuário já está associado a outro PDV`" label="Selecione os usuários"
+            item-text="name" item-value="id" item-subtitle="email" more-label="usuários" />
         </v-card-text>
-         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            text="Cancelar"
-            outlined
-            @click="closeAddUserModal"
-          />
-          <DefaultButton
-            text="Adicionar"
-            color="primary"
-            :loading="isSubmitting"
-            @click="addUsersToPdv"
-          />
+        <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
+          <DefaultButton text="Cancelar" outlined @click="closeAddUserModal" />
+          <DefaultButton text="Adicionar" color="primary" :loading="isSubmitting" @click="addUsersToPdv" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -294,54 +197,25 @@
           Adicionar Ingressos
         </v-card-title>
         <v-card-text>
-          <AdvancedAutocomplete
-            v-model="ticketToAdd"
-            :items="getTickets"
-            label="Selecione os ingressos"
-            item-text="name"
-            item-value="id"
-            more-label="ingressos"
-          />
+          <AdvancedAutocomplete v-model="ticketToAdd" :items="getTickets" label="Selecione os ingressos"
+            item-text="name" item-value="id" more-label="ingressos" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            text="Cancelar"
-            outlined
-            @click="closeAddTicketModal"
-          />
-          <DefaultButton
-            text="Adicionar"
-            color="primary"
-            :loading="isSubmitting"
-            @click="addTicketsToPdv"
-          />
+          <DefaultButton text="Cancelar" outlined @click="closeAddTicketModal" />
+          <DefaultButton text="Adicionar" color="primary" :loading="isSubmitting" @click="addTicketsToPdv" />
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- Modal para confirmação de exclusão -->
-    <ConfirmDialog
-      v-model="deleteConfirmDialog"
-      title="Excluir PDV"
-      :message="`Tem certeza que deseja excluir o PDV '${pdvToDelete?.name}'?`"
-      confirm-text="Excluir"
-      cancel-text="Cancelar"
-      :loading="isDeleting"
-      @confirm="deletePdv"
-      @cancel="closeDeletePdvModal" />
+    <ConfirmDialog v-model="deleteConfirmDialog" title="Excluir PDV"
+      :message="`Tem certeza que deseja excluir o PDV '${pdvToDelete?.name}'?`" confirm-text="Excluir"
+      cancel-text="Cancelar" :loading="isDeleting" @confirm="deletePdv" @cancel="closeDeletePdvModal" />
   </div>
 </template>
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { 
-  eventTickets, 
-  eventGeneralInfo,
-  eventCollaborators,
-  eventPdv,
-  user,
-  toast,
-} from '@/store';
 import { PDV_ROLE, ADMIN_ROLE, MANAGER_ROLE } from '@/utils/permissions-config';
 
 export default {
@@ -388,11 +262,9 @@ export default {
       statusAvailable: null,
       statusClosed: null,
     };
-  },
-
-  computed: {
+  }, computed: {
     isLoading() {
-      return eventPdv.$isLoading;
+      return this.$store.getters['eventPdv/$isLoading'];
     },
 
     isMobile() {
@@ -401,10 +273,9 @@ export default {
 
     availableUsers() {
       // Apenas usuários admin e gerente e colaboradores do evento com permissão de PDV
+      const adminAndGerenteUsers = this.$store.getters['user/$userList'].filter(user => user?.role?.name === ADMIN_ROLE || user?.role?.name === MANAGER_ROLE);
 
-      const adminAndGerenteUsers = user.$userList.filter(user => user?.role?.name === ADMIN_ROLE || user?.role?.name === MANAGER_ROLE);
-
-      const collaboratorsWithPdvPermission = eventCollaborators.$collaborators.filter(
+      const collaboratorsWithPdvPermission = this.$store.getters['eventCollaborators/$collaborators'].filter(
         collaborator => collaborator?.role?.name === PDV_ROLE ||
           collaborator?.role?.name === ADMIN_ROLE ||
           collaborator?.role?.name === MANAGER_ROLE
@@ -419,22 +290,22 @@ export default {
         id: user.id,
         name: user.people?.first_name + ' ' + user.people?.last_name || user.email || 'Usuário sem nome',
         email: user.email,
-        _disabled: eventPdv.$pdvs.some(pdv => pdv.users.some(u => u.user_id === user.id && u.pdv_id !== this.editingPdv?.id))
+        _disabled: this.$store.getters['eventPdv/$pdvs'].some(pdv => pdv.users.some(u => u.user_id === user.id && u.pdv_id !== this.editingPdv?.id))
       }));
 
       return mappedUsers;
     },
 
     getPdvs() {
-      return eventPdv.$pdvs;
+      return this.$store.getters['eventPdv/$pdvs'];
     },
 
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     getTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
 
     eventId() {
@@ -458,16 +329,16 @@ export default {
   methods: {
     async fetchInitialData() {
       try {
-        await eventPdv.fetchAndPopulateByEventId(this.eventId);
-        if (!user.$userList.length) {
-          await user.fetchUsers();
+        await this.$store.dispatch('eventPdv/fetchAndPopulateByEventId', this.eventId);
+        if (!this.$store.getters['user/$userList'].length) {
+          await this.$store.dispatch('user/fetchUsers');
         }
-        if (!eventTickets.$tickets.length) {
-          await eventTickets.fetchByEventId(this.eventId);
+        if (!this.$store.getters['eventTickets/$tickets'].length) {
+          await this.$store.dispatch('eventTickets/fetchByEventId', this.eventId);
         }
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao carregar dados iniciais:',
           type: 'error',
           time: 5000,
@@ -477,38 +348,38 @@ export default {
 
     async fetchAndSetupStatuses() {
       try {
-        if (eventPdv.$statuses && eventPdv.$statuses.length > 0) {
-          this.availableStatuses = eventPdv.$statuses;
-          
-          const availableStatus = this.availableStatuses.find(s => 
-            s.name.toLowerCase() === 'disponível' || 
+        if (this.$store.getters['eventPdv/$statuses'] && this.$store.getters['eventPdv/$statuses'].length > 0) {
+          this.availableStatuses = this.$store.getters['eventPdv/$statuses'];
+
+          const availableStatus = this.availableStatuses.find(s =>
+            s.name.toLowerCase() === 'disponível' ||
             s.name.toLowerCase() === 'disponivel');
-          
-          const closedStatus = this.availableStatuses.find(s => 
+
+          const closedStatus = this.availableStatuses.find(s =>
             s.name.toLowerCase() === 'fechado');
-          
+
           if (availableStatus) {
             this.statusAvailable = availableStatus.id;
           }
-          
+
           if (closedStatus) {
             this.statusClosed = closedStatus.id;
           }
         } else {
-          const statuses = await eventPdv.fetchStatuses();
+          const statuses = await this.$store.dispatch('eventPdv/fetchStatuses');
           this.availableStatuses = statuses;
-          
-          const availableStatus = this.availableStatuses.find(s => 
-            s.name.toLowerCase() === 'disponível' || 
+
+          const availableStatus = this.availableStatuses.find(s =>
+            s.name.toLowerCase() === 'disponível' ||
             s.name.toLowerCase() === 'disponivel');
-          
-          const closedStatus = this.availableStatuses.find(s => 
+
+          const closedStatus = this.availableStatuses.find(s =>
             s.name.toLowerCase() === 'fechado');
-          
+
           if (availableStatus) {
             this.statusAvailable = availableStatus.id;
           }
-          
+
           if (closedStatus) {
             this.statusClosed = closedStatus.id;
           }
@@ -519,19 +390,19 @@ export default {
     },
 
     async fetchEventPdvs() {
-      await eventPdv.fetchAndPopulateByEventId(this.eventId);
+      await this.$store.dispatch('eventPdv/fetchAndPopulateByEventId', this.eventId);
     },
 
     openAddPdvModal() {
       this.newPdv = {
         name: '',
         event_id: this.eventId,
-        status_id: eventPdv.$statusDefault?.id || '',
+        status_id: this.$store.getters['eventPdv/$statusDefault']?.id || '',
       };
       this.selectedUsers = [];
       this.selectedTickets = [];
       this.addPdvModal = true;
-      
+
       this.$nextTick(() => {
         if (!Array.isArray(this.selectedUsers)) this.selectedUsers = [];
         if (!Array.isArray(this.selectedTickets)) this.selectedTickets = [];
@@ -558,7 +429,7 @@ export default {
       };
       this.editPdvModal = true;
     },
-    
+
     populateEditSelections() {
       if (!this.editingPdv || !this.editingPdv.id) return;
 
@@ -567,20 +438,20 @@ export default {
         .map(u => {
           const userData = this.availableUsers.find(au => au.id === u.user.id);
           if (userData) return userData;
-          
+
           return {
             id: u.user.id,
             name: u.user.people?.first_name + ' ' + (u.user.people?.last_name || '') || u.user.email || 'Usuário sem nome',
             email: u.user.email
           };
         });
-        
+
       this.editTicketSelection = this.editingPdv.tickets
         .filter(t => t.ticket && t.ticket.id)
         .map(t => {
           const ticketData = this.getTickets.find(gt => gt.id === t.ticket.id);
           if (ticketData) return ticketData;
-          
+
           return {
             id: t.ticket.id,
             name: t.ticket.name || 'Ingresso sem nome'
@@ -650,7 +521,7 @@ export default {
           throw new Error('Nome do PDV e evento são obrigatórios');
         }
 
-        const response = await eventPdv.createPdv(this.newPdv);
+        const response = await this.$store.dispatch('eventPdv/createPdv', this.newPdv);
 
         if (!response.success) {
           throw new Error('Erro ao criar PDV');
@@ -661,7 +532,7 @@ export default {
         if (this.selectedUsers && this.selectedUsers.length > 0) {
           try {
             const userIds = this.selectedUsers.map(user => user.id);
-            await eventPdv.associateUsers({
+            await this.$store.dispatch('eventPdv/associateUsers', {
               pdvId: newPdvId,
               userIds
             });
@@ -673,7 +544,7 @@ export default {
         if (this.selectedTickets && this.selectedTickets.length > 0) {
           try {
             const ticketIds = this.selectedTickets.map(ticket => ticket.id);
-            await eventPdv.associateTickets({
+            await this.$store.dispatch('eventPdv/associateTickets', {
               pdvId: newPdvId,
               ticketIds
             });
@@ -682,7 +553,7 @@ export default {
           }
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'PDV criado com sucesso',
           type: 'success',
           time: 5000,
@@ -691,7 +562,7 @@ export default {
         await this.fetchEventPdvs();
       } catch (error) {
         console.error('Erro ao salvar PDV:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao criar PDV. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -708,7 +579,7 @@ export default {
         this.isSubmitting = true;
 
         const updatePromises = [];
-        
+
         if (this.editingPdv.name !== this.editingPdv.originalName) {
           const updateData = {
             data: {
@@ -717,58 +588,58 @@ export default {
             }
           };
 
-          const response = await eventPdv.updatePdv(updateData);
-          
+          const response = await this.$store.dispatch('eventPdv/updatePdv', updateData);
+
           if (!response.success) {
             throw new Error('Erro ao atualizar nome do PDV');
           }
         }
-        
+
         const currentUserIds = this.editingPdv.users
           .filter(u => u.user && u.user.id)
           .map(u => u.user.id);
 
         const selectedUserIds = this.editUserSelection.map(u => u.id);
-        
+
         const usersToRemove = this.editingPdv.users.filter(
           u => u.user && u.user.id && !selectedUserIds.includes(u.user.id)
         );
-        
+
         const userIdsToAdd = this.editUserSelection
           .filter(u => !currentUserIds.includes(u.id))
           .map(u => u.id);
-        
+
         usersToRemove.forEach(userAssoc => {
-          updatePromises.push(eventPdv.removeUserAssociation(userAssoc.id));
+          updatePromises.push(this.$store.dispatch('eventPdv/removeUserAssociation', userAssoc.id));
         });
-        
+
         if (userIdsToAdd.length > 0) {
-          updatePromises.push(eventPdv.associateUsers({
+          updatePromises.push(this.$store.dispatch('eventPdv/associateUsers', {
             pdvId: this.editingPdv.id,
             userIds: userIdsToAdd
           }));
         }
-        
+
         const currentTicketIds = this.editingPdv.tickets
           .filter(t => t.ticket && t.ticket.id)
           .map(t => t.ticket.id);
-          
+
         const selectedTicketIds = this.editTicketSelection.map(t => t.id);
-        
+
         const ticketsToRemove = this.editingPdv.tickets.filter(
           t => t.ticket && t.ticket.id && !selectedTicketIds.includes(t.ticket.id)
         );
-        
+
         const ticketIdsToAdd = this.editTicketSelection
           .filter(t => !currentTicketIds.includes(t.id))
           .map(t => t.id);
-        
+
         ticketsToRemove.forEach(ticketAssoc => {
-          updatePromises.push(eventPdv.removeTicketAssociation(ticketAssoc.id));
+          updatePromises.push(this.$store.dispatch('eventPdv/removeTicketAssociation', ticketAssoc.id));
         });
-                
+
         if (ticketIdsToAdd.length > 0) {
-          updatePromises.push(eventPdv.associateTickets({
+          updatePromises.push(this.$store.dispatch('eventPdv/associateTickets', {
             pdvId: this.editingPdv.id,
             ticketIds: ticketIdsToAdd
           }));
@@ -778,7 +649,7 @@ export default {
           await Promise.all(updatePromises);
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'PDV atualizado com sucesso',
           type: 'success',
           time: 5000,
@@ -787,7 +658,7 @@ export default {
         await this.fetchEventPdvs();
       } catch (error) {
         console.error('Erro ao atualizar PDV:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao atualizar PDV. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -803,13 +674,13 @@ export default {
       try {
         this.isDeleting = true;
 
-        const response = await eventPdv.deletePdv(this.pdvToDelete.id);
+        const response = await this.$store.dispatch('eventPdv/deletePdv', this.pdvToDelete.id);
 
         if (!response.success) {
           throw new Error('Erro ao excluir PDV');
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'PDV excluído com sucesso',
           type: 'success',
           time: 5000,
@@ -817,7 +688,7 @@ export default {
         this.closeDeletePdvModal();
       } catch (error) {
         console.error('Erro ao excluir PDV:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao excluir PDV. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -834,8 +705,8 @@ export default {
         this.isSubmitting = true;
 
         const userIds = this.userToAdd.map(user => user.id);
-        
-        const response = await eventPdv.associateUsers({
+
+        const response = await this.$store.dispatch('eventPdv/associateUsers', {
           pdvId: this.editingPdv.id,
           userIds
         });
@@ -845,14 +716,14 @@ export default {
         }
 
         await this.fetchEventPdvs();
-        
-        const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
+
+        const updatedPdv = this.$store.getters['eventPdv/$pdvs'].find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.users = updatedPdv.users || [];
           this.populateEditSelections();
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Usuários adicionados com sucesso',
           type: 'success',
           time: 5000,
@@ -860,7 +731,7 @@ export default {
         this.closeAddUserModal();
       } catch (error) {
         console.error('Erro ao adicionar usuários:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao adicionar usuários. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -877,8 +748,8 @@ export default {
         this.isSubmitting = true;
 
         const ticketIds = this.ticketToAdd.map(ticket => ticket.id);
-        
-        const response = await eventPdv.associateTickets({
+
+        const response = await this.$store.dispatch('eventPdv/associateTickets', {
           pdvId: this.editingPdv.id,
           ticketIds
         });
@@ -888,14 +759,14 @@ export default {
         }
 
         await this.fetchEventPdvs();
-        
-        const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
+
+        const updatedPdv = this.$store.getters['eventPdv/$pdvs'].find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.tickets = updatedPdv.tickets || [];
           this.populateEditSelections();
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Ingressos adicionados com sucesso',
           type: 'success',
           time: 5000,
@@ -903,7 +774,7 @@ export default {
         this.closeAddTicketModal();
       } catch (error) {
         console.error('Erro ao adicionar ingressos:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao adicionar ingressos. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -917,28 +788,28 @@ export default {
       try {
         this.isSubmitting = true;
 
-        const response = await eventPdv.removeUserAssociation(pdvUserId);
+        const response = await this.$store.dispatch('eventPdv/removeUserAssociation', pdvUserId);
 
         if (!response.success) {
           throw new Error('Erro ao remover usuário');
         }
 
         await this.fetchEventPdvs();
-        
-        const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
+
+        const updatedPdv = this.$store.getters['eventPdv/$pdvs'].find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.users = updatedPdv.users || [];
           this.populateEditSelections();
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Usuário removido com sucesso',
           type: 'success',
           time: 5000,
         });
       } catch (error) {
         console.error('Erro ao remover usuário:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao remover usuário. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -952,28 +823,28 @@ export default {
       try {
         this.isSubmitting = true;
 
-        const response = await eventPdv.removeTicketAssociation(pdvTicketId);
+        const response = await this.$store.dispatch('eventPdv/removeTicketAssociation', pdvTicketId);
 
         if (!response.success) {
           throw new Error('Erro ao remover ingresso');
         }
 
         await this.fetchEventPdvs();
-        
-        const updatedPdv = eventPdv.$pdvs.find(p => p.id === this.editingPdv.id);
+
+        const updatedPdv = this.$store.getters['eventPdv/$pdvs'].find(p => p.id === this.editingPdv.id);
         if (updatedPdv) {
           this.editingPdv.tickets = updatedPdv.tickets || [];
           this.populateEditSelections();
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Ingresso removido com sucesso',
           type: 'success',
           time: 5000,
         });
       } catch (error) {
         console.error('Erro ao remover ingresso:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao remover ingresso. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -985,40 +856,40 @@ export default {
 
     getPdvStatusColor(pdv) {
       const statusName = pdv.status?.name?.toLowerCase() || '';
-      
+
       if (statusName.includes('disponível') || statusName.includes('disponivel')) {
         return 'success';
       } else if (statusName.includes('fechado')) {
         return 'warning';
       }
-      
+
       return 'grey';
     },
-    
+
     getPdvStatusIcon(pdv) {
       const statusName = pdv.status?.name?.toLowerCase() || '';
-      
+
       if (statusName.includes('disponível') || statusName.includes('disponivel')) {
         return 'mdi-lock-open-variant';
       } else if (statusName.includes('fechado')) {
         return 'mdi-lock';
       }
-      
+
       return 'mdi-help-circle';
     },
-    
+
     getPdvStatusTooltip(pdv) {
       const statusName = pdv.status?.name?.toLowerCase() || '';
-      
+
       if (statusName.includes('disponível') || statusName.includes('disponivel')) {
         return 'Fechar PDV';
       } else if (statusName.includes('fechado')) {
         return 'Abrir PDV';
       }
-      
+
       return 'Alterar status';
     },
-    
+
     async togglePdvStatus(pdv) {
       try {
         this.isSubmitting = true;
@@ -1027,7 +898,7 @@ export default {
 
         const currentStatusName = pdv.status?.name?.toLowerCase() || '';
         let newStatusId = null;
-        
+
         if (currentStatusName.includes('disponível') || currentStatusName.includes('disponivel')) {
           newStatusId = this.statusClosed;
         } else if (currentStatusName.includes('fechado')) {
@@ -1035,35 +906,35 @@ export default {
         } else {
           newStatusId = this.statusAvailable;
         }
-        
+
         if (!newStatusId) {
           throw new Error('Não foi possível determinar o novo status do PDV');
         }
-        
+
         const updateData = {
           data: {
             id: pdv.id,
             status_id: newStatusId,
           }
         };
-        
-        const response = await eventPdv.updatePdv(updateData);
-        
+
+        const response = await this.$store.dispatch('eventPdv/updatePdv', updateData);
+
         if (!response.success) {
           throw new Error('Erro ao atualizar status do PDV');
         }
-        
+
         await this.fetchEventPdvs();
-        
+
         const newStatus = newStatusId === this.statusAvailable ? 'disponível' : 'fechado';
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `PDV agora está ${newStatus}`,
           type: 'success',
           time: 5000,
         });
       } catch (error) {
         console.error('Erro ao alternar status do PDV:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao alternar status do PDV. Tente novamente.',
           type: 'error',
           time: 5000,
@@ -1132,4 +1003,4 @@ export default {
   font-size: 14px;
   font-style: italic;
 }
-</style> 
+</style>

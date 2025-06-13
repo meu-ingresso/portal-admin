@@ -1,157 +1,139 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { BatchOperations, CustomField, CustomFieldApiResponse, CustomFieldTicket, CustomFieldTicketApiResponse, FieldOption, FieldSelectedOption, PersonType, TicketApiResponse, ValidationResult } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
 import { defaultFields, getFieldOptionChanges, getNextDisplayOrder, getPersonTypeChanges, getTicketRelationChanges, isMultiOptionField, prepareFieldPayload, shouldUpdateField } from '~/utils/customFieldsHelpers';
 import { handleGetResponse } from '~/utils/responseHelpers';
 
-@Module({
-  name: 'eventCustomFields',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventCustomFields extends VuexModule {
+interface EventCustomFieldsState {
+  isLoading: boolean;
+  defaultFieldList: CustomField[];
+  fieldList: CustomField[];
+}
 
-  private isLoading: boolean = false;
+const defaultFieldList: CustomField[] = [
+  {
+    name: 'Nome Completo',
+    type: 'TEXTO',
+    is_default: true,
+    options: [
+      'required',
+      'visible_on_ticket',
+    ],
+    person_types: [
+      'PF',
+      'PJ',
+      'ESTRANGEIRO',
+    ],
+    tickets: [],
+    selected_options: []
+  },
+  {
+    name: 'Email',
+    type: 'EMAIL',
+    is_default: true,
+    options: [
+      'required',
+      'visible_on_ticket',
+    ],
+    person_types: [
+      'PF',
+      'PJ',
+      'ESTRANGEIRO',
+    ],
+    tickets: [],
+    selected_options: []
+  },
+];
 
-  private defaultFieldList: CustomField[] = [
-    {
-      name: 'Nome Completo',
-      type: 'TEXTO',
-      is_default: true,
-      options: [
-        'required',
-        'visible_on_ticket',
-      ],
-      person_types: [
-        'PF',
-        'PJ',
-        'ESTRANGEIRO',
-      ],
-      tickets: [],
-      selected_options: []
-    },
-    {
-      name: 'Email',
-      type: 'EMAIL',
-      is_default: true,
-      options: [
-        'required',
-        'visible_on_ticket',
-      ],
-      person_types: [
-        'PF',
-        'PJ',
-        'ESTRANGEIRO',
-      ],
-      tickets: [],
-      selected_options: []
-    },
-  ];
+const mockFieldList: CustomField[] = [
+  ...defaultFieldList,
+  {
+    name: 'CPF',
+    type: 'CPF',
+    options: [
+      'required',
+      'visible_on_ticket',
+    ],
+    person_types: [
+      'PF',
+    ],
+    tickets: [{
+      id: '1',
+      name: 'Ingresso Normal',
+    }, {
+      id: '2',
+      name: 'Ingresso Vip',
+    }],
+    selected_options: []
+  },
+];
 
-  private fieldList: CustomField[] = [
-    ...this.defaultFieldList,
-  ];
+export const state = (): EventCustomFieldsState => ({
+  isLoading: false,
+  defaultFieldList,
+  fieldList: process.env.USE_MOCK_DATA === 'true' ? mockFieldList : [...defaultFieldList],
+});
 
-  private mockFieldList: CustomField[] = [
-    ...this.defaultFieldList,
-    {
-      name: 'CPF',
-      type: 'CPF',
-      options: [
-        'required',
-        'visible_on_ticket',
-      ],
-      person_types: [
-        'PF',
-      ],
-      tickets: [{
-        id: '1',
-        name: 'Ingresso Normal',
-      }, {
-        id: '2',
-        name: 'Ingresso Vip',
-      }],
-      selected_options: []
-    },
-  ];
+export const getters = {
+  $customFields: (state: EventCustomFieldsState) => state.fieldList,
+  $isLoading: (state: EventCustomFieldsState) => state.isLoading,
+};
 
-  constructor(module: VuexModule<ThisType<EventCustomFields>, EventCustomFields>) {
-    super(module);
-    this.fieldList = process.env.USE_MOCK_DATA === 'true' ? this.mockFieldList : this.fieldList;
-  }
+export const mutations = {
+  SET_LOADING(state: EventCustomFieldsState, loading: boolean) {
+    state.isLoading = loading;
+  },
 
-  public get $customFields() {
-    return this.fieldList;
-  }
+  SET_FIELDS(state: EventCustomFieldsState, fields: CustomField[]) {
+    state.fieldList = [...fields];
+  },
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+  ADD_FIELD(state: EventCustomFieldsState, field: CustomField) {
+    state.fieldList = [...state.fieldList, field];
+  },
 
-  @Mutation
-  private SET_LOADING(loading: boolean) {
-    this.isLoading = loading;
-  }
-
-  @Mutation
-  private SET_FIELDS(fields: CustomField[]) {
-    this.fieldList = [...fields];
-  }
-
-  @Mutation
-  private ADD_FIELD(field: CustomField) {
-    this.fieldList = [...this.fieldList, field];
-  }
-
-  @Mutation
-  private UPDATE_FIELD({ index, field }: { index: number; field: CustomField }) {
-    const updatedList = [...this.fieldList];
+  UPDATE_FIELD(state: EventCustomFieldsState, { index, field }: { index: number; field: CustomField }) {
+    const updatedList = [...state.fieldList];
     updatedList[index] = { ...field };
-    this.fieldList = updatedList;
-  }
+    state.fieldList = updatedList;
+  },
 
-  @Mutation
-  private REMOVE_FIELD(index: number) {
-    const updatedList = [...this.fieldList];
+  REMOVE_FIELD(state: EventCustomFieldsState, index: number) {
+    const updatedList = [...state.fieldList];
     updatedList[index]._deleted = true;
-    this.fieldList = updatedList;
-  }
+    state.fieldList = updatedList;
+  },
 
-  @Mutation
-  private SWAP_FIELDS(payload: { 
+  SWAP_FIELDS(state: EventCustomFieldsState, payload: { 
     removedIndex: number; 
     addedIndex: number; 
   }) {
-    const fieldList = [...this.fieldList];
+    const fieldList = [...state.fieldList];
     const [removedField] = fieldList.splice(payload.removedIndex, 1);
     fieldList.splice(payload.addedIndex, 0, removedField);
-    this.fieldList = fieldList;
-  }
+    state.fieldList = fieldList;
+  },
+};
 
-  @Action
-  public setFields(fields: CustomField[]) {
-    this.context.commit('SET_FIELDS', fields);
-  }
+export const actions = {
+  setFields({ commit }: any, fields: CustomField[]) {
+    commit('SET_FIELDS', fields);
+  },
 
-  @Action
-  public addField(field: CustomField) {
-    this.context.commit('ADD_FIELD', field);
-  }
+  addField({ commit }: any, field: CustomField) {
+    commit('ADD_FIELD', field);
+  },
 
-  @Action
-  public updateField(payload: { index: number; field: CustomField }) {
-    this.context.commit('UPDATE_FIELD', payload);
-  }
+  updateField({ commit }: any, payload: { index: number; field: CustomField }) {
+    commit('UPDATE_FIELD', payload);
+  },
 
-  @Action
-  public removeField(index: number) {
-    this.context.commit('REMOVE_FIELD', index);
-  }
+  removeField({ commit }: any, index: number) {
+    commit('REMOVE_FIELD', index);
+  },
 
-  @Action
-  public async fetchAndPopulateByEventId(eventId: string) {
+  async fetchAndPopulateByEventId({ commit }: any, eventId: string) {
     try {
-      this.context.commit('SET_LOADING', true); 
+      commit('SET_LOADING', true); 
       const response = await $axios.$get(`event-checkout-fields?where[event_id][v]=${eventId}`);
       const fieldsResult = handleGetResponse(response, 'Campos personalizados não encontrados', eventId, true);
       
@@ -301,18 +283,17 @@ export default class EventCustomFields extends VuexModule {
       };
       
       const fields = Array.from(groupedFields.values()).sort((a, b) => a.display_order - b.display_order);
-      this.context.commit('SET_FIELDS', fields);
+      commit('SET_FIELDS', fields);
       
     } catch (error) {
       console.error('Erro ao buscar campos personalizados:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async createCustomFields(eventIds: string[]): Promise<void> {
+  async createCustomFields({ state, dispatch }: any, eventIds: string[]): Promise<void> {
     try {
       // Para cada evento, teremos um conjunto de operações em lote
       for (const eventId of eventIds) {
@@ -330,17 +311,17 @@ export default class EventCustomFields extends VuexModule {
 
         const fieldMap = new Map<string, string>(); 
 
-        const tickets = await this.getEventTickets(eventId);
+        const tickets = await dispatch('getEventTickets', eventId);
 
         // 2. Processar campos
-        this.fieldList.forEach((field, index) => {
+        state.fieldList.forEach((field: CustomField, index: number) => {
           
           if (field.is_default) {
             field.tickets = tickets;
           }
 
           // Para cada tipo de pessoa, criar um campo
-          field.person_types.forEach((personType) => {
+          field.person_types.forEach((personType: PersonType) => {
             operations.fieldsToCreate.push({
               event_id: eventId,
               name: field.name,
@@ -373,10 +354,10 @@ export default class EventCustomFields extends VuexModule {
         });
 
         // 5. Preparar criação de opções e relações com tickets
-        this.fieldList.forEach((field) => {
+        state.fieldList.forEach((field: CustomField) => {
           // Se é campo de múltipla escolha, criar opções
           if (isMultiOptionField(field.type)) {
-            field.person_types.forEach((personType) => {
+            field.person_types.forEach((personType: PersonType) => {
               const fieldId = fieldMap.get(`${field.name}-${personType}`);
               if (fieldId) {
                 field.selected_options.forEach((option) => {
@@ -390,7 +371,7 @@ export default class EventCustomFields extends VuexModule {
           }
 
           // Criar relações com tickets
-          field.person_types.forEach((personType) => {
+          field.person_types.forEach((personType: PersonType) => {
             const fieldId = fieldMap.get(`${field.name}-${personType}`);
             if (fieldId) {
               field.tickets.forEach((ticket) => {
@@ -407,16 +388,15 @@ export default class EventCustomFields extends VuexModule {
         });
 
         // 6. Executar operações em lote para opções e relações
-        await this.executeBatchOperations(operations);
+        await dispatch('executeBatchOperations', operations);
       }
     } catch (error) {
       console.error('Erro ao criar campos personalizados:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async deleteCustomFields(fieldId: string) {
+  async deleteCustomFields(_: any, fieldId: string) {
     try {
       const response = await $axios.$delete(`event-checkout-field/${fieldId}`);
 
@@ -430,14 +410,13 @@ export default class EventCustomFields extends VuexModule {
       console.error('Erro ao deletar campo personalizado:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public validateCustomFields(): ValidationResult {
+  validateCustomFields({ state }: any): ValidationResult {
     const errors: string[] = [];
     const fieldNames = new Set<string>();
 
-    this.fieldList.filter(field => !field.is_default).forEach((field, index) => {
+    state.fieldList.filter((field: CustomField) => !field.is_default).forEach((field: CustomField, index: number) => {
       
       // Validação de nome duplicado
       if (fieldNames.has(field.name)) {
@@ -485,15 +464,14 @@ export default class EventCustomFields extends VuexModule {
       isValid: errors.length === 0,
       errors,
     };
-  }
+  },
 
-  @Action
-  public async updateEventCustomFields(payload: {
+  async updateEventCustomFields({ commit, state, dispatch }: any, payload: {
     eventId: string;
     tickets: CustomFieldTicket[];
   }): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const [fieldsResponse, ticketsFromEventResponse] = await Promise.all([
         $axios.$get(`event-checkout-fields?where[event_id][v]=${payload.eventId}`),
@@ -514,7 +492,7 @@ export default class EventCustomFields extends VuexModule {
         ticketRelationsToDelete: [],
       };
 
-      const displayOrders = getNextDisplayOrder(this.fieldList);
+      const displayOrders = getNextDisplayOrder(state.fieldList);
 
       // Mapeia os tickets existentes para fácil acesso
       const existingTickets = new Map(
@@ -528,7 +506,7 @@ export default class EventCustomFields extends VuexModule {
         ])
       );
 
-      for (const field of this.fieldList) {
+      for (const field of state.fieldList) {
 
         if (field.is_default) continue;
 
@@ -587,7 +565,7 @@ export default class EventCustomFields extends VuexModule {
 
               // Processa opções se for campo multi-opção
               if (isMultiOptionField(field.type)) {
-                await this.processFieldOptions({ field, fieldId, operations });
+                await dispatch('processFieldOptions', { field, fieldId, operations });
               }
             }
           } else {
@@ -596,7 +574,7 @@ export default class EventCustomFields extends VuexModule {
               field, 
               payload.eventId, 
               personType, 
-              displayOrders[this.fieldList.indexOf(field)]
+              displayOrders[state.fieldList.indexOf(field)]
             );
             operations.fieldsToCreate.push(newField);
 
@@ -663,23 +641,21 @@ export default class EventCustomFields extends VuexModule {
         }
       }
 
-      await this.executeBatchOperations(operations);
+      await dispatch('executeBatchOperations', operations);
 
     } catch (error) {
       console.error('Erro ao atualizar campos personalizados:', error);
       throw new Error(`Falha ao atualizar campos personalizados: ${error.message}`);
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public reset() {
-    this.context.commit('SET_FIELDS', this.defaultFieldList);
-  }
+  reset({ commit, state }: any) {
+    commit('SET_FIELDS', state.defaultFieldList);
+  },
 
-  @Action
-  private async executeBatchOperations(operations: BatchOperations): Promise<void> {
+  async executeBatchOperations(_: any, operations: BatchOperations): Promise<void> {
     const apiCalls = [];
 
     if (operations.fieldsToDelete.length > 0) {
@@ -721,10 +697,9 @@ export default class EventCustomFields extends VuexModule {
     }
 
     await Promise.all(apiCalls);
-  }
+  },
 
-  @Action
-  public async processFieldOptions(payload: {
+  async processFieldOptions(_: any, payload: {
     field: CustomField, 
     fieldId: string, 
     operations: BatchOperations
@@ -772,26 +747,25 @@ export default class EventCustomFields extends VuexModule {
       console.error('Erro ao processar opções do campo:', error);
       throw new Error(`Falha ao processar opções do campo: ${error.message}`);
     }
-  }
+  },
 
   // Função para trocar a ordem dos campos com base em milhares ou centenas
-  @Action
-  public swapFieldsOrder(payload: { 
+  swapFieldsOrder({ commit, state }: any, payload: { 
     removedIndex: number; 
     addedIndex: number;
   }) {
 
-    this.context.commit('SWAP_FIELDS', payload);
+    commit('SWAP_FIELDS', payload);
     
-    const sortedFields = [...this.fieldList];
+    const sortedFields = [...state.fieldList];
     
     let useThousandsScale = true;
     
-    const fieldsInTensScale = sortedFields.filter(f => 
+    const fieldsInTensScale = sortedFields.filter((f: CustomField) => 
       !f._deleted && f.display_order !== undefined && f.display_order < 1000
     ).length;
     
-    const fieldsInThousandsScale = sortedFields.filter(f => 
+    const fieldsInThousandsScale = sortedFields.filter((f: CustomField) => 
       !f._deleted && f.display_order !== undefined && f.display_order >= 1000
     ).length;
     
@@ -802,7 +776,7 @@ export default class EventCustomFields extends VuexModule {
     const baseOffset = useThousandsScale ? 1000 : 10;
     
     const newOrderValues = sortedFields
-      .filter(f => !f._deleted)
+      .filter((f: CustomField) => !f._deleted)
       .map((_, index) => baseOffset + (index * 10));
     
     const ordersByPersonType = new Map<string, Map<number, number>>();
@@ -811,12 +785,12 @@ export default class EventCustomFields extends VuexModule {
       ordersByPersonType.set(personType, new Map<number, number>());
     });
       
-    sortedFields.forEach((field, index) => {
+    sortedFields.forEach((field: CustomField, index: number) => {
       if (!field._deleted) {
         const newOrder = newOrderValues[index];
         
         if (field.display_order !== newOrder) {
-          this.context.commit('UPDATE_FIELD', { 
+          commit('UPDATE_FIELD', { 
             index, 
             field: {
               ...field,
@@ -835,7 +809,7 @@ export default class EventCustomFields extends VuexModule {
     
     const fieldsWithDuplicateOrders = new Set<number>();
     
-    sortedFields.forEach((field, index) => {
+    sortedFields.forEach((field: CustomField, index: number) => {
       if (!field._deleted && field.display_order !== undefined) {
         field.person_types.forEach(personType => {
           const usedOrders = usedDisplayOrdersByPersonType.get(personType);
@@ -868,7 +842,7 @@ export default class EventCustomFields extends VuexModule {
         }
       }
       
-      this.context.commit('UPDATE_FIELD', { 
+      commit('UPDATE_FIELD', { 
         index, 
         field: {
           ...field,
@@ -883,14 +857,11 @@ export default class EventCustomFields extends VuexModule {
         }
       });
     });
-  }
+  },
 
-
-  @Action
-  private async getEventTickets(eventId: string): Promise<TicketApiResponse[]> {
+  async getEventTickets(_: any, eventId: string): Promise<TicketApiResponse[]> {
     const response = await $axios.$get(`tickets?where[event_id][v]=${eventId}`);
     const { data } = handleGetResponse(response, 'Ingressos não encontrados', eventId, true);
     return data;
-  }
-
-} 
+  },
+}; 

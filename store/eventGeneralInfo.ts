@@ -1,258 +1,231 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { Event, EventAddress, ValidationResult, EventAttachment, EventApiResponse, EventDate } from '~/models/event';
 import { $axios } from '@/utils/nuxt-instance';
-import { status } from '@/utils/store-util';
 import { splitDateTime } from '@/utils/formatters';
 import { handleGetResponse } from '~/utils/responseHelpers';
 
-@Module({
-  name: 'eventGeneralInfo',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventGeneralInfo extends VuexModule {
-  private isLoading: boolean = false;
-  private eventList: EventApiResponse[] = [];
+interface EventGeneralInfoState {
+  isLoading: boolean;
+  eventList: EventApiResponse[];
+  info: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'>;
+  selectedStatus: string | null;
+  isLoadingEventStatus: boolean;
+}
 
-  private info: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
+const defaultInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
+  id: '',
+  name: '',
+  alias: '',
+  description: '',
+  general_information: '',
+  category: null,
+  event_type: null,
+  rating: null,
+  sale_type: 'Ingresso',
+  availability: 'Publico',
+  is_featured: false,
+  absorb_service_fee: false,
+  banner: null,
+  address: {
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zipcode: '',
+    location_name: '',
+    latitude: null,
+    longitude: null,
+  },
+  attachments: [],
+  collaborators: [],
+  totalizers: {
+    totalSales: '0',
+    totalSalesToday: '0',
+    totalSalesAmount: '0',
+    totalSalesAmountToday: '0',
+    totalViews: '0',
+  },
+  status: null,
+  fees: {
     id: '',
-    name: '',
-    alias: '',
-    description: '',
-    general_information: '',
-    category: null,
-    event_type: null,
-    rating: null,
-    sale_type: 'Ingresso',
-    availability: 'Publico',
-    is_featured: false,
-    absorb_service_fee: false,
-    banner: null,
-    address: {
-      street: '',
-      number: '',
-      complement: '',
-      neighborhood: '',
-      city: '',
-      state: '',
-      zipcode: '',
-      location_name: '',
-      latitude: null,
-      longitude: null,
-    },
-    attachments: [],
-    collaborators: [],
-    totalizers: {
-      totalSales: '0',
-      totalSalesToday: '0',
-      totalSalesAmount: '0',
-      totalSalesAmountToday: '0',
-      totalViews: '0',
-    },
-    status: null,
-    fees: {
-      id: '',
-      platform_fee: 0,
-    },
-    groups: [],
-    event_dates: [],
-    group_id: null,
-  };
+    platform_fee: 0,
+  },
+  groups: [],
+  event_dates: [],
+  group_id: null,
+};
 
-  private mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
-    id: null,
-    name: '[MOCK] Evento de Teste',
-    alias: '[MOCK] evento-de-teste',
-    description: '[MOCK] Descrição do evento de teste',
-    general_information: '[MOCK] Informações gerais do evento de teste',
-    category: {
-      text: 'E-sports',
-      value: '71b34079-d36b-4c93-9785-008e80498749',
-    },
-    event_type: 'Presencial',
-    rating: {
-      img: 'https://meuingresso-attachments.s3.us-east-1.amazonaws.com/%2B14.png',
-      text: 'Maiores de 14 anos',
-      value: 'fdc6ed28-5d77-4383-9820-621491c5b075',
-    },
-    sale_type: 'Ingresso',
-    availability: 'Publico',
-    is_featured: false,
-    absorb_service_fee: false,
-    banner: null,
-    address: {
-      street: 'Rua da Alegria',
-      number: '100',
-      complement: '',
-      neighborhood: 'Centro',
-      city: 'Joinville',
-      state: 'SC',
-      zipcode: '89201-123',
-      location_name: 'MeuIngresso',
-      latitude: -26.304577,
-      longitude: -48.849447,
-    },
-    link_online: '',
-    promoter_id: '1',
-    attachments: [],
-    collaborators: [],
-    totalizers: {
-      totalSales: '22',
-      totalSalesToday: '4',
-      totalSalesAmount: 'R$ 1.000,00',
-      totalSalesAmountToday: 'R$ 100,00',
-      totalViews: '100',
-    },
-    status: {
-      id: '1',
-      name: 'Em análise',
-      module: 'event',
-      description: 'Em análise do evento',
-    },
-    fees: {
-      id: '',
-      platform_fee: 10,
-    },
-    groups: [],
-    event_dates: [{
-      id: '',
-      start_date: '2025-02-01',
-      start_time: '10:00',
-      end_date: '2025-02-01',
-      end_time: '12:00',
-    }],
-    group_id: null,
-  };
+const mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
+  id: null,
+  name: '[MOCK] Evento de Teste',
+  alias: '[MOCK] evento-de-teste',
+  description: '[MOCK] Descrição do evento de teste',
+  general_information: '[MOCK] Informações gerais do evento de teste',
+  category: {
+    text: 'E-sports',
+    value: '71b34079-d36b-4c93-9785-008e80498749',
+  },
+  event_type: 'Presencial',
+  rating: {
+    img: 'https://meuingresso-attachments.s3.us-east-1.amazonaws.com/%2B14.png',
+    text: 'Maiores de 14 anos',
+    value: 'fdc6ed28-5d77-4383-9820-621491c5b075',
+  },
+  sale_type: 'Ingresso',
+  availability: 'Publico',
+  is_featured: false,
+  absorb_service_fee: false,
+  banner: null,
+  address: {
+    street: 'Rua da Alegria',
+    number: '100',
+    complement: '',
+    neighborhood: 'Centro',
+    city: 'Joinville',
+    state: 'SC',
+    zipcode: '89201-123',
+    location_name: 'MeuIngresso',
+    latitude: -26.304577,
+    longitude: -48.849447,
+  },
+  link_online: '',
+  promoter_id: '1',
+  attachments: [],
+  collaborators: [],
+  totalizers: {
+    totalSales: '22',
+    totalSalesToday: '4',
+    totalSalesAmount: 'R$ 1.000,00',
+    totalSalesAmountToday: 'R$ 100,00',
+    totalViews: '100',
+  },
+  status: {
+    id: '1',
+    name: 'Em análise',
+    module: 'event',
+    description: 'Em análise do evento',
+  },
+  fees: {
+    id: '',
+    platform_fee: 10,
+  },
+  groups: [],
+  event_dates: [{
+    id: '',
+    start_date: '2025-02-01',
+    start_time: '10:00',
+    end_date: '2025-02-01',
+    end_time: '12:00',
+  }],
+  group_id: null,
+};
 
-  private selectedStatus: string = null;
+export const state = (): EventGeneralInfoState => ({
+  isLoading: false,
+  eventList: [],
+  info: process.env.USE_MOCK_DATA === 'true' ? mockInfo : defaultInfo,
+  selectedStatus: null,
+  isLoadingEventStatus: false,
+});
 
-  private isLoadingEventStatus: boolean = false;
-
-  constructor(module: VuexModule<ThisType<EventGeneralInfo>, EventGeneralInfo>) {
-    super(module);
-    this.info = process.env.USE_MOCK_DATA === 'true' ? this.mockInfo : this.info;
-  }
-
-  public get $info() {
-    return this.info;
-  }
-
-  public get $formattedLocation() {
-
-    if (this.info.address && this.info.address.deleted_at !== null) {
-      return `${this.info.address.street}, ${this.info.address.number} - ${this.info.address.neighborhood}, ${this.info.address.city} - ${this.info.address.state}`;
+export const getters = {
+  $info: (state: EventGeneralInfoState) => state.info,
+  $formattedLocation: (state: EventGeneralInfoState) => {
+    if (state.info.address && state.info.address.deleted_at !== null) {
+      return `${state.info.address.street}, ${state.info.address.number} - ${state.info.address.neighborhood}, ${state.info.address.city} - ${state.info.address.state}`;
     }
-
     return null;
-  }
+  },
+  $isLoading: (state: EventGeneralInfoState) => state.isLoading,
+  $isLoadingEventStatus: (state: EventGeneralInfoState) => state.isLoadingEventStatus,
+  $eventList: (state: EventGeneralInfoState) => state.eventList,
+};
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const mutations = {
+  SET_LOADING(state: EventGeneralInfoState, payload: boolean) {
+    state.isLoading = payload;
+  },
 
-  public get $isLoadingEventStatus() {
-    return this.isLoadingEventStatus;
-  }
+  SET_LOADING_EVENT_STATUS(state: EventGeneralInfoState, status: boolean) {
+    state.isLoadingEventStatus = status;
+  },
 
-  public get $eventList() {
-    return this.eventList;
-  }
+  UPDATE_INFO(state: EventGeneralInfoState, payload: Partial<Event>) {
+    state.info = { ...state.info, ...payload };
+  },
 
-  @Mutation
-  private SET_LOADING(payload: boolean) {
-    this.isLoading = payload;
-  }
+  UPDATE_INFO_ADDRESS(state: EventGeneralInfoState, payload: Partial<EventAddress>) {
+    state.info.address = { ...state.info.address, ...payload };
+  },
 
-  @Mutation
-  private SET_LOADING_EVENT_STATUS(status: boolean) {
-    this.isLoadingEventStatus = status;
-  }
+  SET_STATUS(state: EventGeneralInfoState, status: string) {
+    state.selectedStatus = status;
+  },
 
-  @Mutation
-  private UPDATE_INFO(payload: Partial<Event>) {
-    this.info = { ...this.info, ...payload };
-  }
+  ADD_EVENT_DATE(state: EventGeneralInfoState, eventDate: any) {
+    state.info.event_dates.push(eventDate);
+  },
 
-  @Mutation
-  private UPDATE_INFO_ADDRESS(payload: Partial<EventAddress>) {
-    this.info.address = { ...this.info.address, ...payload };
-  }
+  UPDATE_EVENT_DATE(state: EventGeneralInfoState, payload: { index: number; eventDate: any }) {
+    state.info.event_dates[payload.index] = payload.eventDate;
+  },
 
-  @Mutation
-  private SET_STATUS(status: string) {
-    this.selectedStatus = status;
-  }
+  REMOVE_EVENT_DATE(state: EventGeneralInfoState, index: number) {
+    state.info.event_dates.splice(index, 1);
+  },
 
-  @Mutation
-  private ADD_EVENT_DATE(eventDate: any) {
-    this.info.event_dates.push(eventDate);
-  }
+  SET_EVENT_DATES(state: EventGeneralInfoState, eventDates: any[]) {
+    state.info.event_dates = eventDates;
+  },
 
-  @Mutation
-  private UPDATE_EVENT_DATE(payload: { index: number; eventDate: any }) {
-    this.info.event_dates[payload.index] = payload.eventDate;
-  }
+  SET_GROUP_ID(state: EventGeneralInfoState, groupId: string) {
+    state.info.group_id = groupId;
+  },
 
-  @Mutation
-  private REMOVE_EVENT_DATE(index: number) {
-    this.info.event_dates.splice(index, 1);
-  }
+  SET_EVENT_LIST(state: EventGeneralInfoState, events: EventApiResponse[]) {
+    state.eventList = events;
+  },
+};
 
-  @Mutation
-  private SET_EVENT_DATES(eventDates: any[]) {
-    this.info.event_dates = eventDates;
-  }
+export const actions = {
+  updateGeneralInfoAddress({ commit }: any, payload: Partial<EventAddress>) {
+    commit('UPDATE_INFO_ADDRESS', payload);
+  },
 
-  @Mutation
-  private SET_GROUP_ID(groupId: string) {
-    this.info.group_id = groupId;
-  }
+  updateGeneralInfo({ commit }: any, payload: Partial<Event>) {
+    commit('UPDATE_INFO', payload);
+  },
 
-  @Mutation
-  private SET_EVENT_LIST(events: EventApiResponse[]) {
-    this.eventList = events;
-  }
-
-  @Action
-  public updateGeneralInfoAddress(payload: Partial<EventAddress>) {
-    this.context.commit('UPDATE_INFO_ADDRESS', payload);
-  }
-
-  @Action
-  public updateGeneralInfo(payload: Partial<Event>) {
-    this.context.commit('UPDATE_INFO', payload);
-  }
-
-  @Action
-  public validateGeneralInfo(): ValidationResult {
+  validateGeneralInfo({ state }: any): ValidationResult {
     const errors: string[] = [];
 
     // Validações obrigatórias
-    if (!this.info.name?.trim()) {
+    if (!state.info.name?.trim()) {
       errors.push('Nome do evento é obrigatório');
     }
 
-    if (!this.info.category?.value) {
+    if (!state.info.category?.value) {
       errors.push('Categoria é obrigatória');
     }
 
-    if (!this.info.event_type) {
+    if (!state.info.event_type) {
       errors.push('Tipo de evento é obrigatório');
     }
 
-    if (!this.info.rating?.value) {
+    if (!state.info.rating?.value) {
       errors.push('Classificação indicativa é obrigatória');
     }
 
     // Validações de data
-    if (this.info.event_dates.length === 0) {
+    if (state.info.event_dates.length === 0) {
       errors.push('Pelo menos uma data é obrigatória');
     } else {
       // Validar cada data
       const now = new Date();
       
-      for (let i = 0; i < this.info.event_dates.length; i++) {
-        const date = this.info.event_dates[i];
+      for (let i = 0; i < state.info.event_dates.length; i++) {
+        const date = state.info.event_dates[i];
         
         if (!date.start_date || !date.start_time) {
           errors.push(`Data e hora de início são obrigatórios (Data ${i+1})`);
@@ -278,28 +251,28 @@ export default class EventGeneralInfo extends VuexModule {
     }
 
     // Validações específicas por tipo de evento
-    if (this.info.event_type === 'Online') {
-      if (!this.info.link_online?.trim()) {
+    if (state.info.event_type === 'Online') {
+      if (!state.info.link_online?.trim()) {
         errors.push('Link do evento online é obrigatório');
       }
     } else {
       // Validações de endereço para eventos presenciais
-      if (!this.info.address?.street?.trim()) {
+      if (!state.info.address?.street?.trim()) {
         errors.push('Rua é obrigatória para eventos presenciais');
       }
-      if (!this.info.address?.number?.trim()) {
+      if (!state.info.address?.number?.trim()) {
         errors.push('Número é obrigatório para eventos presenciais');
       }
-      if (!this.info.address?.neighborhood?.trim()) {
+      if (!state.info.address?.neighborhood?.trim()) {
         errors.push('Bairro é obrigatório para eventos presenciais');
       }
-      if (!this.info.address?.city?.trim()) {
+      if (!state.info.address?.city?.trim()) {
         errors.push('Cidade é obrigatória para eventos presenciais');
       }
-      if (!this.info.address?.state?.trim()) {
+      if (!state.info.address?.state?.trim()) {
         errors.push('Estado é obrigatório para eventos presenciais');
       }
-      if (!this.info.address?.zipcode?.trim()) {
+      if (!state.info.address?.zipcode?.trim()) {
         errors.push('CEP é obrigatório para eventos presenciais');
       }
     }
@@ -308,12 +281,11 @@ export default class EventGeneralInfo extends VuexModule {
       isValid: errors.length === 0,
       errors,
     };
-  }
+  },
 
-  @Action
-  public async fetchAndPopulateByEventId(eventId: string) {
+  async fetchAndPopulateByEventId({ commit, dispatch }: any, eventId: string) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const preloads = [
         'rating',
@@ -368,10 +340,10 @@ export default class EventGeneralInfo extends VuexModule {
 
       // Buscar outras datas se pertencer a um grupo
       if (groupId) {
-        await this.fetchAndAddGroupEvents(groupId, eventId);
+        await dispatch('fetchAndAddGroupEvents', { groupId, currentEventId: eventId });
       }
 
-      this.context.commit('UPDATE_INFO', {
+      commit('UPDATE_INFO', {
         id: event.id,
         name: event.name,
         alias: event.alias,
@@ -438,12 +410,11 @@ export default class EventGeneralInfo extends VuexModule {
       console.error('Erro ao buscar evento:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchAndAddGroupEvents(groupId: string, currentEventId: string) {
+  async fetchAndAddGroupEvents({ commit, state }: any, { groupId, currentEventId }: { groupId: string; currentEventId: string }) {
     try {
       const response = await $axios.$get(
         `events?whereHas[groups][id]=${groupId}&preloads[]=status`
@@ -470,28 +441,27 @@ export default class EventGeneralInfo extends VuexModule {
       });
 
       // Adicionar as datas ao array de datas de eventos
-      const currentDates = this.info.event_dates || [];
-      this.context.commit('SET_EVENT_DATES', [...currentDates, ...additionalDates]);
+      const currentDates = state.info.event_dates || [];
+      commit('SET_EVENT_DATES', [...currentDates, ...additionalDates]);
 
     } catch (error) {
       console.error('Erro ao buscar eventos do grupo:', error);
     }
-  }
+  },
 
-  @Action
-  public async createEventBase(): Promise<EventApiResponse[]> {
+  async createEventBase({ state, commit, dispatch }: any): Promise<EventApiResponse[]> {
     try {
       // Criar endereço se o evento for presencial
       const [addressId, eventStatus] = await Promise.all([
-        this.info.event_type !== 'Online' ? this.createAddress(this.info.address) : null,
-        status.fetchStatusByModuleAndName({
+        state.info.event_type !== 'Online' ? dispatch('createAddress', state.info.address) : null,
+        dispatch('fetchStatusByModuleAndName', {
           module: 'event',
-          name: this.selectedStatus,
+          name: state.selectedStatus,
         }),
       ]);
 
       // Preparar array com todas as datas do evento
-      const eventData = this.info.event_dates.map((date, index) => {
+      const eventData = state.info.event_dates.map((date: any, index: number) => {
         const startDateTime = `${date.start_date}T${date.start_time}:00.000Z`;
         const endDateTime = `${date.end_date}T${date.end_time}:00.000Z`;
 
@@ -499,24 +469,24 @@ export default class EventGeneralInfo extends VuexModule {
         const endDate = new Date(endDateTime);
 
         return {
-          alias: index === 0 ? this.info.alias : `${this.info.alias}-${index}`,
-          name: this.info.name,
-          description: this.info.description,
-          general_information: this.info.general_information,
-          category_id: this.info.category?.value,
-          rating_id: this.info.rating?.value,
-          event_type: this.info.event_type,
+          alias: index === 0 ? state.info.alias : `${state.info.alias}-${index}`,
+          name: state.info.name,
+          description: state.info.description,
+          general_information: state.info.general_information,
+          category_id: state.info.category?.value,
+          rating_id: state.info.rating?.value,
+          event_type: state.info.event_type,
           start_date: startDate.toISOString().replace('Z', '-0300'),
           end_date: endDate.toISOString().replace('Z', '-0300'),
           address_id: addressId,
           status_id: eventStatus.id,
-          link_online: this.info.link_online,
-          location_name: this.info.address?.location_name,
-          promoter_id: this.info.promoter_id,
-          sale_type: this.info.sale_type,
-          availability: this.info.availability,
-          is_featured: this.info.is_featured,
-          absorb_service_fee: this.info.absorb_service_fee || false,
+          link_online: state.info.link_online,
+          location_name: state.info.address?.location_name,
+          promoter_id: state.info.promoter_id,
+          sale_type: state.info.sale_type,
+          availability: state.info.availability,
+          is_featured: state.info.is_featured,
+          absorb_service_fee: state.info.absorb_service_fee || false,
         };
       });
 
@@ -533,7 +503,7 @@ export default class EventGeneralInfo extends VuexModule {
       let groupId = null;
       if (eventResponse.body.result[0].group_id) {
         groupId = eventResponse.body.result[0].group_id;
-        this.context.commit('SET_GROUP_ID', groupId);
+        commit('SET_GROUP_ID', groupId);
       }
 
       return eventResponse.body.result;
@@ -541,23 +511,22 @@ export default class EventGeneralInfo extends VuexModule {
       console.error('Erro ao criar evento base:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  private async updateAddress() {
+  async updateAddress({ state }: any) {
     const addressResponse = await $axios.$patch('address', {
       data: [
         {
-          id: this.info.address?.id,
-          street: this.info.address?.street,
-          number: this.info.address?.number,
-          complement: this.info.address?.complement,
-          neighborhood: this.info.address?.neighborhood,
-          city: this.info.address?.city,
-          state: this.info.address?.state,
-          zipcode: this.info.address?.zipcode,
-          latitude: this.info.address?.latitude,
-          longitude: this.info.address?.longitude,
+          id: state.info.address?.id,
+          street: state.info.address?.street,
+          number: state.info.address?.number,
+          complement: state.info.address?.complement,
+          neighborhood: state.info.address?.neighborhood,
+          city: state.info.address?.city,
+          state: state.info.address?.state,
+          zipcode: state.info.address?.zipcode,
+          latitude: state.info.address?.latitude,
+          longitude: state.info.address?.longitude,
         },
       ],
     });
@@ -567,27 +536,25 @@ export default class EventGeneralInfo extends VuexModule {
     }
 
     return addressResponse.body.result;
-  }
+  },
 
-  @Action
-  private async deleteAddress() {
-    const addressResponse = await $axios.$delete(`address/${this.info.address?.id}`);
+  async deleteAddress({ state }: any) {
+    const addressResponse = await $axios.$delete(`address/${state.info.address?.id}`);
 
     if (!addressResponse.body || addressResponse.body.code !== 'DELETE_SUCCESS') {
       throw new Error('Falha ao deletar endereço');
     }
 
     return addressResponse.body.result;
-  }
+  },
 
-  @Action
-  private async createEventDates(payload: { eventId: string; defaultDate: EventDate }) {
+  async createEventDates({ state }: any, payload: { eventId: string; defaultDate: EventDate }) {
     try {
       if (!payload.defaultDate) return;
       
       // Corrigindo a lógica de filtro para considerar uma data como não padrão
       // apenas se for completamente diferente da data padrão
-      const nonDefaultDates = this.info.event_dates.filter((date) => 
+      const nonDefaultDates = state.info.event_dates.filter((date: any) => 
         !(date.start_date === payload.defaultDate.start_date && 
           date.start_time === payload.defaultDate.start_time && 
           date.end_date === payload.defaultDate.end_date && 
@@ -600,7 +567,7 @@ export default class EventGeneralInfo extends VuexModule {
       }
 
       // Formatando as datas no mesmo padrão usado em updateEventBase
-      const formattedSessions = nonDefaultDates.map((date) => {
+      const formattedSessions = nonDefaultDates.map((date: any) => {
         const startDateTime = `${date.start_date}T${date.start_time}:00.000Z`;
         const endDateTime = `${date.end_date}T${date.end_time}:00.000Z`;
         
@@ -627,27 +594,26 @@ export default class EventGeneralInfo extends VuexModule {
       console.error('Erro ao criar sessões de evento:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async updateEventBase(eventId: string) {
+  async updateEventBase({ state, dispatch }: any, eventId: string) {
     try {
       
-      const isOnline = this.info.event_type === 'Online';
-      const hasAddress = this.info.address?.id;
+      const isOnline = state.info.event_type === 'Online';
+      const hasAddress = state.info.address?.id;
       
       // Atualiza o endereço se existir
       if (hasAddress) {
-        await this.updateAddress();
+        await dispatch('updateAddress');
 
         // Se o evento for online, deleta o endereço
         if (isOnline) {
-          await this.deleteAddress();
+          await dispatch('deleteAddress');
         }
       }
 
       // Obter evento principal (o que está sendo editado)
-      const mainDate = this.info.event_dates.find(date => date.id === eventId) || this.info.event_dates[0];
+      const mainDate = state.info.event_dates.find((date: any) => date.id === eventId) || state.info.event_dates[0];
       
       const startDateTime = `${mainDate.start_date}T${mainDate.start_time}:00.000Z`;
       const endDateTime = `${mainDate.end_date}T${mainDate.end_time}:00.000Z`;
@@ -660,21 +626,21 @@ export default class EventGeneralInfo extends VuexModule {
         data: [
           {
             id: eventId,
-            name: this.info.name,
-            address_id: this.info.address?.id,
-            description: this.info.description,
-            general_information: this.info.general_information,
-            category_id: this.info.category?.value,
-            rating_id: this.info.rating?.value,
-            event_type: this.info.event_type,
+            name: state.info.name,
+            address_id: state.info.address?.id,
+            description: state.info.description,
+            general_information: state.info.general_information,
+            category_id: state.info.category?.value,
+            rating_id: state.info.rating?.value,
+            event_type: state.info.event_type,
             start_date: startDate.toISOString().replace('Z', '-0300'),
             end_date: endDate.toISOString().replace('Z', '-0300'),
-            link_online: this.info.link_online,
-            location_name: this.info.address?.location_name,
-            sale_type: this.info.sale_type,
-            availability: this.info.availability,
-            is_featured: this.info.is_featured,
-            absorb_service_fee: this.info.absorb_service_fee || false,
+            link_online: state.info.link_online,
+            location_name: state.info.address?.location_name,
+            sale_type: state.info.sale_type,
+            availability: state.info.availability,
+            is_featured: state.info.is_featured,
+            absorb_service_fee: state.info.absorb_service_fee || false,
           },
         ],
       });
@@ -684,21 +650,19 @@ export default class EventGeneralInfo extends VuexModule {
       }
 
       // Cria as novas sessoes (datas) para o evento  
-      await this.createEventDates({ eventId, defaultDate: mainDate });
+      await dispatch('createEventDates', { eventId, defaultDate: mainDate });
       // Atualiza ou deleta banner
-      await this.handleEventBanner([eventId]);
+      await dispatch('handleEventBanner', [eventId]);
 
       return eventResponse.body.result;
     } catch (error) {
       console.error('Erro ao atualizar evento base:', error);
       throw error;
     }
-  }
+  },
 
-
-  @Action
-  public reset() {
-    this.context.commit('UPDATE_INFO', {
+  reset({ commit }: any) {
+    commit('UPDATE_INFO', {
       id: '',
       name: '',
       alias: '',
@@ -724,7 +688,7 @@ export default class EventGeneralInfo extends VuexModule {
       event_dates: [],
       group_id: null,
     });
-    this.context.commit('UPDATE_INFO_ADDRESS', {
+    commit('UPDATE_INFO_ADDRESS', {
       id: '',
       street: '',
       number: '',
@@ -737,10 +701,9 @@ export default class EventGeneralInfo extends VuexModule {
       latitude: null,
       longitude: null,
     });
-  }
+  },
 
-  @Action
-  private async createAddress(address: EventAddress): Promise<string> {
+  async createAddress(_: any, address: EventAddress): Promise<string> {
     try {
       const addressResponse = await $axios.$post('address', {
         data: [
@@ -767,10 +730,9 @@ export default class EventGeneralInfo extends VuexModule {
       console.error('Erro ao criar endereço:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async updatePlatformFee(payload: { feeId: string; platformFee: number }) {
+  async updatePlatformFee({ commit }: any, payload: { feeId: string; platformFee: number }) {
     const response = await $axios.$patch('event-fee', {
       data: [
         {
@@ -784,7 +746,7 @@ export default class EventGeneralInfo extends VuexModule {
       throw new Error('Falha ao atualizar taxa negociada');
     }
 
-    this.context.commit('UPDATE_INFO', {
+    commit('UPDATE_INFO', {
       fees: {
         id: payload.feeId,
         platform_fee: response.body.result.platform_fee,
@@ -792,62 +754,59 @@ export default class EventGeneralInfo extends VuexModule {
     });
 
     return response.body.result;
-  }
+  },
 
-  @Action
-  public async handleLinkOnline(eventIds: string[]) {
-    const attachment = this.$info.attachments.find(
+  async handleLinkOnline({ state, dispatch }: any, eventIds: string[]) {
+    const attachment = state.info.attachments.find(
       (attachment: EventAttachment) => attachment.name === 'link_online'
     );
 
-    if (this.$info.link_online_id) {
-      if (attachment && attachment.url !== this.$info.link_online) {
-        await this.deleteEventAttachment(attachment.id as string);
-        await this.createEventAttachment({
+    if (state.info.link_online_id) {
+      if (attachment && attachment.url !== state.info.link_online) {
+        await dispatch('deleteEventAttachment', attachment.id as string);
+        await dispatch('createEventAttachment', {
           eventIds,
           name: 'link_online',
           type: 'link',
-          url: this.$info.link_online,
+          url: state.info.link_online,
         });
       }
-    } else if (this.$info.link_online) {
-      await this.createEventAttachment({
+    } else if (state.info.link_online) {
+      await dispatch('createEventAttachment', {
         eventIds,
         name: 'link_online',
         type: 'link',
-        url: this.$info.link_online,
+        url: state.info.link_online,
       });
     }
-  }
+  },
 
-  @Action
-  public async handleEventBanner(eventIds: string[]) {
-    if (!this.$info.banner) return null;
+  async handleEventBanner({ state, dispatch }: any, eventIds: string[]) {
+    if (!state.info.banner) return null;
 
-    if (this.info.banner instanceof File && this.$info.banner_id) {
-      await this.deleteEventAttachment(this.$info.banner_id as string);
-    } else if (this.info.banner === this.info.backup_banner) {
+    if (state.info.banner instanceof File && state.info.banner_id) {
+      await dispatch('deleteEventAttachment', state.info.banner_id as string);
+    } else if (state.info.banner === state.info.backup_banner) {
       // Se ambos forem iguais é porque não houve alteração
       return;
     }
 
-    const bannerIds = await this.createEventAttachment({
+    const bannerIds = await dispatch('createEventAttachment', {
       eventIds,
       name: 'banner',
       type: 'image',
       url: '',
     });
-    const bannerUrls = await this.uploadEventBanner({
+    const bannerUrls = await dispatch('uploadEventBanner', {
       attachmentIds: bannerIds,
-      banner: this.$info.banner as File,
+      banner: state.info.banner as File,
     });
-    await this.updateEventAttachment({ attachmentIds: bannerIds, url: bannerUrls });
+    await dispatch('updateEventAttachment', { attachmentIds: bannerIds, url: bannerUrls });
 
     return bannerIds;
-  }
+  },
 
-  @Action
-  private async createEventAttachment(payload: {
+  async createEventAttachment(_: any, payload: {
     eventIds: string[];
     name: string;
     type: string;
@@ -866,20 +825,18 @@ export default class EventGeneralInfo extends VuexModule {
       throw new Error('Failed to create attachment.');
     }
 
-    return attachmentResponse.body.result.map((result) => result.id);
-  }
+    return attachmentResponse.body.result.map((result: any) => result.id);
+  },
 
-  @Action
-  private async deleteEventAttachment(attachmentId: string) {
+  async deleteEventAttachment(_: any, attachmentId: string) {
     const attachmentResponse = await $axios.$delete(`event-attachment/${attachmentId}`);
 
     if (!attachmentResponse.body || attachmentResponse.body.code !== 'DELETE_SUCCESS') {
       throw new Error('Failed to delete attachment.');
     }
-  }
+  },
 
-  @Action
-  private async uploadEventBanner(payload: { attachmentIds: string[]; banner: File }) {
+  async uploadEventBanner(_: any, payload: { attachmentIds: string[]; banner: File }) {
     const formData = new FormData();
     
     payload.attachmentIds.forEach((attachmentId) => {
@@ -897,11 +854,10 @@ export default class EventGeneralInfo extends VuexModule {
       throw new Error('Failed to upload banner.');
     }
 
-    return uploadResponse.body.result.map((result) => result.s3_url);
-  }
+    return uploadResponse.body.result.map((result: any) => result.s3_url);
+  },
 
-  @Action
-  private async updateEventAttachment(payload: { attachmentIds: string[]; url: string[] }) {
+  async updateEventAttachment(_: any, payload: { attachmentIds: string[]; url: string[] }) {
     const updateResponse = await $axios.$patch('event-attachment', {
       data: payload.attachmentIds.map((attachmentId, index) => ({
         id: attachmentId,
@@ -912,25 +868,21 @@ export default class EventGeneralInfo extends VuexModule {
     if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
       throw new Error('Failed to update banner.');
     }
-  }
+  },
 
-  @Action
-  private async updateEventStatus(payload: { eventId: string; statusName: string }) {
-    this.context.commit('SET_LOADING_EVENT_STATUS', true);
+  async updateEventStatus({ commit }: any, payload: { eventId: string; statusName: string }) {
+    commit('SET_LOADING_EVENT_STATUS', true);
 
     try {
+      // Buscar status diretamente pela API
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=event&where[name][v]=${payload.statusName}`);
       
-
-      const statusResponse = await status.fetchStatusByModuleAndName({
-        module: 'event',
-        name: payload.statusName,
-      });
-
-      if (!statusResponse) {
-        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
+        commit('SET_LOADING_EVENT_STATUS', false);
         throw new Error('Status não encontrado.');
       }
 
+      const statusData = statusResponse.body.result.data[0];
 
       // Busca o grupo do evento atual
       const { data } = await $axios.get(`/event-groups?whereHas[events][event_id][v]=${payload.eventId}&preloads[]=events:status`);
@@ -940,85 +892,79 @@ export default class EventGeneralInfo extends VuexModule {
       const eventsInGroup = response.data[0]?.events;
 
       if (!eventsInGroup) {
-        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        commit('SET_LOADING_EVENT_STATUS', false);
         throw new Error('Grupo nao retornou eventos');
       }
 
-      const onlyEmAnalise = eventsInGroup.filter((event) => event?.status?.name === 'Em Análise');
+      const onlyEmAnalise = eventsInGroup.filter((event: any) => event?.status?.name === 'Em Análise');
 
       if (onlyEmAnalise.length === 0) {
-        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        commit('SET_LOADING_EVENT_STATUS', false);
         throw new Error('Não há eventos em análise no grupo');
       }
 
-      const eventsIdToUpdate = onlyEmAnalise.map((event) => event?.id);
+      const eventsIdToUpdate = onlyEmAnalise.map((event: any) => event?.id);
 
       if (!eventsIdToUpdate.includes(payload.eventId)) {
-        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        commit('SET_LOADING_EVENT_STATUS', false);
         throw new Error('Evento nao pertence ao grupo');
       }
       
       // Atualiza o status de todos os eventos do grupo
       const updateResponse = await $axios.$patch('event', {
-        data: eventsIdToUpdate.map((eventId) => ({
+        data: eventsIdToUpdate.map((eventId: string) => ({
           id: eventId,
-          status_id: statusResponse.id,
+          status_id: statusData.id,
         })),
       });
 
       if (!updateResponse.body || updateResponse.body.code !== 'UPDATE_SUCCESS') {
-        this.context.commit('SET_LOADING_EVENT_STATUS', false);
+        commit('SET_LOADING_EVENT_STATUS', false);
         throw new Error('Failed to update status.');
       }
 
-      this.context.commit('UPDATE_INFO', {
+      commit('UPDATE_INFO', {
         status: {
-          id: statusResponse.id,
-          name: statusResponse.name,
-          module: statusResponse.module,
+          id: statusData.id,
+          name: statusData.name,
+          module: statusData.module,
         },
       });
 
-      this.context.commit('SET_LOADING_EVENT_STATUS', false);
+      commit('SET_LOADING_EVENT_STATUS', false);
 
       return updateResponse.body.result;
       
     } catch (error) {
-      this.context.commit('SET_LOADING_EVENT_STATUS', false);
+      commit('SET_LOADING_EVENT_STATUS', false);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public setEventStatus(status: string) {
-    this.context.commit('SET_STATUS', status);
-  }
+  setEventStatus({ commit }: any, status: string) {
+    commit('SET_STATUS', status);
+  },
 
-  @Action
-  public addEventDate(eventDate: any) {
-    this.context.commit('ADD_EVENT_DATE', eventDate);
-  }
+  addEventDate({ commit }: any, eventDate: any) {
+    commit('ADD_EVENT_DATE', eventDate);
+  },
 
-  @Action
-  public updateEventDate(payload: { index: number; eventDate: any }) {
-    this.context.commit('UPDATE_EVENT_DATE', payload);
-  }
+  updateEventDate({ commit }: any, payload: { index: number; eventDate: any }) {
+    commit('UPDATE_EVENT_DATE', payload);
+  },
 
-  @Action
-  public removeEventDate(index: number) {
-    if (this.info.event_dates.length === 1) {
+  removeEventDate({ commit, state }: any, index: number) {
+    if (state.info.event_dates.length === 1) {
       return;
     }
-    this.context.commit('REMOVE_EVENT_DATE', index);
-  }
+    commit('REMOVE_EVENT_DATE', index);
+  },
 
-  @Action
-  public setGroupId(groupId: string) {
-    this.context.commit('SET_GROUP_ID', groupId);
-  }
+  setGroupId({ commit }: any, groupId: string) {
+    commit('SET_GROUP_ID', groupId);
+  },
 
-  @Action
-  private async getGroupEvents(groupId: string): Promise<any[]> {
+  async getGroupEvents(_: any, groupId: string): Promise<any[]> {
     try {
       if (!groupId) return [];
       
@@ -1032,17 +978,16 @@ export default class EventGeneralInfo extends VuexModule {
       console.error('Erro ao buscar eventos do grupo:', error);
       return [];
     }
-  }
+  },
 
-  @Action
-  public async fetchEvents(params?: {
+  async fetchEvents({ commit }: any, params?: {
     sortBy?: string[];
     sortDesc?: boolean[];
     whereHas?: Record<string, any>;
     preloads?: string[];
   }) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       // Construir a query string
       const queryParams: string[] = [];
@@ -1075,18 +1020,17 @@ export default class EventGeneralInfo extends VuexModule {
       const response = await $axios.$get(`events${queryString}`);
       const { data } = handleGetResponse(response, 'Eventos não encontrados', null, true);
 
-      this.context.commit('SET_EVENT_LIST', data || []);
+      commit('SET_EVENT_LIST', data || []);
       return data;
     } catch (error) {
       console.error('Erro ao buscar eventos:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async uploadEventImage(payload: { attachmentIds: string[]; imageFile: File }) {
+  async uploadEventImage(_: any, payload: { attachmentIds: string[]; imageFile: File }) {
     const formData = new FormData();
     
     payload.attachmentIds.forEach((attachmentId) => {
@@ -1104,6 +1048,21 @@ export default class EventGeneralInfo extends VuexModule {
       throw new Error('Failed to upload event image.');
     }
 
-    return uploadResponse.body.result.map((result) => result.s3_url);
-  }
-}
+    return uploadResponse.body.result.map((result: any) => result.s3_url);
+  },
+
+  async fetchStatusByModuleAndName(_: any, { module, name }: { module: string; name: string }) {
+    try {
+      const response = await $axios.$get(`statuses?where[module][v]=${module}&where[name][v]=${name}`);
+      
+      if (!response.body || response.body.code !== 'SEARCH_SUCCESS') {
+        throw new Error(`Status "${name}" não encontrado para o módulo "${module}"`);
+      }
+
+      return response.body.result.data[0];
+    } catch (error) {
+      console.error('Erro ao buscar status:', error);
+      throw error;
+    }
+  },
+};

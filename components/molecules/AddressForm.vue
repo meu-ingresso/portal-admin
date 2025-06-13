@@ -155,17 +155,15 @@
 </template>
 
 <script>
-import { eventGeneralInfo } from '@/store';
-
 export default {
   data() {
     return {
       isFetchingAddress: false,
       addressError: '',
-      localLocationName: eventGeneralInfo.$info.address.location_name,
-      localNumber: eventGeneralInfo.$info.address.number,
-      localComplement: eventGeneralInfo.$info.address.complement,
-      localZipcode: eventGeneralInfo.$info.address.zipcode,
+      localLocationName: '',
+      localNumber: '',
+      localComplement: '',
+      localZipcode: '',
       isFormValid: false,
       googleSearchQuery: '',
       showMap: false,
@@ -213,6 +211,10 @@ export default {
   },
 
   computed: {
+    eventInfo() {
+      return this.$store.getters['eventGeneralInfo/$info'];
+    },
+
     isAddressFilled() {
       return (
         this.formData.street !== '' &&
@@ -225,14 +227,14 @@ export default {
 
     formData() {
       return {
-        ...eventGeneralInfo.$info.address
+        ...this.eventInfo.address
       };
     },
 
     form() {
       return {
-        location_name: eventGeneralInfo.$info.address.location_name,
-        number: eventGeneralInfo.$info.address.number,
+        location_name: this.eventInfo.address.location_name,
+        number: this.eventInfo.address.number,
       };
     },
 
@@ -260,7 +262,7 @@ export default {
 
     // Verifica se o evento é presencial ou híbrido (precisa de endereço)
     needsAddress() {
-      const eventType = eventGeneralInfo.$info.event_type;
+      const eventType = this.eventInfo.event_type;
       return ['Presencial', 'Híbrido'].includes(eventType);
     },
 
@@ -271,24 +273,30 @@ export default {
     localLocationName: {
       immediate: true,
       handler(newValue) {
-        if (newValue) {
-          eventGeneralInfo.$info.address.location_name = newValue;
+        if (newValue !== this.eventInfo.address.location_name) {
+          this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
+            location_name: newValue
+          });
         }
       },
     },
     localNumber: {
       immediate: true,
       handler(newValue) {
-        if (newValue) {
-          eventGeneralInfo.$info.address.number = newValue;
+        if (newValue !== this.eventInfo.address.number) {
+          this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
+            number: newValue
+          });
         }
       },
     },
     localComplement: {
       immediate: true,
       handler(newValue) {
-        if (newValue) {
-          eventGeneralInfo.$info.address.complement = newValue;
+        if (newValue !== this.eventInfo.address.complement) {
+          this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
+            complement: newValue
+          });
         }
       },
     },
@@ -302,9 +310,15 @@ export default {
             return;
           }
           
-          eventGeneralInfo.$info.address.zipcode = formatted;
+          if (formatted !== this.eventInfo.address.zipcode) {
+            this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
+              zipcode: formatted
+            });
+          }
         } else {
-          eventGeneralInfo.$info.address.zipcode = '';
+          this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
+            zipcode: ''
+          });
         }
       },
     },
@@ -325,6 +339,20 @@ export default {
           });
         }
       }
+    },
+
+    // Watcher para sincronizar valores da store com campos locais
+    'eventInfo.address': {
+      immediate: true,
+      deep: true,
+      handler(newAddress) {
+        if (newAddress) {
+          this.localLocationName = newAddress.location_name || '';
+          this.localNumber = newAddress.number || '';
+          this.localComplement = newAddress.complement || '';
+          this.localZipcode = newAddress.zipcode || '';
+        }
+      }
     }
   },
 
@@ -333,6 +361,9 @@ export default {
   },
 
   mounted() {
+    // Inicializar campos locais com valores da store
+    this.syncLocalFieldsWithStore();
+    
     // Adicionamos um click handler ao documento para fechar as sugestões quando o usuário clicar fora
     document.addEventListener('click', this.handleClickOutside);
   },
@@ -342,6 +373,13 @@ export default {
   },
 
   methods: {
+    syncLocalFieldsWithStore() {
+      const address = this.eventInfo.address;
+      this.localLocationName = address.location_name || '';
+      this.localNumber = address.number || '';
+      this.localComplement = address.complement || '';
+      this.localZipcode = address.zipcode || '';
+    },
 
     clearAddress() {
       this.localLocationName = '';
@@ -361,7 +399,7 @@ export default {
         this.googleMapMarker = null;
       }
       
-      eventGeneralInfo.updateGeneralInfoAddress({
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
         street: '',
         neighborhood: '',
         city: '',
@@ -568,7 +606,7 @@ export default {
         
         const number = addressComponents.number || this.localNumber;
         
-        eventGeneralInfo.updateGeneralInfoAddress({
+        await this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
           street: addressComponents.street || '',
           neighborhood: addressComponents.neighborhood || '',
           city: addressComponents.city || '',

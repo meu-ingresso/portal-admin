@@ -62,7 +62,6 @@
 
 <script>
 import { formatDateToCustomString, formatHourToBr } from '@/utils/formatters';
-import { eventGeneralInfo } from '@/store';
 
 export default {
   props: {
@@ -104,7 +103,7 @@ export default {
 
   computed: {
     currentEvent() {
-      return this.selectedEvent || eventGeneralInfo.$info;
+      return this.selectedEvent || this.$store.getters['eventGeneralInfo/$info'];
     },
 
     isMobile() {
@@ -120,7 +119,7 @@ export default {
 
       const currentGroupId = this.currentEvent.groups[0].id;
       
-      return eventGeneralInfo.$eventList
+      return this.$store.getters['eventGeneralInfo/$eventList']
         .filter(event => 
           event.groups?.length && 
           event.groups[0].id === currentGroupId
@@ -198,7 +197,7 @@ export default {
 
   methods: {
     getEventById(id) {
-      return eventGeneralInfo.$eventList.find(event => event.id === id);
+      return this.$store.getters['eventGeneralInfo/$eventList'].find(event => event.id === id);
     },
     
     customFilter(item, queryText, _itemText) {

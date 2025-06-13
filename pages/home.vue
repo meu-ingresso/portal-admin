@@ -18,7 +18,6 @@
  * - As informações sobre quantidade de sessões são adicionadas ao evento exibido
  * - As demais sessões serão exibidas na página de detalhes do evento
  */
-import { event } from '@/store';
 import { groupEventsBySession, logEventGroupingDiagnostics } from '~/utils/event-utils';
 
 export default {
@@ -32,24 +31,24 @@ export default {
 
   computed: {
     events() {
-      return event.$eventList;
+      return this.$store.getters['event/$eventList'];
     },
     groupedEvents() {
       return groupEventsBySession(this.events);
     },
     isLoadingEvents() {
-      return event.$isLoading;
+      return this.$store.getters['event/$isLoading'];
     },
   },
 
   async mounted() {
     try {
-      await event.fetchEvents({
+      await this.$store.dispatch('event/fetchEvents', {
         sortBy: ['name'],
         sortDesc: [false],
         filterDeleted: true,
       });
-      
+
       // Executar diagnóstico apenas uma vez em ambiente de desenvolvimento
       if (process.env.NODE_ENV === 'development' && !this.diagnosticRun) {
         this.logGroupedEvents();
@@ -59,7 +58,7 @@ export default {
       console.error('Erro ao carregar eventos:', error);
     }
   },
-  
+
   methods: {
     /**
      * Método para depuração que mostra no console informações sobre

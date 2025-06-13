@@ -4,8 +4,7 @@
     <div v-if="isShowingMembers" class="breadcrumb-container mb-6">
       <!-- Versão Mobile -->
       <div v-if="isMobile" class="mobile-breadcrumb">
-        <div
-          class="d-flex align-center cursor-pointer mb-2"
+        <div class="d-flex align-center cursor-pointer mb-2"
           @click="$router.push(`/events/${$route.params.id}/guestlists`)">
           <v-icon color="primary" size="20">mdi-arrow-left</v-icon>
           <span class="primary--text ml-2">Voltar para listas</span>
@@ -14,9 +13,7 @@
 
       <!-- Versão Desktop -->
       <div v-else class="desktop-breadcrumb">
-        <div
-          class="d-flex align-center cursor-pointer"
-          @click="$router.push(`/events/${$route.params.id}/guestlists`)">
+        <div class="d-flex align-center cursor-pointer" @click="$router.push(`/events/${$route.params.id}/guestlists`)">
           <v-icon color="primary" class="mr-2">mdi-arrow-left</v-icon>
           <span class="primary--text">Todas as listas de convidados</span>
         </div>
@@ -29,7 +26,6 @@
 </template>
 
 <script>
-import { eventGuests } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
@@ -48,7 +44,7 @@ export default {
 
     currentList() {
       if (!this.isShowingMembers) return null;
-      return eventGuests.$guestLists.find(
+      return this.$store.getters['eventGuests/$guestLists'].find(
         (list) => list.id === this.$route.params.listId
       );
     },
@@ -93,7 +89,8 @@ export default {
   font-weight: 600;
   color: var(--grey-dark);
   line-height: 1.2;
-  word-break: break-word; /* Permite quebra de palavras longas */
+  word-break: break-word;
+  /* Permite quebra de palavras longas */
   margin-top: 4px;
 }
 
@@ -103,7 +100,8 @@ export default {
   }
 
   .breadcrumb-container {
-    margin-bottom: 16px !important; /* Sobrescreve o mb-6 do Vuetify */
+    margin-bottom: 16px !important;
+    /* Sobrescreve o mb-6 do Vuetify */
   }
 }
 </style>

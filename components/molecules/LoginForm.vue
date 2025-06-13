@@ -19,7 +19,7 @@
     <v-row class="text-center">
       <v-col cols="12" class="pa-0 ma-0 emailInput">
         <v-text-field
-          v-model="$auth.email"
+          v-model="credentials.email"
           :disabled="isLoading"
           class="loginInput"
           label="E-mail"
@@ -35,7 +35,7 @@
 
       <v-col cols="12" class="pa-0 ma-0 passwordImput">
         <v-text-field
-          v-model="$auth.password"
+          v-model="credentials.password"
           :disabled="isLoading"
           class="loginInput"
           label="Senha"
@@ -75,13 +75,18 @@
 </template>
 
 <script>
-import { auth, loading } from '~/store';
 import { isMobileDevice } from '@/utils/utils';
+
 export default {
   data() {
     return {
       valid: true,
       error: false,
+      isLoading: false,
+      credentials: {
+        email: '',
+        password: ''
+      },
       rules: {
         email: [
           (v) => !!v || 'Campo obrigatório',
@@ -94,12 +99,6 @@ export default {
   },
 
   computed: {
-    $auth() {
-      return auth.$credentials;
-    },
-    isLoading() {
-      return loading.$isLoading;
-    },
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -113,18 +112,27 @@ export default {
     async onLogin() {
       try {
         this.error = false;
+        this.isLoading = true;
 
-        const res = await auth.login(auth.$credentials);
+        // Usando o Nuxt Auth Module oficial
+        await this.$auth.loginWith('local', {
+          data: {
+            email: this.credentials.email,
+            password: this.credentials.password
+          }
+        });
 
-        if (res && res?.body?.code === 'LOGIN_SUCCESS') {
-          this.error = false;
-          this.$router.push({ name: 'Lista de Eventos' });
-        } else {
-          this.error = true;
-          this.$refs.form.resetValidation();
-        }
+        // Se chegou aqui, login foi bem-sucedido
+        // O Nuxt Auth faz o redirect automaticamente
+        // ou podemos forçar o redirect:
+        this.$router.push({ name: 'Lista de Eventos' });
+
       } catch (error) {
-        console.error(error);
+        console.error('Erro no login:', error);
+        this.error = true;
+        this.$refs.form.resetValidation();
+      } finally {
+        this.isLoading = false;
       }
     },
 
@@ -132,9 +140,7 @@ export default {
       await this.$refs.form.validate();
 
       if (this.valid) {
-        loading.setIsLoading(true);
         await this.onLogin();
-        loading.setIsLoading(false);
       }
     },
   },

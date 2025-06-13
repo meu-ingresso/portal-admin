@@ -66,8 +66,6 @@
 </template>
 
 <script>
-import { user } from '@/store';
-
 export default {
 
   props: {
@@ -128,7 +126,7 @@ export default {
       }
 
       // Update user store with form data
-      user.context.commit('SET_USER', {
+      this.$store.commit('user/SET_USER', {
         ...this.user,
         people: {
           ...this.user.people,

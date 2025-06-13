@@ -1,6 +1,4 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
-import { status } from '@/utils/store-util';
 import { SearchPayload } from '~/models';
 import { formatRealValue } from '~/utils/formatters';
 import { handleGetResponse } from '~/utils/responseHelpers';
@@ -11,187 +9,183 @@ interface EventSearchPayload extends SearchPayload {
   promoterId?: string;
 }
 
-@Module({
-  name: 'event',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Event extends VuexModule {
-  private eventList = [];
-  private isLoading: boolean = false;
-  private isLoadingAlias: boolean = false;
-  private isSaving: boolean = false;
-  private isEditing: boolean = false;
-  private isDeleting: boolean = false;
-  private progressTitle: string = '';
-  private paginationMeta: any = {
+interface EventState {
+  eventList: any[];
+  isLoading: boolean;
+  isLoadingAlias: boolean;
+  isSaving: boolean;
+  isEditing: boolean;
+  isDeleting: boolean;
+  progressTitle: string;
+  paginationMeta: any;
+  event: any;
+  copyEvent: any;
+  defaultFields: any[];
+}
+
+const defaultFields = [
+  {
+    name: 'Nome Completo',
+    type: { text: 'Texto', value: 'TEXTO' },
+    is_default: true,
+    options: [
+      { text: 'Obrigatório', value: 'required' },
+      { text: 'Visível no ingresso', value: 'visible_on_ticket' },
+    ],
+    person_types: [
+      { text: 'Pessoa Física (PF)', value: 'PF' },
+      { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+      { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
+    ],
+    tickets: [],
+  },
+  {
+    name: 'Email',
+    type: { text: 'Email', value: 'EMAIL' },
+    is_default: true,
+    options: [
+      { text: 'Obrigatório', value: 'required' },
+      { text: 'Visível na Impressão', value: 'visible_on_ticket' },
+    ],
+    person_types: [
+      { text: 'Pessoa Física (PF)', value: 'PF' },
+      { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
+      { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
+    ],
+    tickets: [],
+  },
+];
+
+const defaultEvent = {
+  location_name: '',
+  description: '',
+  start_date: '',
+  end_date: '',
+  name: '',
+  alias: '',
+  event_type: '',
+  rating: {
+    value: '',
+    text: '',
+    img: '',
+  },
+  address: {
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zipcode: '',
+    cep: '',
+  },
+  is_featured: false,
+  absorb_service_fee: false,
+  tickets: [],
+  coupons: [],
+  collaborators: [],
+  attachments: [],
+  customFields: [...defaultFields],
+  link_online: '',
+  sale_type: 'Ingresso',
+  availability: 'Público',
+  promoter_id: null,
+  status_id: '',
+  rating_id: '',
+  category_id: '',
+  general_information: '',
+};
+
+const defaultCopyEvent = {
+  location_name: '',
+  description: 'teste',
+  category_id: '',
+  rating_id: '',
+  start_date: '',
+  end_date: '',
+  name: '',
+  event_type: '',
+  address: {
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zipcode: '',
+    cep: '',
+  },
+};
+
+export const state = (): EventState => ({
+  eventList: [],
+  isLoading: false,
+  isLoadingAlias: false,
+  isSaving: false,
+  isEditing: false,
+  isDeleting: false,
+  progressTitle: '',
+  paginationMeta: {
     current_page: 1,
     last_page: 1,
     per_page: 12,
     total: 0
-  };
+  },
+  event: { ...defaultEvent },
+  copyEvent: { ...defaultCopyEvent },
+  defaultFields,
+});
 
-  public get $eventList() {
-    return this.eventList || [];
-  }
-
-  public get $paginationMeta() {
-    return this.paginationMeta;
-  }
-
-  private defaultFields = [
-    {
-      name: 'Nome Completo',
-      type: { text: 'Texto', value: 'TEXTO' },
-      is_default: true,
-      options: [
-        { text: 'Obrigatório', value: 'required' },
-        { text: 'Visível no ingresso', value: 'visible_on_ticket' },
-      ],
-      person_types: [
-        { text: 'Pessoa Física (PF)', value: 'PF' },
-        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
-      ],
-      tickets: [],
-    },
-    {
-      name: 'Email',
-      type: { text: 'Email', value: 'EMAIL' },
-      is_default: true,
-      options: [
-        { text: 'Obrigatório', value: 'required' },
-        { text: 'Visível na Impressão', value: 'visible_on_ticket' },
-      ],
-      person_types: [
-        { text: 'Pessoa Física (PF)', value: 'PF' },
-        { text: 'Pessoa Jurídica (PJ)', value: 'PJ' },
-        { text: 'Estrangeiro', value: 'ESTRANGEIRO' },
-      ],
-      tickets: [],
-    },
-  ];
-
-  private event: any = {
-    location_name: '',
-    description: '',
-    start_date: '',
-    end_date: '',
-    name: '',
-    alias: '',
-    event_type: '',
-    rating: {
-      value: '',
-      text: '',
-      img: '',
-    },
-    address: {
-      street: '',
-      number: '',
-      complement: '',
-      neighborhood: '',
-      city: '',
-      state: '',
-      zipcode: '',
-      cep: '',
-    },
-    is_featured: false,
-    absorb_service_fee: false,
-    tickets: [],
-    coupons: [],
-    collaborators: [],
-    attachments: [],
-    customFields: [...this.defaultFields],
-    link_online: '',
-    sale_type: 'Ingresso',
-    availability: 'Público',
-    promoter_id: null,
-    status_id: '',
-    rating_id: '',
-    category_id: '',
-    general_information: '',
-  };
-
-  private copyEvent: any = {
-    location_name: '',
-    description: 'teste',
-    category_id: '',
-    rating_id: '',
-    start_date: '',
-    end_date: '',
-    name: '',
-    event_type: '',
-    address: {
-      street: '',
-      number: '',
-      complement: '',
-      neighborhood: '',
-      city: '',
-      state: '',
-      zipcode: '',
-      cep: '',
-    },
-  };
-
-  public get $event() {
-    if (!this.event) return null;
+export const getters = {
+  $eventList: (state: EventState) => state.eventList || [],
+  $paginationMeta: (state: EventState) => state.paginationMeta,
+  $event: (state: EventState) => {
+    if (!state.event) return null;
 
     return {
-      ...this.event,
-      location: this.event.address ? `${this.event.address.street}, ${this.event.address.number} - ${this.event.address.neighborhood}, ${this.event.address.city} - ${this.event.address.state}` : '',
+      ...state.event,
+      location: state.event.address ? `${state.event.address.street}, ${state.event.address.number} - ${state.event.address.neighborhood}, ${state.event.address.city} - ${state.event.address.state}` : '',
     };
-  }
+  },
+  $isLoading: (state: EventState) => state.isLoading,
+  $isLoadingAlias: (state: EventState) => state.isLoadingAlias,
+  $isSaving: (state: EventState) => state.isSaving,
+  $isEditing: (state: EventState) => state.isEditing,
+  $isDeleting: (state: EventState) => state.isDeleting,
+  $progressTitle: (state: EventState) => state.progressTitle,
+};
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
-
-  public get $isLoadingAlias() {
-    return this.isLoadingAlias;
-  }
-
-  public get $isSaving() {
-    return this.isSaving;
-  }
-
-  public get $isEditing() {
-    return this.isEditing;
-  }
-
-  public get $isDeleting() {
-    return this.isDeleting;
-  }
-
-  public get $progressTitle() {
-    return this.progressTitle;
-  }
-
-  @Mutation
-  private SET_EVENT_LIST(data: any) {
-    this.eventList = data.map((event: any) => ({
+export const mutations = {
+  SET_EVENT_LIST(state: EventState, data: any) {
+    state.eventList = data.map((event: any) => ({
       ...event,
       location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
     }));
-  }
+  },
 
-  @Mutation
-  private APPEND_TO_EVENT_LIST(data: any) {
+  APPEND_TO_EVENT_LIST(state: EventState, data: any) {
     const mappedData = data.map((event: any) => ({
       ...event,
       location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
     }));
-    this.eventList = [...this.eventList, ...mappedData];
-  }
+    state.eventList = [...state.eventList, ...mappedData];
+  },
 
-  @Mutation
-  private SET_EVENT(data: any) {
-    const nonDeletedTickets = data.tickets.filter((ticket) => !ticket.deleted_at);
+  SET_EVENT(state: EventState, data: any) {
 
-    const ticketsTypes = nonDeletedTickets.map((ticket) => ticket.name);
+    if (!data) {
+      state.event = { ...defaultEvent };
+      state.copyEvent = { ...defaultCopyEvent };
+      return;
+    }
 
-    const ticketSales = nonDeletedTickets.filter((ticket) => ticket.total_sold > 0);
+    const nonDeletedTickets = data.tickets.filter((ticket: any) => !ticket.deleted_at);
 
-    this.event = {
+    const ticketsTypes = nonDeletedTickets.map((ticket: any) => ticket.name);
+
+    const ticketSales = nonDeletedTickets.filter((ticket: any) => ticket.total_sold > 0);
+
+    state.event = {
       ...data,
       title: data.name,
       statusText: data.status.name,
@@ -221,7 +215,7 @@ export default class Event extends VuexModule {
         },
       ],
       collaborators: data.collaborators.length,
-      tickets: nonDeletedTickets.map((ticket) => ({
+      tickets: nonDeletedTickets.map((ticket: any) => ({
         ...ticket,
         id: ticket.id,
         name: ticket.name,
@@ -233,16 +227,15 @@ export default class Event extends VuexModule {
       })),
     };
 
-    this.copyEvent = {
-      ...this.event,
+    state.copyEvent = {
+      ...state.event,
     };
-  }
+  },
 
-  @Mutation
-  private UPDATE_EVENT_TICKETS(tickets: any[]) {
-    if (this.event) {
-      this.event = {
-        ...this.event,
+  UPDATE_EVENT_TICKETS(state: EventState, tickets: any[]) {
+    if (state.event) {
+      state.event = {
+        ...state.event,
         tickets: tickets.map((ticket) => ({
           ...ticket,
           id: ticket.id,
@@ -251,9 +244,9 @@ export default class Event extends VuexModule {
           total: ticket.total_quantity,
           status: ticket.status.name,
           hasSales: ticket.total_sold > 0,
-          eventPromoter: this.event.promoter_id,
+          eventPromoter: state.event.promoter_id,
         })),
-        statistics: this.event.statistics.map((stat) => {
+        statistics: state.event.statistics.map((stat: any) => {
           if (stat.title === 'Lista de ingressos') {
             return {
               ...stat,
@@ -262,7 +255,7 @@ export default class Event extends VuexModule {
           }
           return stat;
         }),
-        sales: this.event.sales.map((sale) => {
+        sales: state.event.sales.map((sale: any) => {
           if (sale.title === 'Ingressos Vendidos') {
             return {
               ...sale,
@@ -273,81 +266,43 @@ export default class Event extends VuexModule {
         }),
       };
     }
-  }
+  },
 
-  @Mutation
-  private SET_IS_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
+  SET_IS_LOADING(state: EventState, value: boolean) {
+    state.isLoading = value;
+  },
 
-  @Mutation
-  private SET_IS_LOADING_ALIAS(value: boolean) {
-    this.isLoadingAlias = value;
-  }
+  SET_IS_LOADING_ALIAS(state: EventState, value: boolean) {
+    state.isLoadingAlias = value;
+  },
 
-  @Mutation
-  private SET_IS_SAVING(value: boolean) {
-    this.isSaving = value;
-  }
+  SET_IS_SAVING(state: EventState, value: boolean) {
+    state.isSaving = value;
+  },
 
-  @Mutation
-  private SET_IS_EDITING(value: boolean) {
-    this.isEditing = value;
-  }
+  SET_IS_EDITING(state: EventState, value: boolean) {
+    state.isEditing = value;
+  },
 
-  @Mutation
-  private SET_IS_DELETING(value: boolean) {
-    this.isDeleting = value;
-  }
+  SET_IS_DELETING(state: EventState, value: boolean) {
+    state.isDeleting = value;
+  },
 
-  @Mutation
-  private SET_PROGRESS_TITLE(value: string) {
-    this.progressTitle = value;
-  }
+  SET_PROGRESS_TITLE(state: EventState, value: string) {
+    state.progressTitle = value;
+  },
 
-  @Mutation
-  private SET_PAGINATION_META(meta: any) {
-    this.paginationMeta = meta || {
+  SET_PAGINATION_META(state: EventState, meta: any) {
+    state.paginationMeta = meta || {
       current_page: 1,
       last_page: 1,
       per_page: 12,
       total: 0
     };
-  }
+  },
 
-  @Action
-  public setLoading(value: boolean) {
-    this.context.commit('SET_IS_LOADING', value);
-  }
-
-  @Action
-  public setEditing(value: boolean) {
-    this.isEditing = value;
-  }
-
-  @Action
-  public setDeleting(value: boolean) {
-    this.isDeleting = value;
-  }
-
-  @Action
-  public setProgressTitle(value: string) {
-    this.context.commit('SET_PROGRESS_TITLE', value);
-  }
-
-  @Action
-  public setSaving(value: boolean) {
-    this.context.commit('SET_IS_SAVING', value);
-  }
-
-  @Action
-  public setLoadingAlias(value: boolean) {
-    this.context.commit('SET_IS_LOADING_ALIAS', value);
-  }
-
-  @Mutation
-  private RESET() {
-    this.event = {
+  RESET(state: EventState) {
+    state.event = {
       id: undefined,
       location_name: '',
       description: '',
@@ -373,16 +328,40 @@ export default class Event extends VuexModule {
       is_featured: false,
       absorb_service_fee: false,
     };
-    this.copyEvent = { ...this.event };
-  }
+    state.copyEvent = { ...state.event };
+  },
+};
 
-  @Action
-  public setEvent(data: any) {
-    this.context.commit('SET_EVENT', data);
-  }
+export const actions = {
+  setLoading({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING', value);
+  },
 
-  @Action
-  public async fetchEvents({
+  setEditing({ commit }: any, value: boolean) {
+    commit('SET_IS_EDITING', value);
+  },
+
+  setDeleting({ commit }: any, value: boolean) {
+    commit('SET_IS_DELETING', value);
+  },
+
+  setProgressTitle({ commit }: any, value: string) {
+    commit('SET_PROGRESS_TITLE', value);
+  },
+
+  setSaving({ commit }: any, value: boolean) {
+    commit('SET_IS_SAVING', value);
+  },
+
+  setLoadingAlias({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING_ALIAS', value);
+  },
+
+  setEvent({ commit }: any, data: any) {
+    commit('SET_EVENT', data);
+  },
+
+  async fetchEvents({ commit, dispatch }: any, {
     page = 1,
     limit = 12,
     search,
@@ -393,7 +372,7 @@ export default class Event extends VuexModule {
     filterDeleted = false,
     promoterId,
   }: EventSearchPayload & { append?: boolean, filterDeleted?: boolean, promoterId?: string }) {
-    this.setLoading(true);
+    dispatch('setLoading', true);
 
     const preloads = [
       'rating',
@@ -436,22 +415,21 @@ export default class Event extends VuexModule {
 
     const { data: events, meta } = handleGetResponse(response, 'Eventos não encontrados', null, filterDeleted);
 
-    this.setLoading(false);
+    dispatch('setLoading', false);
     
     if (append) {
-      this.context.commit('APPEND_TO_EVENT_LIST', events);
+      commit('APPEND_TO_EVENT_LIST', events);
     } else {
-      this.context.commit('SET_EVENT_LIST', events);
+      commit('SET_EVENT_LIST', events);
     }
     
-    this.context.commit('SET_PAGINATION_META', meta);
+    commit('SET_PAGINATION_META', meta);
 
     return { events, meta };
-  }
+  },
 
-  @Action
-  public async getById(eventId: string) {
-    this.setLoading(true);
+  async getById({ commit, dispatch }: any, eventId: string) {
+    dispatch('setLoading', true);
 
     const preloads = [
       'rating',
@@ -474,24 +452,23 @@ export default class Event extends VuexModule {
         if (response.body && response.body.code !== 'SEARCH_SUCCESS')
           throw new Error(response);
 
-        this.setLoading(false);
+        dispatch('setLoading', false);
 
-        this.context.commit('SET_EVENT', response.body.result.data[0]);
+        commit('SET_EVENT', response.body.result.data[0]);
         return response;
       })
       .catch(() => {
-        this.setLoading(false);
+        dispatch('setLoading', false);
         return {
           data: 'Error',
           code: 'FIND_NOTFOUND',
           total: 0,
         };
       });
-  }
+  },
 
-  @Action
-  public async validateAlias(alias: string) {
-    this.setLoadingAlias(true);
+  async validateAlias({ dispatch }: any, alias: string) {
+    dispatch('setLoadingAlias', true);
 
     return await $axios
       .$get(`event/validate-alias/${alias}`)
@@ -499,22 +476,21 @@ export default class Event extends VuexModule {
         if (response.body && response.body.code !== 'VALIDATE_SUCCESS')
           throw new Error(response);
 
-        this.setLoadingAlias(false);
+        dispatch('setLoadingAlias', false);
 
         return response.body.result;
       })
       .catch(() => {
-        this.setLoadingAlias(false);
+        dispatch('setLoadingAlias', false);
         return {
           data: 'Error',
           code: 'FIND_NOTFOUND',
           total: 0,
         };
       });
-  }
+  },
 
-  @Action
-  public async fetchEventStatuses(payload) {
+  async fetchEventStatuses(_: any, payload: any) {
     try {
       const { status } = payload;
 
@@ -532,10 +508,9 @@ export default class Event extends VuexModule {
       console.error('Error fetching event statuses:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async updateEvent(payload: any[]) {
+  async updateEvent(_: any, payload: any[]) {
     try {
       const response = await $axios.$patch('event', {
         data: payload
@@ -549,20 +524,22 @@ export default class Event extends VuexModule {
       console.error('Error updating event:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async deleteEvent(payload) {
+  async deleteEvent({ dispatch }: any, payload: any) {
     try {
       const { eventId } = payload;
 
-      const deleteStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: 'Excluído' });
-
-      if (!deleteStatus) {
+      // Buscar status de exclusão diretamente
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=event&where[name][v]=Excluído`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
         throw new Error('Status de exclusão não encontrado.');
       }
 
-      const updateEventStatus = await this.updateEvent([
+      const deleteStatus = statusResponse.body.result.data[0];
+
+      const updateEventStatus = await dispatch('updateEvent', [
         { id: eventId, status_id: deleteStatus.id },
       ]);
 
@@ -581,15 +558,13 @@ export default class Event extends VuexModule {
       console.error('Error deleting event:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public reset() {
-    this.context.commit('RESET');
-  }
+  reset({ commit }: any) {
+    commit('RESET');
+  },
 
-  @Action
-  public async fetchEventTickets(eventId: string) {
+  async fetchEventTickets({ commit, state }: any, eventId: string) {
     try {
       const response = await $axios.$get(
         `tickets?where[event_id][v]=${eventId}&preloads[]=status`
@@ -610,26 +585,23 @@ export default class Event extends VuexModule {
         total: ticket.total_quantity,
         status: ticket.status,
         hasSales: ticket.total_sold > 0,
-        eventPromoter: this.event.promoter_id,
+        eventPromoter: state.event.promoter_id,
       }));
 
       // Atualiza os tickets no evento atual
-      this.context.commit('UPDATE_EVENT_TICKETS', tickets);
+      commit('UPDATE_EVENT_TICKETS', tickets);
 
       return tickets;
     } catch (error) {
       console.error('Erro ao buscar ingressos:', error);
       throw error;
     } finally {
-      this.context.commit('SET_IS_LOADING', false);
+      commit('SET_IS_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchEventsByPromoterId(payload: { promoterId: string, limit?: number, preloads?: string[] }) {
+  async fetchEventsByPromoterId(_: any, payload: { promoterId: string, limit?: number, preloads?: string[] }) {
     try {
-
-
       const preloads = payload.preloads?.map((preload) => `preloads[]=${preload}`).join('&') || '';
 
       const response = await $axios.$get(`events?where[promoter_id][v]=${payload.promoterId}&${preloads}&limit=${payload.limit || 9999}`);
@@ -642,12 +614,9 @@ export default class Event extends VuexModule {
       console.error('Erro ao buscar status de eventos:', error);
       throw error;
     }
-  }
+  },
 
-
-  @Action
-  public async updatePromoterEventsFromStatusToStatus(payload: { userId: string, fromStatus: string, toStatus: string }) {
-
+  async updatePromoterEventsFromStatusToStatus({ dispatch }: any, payload: { userId: string, fromStatus: string, toStatus: string }) {
     try {
       const response = await $axios.$get(`events?preloads[]=status&where[promoter_id][v]=${payload.userId}&whereHas[status][name]=${payload.fromStatus}&limit=9999`);
 
@@ -657,18 +626,21 @@ export default class Event extends VuexModule {
         return;
       }
 
-      const updateStatus = await status.fetchStatusByModuleAndName({ module: 'event', name: payload.toStatus });
-
-      if (!updateStatus) {
+      // Buscar status diretamente
+      const statusResponse = await $axios.$get(`statuses?where[module][v]=event&where[name][v]=${payload.toStatus}`);
+      
+      if (!statusResponse.body || statusResponse.body.code !== 'SEARCH_SUCCESS') {
         throw new Error(`Status ${payload.toStatus} não encontrado.`);
       }
+
+      const updateStatus = statusResponse.body.result.data[0];
 
       const eventsToUpdate = events.data.map((event: any) => ({
         id: event.id,
         status_id: updateStatus.id,
       }));
 
-      const updateEvents = await this.updateEvent(eventsToUpdate);
+      const updateEvents = await dispatch('updateEvent', eventsToUpdate);
 
       if (!updateEvents.success) {
         throw new Error(`Falha ao atualizar o status dos eventos para ${payload.toStatus}.`);
@@ -680,5 +652,5 @@ export default class Event extends VuexModule {
       console.error(`Erro ao buscar eventos do promotor ${payload.userId} com status ${payload.fromStatus}:`, error);
       throw error;
     }
-  }
-}
+  },
+};

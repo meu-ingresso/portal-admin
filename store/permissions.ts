@@ -1,78 +1,63 @@
-import { Module, VuexModule, Action, Mutation } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 
-@Module({
-  name: 'permissions',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class PermissionsModule extends VuexModule {
-  private userPermissions: string[] = [];
-  private eventPermissionsMap: Record<string, string[]> = {};
-  private lastUpdate: number = 0;
-  private cacheExpirationTime: number = 5 * 60 * 1000; // 5 minutos
+interface PermissionsState {
+  userPermissions: string[];
+  eventPermissionsMap: Record<string, string[]>;
+  lastUpdate: number;
+  cacheExpirationTime: number;
+  isLoadingEventPermissions: boolean;
+}
 
-  private isLoadingEventPermissions: boolean = false;
+export const state = (): PermissionsState => ({
+  userPermissions: [],
+  eventPermissionsMap: {},
+  lastUpdate: 0,
+  cacheExpirationTime: 5 * 60 * 1000, // 5 minutos
+  isLoadingEventPermissions: false,
+});
 
-  get $permissions(): string[] {
-    return this.userPermissions;
-  }
+export const getters = {
+  $permissions: (state: PermissionsState) => state.userPermissions,
+  $eventPermissions: (state: PermissionsState) => state.eventPermissionsMap,
+  $lastUpdate: (state: PermissionsState) => state.lastUpdate,
+  $isCacheValid: (state: PermissionsState) => Date.now() - state.lastUpdate < state.cacheExpirationTime,
+  $hasAllPermissions: (state: PermissionsState) => state.userPermissions.includes('*'),
+  $isLoadingEventPermissions: (state: PermissionsState) => state.isLoadingEventPermissions,
+};
 
-  get $eventPermissions(): Record<string, string[]> {
-    return this.eventPermissionsMap;
-  }
+export const mutations = {
+  SET_LOADING_EVENT_PERMISSIONS(state: PermissionsState, loading: boolean) {
+    state.isLoadingEventPermissions = loading;
+  },
 
-  get $lastUpdate(): number {
-    return this.lastUpdate;
-  }
+  SET_USER_PERMISSIONS(state: PermissionsState, permissions: string[]) {
+    state.userPermissions = permissions;
+    state.lastUpdate = Date.now();
+  },
 
-  get $isCacheValid(): boolean {
-    return Date.now() - this.lastUpdate < this.cacheExpirationTime;
-  }
+  SET_EVENT_PERMISSIONS(state: PermissionsState, payload: { eventId: string; permissions: string[] }) {
+    state.eventPermissionsMap[payload.eventId] = payload.permissions;
+    state.lastUpdate = Date.now();
+  },
 
-  get $hasAllPermissions(): boolean {
-    return this.userPermissions.includes('*');
-  }
+  RESET_PERMISSIONS(state: PermissionsState) {
+    state.userPermissions = [];
+    state.eventPermissionsMap = {};
+    state.lastUpdate = 0;
+  },
+};
 
-  get $isLoadingEventPermissions(): boolean {
-    return this.isLoadingEventPermissions;
-  }
-
-  @Mutation
-  SET_LOADING_EVENT_PERMISSIONS(loading: boolean) {
-    this.isLoadingEventPermissions = loading;
-  }
-
-  @Mutation
-  SET_USER_PERMISSIONS(permissions: string[]) {
-    this.userPermissions = permissions;
-    this.lastUpdate = Date.now();
-  }
-
-  @Mutation
-  SET_EVENT_PERMISSIONS(payload: { eventId: string; permissions: string[] }) {
-    this.eventPermissionsMap[payload.eventId] = payload.permissions;
-    this.lastUpdate = Date.now();
-  }
-
-  @Mutation
-  RESET_PERMISSIONS() {
-    this.userPermissions = [];
-    this.eventPermissionsMap = {};
-    this.lastUpdate = 0;
-  }
-
-  @Action
-  async loadUserPermissions(payload: { userId: string; roleId: string }) {
+export const actions = {
+  async loadUserPermissions({ commit, getters }: any, payload: { userId: string; roleId: string }) {
     try {
-      if (this.$isCacheValid && this.userPermissions.length > 0) {
-        return this.userPermissions;
+      if (getters.$isCacheValid && getters.$permissions.length > 0) {
+        return getters.$permissions;
       }
 
       // Admin e Gerente têm acesso a tudo
       if (payload.roleId && ['1c279e46-7105-4e3b-964b-2d8104254dec', '5388c6fa-2653-4c27-9cc8-a8d79ff59802'].includes(payload.roleId)) {
         const allPermissions = ['*'];
-        this.context.commit('SET_USER_PERMISSIONS', allPermissions);
+        commit('SET_USER_PERMISSIONS', allPermissions);
         return allPermissions;
       }
 
@@ -90,28 +75,27 @@ export default class PermissionsModule extends VuexModule {
         .map((rp: any) => rp.permission?.name)
         .filter(Boolean);
       
-      this.context.commit('SET_USER_PERMISSIONS', permissionsList);
+      commit('SET_USER_PERMISSIONS', permissionsList);
       return permissionsList;
     } catch (error) {
       console.error('Erro ao carregar permissões do usuário:', error);
       return [];
     }
-  }
+  },
 
-  @Action
-  async loadEventPermissions(payload: { userId: string; eventId: string; roleId: string }) {
+  async loadEventPermissions({ commit, getters }: any, payload: { userId: string; eventId: string; roleId: string }) {
     try {
-      this.context.commit('SET_LOADING_EVENT_PERMISSIONS', true);
+      commit('SET_LOADING_EVENT_PERMISSIONS', true);
 
       // Verificar se já tem no cache
-      if (this.$isCacheValid && this.eventPermissionsMap[payload.eventId]) {
-        return this.eventPermissionsMap[payload.eventId];
+      if (getters.$isCacheValid && getters.$eventPermissions[payload.eventId]) {
+        return getters.$eventPermissions[payload.eventId];
       }
 
       // Admin e Gerente têm acesso a tudo
       if (payload.roleId && ['1c279e46-7105-4e3b-964b-2d8104254dec', '5388c6fa-2653-4c27-9cc8-a8d79ff59802'].includes(payload.roleId)) {
         const allPermissions = ['*'];
-        this.context.commit('SET_EVENT_PERMISSIONS', { 
+        commit('SET_EVENT_PERMISSIONS', { 
           eventId: payload.eventId, 
           permissions: allPermissions 
         });
@@ -126,7 +110,7 @@ export default class PermissionsModule extends VuexModule {
       if (eventResponse?.body?.result?.data?.length > 0) {
         // Promotor tem todas as permissões
         const allPermissions = ['*'];
-        this.context.commit('SET_EVENT_PERMISSIONS', { 
+        commit('SET_EVENT_PERMISSIONS', { 
           eventId: payload.eventId, 
           permissions: allPermissions 
         });
@@ -146,7 +130,7 @@ export default class PermissionsModule extends VuexModule {
       if (collaborator && ['Admin', 'Gerente'].includes(collaborator?.role?.name)) {
         // Retorna um array com todas as permissões possíveis
         const allPermissions = ['*'];
-        this.context.commit('SET_EVENT_PERMISSIONS', { 
+        commit('SET_EVENT_PERMISSIONS', { 
           eventId: payload.eventId, 
           permissions: allPermissions 
         });
@@ -169,7 +153,7 @@ export default class PermissionsModule extends VuexModule {
         .map((rp: any) => rp.permission?.name)
         .filter(Boolean);
       
-      this.context.commit('SET_EVENT_PERMISSIONS', { 
+      commit('SET_EVENT_PERMISSIONS', { 
         eventId: payload.eventId, 
         permissions: permissionsList 
       });
@@ -179,42 +163,37 @@ export default class PermissionsModule extends VuexModule {
       console.error('Erro ao carregar permissões do evento:', error);
       return [];
     } finally {
-      this.context.commit('SET_LOADING_EVENT_PERMISSIONS', false);
+      commit('SET_LOADING_EVENT_PERMISSIONS', false);
     }
-  }
+  },
 
-  @Action
-  hasPermission(permission: string): boolean {
-    return this.userPermissions.includes('*') || this.userPermissions.includes(permission);
-  }
+  hasPermission({ getters }: any, permission: string): boolean {
+    return getters.$permissions.includes('*') || getters.$permissions.includes(permission);
+  },
 
-  @Action
-  hasEventPermission(payload: { eventId: string; permission: string }): boolean {
-    const eventPerms = this.eventPermissionsMap[payload.eventId];
+  hasEventPermission({ getters }: any, payload: { eventId: string; permission: string }): boolean {
+    const eventPerms = getters.$eventPermissions[payload.eventId];
     if (!eventPerms) return false;
     
     return eventPerms.includes('*') || eventPerms.includes(payload.permission);
-  }
+  },
 
-  @Action
-  checkPermissions(permissions: string[]): boolean {
-    if (this.userPermissions.includes('*')) return true;
+  checkPermissions({ getters }: any, permissions: string[]): boolean {
+    if (getters.$permissions.includes('*')) return true;
     
-    return permissions.some(permission => this.userPermissions.includes(permission));
-  }
+    return permissions.some(permission => getters.$permissions.includes(permission));
+  },
 
-  @Action
-  checkEventPermissions(payload: { eventId: string; permissions: string[] }): boolean {
-    const eventPerms = this.eventPermissionsMap[payload.eventId];
+  checkEventPermissions({ getters }: any, payload: { eventId: string; permissions: string[] }): boolean {
+    const eventPerms = getters.$eventPermissions[payload.eventId];
     if (!eventPerms) return false;
     
     if (eventPerms.includes('*')) return true;
     
     return payload.permissions.some(permission => eventPerms.includes(permission));
-  }
+  },
 
-  @Action
-  clearPermissions() {
-    this.context.commit('RESET_PERMISSIONS');
-  }
-} 
+  clearPermissions({ commit }: any) {
+    commit('RESET_PERMISSIONS');
+  },
+}; 

@@ -1,84 +1,63 @@
-
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
-import { eventGeneralInfo, eventTickets, eventCustomFields, eventCoupons } from '@/utils/store-util';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
 import { Event, ValidationResult } from '~/models/event';
 
-@Module({
-  name: 'eventPrincipal',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventPrincipalModule extends VuexModule {
+interface EventPrincipalState {
+  eventData: Event | null;
+  eventList: Event[];
+  isLoading: boolean;
+  progressTitle: string;
+  isSaving: boolean;
+}
 
-  private eventData: Event | null = null;
-  private eventList: Event[] = [];
-  private isLoading: boolean = false;
-  private progressTitle: string = '';
-  private isSaving: boolean = false;
+export const state = (): EventPrincipalState => ({
+  eventData: null,
+  eventList: [],
+  isLoading: false,
+  progressTitle: '',
+  isSaving: false,
+});
 
-  // Getters
-  public get $event() {
-    return this.eventData;
-  }
+export const getters = {
+  $event: (state: EventPrincipalState) => state.eventData,
+  $eventList: (state: EventPrincipalState) => state.eventList,
+  $isLoading: (state: EventPrincipalState) => state.isLoading,
+  $progressTitle: (state: EventPrincipalState) => state.progressTitle,
+  $isSaving: (state: EventPrincipalState) => state.isSaving,
+};
 
-  public get $eventList() {
-    return this.eventList;
-  }
+export const mutations = {
+  SET_EVENT(state: EventPrincipalState, event: Event) {
+    state.eventData = event;
+  },
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+  SET_EVENT_LIST(state: EventPrincipalState, events: Event[]) {
+    state.eventList = events;
+  },
 
-  public get $progressTitle() {
-    return this.progressTitle;
-  }
+  SET_LOADING(state: EventPrincipalState, value: boolean) {
+    state.isLoading = value;
+  },
 
-  public get $isSaving() {
-    return this.isSaving;
-  }
+  SET_PROGRESS_TITLE(state: EventPrincipalState, title: string) {
+    state.progressTitle = title;
+  },
 
-  // Mutations
-  @Mutation
-  private SET_EVENT(event: Event) {
-    this.eventData = event;
-  }
+  SET_SAVING(state: EventPrincipalState, value: boolean) {
+    state.isSaving = value;
+  },
+};
 
-  @Mutation
-  private SET_EVENT_LIST(events: Event[]) {
-    this.eventList = events;
-  }
-
-  @Mutation
-  private SET_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
-
-  @Mutation
-  private SET_PROGRESS_TITLE(title: string) {
-    this.progressTitle = title;
-  }
-
-  @Mutation
-  private SET_SAVING(value: boolean) {
-    this.isSaving = value;
-  }
-
-
-  // Actions - CRUD Operations
-  @Action
-  public async fetchEvents({
+export const actions = {
+  async fetchEvents({ commit }: any, {
     page = 1,
     limit = 12,
     search,
     sortBy,
     sortDesc,
   }: SearchPayload) {
-
     try {
-
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const preloads = [
         'rating',
@@ -117,7 +96,7 @@ export default class EventPrincipalModule extends VuexModule {
         throw new Error('Falha ao buscar eventos');
       }
 
-      this.context.commit('SET_EVENT_LIST', response.body.result.data);
+      commit('SET_EVENT_LIST', response.body.result.data);
       return response.body.result;
 
     } catch (error) {
@@ -128,15 +107,13 @@ export default class EventPrincipalModule extends VuexModule {
         code: 'FIND_NOTFOUND',
       };
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async getById(eventId: string) {
+  async getById({ commit }: any, eventId: string) {
     try {
-
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const preloads = [
         'rating',
@@ -160,22 +137,20 @@ export default class EventPrincipalModule extends VuexModule {
       }
 
       const event = response.body.result.data[0];
-      this.context.commit('SET_EVENT', event);
+      commit('SET_EVENT', event);
       return event;
 
     } catch (error) {
       console.error('Erro ao buscar evento:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async updateEvent(payload) {
+  async updateEvent({ commit }: any, payload: any) {
     try {
-
-      this.context.commit('SET_SAVING', true);
+      commit('SET_SAVING', true);
 
       const response = await $axios.$patch('event', payload);
 
@@ -187,15 +162,13 @@ export default class EventPrincipalModule extends VuexModule {
       console.error('Error updating event:', error);
       throw error;
     } finally {
-      this.context.commit('SET_SAVING', false);
+      commit('SET_SAVING', false);
     }
-  }
+  },
 
-  @Action
-  public async deleteEvent(payload) {
+  async deleteEvent({ commit }: any, payload: any) {
     try {
-
-      this.context.commit('SET_SAVING', true);
+      commit('SET_SAVING', true);
 
       const { eventId } = payload;
 
@@ -210,14 +183,13 @@ export default class EventPrincipalModule extends VuexModule {
       console.error('Error deleting event:', error);
       throw error;
     } finally {
-      this.context.commit('SET_SAVING', false);
+      commit('SET_SAVING', false);
     }
-  }
+  },
 
-  @Action
-  public async validateAlias(alias: string): Promise<boolean> {
+  async validateAlias({ commit }: any, alias: string): Promise<boolean> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$get(`event/validate-alias/${alias}`);
 
@@ -230,61 +202,62 @@ export default class EventPrincipalModule extends VuexModule {
       console.error('Erro ao validar alias:', error);
       return false;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  // Actions - Event Creation Flow
-  @Action
-  public async createEvent(): Promise<{ success: boolean; eventIds?: string[] }> {
+  async createEvent({ commit, dispatch, rootGetters }: any): Promise<{ success: boolean; eventIds?: string[] }> {
     try {
-      this.context.commit('SET_SAVING', true);
+      commit('SET_SAVING', true);
 
       // 1. Validar todo o evento
-      this.context.commit('SET_PROGRESS_TITLE', 'Validando evento...');
-      const validation = await this.validateEvent();
+      commit('SET_PROGRESS_TITLE', 'Validando evento...');
+      const validation = await dispatch('validateEvent');
       if (!validation.isValid) {
         throw new Error('Evento inválido: ' + validation.errors.join(', '));
       }
 
       // 2. Criar evento base
-      this.context.commit('SET_PROGRESS_TITLE', 'Criando evento...');
-      const responseEvents = await eventGeneralInfo.createEventBase();
+      commit('SET_PROGRESS_TITLE', 'Criando evento...');
+      const responseEvents = await dispatch('eventGeneralInfo/createEventBase', null, { root: true });
 
       if (!responseEvents) {
         throw new Error('Falha ao criar evento base');
       }
 
-      const eventIds = responseEvents.map((event) => event.id);
+      const eventIds = responseEvents.map((event: any) => event.id);
 
       // 3. Processar banner e link online em paralelo
-      this.context.commit('SET_PROGRESS_TITLE', 'Processando mídia e configurações...');
+      commit('SET_PROGRESS_TITLE', 'Processando mídia e configurações...');
       await Promise.all([
-        eventGeneralInfo.handleEventBanner(eventIds),
-        eventGeneralInfo.handleLinkOnline(eventIds)
+        dispatch('eventGeneralInfo/handleEventBanner', eventIds, { root: true }),
+        dispatch('eventGeneralInfo/handleLinkOnline', eventIds, { root: true })
       ]);
 
       // 4. Criar ingressos
-      this.context.commit('SET_PROGRESS_TITLE', 'Criando ingressos...');
-      if (eventTickets.$tickets.length > 0) {
-        await eventTickets.createTickets(eventIds);
+      commit('SET_PROGRESS_TITLE', 'Criando ingressos...');
+      const ticketsCount = rootGetters['eventTickets/$tickets']?.length || 0;
+      if (ticketsCount > 0) {
+        await dispatch('eventTickets/createTickets', eventIds, { root: true });
       }
 
       // 5. Criar campos personalizados
-      this.context.commit('SET_PROGRESS_TITLE', 'Configurando campos personalizados...');
-      if (eventCustomFields.$customFields.length > 0) {
-        await eventCustomFields.createCustomFields(eventIds);
+      commit('SET_PROGRESS_TITLE', 'Configurando campos personalizados...');
+      const customFieldsCount = rootGetters['eventCustomFields/$customFields']?.length || 0;
+      if (customFieldsCount > 0) {
+        await dispatch('eventCustomFields/createCustomFields', eventIds, { root: true });
       }
 
       // 6. Criar cupons
-      this.context.commit('SET_PROGRESS_TITLE', 'Configurando cupons...');
-      if (eventCoupons.$coupons.length > 0) {
-        await eventCoupons.createCoupons(eventIds);
+      commit('SET_PROGRESS_TITLE', 'Configurando cupons...');
+      const couponsCount = rootGetters['eventCoupons/$coupons']?.length || 0;
+      if (couponsCount > 0) {
+        await dispatch('eventCoupons/createCoupons', eventIds, { root: true });
       }
 
       // 7. Resetar todos os módulos após sucesso
-      this.context.commit('SET_PROGRESS_TITLE', 'Finalizando...');
-      this.resetAllModules();
+      commit('SET_PROGRESS_TITLE', 'Finalizando...');
+      dispatch('resetAllModules');
 
       return { success: true, eventIds };
 
@@ -292,14 +265,12 @@ export default class EventPrincipalModule extends VuexModule {
       console.error('Erro ao criar evento:', error);
       throw error;
     } finally {
-      this.context.commit('SET_SAVING', false);
-      this.context.commit('SET_PROGRESS_TITLE', '');
+      commit('SET_SAVING', false);
+      commit('SET_PROGRESS_TITLE', '');
     }
-  }
+  },
 
-  @Action
-  public async validateEvent(): Promise<ValidationResult> {
-
+  async validateEvent({ dispatch }: any): Promise<ValidationResult> {
     try {
       const [
         generalInfoValidation,
@@ -307,10 +278,10 @@ export default class EventPrincipalModule extends VuexModule {
         customFieldsValidation,
         couponsValidation
       ] = await Promise.all([
-        eventGeneralInfo.validateGeneralInfo(),
-        eventTickets.validateTickets(),
-        eventCustomFields.validateCustomFields(),
-        eventCoupons.validateCoupons()
+        dispatch('eventGeneralInfo/validateGeneralInfo', null, { root: true }),
+        dispatch('eventTickets/validateTickets', null, { root: true }),
+        dispatch('eventCustomFields/validateCustomFields', null, { root: true }),
+        dispatch('eventCoupons/validateCoupons', null, { root: true })
       ]);
 
       const errors = [
@@ -328,28 +299,25 @@ export default class EventPrincipalModule extends VuexModule {
       console.error('Erro ao validar evento:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  private resetAllModules() {
-    eventGeneralInfo.reset();
-    eventTickets.reset();
-    eventCustomFields.reset();
-    eventCoupons.reset();
-    this.reset();
-  }
+  resetAllModules({ dispatch }: any) {
+    dispatch('eventGeneralInfo/reset', null, { root: true });
+    dispatch('eventTickets/reset', null, { root: true });
+    dispatch('eventCustomFields/reset', null, { root: true });
+    dispatch('eventCoupons/reset', null, { root: true });
+    dispatch('reset');
+  },
 
-  @Action
-  public reset() {
-    this.context.commit('SET_EVENT', null);
-    this.context.commit('SET_EVENT_LIST', []);
-    this.context.commit('SET_LOADING', false);
-    this.context.commit('SET_PROGRESS_TITLE', '');
-    this.context.commit('SET_SAVING', false);
-  }
+  reset({ commit }: any) {
+    commit('SET_EVENT', null);
+    commit('SET_EVENT_LIST', []);
+    commit('SET_LOADING', false);
+    commit('SET_PROGRESS_TITLE', '');
+    commit('SET_SAVING', false);
+  },
 
-  @Action
-  private async createEventCheckoutFieldTicketRelations(payload: { fieldTicketMap: Record<string, string[]>, ticketMap: Record<string, string> }) {
+  async createEventCheckoutFieldTicketRelations({ dispatch }: any, payload: { fieldTicketMap: Record<string, string[]>, ticketMap: Record<string, string> }) {
     try {
       const relations = Object.entries(payload.fieldTicketMap).flatMap(([ticketName, fieldIds]) => {
         const ticketId = payload.ticketMap[ticketName];
@@ -367,8 +335,8 @@ export default class EventPrincipalModule extends VuexModule {
       await Promise.all(
         relations.map(async ({ fieldId, ticketId, ticketName }) => {
           try {
-            await this.createSingleFieldTicketRelation({ fieldId, ticketId } );
-          } catch (error) {
+            await dispatch('createSingleFieldTicketRelation', { fieldId, ticketId });
+          } catch (error: any) {
             throw new Error(
               `Falha ao criar relação entre campo ${fieldId} e ingresso ${ticketName}: ${error.message}`
             );
@@ -379,10 +347,9 @@ export default class EventPrincipalModule extends VuexModule {
       console.error('Erro ao criar relações entre campos e ingressos:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  private async createSingleFieldTicketRelation(payload: { fieldId: string, ticketId: string }) {
+  async createSingleFieldTicketRelation(_: any, payload: { fieldId: string, ticketId: string }) {
     const response = await $axios.$post('event-checkout-field-ticket', {
       event_checkout_field_id: payload.fieldId,
       ticket_id: payload.ticketId,
@@ -393,10 +360,9 @@ export default class EventPrincipalModule extends VuexModule {
     }
 
     return response.body.result;
-  }
+  },
 
-  @Action
-  private async createCouponTicketRelations(payload: { couponTicketMap: Record<string, string[]>, ticketMap: Record<string, string> }) {
+  async createCouponTicketRelations(_: any, payload: { couponTicketMap: Record<string, string[]>, ticketMap: Record<string, string> }) {
     try {
       const relationsPromises = [];
 
@@ -422,5 +388,5 @@ export default class EventPrincipalModule extends VuexModule {
       console.error('Error in createCouponTicketRelations:', error);
       throw new Error('Failed to create coupon-ticket relations.');
     }
-  }
-}
+  },
+};

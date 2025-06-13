@@ -3,57 +3,33 @@
 
     <v-row>
       <v-col cols="12">
-        <v-text-field
-          v-model="newPassword"
-          label="Nova Senha"
-          :rules="passwordRules"
-          :type="showNewPassword ? 'text' : 'password'"
-          :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          outlined
-          dense
-          @click:append="showNewPassword = !showNewPassword"
-        />
+        <v-text-field v-model="newPassword" label="Nova Senha" :rules="passwordRules"
+          :type="showNewPassword ? 'text' : 'password'" :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          outlined dense @click:append="showNewPassword = !showNewPassword" />
       </v-col>
     </v-row>
 
     <v-row>
       <v-col cols="12">
-        <v-text-field
-          v-model="confirmPassword"
-          label="Confirmar Nova Senha"
-          :rules="confirmPasswordRules"
+        <v-text-field v-model="confirmPassword" label="Confirmar Nova Senha" :rules="confirmPasswordRules"
           :type="showConfirmPassword ? 'text' : 'password'"
-          :append-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          outlined
-          dense
-          @click:append="showConfirmPassword = !showConfirmPassword"
-        />
+          :append-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'" outlined dense
+          @click:append="showConfirmPassword = !showConfirmPassword" />
       </v-col>
     </v-row>
 
     <v-row>
       <v-col cols="12" class="d-flex align-center justify-space-between">
 
-        <DefaultButton
-          text="Cancelar"
-          outlined
-          @click="cancel"
-        />
+        <DefaultButton text="Cancelar" outlined @click="cancel" />
 
-        <DefaultButton
-          text="Salvar"
-          :loading="isLoading"
-          :disabled="!isValid || !canSubmit"
-          @click="changePassword"
-        />
+        <DefaultButton text="Salvar" :loading="isLoading" :disabled="!isValid || !canSubmit" @click="changePassword" />
       </v-col>
     </v-row>
   </v-form>
 </template>
 
 <script>
-import { user, toast } from '@/store';
-
 export default {
 
   data() {
@@ -83,14 +59,14 @@ export default {
     },
 
     getUserId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.id;
     },
-    
+
     canSubmit() {
       return this.newPassword && this.confirmPassword && this.newPassword === this.confirmPassword;
     },
   },
-  
+
   methods: {
 
     cancel() {
@@ -101,30 +77,30 @@ export default {
       if (!this.$refs.form.validate()) {
         return;
       }
-      
+
       try {
         this.isLoading = true;
-        
+
         // Aqui você implementaria a chamada para o backend para alterar a senha
-        await user.updateUser({
+        await this.$store.dispatch('user/updateUser', {
           id: this.getUserId,
           password: this.newPassword
         });
-        
+
         // Resetar o formulário
         this.$refs.form.reset();
         this.newPassword = '';
         this.confirmPassword = '';
-        
-        toast.setToast({
+
+        this.$store.dispatch('toast/setToast', {
           text: 'Senha alterada com sucesso!',
           type: 'success',
           time: 5000,
         });
       } catch (error) {
         console.error('Erro ao alterar senha:', error);
-        
-        toast.setToast({
+
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao alterar a senha. Verifique se sua senha atual está correta.',
           type: 'error',
           time: 5000,
@@ -135,4 +111,4 @@ export default {
     },
   },
 }
-</script> 
+</script>

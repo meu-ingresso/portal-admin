@@ -98,7 +98,6 @@
 </template>
 
 <script>
-import { user, userAddress, userDocuments } from '@/store';
 import { onFormatCNPJ, onFormatCEP, onFormatCPF } from '@/utils/formatters';
 
 export default {
@@ -115,19 +114,19 @@ export default {
 
   computed: {
     people() {
-      return user?.$user?.people || {};
+      return this.$store.getters['user/$user']?.people || {};
     },
 
     isLoading() {
-      return userDocuments.$isLoading || userAddress.$isLoading;
+      return this.$store.getters['userDocuments/$isLoading'] || this.$store.getters['userAddress/$isLoading'];
     },
 
     currentAddress() {
-      return userAddress.$address || {};
+      return this.$store.getters['userAddress/$address'] || {};
     },
 
     pixInfo() {
-      return userDocuments.$pixInfo;
+      return this.$store.getters['userDocuments/$pixInfo'];
     },
 
     pixKey() {
@@ -167,13 +166,14 @@ export default {
   methods: {
     loadUserData() {
       // Carrega o endereço do usuário se disponível
-      if (user?.$user?.people?.id) {
-        userAddress.fetchUserAddress(user.$user.people.id);
+      const currentUser = this.$store.getters['user/$user'];
+      if (currentUser?.people?.id) {
+        this.$store.dispatch('userAddress/fetchUserAddress', currentUser.people.id);
       }
 
       // Carrega os documentos (incluindo PIX)
-      // if (user?.$user?.id) {
-      // userDocuments.fetchDocumentStatus(user.$user.id);
+      // if (currentUser?.id) {
+      //   this.$store.dispatch('userDocuments/fetchDocumentStatus', currentUser.id);
       // }
     },
 

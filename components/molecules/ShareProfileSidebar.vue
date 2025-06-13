@@ -70,7 +70,6 @@
 <script>
 import QRCode from 'qrcode';
 import { isMobileDevice } from '@/utils/utils';
-import { toast } from '@/store';
 
 export default {
   props: {
@@ -104,14 +103,14 @@ export default {
     async copyLink() {
       try {
         await navigator.clipboard.writeText(this.profileUrl);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Link copiado para a área de transferência',
           type: 'success',
           time: 3000
         });
       } catch (error) {
         console.error('Error copying to clipboard:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao copiar link',
           type: 'error',
           time: 3000
@@ -139,14 +138,14 @@ export default {
         link.click();
         document.body.removeChild(link);
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'QR Code baixado com sucesso',
           type: 'success',
           time: 3000
         });
       } catch (error) {
         console.error('Error generating QR code:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao gerar QR Code',
           type: 'error',
           time: 3000

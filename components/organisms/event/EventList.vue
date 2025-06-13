@@ -1,22 +1,12 @@
 <template>
   <div v-if="!isLoadingEvents" class="event-list">
     <template v-if="!isMobile">
-      <EventRow
-        v-for="event in events"
-        :key="event.id"
-        :event="event"
-        :can-manage-event="canManageEvent"
-        :image="findBannerImage(event)"
-        :show-sessions-indicator="showSessionsIndicator"
-        @approved-event="handleApprovedEvent"
-        />
+      <EventRow v-for="event in events" :key="event.id" :event="event" :can-manage-event="canManageEvent"
+        :image="findBannerImage(event)" :show-sessions-indicator="showSessionsIndicator"
+        @approved-event="handleApprovedEvent" />
     </template>
     <template v-else>
-      <EventCard
-        v-for="event in events"
-        :key="event.id"
-        :event="event"
-        :can-manage-event="canManageEvent"
+      <EventCard v-for="event in events" :key="event.id" :event="event" :can-manage-event="canManageEvent"
         :show-sessions-indicator="showSessionsIndicator" />
     </template>
   </div>
@@ -29,8 +19,8 @@
 </template>
 
 <script>
-import { event } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
+
 export default {
   props: {
     events: { type: Array, required: true },
@@ -39,13 +29,13 @@ export default {
 
   computed: {
     isLoadingEvents() {
-      return event.$isLoading;
+      return this.$store.getters['event/$isLoading'];
     },
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
     userRole() {
-      return this.$cookies.get('user_role');
+      return this.$store.state.auth.user?.role;
     },
     isAdmin() {
       const role = this.userRole;
@@ -67,7 +57,7 @@ export default {
             this.$emit('check-promoter', promoterId);
           }
         }
-        
+
       } catch (error) {
         console.error('Erro ao verificar promotor', error);
       }

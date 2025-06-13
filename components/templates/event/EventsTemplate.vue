@@ -4,47 +4,32 @@
       <v-col cols="12" md="6" sm="12">
         <div class="events-template-title">Lista de Eventos</div>
       </v-col>
-      <v-col cols="12" md="6" sm="12" class="d-flex" :class="{ 'justify-md-end': !isMobile, 'justify-space-between': isMobile }">
+      <v-col cols="12" md="6" sm="12" class="d-flex"
+        :class="{ 'justify-md-end': !isMobile, 'justify-space-between': isMobile }">
         <DefaultButton v-if="canCreateEvent" text="Criar um evento" :block="isMobile" to="/events/create" />
       </v-col>
     </v-row>
     <div class="actions">
-      <DataSearch
-        :search="search"
-        place-holder="Encontre seu evento"
-        @do-search="handleSearch" />
+      <DataSearch :search="search" place-holder="Encontre seu evento" @do-search="handleSearch" />
     </div>
 
-    <FilterButtons
-      :filters="statusList"
-      :selected="selectedFilter"
-      :is-loading="isLoadingStatus"
+    <FilterButtons :filters="statusList" :selected="selectedFilter" :is-loading="isLoadingStatus"
       @filter-selected="handleFilterChange" />
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
-    <EventList
-      :events="groupedEvents"
-      :show-sessions-indicator="showSessionsIndicator"
-      @check-promoter="handleCheckPromoter"
-    />
+    <EventList :events="groupedEvents" :show-sessions-indicator="showSessionsIndicator"
+      @check-promoter="handleCheckPromoter" />
 
     <!-- Estado vazio -->
     <template v-if="groupedEvents.length === 0 && !isLoadingEvents">
-      <EmptyState
-        title="Ainda não há eventos para esta busca"
-        subtitle="Uma vez criados, seus eventos aparecerão aqui"
+      <EmptyState title="Ainda não há eventos para esta busca" subtitle="Uma vez criados, seus eventos aparecerão aqui"
         icon="mdi-calendar-outline" />
     </template>
 
     <v-row v-if="groupedEvents.length > 0 && !isLoadingEvents">
       <v-col cols="12" class="text-center">
-        <v-btn 
-          v-if="hasEvents" 
-          color="primary" 
-          text 
-          :disabled="!hasMorePages"
-          @click="loadMore">
+        <v-btn v-if="hasEvents" color="primary" text :disabled="!hasMorePages" @click="loadMore">
           {{ loadMoreButtonText }}
         </v-btn>
       </v-col>
@@ -53,7 +38,6 @@
 </template>
 
 <script>
-import { event, status, user } from '@/store';
 import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
 import { checkUserPermissionsBatch } from '@/utils/permissions-util';
 import { EVENT_PERMISSIONS } from '@/utils/permissions-config';
@@ -63,14 +47,14 @@ export default {
     groupedEvents: { type: Array, required: true },
     events: { type: Array, required: true },
     showSessionsIndicator: { type: Boolean, default: false },
-    paginationMeta: { 
-      type: Object, 
+    paginationMeta: {
+      type: Object,
       default: () => ({
         current_page: 1,
         last_page: 1,
         per_page: 12,
         total: 0
-      }) 
+      })
     },
   },
   data() {
@@ -83,15 +67,16 @@ export default {
   computed: {
 
     getUserRole() {
-      return this.$cookies.get('user_role');
+      return this.$store.state.auth.user?.role;
     },
 
     getUserId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.id;
     },
 
     isAdminOrManager() {
-      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+      const userRole = this.$store.state.auth.user?.role;
+      return userRole && (userRole.name === 'Admin' || userRole.name === 'Gerente');
     },
 
     isMobile() {
@@ -99,17 +84,17 @@ export default {
     },
 
     isLoadingEvents() {
-      return event.$isLoading;
+      return this.$store.getters['event/$isLoading'];
     },
 
     isLoadingStatus() {
-      return status.$isLoading;
+      return this.$store.getters['status/$isLoading'];
     },
 
     statusList() {
       return [
         { name: 'Todos' },
-        ...status.$getStatusByModule('event'),
+        ...this.$store.getters['status/$getStatusByModule']('event'),
       ];
     },
 
@@ -122,15 +107,15 @@ export default {
     },
 
     loadMoreButtonText() {
-      return this.hasMorePages 
-        ? 'Ver mais...' 
+      return this.hasMorePages
+        ? 'Ver mais...'
         : 'Não há mais eventos para carregar';
     },
 
   },
 
   mounted() {
-    this.checkUserPermission();
+    // this.checkUserPermission();
   },
 
   methods: {
@@ -138,31 +123,31 @@ export default {
     async handleCheckPromoter(promoterId) {
       try {
 
-         const userResponse = await user.getById({ user_id: promoterId, commit: false });
+        const userResponse = await this.$store.dispatch('user/getById', { user_id: promoterId, commit: false });
 
-         if (userResponse && userResponse?.role) {
+        if (userResponse && userResponse?.role) {
 
           const { role } = userResponse;
 
           // Verifica se o promotor é um cliente para transformar em promotor
           if (role.name === 'Cliente') {
-            const roleResponse = await user.getRoleByName({ name: 'Promoter' });
+            const roleResponse = await this.$store.dispatch('user/getRoleByName', { name: 'Promoter' });
 
             if (roleResponse && roleResponse.success) {
-              await user.updateUser({
+              await this.$store.dispatch('user/updateUser', {
                 id: userResponse.id,
                 role_id: roleResponse.data.id
               });
 
-              toast.setToast({
+              this.$store.dispatch('toast/setToast', {
                 text: 'Cliente promovido a promotor com sucesso',
                 type: 'success',
                 time: 3000,
               });
             }
           }
-         }
-        
+        }
+
       } catch (error) {
         console.error('Erro ao verificar promotor', error);
       }
@@ -207,12 +192,14 @@ export default {
 .events-template {
   max-width: 1280px;
 }
+
 .events-template-title {
   font-size: 26px;
   font-weight: 700;
   color: var(--black-text);
   font-family: var(--font-family-inter-bold);
 }
+
 .actions {
   margin-bottom: 20px;
 }

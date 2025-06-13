@@ -91,18 +91,6 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import {
-  category,
-  rating,
-  loading,
-  toast,
-  eventTickets,
-  eventCustomFields,
-  eventPrincipal,
-  eventGeneralInfo,
-  eventCoupons,
-  userDocuments,
-} from '@/store';
 
 export default {
   props: {
@@ -126,7 +114,7 @@ export default {
   computed: {
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.id;
     },
 
     isMobile() {
@@ -134,46 +122,46 @@ export default {
     },
 
     ticketStepperLabel() {
-      return eventGeneralInfo.$info.sale_type;
+      return this.$store.getters['eventGeneralInfo/$info'].sale_type;
     },
 
     isLoading() {
-      return loading.$isLoading || this.isLoadingGeneralInfo;
+      return this.$store.getters['loading/$isLoading'] || this.isLoadingGeneralInfo;
     },
 
     isLoadingGeneralInfo() {
-      return eventGeneralInfo.$isLoading;
+      return this.$store.getters['eventGeneralInfo/$isLoading'];
     },
 
     isLoadingTickets() {
-      return eventTickets.$isLoading;
+      return this.$store.getters['eventTickets/$isLoading'];
     },
 
     isLoadingCustomFields() {
-      return eventCustomFields.$isLoading;
+      return this.$store.getters['eventCustomFields/$isLoading'];
     },
 
     isLoadingCoupons() {
-      return eventCoupons.$isLoading;
+      return this.$store.getters['eventCoupons/$isLoading'];
     },
 
     isSaving() {
-      return eventPrincipal.$isSaving;
+      return this.$store.getters['eventPrincipal/$isSaving'];
     },
 
     progressTitle() {
-      return eventPrincipal.$progressTitle;
+      return this.$store.getters['eventPrincipal/$progressTitle'];
     },
 
     categories() {
-      return category.$categoryList.map((category) => ({
+      return this.$store.getters['category/$categoryList'].map((category) => ({
         value: category.id,
         text: category.name,
       }));
     },
 
     ratings() {
-      return rating.$ratingList.map((rating) => ({
+      return this.$store.getters['rating/$ratingList'].map((rating) => ({
         value: rating.id,
         text: rating.description,
         img: rating.image,
@@ -181,31 +169,31 @@ export default {
     },
 
     getTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
 
     getCustomFields() {
-      return eventCustomFields.$customFields;
+      return this.$store.getters['eventCustomFields/$customFields'];
     },
 
     hasOnlyDefaultCustomFields() {
-      return eventCustomFields.$customFields.every((field) => field.is_default);
+      return this.$store.getters['eventCustomFields/$customFields'].every((field) => field.is_default);
     },
 
     hasRequiredDocuments() {
-      return userDocuments.$hasRequiredDocuments;
+      return this.$store.getters['userDocuments/$hasRequiredDocuments'];
     },
 
     hasPixInfo() {
-      return userDocuments.$hasPixInfo;
+      return this.$store.getters['userDocuments/$hasPixInfo'];
     },
 
     hasFiscalInfo() {
-      return userDocuments.$hasFiscalInfo;
+      return this.$store.getters['userDocuments/$hasFiscalInfo'];
     },
 
     hasDocumentInfo() {
-      return userDocuments.$documentInfo;
+      return this.$store.getters['userDocuments/$documentInfo'];
     },
   },
 
@@ -225,31 +213,31 @@ export default {
 
   methods: {
     resetStores() {
-      eventGeneralInfo.reset();
-      eventTickets.reset();
-      eventCustomFields.reset();
-      eventCoupons.reset();
+      this.$store.dispatch('eventGeneralInfo/reset');
+      this.$store.dispatch('eventTickets/reset');
+      this.$store.dispatch('eventCustomFields/reset');
+      this.$store.dispatch('eventCoupons/reset');
     },
 
     async loadEventData() {
       const promises = [
-        eventGeneralInfo.fetchAndPopulateByEventId(this.eventId),
-        eventTickets.fetchAndPopulateByEventId(this.eventId),
-        eventCoupons.fetchAndPopulateByEventId(this.eventId),
-        eventCustomFields.fetchAndPopulateByEventId(this.eventId),
+        this.$store.dispatch('eventGeneralInfo/fetchAndPopulateByEventId', this.eventId),
+        this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.eventId),
+        this.$store.dispatch('eventCoupons/fetchAndPopulateByEventId', this.eventId),
+        this.$store.dispatch('eventCustomFields/fetchAndPopulateByEventId', this.eventId),
       ];
 
       await Promise.all(promises);
     },
 
     async fetchCategoriesAndRatings() {
-      loading.setIsLoading(true);
+      this.$store.dispatch('loading/setIsLoading', true);
       const promises = [
-        category.fetchCategories({ sortBy: ['name'], sortDesc: [false] }),
-        rating.fetchRatings({ sortBy: ['name'], sortDesc: [false] }),
+        this.$store.dispatch('category/fetchCategories', { sortBy: ['name'], sortDesc: [false] }),
+        this.$store.dispatch('rating/fetchRatings', { sortBy: ['name'], sortDesc: [false] }),
       ];
       await Promise.all(promises);
-      loading.setIsLoading(false);
+      this.$store.dispatch('loading/setIsLoading', false);
     },
 
     nextStep() {
@@ -257,7 +245,7 @@ export default {
       if (currentStepComponent && typeof currentStepComponent.canProceed === 'function') {
         currentStepComponent.canProceed((_canProceed, flag, msg) => {
           if (msg) {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: msg,
               type: 'danger',
               time: 5000,
@@ -293,13 +281,13 @@ export default {
     async checkDocumentStatus() {
       try {
         if (this.userId) {
-          await userDocuments.fetchDocumentStatus(this.userId);
+          await this.$store.dispatch('userDocuments/fetchDocumentStatus', this.userId);
         } else {
           console.warn('Usuário não encontrado para verificar status de documentação');
         }
       } catch (error) {
         console.error('Erro ao verificar status de documentação:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Não foi possível verificar seu status de documentação',
           type: 'danger',
           time: 5000,
@@ -313,21 +301,21 @@ export default {
 
       try {
         if (this.isEditing) {
-          // eventGeneralInfo.setEventStatus('');
+          // this.$store.dispatch('eventGeneralInfo/setEventStatus', '');
 
-          await eventGeneralInfo.updateEventBase(this.eventId);
-          await eventTickets.updateTickets(this.eventId);
+          await this.$store.dispatch('eventGeneralInfo/updateEventBase', this.eventId);
+          await this.$store.dispatch('eventTickets/updateTickets', this.eventId);
 
           if (!this.hasOnlyDefaultCustomFields) {
-            await eventCustomFields.updateEventCustomFields({
+            await this.$store.dispatch('eventCustomFields/updateEventCustomFields', {
               eventId: this.eventId,
               tickets: this.getTickets,
             });
           }
 
-          await eventCoupons.updateEventCoupons(this.eventId);
+          await this.$store.dispatch('eventCoupons/updateEventCoupons', this.eventId);
 
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Evento atualizado com sucesso!',
             type: 'success',
             time: 5000,
@@ -342,12 +330,12 @@ export default {
         } else {
 
           if (status !== 'draft' && (!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo)) {
-            eventGeneralInfo.setEventStatus('Aguardando');
+            this.$store.dispatch('eventGeneralInfo/setEventStatus', 'Aguardando');
           } else {
-            eventGeneralInfo.setEventStatus(status);
+            this.$store.dispatch('eventGeneralInfo/setEventStatus', status);
           }
 
-          const createdEventResults = await eventPrincipal.createEvent();
+          const createdEventResults = await this.$store.dispatch('eventPrincipal/createEvent');
 
           console.log('createdEventResults', createdEventResults);
 
@@ -361,7 +349,7 @@ export default {
                 await this.$refs['step-1'].migrateDescriptionImages(mainEventId);
               }
             } catch (error) {
-              toast.setToast({
+              this.$store.dispatch('toast/setToast', {
                 text: `Erro ao migrar imagens da descrição: ${error.message}`,
                 type: 'error',
                 time: 5000,
@@ -379,7 +367,7 @@ export default {
             message = 'Evento enviado para aprovação!';
           }
 
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: message,
             type: 'success',
             time: 5000,
@@ -402,7 +390,7 @@ export default {
           }
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Ocorreu um erro ao salvar o evento. Tente novamente.',
           type: 'danger',
           time: 5000,

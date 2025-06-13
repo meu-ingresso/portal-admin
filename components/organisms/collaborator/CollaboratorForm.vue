@@ -1,36 +1,18 @@
 <template>
   <v-form ref="form" v-model="isFormValid">
     <div class="form-row">
-      <div
-        v-for="(collaborator, index) in collaborators"
-        :key="index"
-        class="collaborator-form-row">
+      <div v-for="(collaborator, index) in collaborators" :key="index" class="collaborator-form-row">
         <v-row>
           <v-col cols="12" md="6" sm="12">
-            <v-text-field
-              v-model="collaborator.email"
-              label="E-mail"
-              placeholder="Digite o e-mail do colaborador"
-              required
-              hide-details="auto"
-              :error="collaborator.errors?.email"
-              :error-messages="collaborator.errorMessages?.email"
-              dense
-              outlined />
+            <v-text-field v-model="collaborator.email" label="E-mail" placeholder="Digite o e-mail do colaborador"
+              required hide-details="auto" :error="collaborator.errors?.email"
+              :error-messages="collaborator.errorMessages?.email" dense outlined />
           </v-col>
 
           <v-col cols="9" md="5" sm="9">
-            <v-autocomplete
-              v-model="collaborator.role"
-              :items="rolesRelatedToEvent"
-              label="Função"
-              placeholder="Selecione a função"
-              required
-              hide-details="auto"
-              :error="collaborator.errors?.role"
-              :error-messages="collaborator.errorMessages?.role"
-              dense
-              outlined />
+            <v-autocomplete v-model="collaborator.role" :items="rolesRelatedToEvent" label="Função"
+              placeholder="Selecione a função" required hide-details="auto" :error="collaborator.errors?.role"
+              :error-messages="collaborator.errorMessages?.role" dense outlined />
           </v-col>
 
           <v-col cols="3" md="1" sm="3" class="d-flex align-center">
@@ -52,7 +34,6 @@
 </template>
 
 <script>
-import { user, eventCollaborators } from '@/store';
 import { EVENT_COLLABORATOR_ROLES } from '~/utils/permissions-config';
 
 export default {
@@ -72,7 +53,7 @@ export default {
 
   computed: {
     $roles() {
-      return user.$roleList.map((role) => ({
+      return this.$store.getters['user/$roleList'].map((role) => ({
         text: role.name,
         value: role.id,
       }));
@@ -170,29 +151,29 @@ export default {
           email: collab.email,
           role: collab.role,
         }));
-        
-        const result = await eventCollaborators.addCollaborators({
+
+        const result = await this.$store.dispatch('eventCollaborators/addCollaborators', {
           eventId: this.eventId,
           collaborators: collaboratorPayload,
         });
-        
+
         if (!result.success && result.invalidEmails && result.invalidEmails.length > 0) {
           // Mark emails that don't exist in the system with errors
           this.collaborators.forEach((collaborator) => {
             if (result.invalidEmails.includes(collaborator.email)) {
               this.$set(collaborator, 'errors', { ...collaborator.errors, email: true });
-              this.$set(collaborator, 'errorMessages', { 
-                ...collaborator.errorMessages, 
+              this.$set(collaborator, 'errorMessages', {
+                ...collaborator.errorMessages,
                 email: 'Usuário com este e-mail não encontrado no sistema'
               });
             }
           });
-          
+
           return { success: false };
         }
-        
+
         return { success: result.success };
-        
+
       } catch (error) {
         console.error('Erro ao salvar colaborador:', error);
         return { success: false };
