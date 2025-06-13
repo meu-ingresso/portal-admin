@@ -47,7 +47,7 @@
           </div>
         </div>
         <v-spacer />
-        <AccountMenu v-if="!isLogin" />
+        <UserAccountMenu v-if="!isLogin" />
       </div>
     </v-app-bar>
 
@@ -63,6 +63,7 @@ import { TopBar } from '~/utils/topbar';
 
 export default {
   name: 'LayoutDefault',
+
   data() {
     return {
       isValid: false,
