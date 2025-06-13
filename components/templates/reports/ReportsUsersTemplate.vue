@@ -31,24 +31,16 @@
     </v-row>
 
     <!-- Modal de pedidos do usuário -->
-    <UserOrdersModal
-      :show.sync="showUserOrders"
-      :user-id="selectedUserId"
-      :user-name="selectedUserName" />
+    <UserOrdersModal :show.sync="showUserOrders" :user-id="selectedUserId" :user-name="selectedUserName" />
 
     <!-- Modal de edição do usuário -->
-    <EditUserModal
-      v-if="showEditUserModal"
-      :show.sync="showEditUserModal"
-      :user="selectedUser"
-      @saved="handleUserSaved"
-    />
+    <EditUserModal v-if="showEditUserModal" :show.sync="showEditUserModal" :user="selectedUser"
+      @saved="handleUserSaved" />
 
   </div>
 </template>
 
 <script>
-import { user, loading } from '@/store';
 import { formatDateToCustomString } from '@/utils/formatters';
 
 export default {
@@ -83,21 +75,21 @@ export default {
       activeTab: 0,
     };
   },
-  
+
   computed: {
     isLoading() {
-      return this.isLoadingInternal || loading.$isLoading;
+      return this.isLoadingInternal || this.$store.getters['loading/$isLoading'];
     },
     isAdmin() {
-      const role = this.$cookies.get('user_role');
+      const role = this.$auth.user?.role;
       return role && role.name === 'Admin';
     },
   },
-  
+
   mounted() {
     this.loadUsers();
   },
-  
+
   methods: {
     formatDateToCustomString,
 
@@ -110,9 +102,9 @@ export default {
           (user.attachments.some(attachment => attachment.type === 'document_rg_front') && user.attachments.some(attachment => attachment.type === 'document_rg_back'));
       } else {
         return user.attachments.some(attachment => attachment.type === 'document_cnpj' || attachment.type === 'document_social_contract');
-      }   
+      }
     },
-    
+
     getPersonTypeColor(personType) {
       switch (personType) {
         case 'PF':
@@ -123,10 +115,10 @@ export default {
           return 'grey';
       }
     },
-    
+
     buildQueryParams() {
       const { page, itemsPerPage, sortBy, sortDesc } = this.options;
-      
+
       return {
         page,
         limit: itemsPerPage,
@@ -136,7 +128,7 @@ export default {
         preloads: ['people:address', 'attachments'],
       };
     },
-    
+
     isQueryDifferent(newQuery, force = false) {
       if (force || !this.currentQuery) {
         this.currentQuery = JSON.stringify(newQuery);
@@ -151,16 +143,16 @@ export default {
 
       return false;
     },
-    
+
     async loadUsers(force = false) {
       try {
         const query = this.buildQueryParams();
-        
+
         if (this.isQueryDifferent(query, force)) {
           this.isLoadingInternal = true;
-          
-          const response = await user.getUsers(query);
-          
+
+          const response = await this.$store.dispatch('user/getUsers', query);
+
           if (response && response.data && response.data !== 'Error') {
             this.users = response.data;
             this.totalUsers = response.total;
@@ -177,25 +169,25 @@ export default {
         this.isLoadingInternal = false;
       }
     },
-    
+
     handleTableUpdate(options) {
       if (!this.isLoading) {
         this.options = options;
         this.loadUsers();
       }
     },
-    
+
     handleSearchChange() {
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
       }
-      
+
       this.searchTimeout = setTimeout(() => {
         this.options.page = 1;
         this.loadUsers(true);
       }, 500);
     },
-    
+
     viewOrders(user) {
       this.selectedUserId = user.id;
       this.selectedUserName = `${user.people?.first_name} ${user.people?.last_name}`;
@@ -227,4 +219,4 @@ export default {
 :deep(.theme--light.v-tabs > .v-tabs-bar) {
   background-color: var(--tertiary) !important;
 }
-</style> 
+</style>

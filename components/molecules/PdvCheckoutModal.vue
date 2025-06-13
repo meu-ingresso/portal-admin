@@ -11,10 +11,7 @@
       <v-stepper v-model="currentStep" flat class="bg-beige">
         <v-stepper-header class="bg-white no-box-shadow">
           <template v-for="(step) in checkoutSteps">
-            <v-stepper-step 
-              :key="step.step" 
-              :complete="currentStep > step.step" 
-              :step="step.step">
+            <v-stepper-step :key="step.step" :complete="currentStep > step.step" :step="step.step">
               {{ step.title }}
             </v-stepper-step>
           </template>
@@ -23,59 +20,31 @@
         <v-stepper-items>
           <!-- Etapa 1: Seleção de Ingressos -->
           <v-stepper-content step="1" class="bg-transparent px-0 py-0">
-            <TicketSelectionStep
-              :grouped-tickets="groupedTickets"
-              :selected-quantities="selectedQuantities"
-              :selected-tickets="selectedTickets"
-              :total-amount="totalAmount"
-              :calculate-fee="calculateFee"
-              :net-amount="netAmount"
-              :event-fee-percentage="eventFeePercentage"
-              :is-loading="isLoading"
-              :is-processing="isProcessing"
-              @increment-ticket="incrementTicket"
-              @decrement-ticket="decrementTicket"
-              @next-step="nextStep"
-            />
+            <TicketSelectionStep :grouped-tickets="groupedTickets" :selected-quantities="selectedQuantities"
+              :selected-tickets="selectedTickets" :total-amount="totalAmount" :calculate-fee="calculateFee"
+              :net-amount="netAmount" :event-fee-percentage="eventFeePercentage" :is-loading="isLoading"
+              :is-processing="isProcessing" @increment-ticket="incrementTicket" @decrement-ticket="decrementTicket"
+              @next-step="nextStep" />
           </v-stepper-content>
 
           <!-- Etapa 2: Informações do Comprador -->
           <v-stepper-content step="2" class="bg-transparent px-0 py-0">
-            <BuyerInfoStep
-              ref="buyerInfoStep"
-              :selected-tickets="selectedTickets"
-              :ticket-form-groups="ticketFormGroups"
-              :checkout-fields="checkoutFields"
-              :checkout-field-options="checkoutFieldOptions"
-              :person-type-options="personTypeOptions"
-              :expanded-form-panels="expandedFormPanels"
-              :total-amount="totalAmount"
-              :calculate-fee="calculateFee"
-              :net-amount="netAmount"
-              :event-fee-percentage="eventFeePercentage"
-              :is-loading-fields="isLoadingFields"
-              :is-processing="isProcessing"
-              @update:expanded-form-panels="expandedFormPanels = $event"
-              @update:ticket-form-groups="ticketFormGroups = $event"
-              @previous-step="previousStep"
-              @next-step="nextStep"
-            />
+            <BuyerInfoStep ref="buyerInfoStep" :selected-tickets="selectedTickets"
+              :ticket-form-groups="ticketFormGroups" :checkout-fields="checkoutFields"
+              :checkout-field-options="checkoutFieldOptions" :person-type-options="personTypeOptions"
+              :expanded-form-panels="expandedFormPanels" :total-amount="totalAmount" :calculate-fee="calculateFee"
+              :net-amount="netAmount" :event-fee-percentage="eventFeePercentage" :is-loading-fields="isLoadingFields"
+              :is-processing="isProcessing" @update:expanded-form-panels="expandedFormPanels = $event"
+              @update:ticket-form-groups="ticketFormGroups = $event" @previous-step="previousStep"
+              @next-step="nextStep" />
           </v-stepper-content>
 
           <!-- Etapa 3: Pagamento -->
           <v-stepper-content step="3" class="bg-transparent px-0 py-0 fixed-height-content">
-            <PaymentStep
-              :selected-tickets="selectedTickets"
-              :total-amount="totalAmount"
-              :calculate-fee="calculateFee"
-              :net-amount="netAmount"
-              :event-fee-percentage="eventFeePercentage"
-              :payment-method="paymentMethod"
-              :is-processing="isProcessing"
-              @update:payment-method="paymentMethod = $event"
-              @previous-step="previousStep"
-              @process-payment="processPdvPayment"
-            />
+            <PaymentStep :selected-tickets="selectedTickets" :total-amount="totalAmount" :calculate-fee="calculateFee"
+              :net-amount="netAmount" :event-fee-percentage="eventFeePercentage" :payment-method="paymentMethod"
+              :is-processing="isProcessing" @update:payment-method="paymentMethod = $event"
+              @previous-step="previousStep" @process-payment="processPdvPayment" />
           </v-stepper-content>
         </v-stepper-items>
       </v-stepper>
@@ -85,9 +54,7 @@
 </template>
 
 <script>
-import { eventGeneralInfo, eventCheckout, eventPdv, eventTickets, toast } from '@/store';
 import { formatRealValue } from '@/utils/formatters';
-import { isUserAdmin, isUserManager } from '@/utils/utils';
 import { isMultiOptionField } from '@/utils/customFieldsHelpers';
 import checkoutService from '@/services/checkout/checkoutService';
 
@@ -103,7 +70,7 @@ export default {
       required: true
     }
   },
-  
+
   data() {
     return {
       pdvId: null,
@@ -131,20 +98,25 @@ export default {
       ]
     };
   },
-  
+
   computed: {
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$auth.user?.id;
     },
 
     isAdminOrManager() {
-      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+      const role = this.$auth.user?.role;
+      return role && (role.name === 'Admin' || role.name === 'Manager');
+    },
+
+    currentEvent() {
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     tickets() {
-      return this.pdvTickets.filter(ticket => 
-        !ticket._deleted && 
+      return this.pdvTickets.filter(ticket =>
+        !ticket._deleted &&
         ticket.status?.name !== 'Indisponível' &&
         (ticket.total_quantity - ticket.total_sold) > 0
       );
@@ -160,7 +132,7 @@ export default {
         acc[categoryId].tickets.push(ticket);
         return acc;
       }, {});
-      
+
       // Ordenar ingressos pelo display_order em cada categoria
       Object.keys(grouped).forEach(categoryId => {
         grouped[categoryId].tickets.sort((a, b) => {
@@ -169,18 +141,14 @@ export default {
           return orderA - orderB;
         });
       });
-      
+
       return grouped;
     },
-    
-    currentEvent() {
-      return eventGeneralInfo.$info;
-    },
-    
+
     eventFeePercentage() {
       return parseFloat(this.currentEvent?.fees?.platform_fee) || 0;
     },
-    
+
     selectedTickets() {
       return Object.keys(this.selectedQuantities)
         .filter(id => this.selectedQuantities[id] > 0)
@@ -195,21 +163,21 @@ export default {
           };
         });
     },
-    
+
     totalAmount() {
       return this.selectedTickets.reduce((sum, item) => sum + item.total, 0);
     },
-    
+
     calculateFee() {
       return 0;
     },
-    
+
     netAmount() {
       return this.totalAmount - this.calculateFee;
     }
   },
-  
-  watch: {    
+
+  watch: {
     selectedTickets: {
       handler(newVal) {
         if (newVal.length > 0 && this.currentStep === 2) {
@@ -223,14 +191,14 @@ export default {
   mounted() {
     this.loadData();
   },
-  
+
   beforeDestroy() {
     this.resetData();
   },
-  
+
   methods: {
     formatRealValue,
-    
+
     async loadData() {
       try {
 
@@ -241,7 +209,7 @@ export default {
           console.log('Carregando ingressos para usuários disponíveis para PDV');
           await this.loadTicketsForAvailableUsers();
         }
-      
+
         const categoryCount = Object.keys(this.groupedTickets).length;
         if (categoryCount > 0) {
           this.expandedPanels = [...Array(categoryCount).keys()];
@@ -249,21 +217,29 @@ export default {
 
       } catch (error) {
         console.error('Erro ao carregar ingressos:', error);
-        toast.setToast({ text: 'Erro ao carregar ingressos.', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao carregar ingressos.',
+          type: 'error',
+          time: 3000
+        });
       }
     },
 
     async loadTicketsForAdmins() {
       try {
         this.isLoading = true;
-        const response = await eventTickets.fetchAndPopulateByEventId(this.eventId);
+        const response = await this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.eventId);
 
         if (response.success && response.data) {
           this.pdvTickets = response.data;
         }
       } catch (error) {
         console.error('Erro ao carregar ingressos:', error);
-        toast.setToast({ text: 'Erro ao carregar ingressos.', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao carregar ingressos.',
+          type: 'error',
+          time: 3000
+        });
       } finally {
         this.isLoading = false;
       }
@@ -272,14 +248,21 @@ export default {
     async loadTicketsForAvailableUsers() {
       try {
         this.isLoading = true;
-        const response = await eventPdv.fetchPdvFromEventAndUserId({ eventId: this.eventId, userId: this.userId });
+        const response = await this.$store.dispatch('eventPdv/fetchPdvFromEventAndUserId', {
+          eventId: this.eventId,
+          userId: this.userId
+        });
 
         if (response.success && response.data && response.data.length > 0) {
 
           const openPdv = response.data.find(pdv => pdv.status?.name === 'Disponível');
 
           if (!openPdv) {
-            toast.setToast({ text: 'Nenhum PDV disponível encontrado.', type: 'info', time: 3000 });
+            this.$store.dispatch('toast/setToast', {
+              text: 'Nenhum PDV disponível encontrado.',
+              type: 'info',
+              time: 3000
+            });
             return;
           }
 
@@ -292,12 +275,16 @@ export default {
         }
       } catch (error) {
         console.error('Erro ao carregar ingressos:', error);
-        toast.setToast({ text: 'Erro ao carregar ingressos.', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao carregar ingressos.',
+          type: 'error',
+          time: 3000
+        });
       } finally {
         this.isLoading = false;
       }
     },
-    
+
     resetData() {
       this.selectedQuantities = {};
       this.expandedPanels = [];
@@ -307,24 +294,24 @@ export default {
       this.checkoutFieldOptions = {};
       this.ticketFormGroups = [];
       this.paymentMethod = 'PDV';
-      
+
       this.isLoading = false;
       this.isLoadingFields = false;
       this.isProcessing = false;
     },
-    
+
     close() {
       this.isLoading = false;
       this.isLoadingFields = false;
       this.isProcessing = false;
-      
+
       this.$emit('update:show', false);
     },
-    
+
     getTicketQuantity(ticketId) {
       return this.selectedQuantities[ticketId] || 0;
     },
-    
+
     incrementTicket(ticketId) {
       const currentQty = this.selectedQuantities[ticketId] || 0;
       const ticket = this.tickets.find(t => t.id === ticketId);
@@ -333,13 +320,13 @@ export default {
         this.$set(this.selectedQuantities, ticketId, currentQty + 1);
       }
     },
-    
+
     decrementTicket(ticketId) {
       if (this.selectedQuantities[ticketId] > 0) {
         this.$set(this.selectedQuantities, ticketId, this.selectedQuantities[ticketId] - 1);
       }
     },
-    
+
     nextStep() {
       if (this.currentStep === 1) {
         this.fetchCheckoutFields();
@@ -348,18 +335,18 @@ export default {
         this.currentStep++;
       }
     },
-    
+
     previousStep() {
       if (this.currentStep > 1) {
         this.currentStep--;
       }
     },
-    
+
     async fetchCheckoutFields() {
       try {
         this.isLoadingFields = true;
-        const checkoutFieldsResponse = await eventCheckout.fetchCheckoutFields(this.eventId);
-        
+        const checkoutFieldsResponse = await this.$store.dispatch('eventCheckout/fetchCheckoutFields', this.eventId);
+
         if (!checkoutFieldsResponse || checkoutFieldsResponse.length === 0) {
           this.checkoutFields = [];
           this.isLoadingFields = false;
@@ -368,33 +355,37 @@ export default {
 
         // Ordena os campos de checkout pelo display_order
         this.checkoutFields = checkoutFieldsResponse.sort((a, b) => a.eventCheckoutField.display_order - b.eventCheckoutField.display_order);
-        
+
         await this.fetchFieldOptions();
         this.generateTicketForms();
         this.isLoadingFields = false;
       } catch (error) {
         console.error('Erro ao carregar campos de checkout:', error);
-        toast.setToast({ text: 'Erro ao carregar campos de checkout.', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao carregar campos de checkout.',
+          type: 'error',
+          time: 3000
+        });
         this.isLoadingFields = false;
         this.checkoutFields = [];
       }
     },
-    
+
     async fetchFieldOptions() {
       try {
-        const specialFields = this.checkoutFields.filter(field => 
+        const specialFields = this.checkoutFields.filter(field =>
           field.eventCheckoutField && isMultiOptionField(field.eventCheckoutField.type)
         );
-        
+
         if (!specialFields || specialFields.length === 0) {
           return;
         }
-        
+
         for (const field of specialFields) {
           try {
             const fieldId = field.eventCheckoutField.id;
             if (!this.checkoutFieldOptions[fieldId]) {
-              this.checkoutFieldOptions[fieldId] = await eventCheckout.fetchCheckoutFieldOptions(fieldId);
+              this.checkoutFieldOptions[fieldId] = await this.$store.dispatch('eventCheckout/fetchCheckoutFieldOptions', fieldId);
             }
           } catch (error) {
             console.error(`Erro ao carregar opções para o campo ${field.eventCheckoutField.id}:`, error);
@@ -406,17 +397,17 @@ export default {
         this.checkoutFieldOptions = {};
       }
     },
-    
+
     generateTicketForms() {
       this.ticketFormGroups = [];
       this.expandedFormPanels = [];
-      
+
       let panelIndex = 0;
-      
+
       this.selectedTickets.forEach(selectedTicket => {
         const ticket = this.tickets.find(t => t.id === selectedTicket.id);
         if (!ticket) return;
-        
+
         const instances = [];
         for (let i = 0; i < selectedTicket.quantity; i++) {
           instances.push({
@@ -424,38 +415,46 @@ export default {
             fields: {}
           });
         }
-        
+
         this.ticketFormGroups.push({
           ticketId: ticket.id,
           ticketName: ticket.name,
           quantity: selectedTicket.quantity,
           instances
         });
-        
+
         this.expandedFormPanels.push(panelIndex);
         panelIndex++;
       });
     },
-    
+
     validateCheckoutFields() {
       if (!this.$refs.buyerInfoStep) return true;
       return this.$refs.buyerInfoStep.validateFields();
     },
-    
+
     async processPdvPayment() {
       if (this.selectedTickets.length === 0) {
-        toast.setToast({ text: 'Selecione pelo menos um ingresso para continuar.', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Selecione pelo menos um ingresso para continuar.',
+          type: 'error',
+          time: 3000
+        });
         return;
       }
-      
+
       if (!this.validateCheckoutFields()) {
-        toast.setToast({ text: 'Por favor, preencha todos os campos obrigatórios.', type: 'error', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Por favor, preencha todos os campos obrigatórios.',
+          type: 'error',
+          time: 3000
+        });
         return;
       }
-      
+
       try {
         this.isProcessing = true;
-        
+
         await checkoutService.processPdvPayment(this, {
           tickets: this.selectedTickets,
           ticketFormGroups: this.ticketFormGroups,
@@ -466,12 +465,20 @@ export default {
           pdvId: this.pdvId
         });
 
-        toast.setToast({ text: 'Pedido PDV realizado com sucesso!', type: 'success', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Pedido PDV realizado com sucesso!',
+          type: 'success',
+          time: 3000
+        });
         this.close();
         this.$emit('order-created');
       } catch (error) {
         console.error('Erro ao processar PDV:', error);
-        toast.setToast({ text: 'Erro ao processar pedido PDV: ' + (error.message || 'Erro desconhecido'), type: 'error', time: 3000 });
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao processar pedido PDV: ' + (error.message || 'Erro desconhecido'),
+          type: 'error',
+          time: 3000
+        });
       } finally {
         this.isProcessing = false;
       }
@@ -481,6 +488,17 @@ export default {
 </script>
 
 <style scoped>
-.ticket-section-title { font-size: 18px; font-weight: 700; color: var(--black-text); font-family: var(--font-family-inter-bold); }
-.ticket-category-name { font-size: 16px; font-weight: 700; color: var(--primary); font-family: var(--font-family-inter-bold); }
+.ticket-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--black-text);
+  font-family: var(--font-family-inter-bold);
+}
+
+.ticket-category-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: var(--font-family-inter-bold);
+}
 </style>

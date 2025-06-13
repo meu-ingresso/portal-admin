@@ -1,22 +1,12 @@
 <template>
   <v-app v-if="isValid">
     <!-- Drawer in Mobile -->
-    <v-navigation-drawer
-      v-if="isMobile"
-      v-model="drawer"
-      clipped
-      app
-      class="navigation-drawer">
+    <v-navigation-drawer v-if="isMobile" v-model="drawer" clipped app class="navigation-drawer">
       <v-list dense nav>
         <v-list-item class="drawer-logo">
           <MobileLogo is-dark :click-to-home="true" />
         </v-list-item>
-        <v-list-item
-          v-for="item in filteredInternalTopBarItems"
-          :key="item.title"
-          :to="item.to"
-          router
-          exact
+        <v-list-item v-for="item in filteredInternalTopBarItems" :key="item.title" :to="item.to" router exact
           active-class="active-item">
           <v-list-item-icon>
             <v-icon>{{ item.icon }}</v-icon>
@@ -26,12 +16,8 @@
             <v-list-item-title>{{ item.title }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item
-          v-for="item in filteredExternalTopBarItems"
-          :key="'ext-'+item.title"
-          :href="item.to"
-          :target="item.target"
-          active-class="active-item">
+        <v-list-item v-for="item in filteredExternalTopBarItems" :key="'ext-' + item.title" :href="item.to"
+          :target="item.target" active-class="active-item">
           <v-list-item-icon>
             <v-icon>{{ item.icon }}</v-icon>
           </v-list-item-icon>
@@ -45,39 +31,23 @@
 
     <v-app-bar color="primary" clipped-left dense fixed app class="header">
       <div class="header-content">
-        <MenuLogo
-          class="header-img"
-          :click-to-home="true"
-          @change-drawer="onChangeDrawer" />
+        <MenuLogo class="header-img" :click-to-home="true" @change-drawer="onChangeDrawer" />
 
         <!-- Desktop -->
         <div v-if="!isMobile" class="content-menus">
           <div v-for="(item, index) in filteredInternalTopBarItems" :key="index" class="topbar-item">
-            <v-btn
-              :to="item.to"
-              class="topbar-button"
-              :title="item.title"
-              depressed
-              plain
-              tile>
+            <v-btn :to="item.to" class="topbar-button" :title="item.title" depressed plain tile>
               <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
             </v-btn>
           </div>
-          <div v-for="(item, index) in filteredExternalTopBarItems" :key="'ext-'+index" class="topbar-item">
-            <v-btn
-              :href="item.to"
-              :target="item.target"
-              class="topbar-button"
-              :title="item.title"
-              depressed
-              plain
-              tile>
+          <div v-for="(item, index) in filteredExternalTopBarItems" :key="'ext-' + index" class="topbar-item">
+            <v-btn :href="item.to" :target="item.target" class="topbar-button" :title="item.title" depressed plain tile>
               <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
             </v-btn>
           </div>
         </div>
         <v-spacer />
-        <AccountMenu v-if="!isLogin" />
+        <UserAccountMenu v-if="!isLogin" />
       </div>
     </v-app-bar>
 
@@ -88,12 +58,12 @@
 </template>
 
 <script>
-import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
+import { isMobileDevice } from '@/utils/utils';
 import { TopBar } from '~/utils/topbar';
-import { loading, permissions } from '@/store';
 
 export default {
   name: 'LayoutDefault',
+
   data() {
     return {
       isValid: false,
@@ -105,11 +75,12 @@ export default {
 
   computed: {
     isLoading() {
-      return loading.$isLoading;
+      return this.$store.getters['loading/$isLoading'];
     },
 
     isAdminOrManager() {
-      return isUserAdmin(this.$cookies) || isUserManager(this.$cookies);
+      const userRole = this.$store.state.auth.user?.role;
+      return userRole && (userRole.name === 'Admin' || userRole.name === 'Gerente');
     },
 
     isMobile() {
@@ -117,19 +88,19 @@ export default {
     },
 
     getUserToken() {
-      return this.$cookies.get('token');
+      return this.$auth.token;
     },
 
     getUserLogged() {
-      return !!this.$cookies.get('user_logged');
+      return this.$auth.loggedIn;
     },
-    
+
     getUserId() {
-      return this.$cookies.get('user_id');
+      return this.$auth.user?.id;
     },
-    
+
     getUserRole() {
-      return this.$cookies.get('user_role');
+      return this.$auth.user?.role;
     },
 
     topBarItems() {
@@ -149,19 +120,15 @@ export default {
   },
 
   async mounted() {
-    if (!this.getUserLogged || !this.getUserToken || this.getUserToken === '') {
-      this.$router.push('/login');
-    } else {
-      this.$set(this, 'isValid', true);
-      await this.filterMenuItemsByPermissions();
-    }
+    this.$set(this, 'isValid', true);
+    await this.filterMenuItemsByPermissions();
   },
 
   methods: {
     onChangeDrawer() {
       this.drawer = !this.drawer;
     },
-    
+
     async filterMenuItemsByPermissions() {
       try {
         if (!this.getUserId || !this.getUserRole) {
@@ -171,7 +138,7 @@ export default {
 
         // Admin e Gerente têm acesso a tudo
         if (this.isAdminOrManager) {
-          this.filteredItems = TopBar.filter(item => 
+          this.filteredItems = TopBar.filter(item =>
             // Se o item é 'Minha página' e o usuário é admin ou gerente, não mostrar
             !(item.title === 'Minha página' && this.isAdminOrManager)
           );
@@ -179,16 +146,16 @@ export default {
         }
 
         // Carregar as permissões do usuário se não existirem no cache ou se o cache expirou
-        if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
-          await permissions.loadUserPermissions({
+        if (this.$store.getters['permissions/$permissions'].length === 0 || !this.$store.getters['permissions/$isCacheValid']) {
+          await this.$store.dispatch('permissions/loadUserPermissions', {
             userId: this.getUserId,
             roleId: this.getUserRole.id
           });
         }
 
         // Se o usuário tem a permissão especial '*', permite tudo (exceto 'Minha página' para admin/gerente)
-        if (permissions.$hasAllPermissions) {
-          this.filteredItems = TopBar.filter(item => 
+        if (this.$store.getters['permissions/$hasAllPermissions']) {
+          this.filteredItems = TopBar.filter(item =>
             !(item.title === 'Minha página' && this.isAdminOrManager)
           );
           return;
@@ -207,12 +174,12 @@ export default {
           }
 
           // Verificar se o usuário tem pelo menos uma das permissões necessárias
-          return item.permissions.some(permission => 
-            permissions.$permissions.includes(permission)
+          return item.permissions.some(permission =>
+            this.$store.getters['permissions/$permissions'].includes(permission)
           );
         });
       } catch (error) {
-        console.error('Erro ao filtrar itens de menu:', error);
+        // console.error('Erro ao filtrar itens de menu:', error);
         this.filteredItems = [];
       }
     },

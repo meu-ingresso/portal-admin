@@ -67,11 +67,7 @@
       <div v-if="!disableMenu && canManageCoupon" class="coupon-section actions-section">
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
-            <v-icon
-              color="red"
-              v-bind="attrs"
-              v-on="on"
-              @click.stop="handleMenuAction('delete')">
+            <v-icon color="red" v-bind="attrs" v-on="on" @click.stop="handleMenuAction('delete')">
               mdi-delete
             </v-icon>
           </template>
@@ -158,11 +154,12 @@ export default {
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.id;
     },
 
     isAdmin() {
-      return isUserAdmin(this.$cookies);
+      const role = this.$store.state.auth.user?.role;
+      return role && role.name === 'Admin';
     },
 
     isEventPromoter() {

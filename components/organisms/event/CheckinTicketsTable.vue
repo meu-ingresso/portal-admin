@@ -1,22 +1,13 @@
 <template>
   <div class="mt-4">
-    <v-data-table
-      :headers="headers"
-      :items="customerTickets"
-      :loading="isLoading"
-      :server-items-length="meta.total"
-      :options.sync="options"
-      :footer-props="{
+    <v-data-table :headers="headers" :items="customerTickets" :loading="isLoading" :server-items-length="meta.total"
+      :options.sync="options" :footer-props="{
         itemsPerPageOptions: [50, 100, 200],
         itemsPerPageText: 'Participantes por página',
         pageText: '{0}-{1} de {2}',
         itemsPerPageAllText: 'Todos',
-      }"
-      :no-data-text="'Nenhum registro encontrado'"
-      :no-results-text="'Nenhum registro encontrado'"
-      :loading-text="'Carregando...'"
-      class="checkin-table"
-      @update:options="handleTableUpdate"
+      }" :no-data-text="'Nenhum registro encontrado'" :no-results-text="'Nenhum registro encontrado'"
+      :loading-text="'Carregando...'" class="checkin-table" @update:options="handleTableUpdate"
       @click:row="(item) => openPaymentDetails(item.payment.id)">
       <!-- Slot para filtros -->
       <template #top>
@@ -24,84 +15,40 @@
           <v-row class="align-center">
             <v-col cols="6">
               <!-- Campo de busca -->
-              <v-text-field
-                v-model="filters.search"
-                label="Buscar por nome ou identificador"
-                prepend-inner-icon="mdi-magnify"
-                clearable
-                hide-details="auto"
-                class="mr-4"
+              <v-text-field v-model="filters.search" label="Buscar por nome ou identificador"
+                prepend-inner-icon="mdi-magnify" clearable hide-details="auto" class="mr-4"
                 @input="handleFiltersChange" />
             </v-col>
             <v-col cols="6" class="d-flex justify-end align-center">
-              <DefaultButton
-                color="error"
-                class="mr-2"
-                text="Limpar Check-ins"
-                is-text
-                @click="showClearCheckinModal = true"
-              />
-              <TableFilter
-                :active-filters-count="activeFiltersCount"
-                @clear-filters="clearFilters">
+              <DefaultButton color="error" class="mr-2" text="Limpar Check-ins" is-text
+                @click="showClearCheckinModal = true" />
+              <TableFilter :active-filters-count="activeFiltersCount" @clear-filters="clearFilters">
                 <template #filter-content>
                   <v-row>
                     <!-- Filtro de período -->
                     <v-col cols="12">
                       <v-row>
                         <v-col cols="6">
-                          <v-menu
-                            v-model="startDateMenu"
-                            :close-on-content-click="false"
-                            transition="scale-transition"
-                            offset-y
-                            max-width="290px"
-                            min-width="290px">
+                          <v-menu v-model="startDateMenu" :close-on-content-click="false" transition="scale-transition"
+                            offset-y max-width="290px" min-width="290px">
                             <template #activator="{ on, attrs }">
-                              <v-text-field
-                                v-model="filters.startDate"
-                                label="Data inicial do check-in"
-                                readonly
-                                outlined
-                                dense
-                                v-bind="attrs"
-                                clearable
-                                hide-details="auto"
-                                v-on="on"
+                              <v-text-field v-model="filters.startDate" label="Data inicial do check-in" readonly
+                                outlined dense v-bind="attrs" clearable hide-details="auto" v-on="on"
                                 @click:clear="clearStartDate" />
                             </template>
-                            <v-date-picker
-                              v-model="filters.startDate"
-                              no-title
-                              locale="pt-br"
+                            <v-date-picker v-model="filters.startDate" no-title locale="pt-br"
                               @input="handleDateSelect('start')" />
                           </v-menu>
                         </v-col>
                         <v-col cols="6">
-                          <v-menu
-                            v-model="endDateMenu"
-                            :close-on-content-click="false"
-                            transition="scale-transition"
-                            offset-y
-                            max-width="290px"
-                            min-width="290px">
+                          <v-menu v-model="endDateMenu" :close-on-content-click="false" transition="scale-transition"
+                            offset-y max-width="290px" min-width="290px">
                             <template #activator="{ on, attrs }">
-                              <v-text-field
-                                v-model="filters.endDate"
-                                label="Data final do check-in"
-                                readonly
-                                outlined
-                                dense
-                                v-bind="attrs"
-                                clearable
-                                hide-details="auto"
-                                v-on="on"
+                              <v-text-field v-model="filters.endDate" label="Data final do check-in" readonly outlined
+                                dense v-bind="attrs" clearable hide-details="auto" v-on="on"
                                 @click:clear="clearEndDate" />
                             </template>
-                            <v-date-picker
-                              v-model="filters.endDate"
-                              no-title
-                              locale="pt-br"
+                            <v-date-picker v-model="filters.endDate" no-title locale="pt-br"
                               @input="handleDateSelect('end')" />
                           </v-menu>
                         </v-col>
@@ -110,28 +57,14 @@
 
                     <!-- Filtro de tipo de ingresso -->
                     <v-col cols="6">
-                      <v-select
-                        v-model="filters.ticketType"
-                        :items="ticketTypeOptions"
-                        label="Tipo de Ingresso"
-                        outlined
-                        dense
-                        clearable
-                        hide-details="auto"
-                        @change="handleFiltersChange" />
+                      <v-select v-model="filters.ticketType" :items="ticketTypeOptions" label="Tipo de Ingresso"
+                        outlined dense clearable hide-details="auto" @change="handleFiltersChange" />
                     </v-col>
 
                     <!-- Filtro de status de check-in -->
                     <v-col cols="6">
-                      <v-select
-                        v-model="filters.checkinStatus"
-                        :items="checkinStatusOptions"
-                        label="Status do Check-in"
-                        outlined
-                        dense
-                        clearable
-                        hide-details="auto"
-                        @change="handleFiltersChange" />
+                      <v-select v-model="filters.checkinStatus" :items="checkinStatusOptions" label="Status do Check-in"
+                        outlined dense clearable hide-details="auto" @change="handleFiltersChange" />
                     </v-col>
                   </v-row>
                 </template>
@@ -142,34 +75,19 @@
 
         <!-- Chips de filtros ativos -->
         <v-sheet v-if="activeFiltersCount" class="px-4 py-2 chip-filters">
-          <v-chip
-            v-if="filters.startDate || filters.endDate"
-            class="mr-2 chip-filter"
-            close
-            dark
-            color="primary"
+          <v-chip v-if="filters.startDate || filters.endDate" class="mr-2 chip-filter" close dark color="primary"
             @click:close="clearDates">
             <v-icon left small>mdi-calendar-range</v-icon>
             Período do check-in: {{ formatDateRange }}
           </v-chip>
 
-          <v-chip
-            v-if="filters.ticketType"
-            class="mr-2 chip-filter"
-            close
-            dark
-            color="primary"
+          <v-chip v-if="filters.ticketType" class="mr-2 chip-filter" close dark color="primary"
             @click:close="clearTicketType">
             <v-icon left small>mdi-ticket</v-icon>
             Tipo: {{ filters.ticketType }}
           </v-chip>
 
-          <v-chip
-            v-if="filters.checkinStatus"
-            class="mr-2 chip-filter" 
-            close
-            dark
-            color="primary"
+          <v-chip v-if="filters.checkinStatus" class="mr-2 chip-filter" close dark color="primary"
             @click:close="clearCheckinStatus">
             <v-icon left small>mdi-flag</v-icon>
             Status: {{ getCheckinStatusText(filters.checkinStatus) }}
@@ -189,10 +107,7 @@
 
       <!-- Pedido -->
       <template #[`item.payment_id`]="{ item }">
-        <span
-          v-if="item.payment?.id"
-          class="payment-link"
-          @click="openPaymentDetails(item.payment.id)">
+        <span v-if="item.payment?.id" class="payment-link" @click="openPaymentDetails(item.payment.id)">
           {{ item.payment.id }}
         </span>
         <span v-else>-</span>
@@ -217,12 +132,8 @@
       <!-- Ação -->
       <template #[`item.actions`]="{ item }">
         <div class="d-flex flex-column align-center">
-          <v-btn
-            small
-            :loading="validatingId === item.id"
-            class="validation-button"
-            :class="{ 'validation-button-validated': item.validated }"
-            @click.stop="toggleValidation(item)">
+          <v-btn small :loading="validatingId === item.id" class="validation-button"
+            :class="{ 'validation-button-validated': item.validated }" @click.stop="toggleValidation(item)">
             <template v-if="item.validated">
               <v-icon small color="white">mdi-check</v-icon>
             </template>
@@ -235,25 +146,15 @@
     </v-data-table>
 
     <!-- Modal de Detalhes do Pagamento -->
-    <PaymentDetailsModal
-      :show.sync="showPaymentDetails"
-      :payment-id="selectedPaymentId" />
+    <PaymentDetailsModal :show.sync="showPaymentDetails" :payment-id="selectedPaymentId" />
 
     <!-- Modal para limpar check-ins -->
-    <ClearCheckinModal
-      :show.sync="showClearCheckinModal"
-      :items="ticketTypeOptions"
-      item-text="text"
-      item-value="value"
-      :loading="isLoading"
-      mode="tickets"
-      @clear="handleClearCheckins"
-    />
+    <ClearCheckinModal :show.sync="showClearCheckinModal" :items="ticketTypeOptions" item-text="text" item-value="value"
+      :loading="isLoading" mode="tickets" @clear="handleClearCheckins" />
   </div>
 </template>
 
 <script>
-import { eventCustomerTickets, toast } from '@/store';
 import { formatDateTimeWithTimezone } from '@/utils/formatters';
 
 export default {
@@ -310,7 +211,7 @@ export default {
     customerTickets() {
       if (!this.eventId) return [];
 
-      return eventCustomerTickets.$customerTickets;
+      return this.$store.getters['eventCustomerTickets/$customerTickets'];
     },
 
     validatedCustomerTickets() {
@@ -318,13 +219,13 @@ export default {
     },
 
     meta() {
-      return eventCustomerTickets.$meta;
+      return this.$store.getters['eventCustomerTickets/$meta'];
     },
     isLoading() {
-      return eventCustomerTickets.$isLoading;
+      return this.$store.getters['eventCustomerTickets/$isLoading'];
     },
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.id;
     },
     eventId() {
       return this.$route.params.id;
@@ -363,7 +264,7 @@ export default {
         if (mode === 'all') {
 
           if (!this.validatedCustomerTickets.length) {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Nenhum check-in para limpar!',
               type: 'info',
               time: 5000,
@@ -372,13 +273,13 @@ export default {
           }
 
           const customerTicketIds = this.validatedCustomerTickets.map(ticket => ticket.id);
-          await eventCustomerTickets.bulkInvalidateCustomerTickets(customerTicketIds);
+          await this.$store.dispatch('eventCustomerTickets/bulkInvalidateCustomerTickets', customerTicketIds);
         } else {
           const ticketsNames = items.map(item => item.value);
           const filteredTickets = this.validatedCustomerTickets.filter(ticket => ticketsNames.includes(ticket?.ticket?.name));
 
           if (!filteredTickets.length) {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Nenhum check-in para limpar!',
               type: 'info',
               time: 5000,
@@ -388,11 +289,11 @@ export default {
 
           const customerTicketIds = filteredTickets.map(ticket => ticket.id);
 
-          await eventCustomerTickets.bulkInvalidateCustomerTickets(customerTicketIds);
+          await this.$store.dispatch('eventCustomerTickets/bulkInvalidateCustomerTickets', customerTicketIds);
         }
       } catch (error) {
         console.error('Erro ao limpar check-ins:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao limpar check-ins',
           type: 'error',
           time: 5000,
@@ -402,7 +303,7 @@ export default {
         await this.fetchCustomerTickets();
       }
     },
-    
+
     getTicketUserName(ticket) {
       if (ticket?.ticketFields?.length) {
         const nameField = ticket.ticketFields.find(
@@ -440,7 +341,7 @@ export default {
         ? `&where[validated][v]=${this.filters.checkinStatus === 'validated'}`
         : '';
 
-      await eventCustomerTickets.fetchAndPopulateByQuery(
+      await this.$store.dispatch('eventCustomerTickets/fetchAndPopulateByQuery',
         `${query}${searchQuery}${ticketTypeQuery}${dateQuery}${checkinStatusQuery}&preloads[]=ticketFields:checkoutField&preloads[]=ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=payment:status&whereHas[ticket][event_id][v]=${this.eventId}`
       );
     },
@@ -480,18 +381,18 @@ export default {
 
         if (ticket.validated) {
           // Desfazer validação
-          await eventCustomerTickets.invalidateCustomerTicket(ticket.id);
+          await this.$store.dispatch('eventCustomerTickets/invalidateCustomerTicket', ticket.id);
 
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Check-in desfeito com sucesso!',
             type: 'success',
             time: 5000,
           });
         } else {
           // Fazer validação
-          await eventCustomerTickets.validateCustomerTicket(ticket.id);
+          await this.$store.dispatch('eventCustomerTickets/validateCustomerTicket', ticket.id);
 
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Check-in realizado com sucesso!',
             type: 'success',
             time: 5000,
@@ -501,7 +402,7 @@ export default {
         // Atualiza a tabela após a ação
         await this.fetchCustomerTickets();
       } catch (error) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: ticket.validated
             ? 'Erro ao desfazer check-in'
             : 'Erro ao realizar check-in',
@@ -572,7 +473,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.chip-filters{
+.chip-filters {
   background-color: transparent !important;
 }
 
@@ -600,4 +501,3 @@ export default {
   }
 }
 </style>
-

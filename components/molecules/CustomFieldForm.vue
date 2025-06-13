@@ -173,8 +173,6 @@
 </template>
 
 <script>
-import { eventCustomFields } from '@/store';
-
 export default {
   props: {
     editIndex: {
@@ -241,6 +239,10 @@ export default {
   },
 
   computed: {
+    customFields() {
+      return this.$store.getters['eventCustomFields/$customFields'];
+    },
+
     isFieldTypeWithOptions() {
       return ['MENU_DROPDOWN', 'MULTI_CHECKBOX'].includes(this.localField.type);
     },
@@ -267,7 +269,7 @@ export default {
 
   created() {
     if (this.isEditing) {
-      const fieldToEdit = eventCustomFields.$customFields[this.editIndex];
+      const fieldToEdit = this.customFields[this.editIndex];
       this.localField = {
         ...fieldToEdit,
         tickets: fieldToEdit.tickets.filter((ticket) => !ticket._deleted),
@@ -276,17 +278,17 @@ export default {
   },
 
   methods: {
-    handleSubmit() {
+    async handleSubmit() {
       try {
         if (!this.$refs.form.validate() || !this.validateOptions()) return false;
 
         if (this.isEditing) {
-          eventCustomFields.updateField({
+          await this.$store.dispatch('eventCustomFields/updateField', {
             index: this.editIndex,
             field: this.localField,
           });
         } else {
-          eventCustomFields.addField(this.localField);
+          await this.$store.dispatch('eventCustomFields/addField', this.localField);
         }
 
         return true;

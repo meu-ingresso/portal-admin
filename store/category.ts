@@ -1,4 +1,3 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
 
@@ -27,47 +26,44 @@ function buildSearchParams({
   return params;
 }
 
-@Module({
-  name: 'category',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Category extends VuexModule {
-  private categoryList = [];
-  private isLoading: boolean = false;
+interface CategoryState {
+  categoryList: any[];
+  isLoading: boolean;
+}
 
-  public get $categoryList() {
-    return this.categoryList;
-  }
+export const state = (): CategoryState => ({
+  categoryList: [],
+  isLoading: false,
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $categoryList: (state: CategoryState) => state.categoryList,
+  $isLoading: (state: CategoryState) => state.isLoading,
+};
 
-  @Mutation
-  private SET_CATEGORY_LIST(data: any) {
-    this.categoryList = data;
-  }
+export const mutations = {
+  SET_CATEGORY_LIST(state: CategoryState, data: any) {
+    state.categoryList = data;
+  },
 
-  @Mutation
-  private SET_IS_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
+  SET_IS_LOADING(state: CategoryState, value: boolean) {
+    state.isLoading = value;
+  },
+};
 
-  @Action
-  public setLoading(value: boolean) {
-    this.context.commit('SET_IS_LOADING', value);
-  }
+export const actions = {
+  setLoading({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING', value);
+  },
 
-  @Action
-  public async fetchCategories({
+  async fetchCategories({ commit, dispatch }: any, {
     page = 1,
     limit = 12,
     search,
     sortBy,
     sortDesc,
   }: SearchPayload) {
-    this.setLoading(true);
+    dispatch('setLoading', true);
 
     const params = buildSearchParams({ page, limit, search, sortBy, sortDesc });
 
@@ -77,7 +73,7 @@ export default class Category extends VuexModule {
       throw new Error('Invalid response format');
     }
 
-    this.context.commit('SET_CATEGORY_LIST', response.body.result.data);
+    commit('SET_CATEGORY_LIST', response.body.result.data);
     return response;
-  }
-}
+  },
+};

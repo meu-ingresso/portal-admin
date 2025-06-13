@@ -4,85 +4,50 @@
     <CategoryTicketsStats ref="categoryStats" />
 
     <template v-if="getTickets?.length === 0">
-      <EmptyState
-        title="Ainda não há ingressos"
-        subtitle="Uma vez criados, seus ingressos aparecerão aqui"
+      <EmptyState title="Ainda não há ingressos" subtitle="Uma vez criados, seus ingressos aparecerão aqui"
         icon="mdi-ticket">
         <template #action>
-          <DefaultButton
-            text="Adicionar ingresso"
-            icon="mdi-plus"
-            class="mt-6"
-            @click="openAddTicketModal" />
+          <DefaultButton text="Adicionar ingresso" icon="mdi-plus" class="mt-6" @click="openAddTicketModal" />
         </template>
       </EmptyState>
     </template>
 
     <template v-else>
-      <StatisticList :statistics="getCurrentStatistics" :title="getStatisticsTitle"/>
+      <StatisticList :statistics="getCurrentStatistics" :title="getStatisticsTitle" />
       <div class="d-flex justify-space-between align-center">
         <div class="template-title">Lista de ingressos</div>
-        <SplitButton
-          text="Adicionar"
-          :items="[
-            { text: 'Nova categoria', action: 'new-category' }
-          ]"
-          @click="openAddTicketModal"
-          @item-click="handleSplitButtonActions" />
+        <SplitButton text="Adicionar" :items="[
+          { text: 'Nova categoria', action: 'new-category' }
+        ]" @click="openAddTicketModal" @item-click="handleSplitButtonActions" />
       </div>
 
       <div class="mt-6">
-        <FilterButtons
-          :filters="getFilterList"
-          :selected="selectedFilter"
-          @filter-selected="handleFilterChange" />
+        <FilterButtons :filters="getFilterList" :selected="selectedFilter" @filter-selected="handleFilterChange" />
       </div>
 
       <v-tabs-items v-model="selectedCategoryTab" class="bg-transparent">
         <!-- Tab: Todos os ingressos -->
         <v-tab-item key="all">
-          <EventTickets
-            :event-id="getEvent.id"
-            title="Lista de ingressos"
-            :disable-title="true"
-            :disable-add-ticket="true"/>
+          <EventTickets :event-id="getEvent.id" title="Lista de ingressos" :disable-title="true"
+            :disable-add-ticket="true" />
         </v-tab-item>
 
         <!-- Tab: Ingressos sem categoria -->
         <v-tab-item key="uncategorized">
-          <EventTickets
-            v-if="getUncategorizedTickets.length > 0"
-            :event-id="getEvent.id"
-            :custom-tickets="getUncategorizedTickets"
-            :disable-title="true"
-            :disable-add-ticket="true"
-            :disable-hover="true"
-            />
-          <EmptyState
-            v-else
-            title="Sem ingressos nesta categoria"
-            subtitle="Todos os ingressos possuem categoria atribuída"
-            icon="mdi-ticket"
-            class="mt-4" />
+          <EventTickets v-if="getUncategorizedTickets.length > 0" :event-id="getEvent.id"
+            :custom-tickets="getUncategorizedTickets" :disable-title="true" :disable-add-ticket="true"
+            :disable-hover="true" />
+          <EmptyState v-else title="Sem ingressos nesta categoria"
+            subtitle="Todos os ingressos possuem categoria atribuída" icon="mdi-ticket" class="mt-4" />
         </v-tab-item>
 
         <!-- Tabs: Para cada categoria -->
-        <v-tab-item
-          v-for="category in getTicketCategories"
-          :key="category.value">
-          <EventTickets
-            v-if="getTicketsByCategory(category.value).length > 0"
-            :event-id="getEvent.id"
-            :custom-tickets="getTicketsByCategory(category.value)"
-            :disable-title="true"
-            :disable-add-ticket="true"
-            :disable-hover="true"/>
-          <EmptyState
-            v-else
-            title="Sem ingressos nesta categoria"
-            subtitle="Adicione ingressos ou atribua existentes a esta categoria"
-            icon="mdi-ticket"
-            class="mt-4" />
+        <v-tab-item v-for="category in getTicketCategories" :key="category.value">
+          <EventTickets v-if="getTicketsByCategory(category.value).length > 0" :event-id="getEvent.id"
+            :custom-tickets="getTicketsByCategory(category.value)" :disable-title="true" :disable-add-ticket="true"
+            :disable-hover="true" />
+          <EmptyState v-else title="Sem ingressos nesta categoria"
+            subtitle="Adicione ingressos ou atribua existentes a esta categoria" icon="mdi-ticket" class="mt-4" />
         </v-tab-item>
       </v-tabs-items>
 
@@ -98,24 +63,14 @@
 
           <v-card-text>
             <v-form ref="categoryForm" v-model="isCategoryFormValid">
-              <v-text-field
-                v-model="newCategoryName"
-                label="Nome da categoria"
-                placeholder="Ex: VIP, Pista, Camarote"
-                :rules="categoryRules"
-                outlined
-                dense />
+              <v-text-field v-model="newCategoryName" label="Nome da categoria" placeholder="Ex: VIP, Pista, Camarote"
+                :rules="categoryRules" outlined dense />
             </v-form>
           </v-card-text>
 
           <v-card-actions class="d-flex justify-space-between py-4 px-4">
-            <DefaultButton
-              outlined
-              text="Cancelar"
-              @click="showAddCategoryDialog = false" />
-            <DefaultButton
-              text="Adicionar"
-              :disabled="!isCategoryFormValid || !newCategoryName"
+            <DefaultButton outlined text="Cancelar" @click="showAddCategoryDialog = false" />
+            <DefaultButton text="Adicionar" :disabled="!isCategoryFormValid || !newCategoryName"
               @click="addNewCategory" />
           </v-card-actions>
         </v-card>
@@ -133,25 +88,13 @@
         </v-card-title>
 
         <v-card-text class="px-4">
-          <TicketForm
-            v-if="showAddDialog"
-            ref="ticketForm"
-            :nomenclature="'Ingresso'"
-            :event-id="getEvent.id" />
+          <TicketForm v-if="showAddDialog" ref="ticketForm" :nomenclature="'Ingresso'" :event-id="getEvent.id" />
         </v-card-text>
 
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            :disabled="isAddingTicket"
-            @click="handleCloseAddDialog" />
+          <DefaultButton outlined text="Cancelar" :disabled="isAddingTicket" @click="handleCloseAddDialog" />
 
-          <DefaultButton
-            text="Salvar"
-            :is-loading="isAddingTicket"
-            :disabled="isAddingTicket"
-            @click="submitAdd" />
+          <DefaultButton text="Salvar" :is-loading="isAddingTicket" :disabled="isAddingTicket" @click="submitAdd" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -160,7 +103,6 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { eventGeneralInfo, eventTickets, toast } from '@/store';
 
 export default {
   data() {
@@ -192,11 +134,11 @@ export default {
     },
 
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     getTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
 
     getFilterList() {
@@ -208,7 +150,7 @@ export default {
     },
 
     getTicketCategories() {
-      return eventTickets.$ticketCategories || [];
+      return this.$store.getters['eventTickets/$ticketCategories'] || [];
     },
 
     // Ingressos sem categoria
@@ -237,12 +179,12 @@ export default {
       if (this.selectedCategoryTab === 0) {
         return this.getGeneralStatistics();
       }
-      
+
       // Estatísticas para ingressos sem categoria
       else if (this.selectedCategoryTab === 1) {
         return this.getUncategorizedStatistics();
       }
-      
+
       // Estatísticas para categoria específica
       else {
         const index = this.selectedCategoryTab - 2;
@@ -296,7 +238,7 @@ export default {
       this.selectedFilter = filter;
       this.selectedCategoryTab = this.getFilterList.findIndex(f => f.name === filter.name);
     },
-    
+
     getUncategorizedStatistics() {
       return this.$refs.categoryStats.calculateUncategorizedStats(this.getUncategorizedTickets);
     },
@@ -322,14 +264,14 @@ export default {
 
     // Verifica se uma categoria tem ingressos
     categoryHasTickets(categoryValue) {
-      return this.getTickets.some(ticket => 
+      return this.getTickets.some(ticket =>
         ticket.category && ticket.category.value === categoryValue
       );
     },
 
     // Obtém ingressos por categoria
     getTicketsByCategory(categoryValue) {
-      return this.getTickets.filter(ticket => 
+      return this.getTickets.filter(ticket =>
         ticket.category && ticket.category.value === categoryValue
       );
     },
@@ -341,14 +283,14 @@ export default {
         const { success, error } = await ticketForm.handleSubmit(true);
         if (success) {
           this.showAddDialog = false;
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Ingresso adicionado com sucesso!`,
             type: 'success',
             time: 5000,
           });
         } else {
           console.log('[INSERÇÃO - TicketForm] Erro de validação', error);
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Erro ao adicionar ingresso`,
             type: 'error',
             time: 5000,
@@ -371,7 +313,7 @@ export default {
         );
 
         if (categoryExists) {
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `A categoria "${this.newCategoryName}" já existe`,
             type: 'error',
             time: 5000,
@@ -380,12 +322,12 @@ export default {
         }
 
         // Criar nova categoria e adicionar ao store
-        await eventTickets.createTicketCategory({
+        await this.$store.dispatch('eventTickets/createTicketCategory', {
           eventId: this.getEvent.id,
           category: this.newCategoryName
         });
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Categoria "${this.newCategoryName}" adicionada com sucesso!`,
           type: 'success',
           time: 5000,
@@ -397,7 +339,7 @@ export default {
 
       } catch (error) {
         console.error('[INSERÇÃO - Categoria] Erro:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Erro ao adicionar categoria`,
           type: 'error',
           time: 5000,

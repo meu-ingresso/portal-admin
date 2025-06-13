@@ -110,7 +110,6 @@
 </template>
 
 <script>
-import { userAddress } from '@/store';
 import { onFormatCEP } from '@/utils/formatters';
 
 export default {
@@ -149,11 +148,11 @@ export default {
   },
   computed: {
     isLoading() {
-      return userAddress.$isLoading;
+      return this.$store.getters['userAddress/$isLoading'];
     },
 
     currentAddress() {
-      return userAddress.$address || {};
+      return this.$store.getters['userAddress/$address'] || {};
     },
 
     isAddressFilled() {
@@ -189,7 +188,7 @@ export default {
       immediate: true,
       handler(newId) {
         if (newId) {
-          userAddress.fetchUserAddress(newId);
+          this.$store.dispatch('userAddress/fetchUserAddress', newId);
         }
       }
     },
@@ -214,14 +213,14 @@ export default {
     localNumber: {
       handler(newValue) {
         if (newValue !== undefined && newValue !== this.currentAddress.number && newValue !== '') {
-          userAddress.updateAddress({ number: newValue });
+          this.$store.dispatch('userAddress/updateAddress', { number: newValue });
         }
       },
     },
     localComplement: {
       handler(newValue) {
         if (newValue !== undefined && newValue !== this.currentAddress.complement && newValue !== '') {
-          userAddress.updateAddress({ complement: newValue });
+          this.$store.dispatch('userAddress/updateAddress', { complement: newValue });
         }
       },
     },
@@ -229,9 +228,9 @@ export default {
       handler(newValue) {
         if (!newValue && this.isApiZipcode) {
           this.isApiZipcode = false;
-          userAddress.updateAddress({ zipcode: '', isApiZipcode: false });
+          this.$store.dispatch('userAddress/updateAddress', { zipcode: '', isApiZipcode: false });
         } else if (newValue !== undefined && newValue !== this.currentAddress.zipcode && newValue !== '') {
-          userAddress.updateAddress({ zipcode: newValue });
+          this.$store.dispatch('userAddress/updateAddress', { zipcode: newValue });
         }
       },
     },
@@ -261,7 +260,7 @@ export default {
       
       // Quando o usuário edita o CEP manualmente, atualizamos o estado no store
       if (this.localZipcode !== this.currentAddress.zipcode) {
-        userAddress.updateAddress({ 
+        this.$store.dispatch('userAddress/updateAddress', { 
           zipcode: this.localZipcode,
           isApiZipcode: false // Marcamos como não vindo da API, pois o usuário editou manualmente
         });
@@ -374,7 +373,7 @@ export default {
         }
         
         // Atualizar dados do endereço
-        userAddress.updateAddress({
+        this.$store.dispatch('userAddress/updateAddress', {
           street: addressComponents.street || '',
           neighborhood: addressComponents.neighborhood || '',
           city: addressComponents.city || '',

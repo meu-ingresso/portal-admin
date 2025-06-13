@@ -203,7 +203,6 @@
 </template>
 
 <script>
-import { user, userAddress, toast } from '@/store';
 import { $axios } from '@/utils/nuxt-instance';
 import { onFormatCNPJ, onFormatCPF, onFormatCEP, onFormatCellphone, formatDateToBr } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
@@ -258,11 +257,11 @@ export default {
     },
     
     people() {
-      return user.$user?.people || {};
+      return this.$store.getters['user/$user']?.people || {};
     },
     
     currentAddress() {
-      return userAddress.$address || {};
+      return this.$store.getters['userAddress/$address'] || {};
     },
 
     formatAddress() {
@@ -299,8 +298,8 @@ export default {
     },
 
     loadUserData() {
-      if (user.$user?.people?.id) {
-        userAddress.fetchUserAddress(user.$user.people.id);
+      if (this.$store.getters['user/$user']?.people?.id) {
+        this.$store.dispatch('userAddress/fetchUserAddress', this.$store.getters['user/$user'].people.id);
       }
     },
 
@@ -362,10 +361,10 @@ export default {
           return;
         }
 
-        const peopleId = user.$user.people_id;
+        const peopleId = this.$store.getters['user/$user'].people_id;
         
         // Atualiza as informações do usuário
-        await user.updatePeople({
+        await this.$store.dispatch('user/updatePeople', {
           id: peopleId,
           tax: this.formData.cpf,
           phone: this.formData.phone,
@@ -374,7 +373,7 @@ export default {
         
         // Atualiza ou cria o endereço
         if (this.currentAddress && this.currentAddress.id) {
-          await userAddress.updateUserAddress({
+          await this.$store.dispatch('userAddress/updateUserAddress', {
             addressId: this.currentAddress.id,
             data: {
               ...this.formData.address,
@@ -382,13 +381,13 @@ export default {
             }
           });
         } else {
-          await userAddress.createUserAddress({
+          await this.$store.dispatch('userAddress/createUserAddress', {
             ...this.formData.address,
             zipcode: this.formData.zipcode
           });
         }
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Informações de comprador atualizadas com sucesso!',
           type: 'success',
           time: 5000,
@@ -399,7 +398,7 @@ export default {
       } catch (error) {
         console.error('Erro ao atualizar informações de comprador:', error);
         
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao atualizar informações. Tente novamente.',
           type: 'error',
           time: 5000,

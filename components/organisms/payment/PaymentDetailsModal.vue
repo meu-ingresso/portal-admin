@@ -1,10 +1,5 @@
 <template>
-  <v-dialog
-    :value="show"
-    max-width="960px"
-    :fullscreen="isMobile"
-    persistent
-    content-class="secondary-dialog"
+  <v-dialog :value="show" max-width="960px" :fullscreen="isMobile" persistent content-class="secondary-dialog"
     @input="$emit('update:show', $event)">
     <v-card :tile="isMobile">
       <v-card-title class="d-flex justify-space-between align-center">
@@ -15,11 +10,7 @@
       </v-card-title>
 
       <v-card-text class="pt-4">
-        <Lottie
-          v-if="isLoading"
-          path="./animations/loading_default.json"
-          height="300"
-          width="300" />
+        <Lottie v-if="isLoading" path="./animations/loading_default.json" height="300" width="300" />
 
         <template v-else>
           <!-- Informações do Pagamento -->
@@ -35,10 +26,7 @@
               <v-col cols="6">
                 <div class="info-label">Status</div>
                 <div class="info-value">
-                  <v-chip
-                    small
-                    :color="getStatusColor(payment.status?.name)"
-                    text-color="white">
+                  <v-chip small :color="getStatusColor(payment.status?.name)" text-color="white">
                     {{ payment.status?.name }}
                   </v-chip>
                 </div>
@@ -138,10 +126,7 @@
                     <td>{{ ticket.ticket?.name }}</td>
                     <td>{{ ticket.ticket_identifier }}</td>
                     <td>
-                      <v-chip
-                        x-small
-                        :color="ticket.validated ? 'green' : 'orange'"
-                        text-color="white">
+                      <v-chip x-small :color="ticket.validated ? 'green' : 'orange'" text-color="white">
                         {{ ticket.validated ? 'Validado' : 'Não Validado' }}
                       </v-chip>
                     </td>
@@ -152,11 +137,7 @@
                       <v-tooltip bottom>
                         <template #activator="{ on, attrs }">
                           <div v-bind="attrs" v-on="on">
-                            <v-btn
-                              x-small
-                              :disabled="!is24HoursOrMoreBeforeEventStart"
-                              icon
-                              color="primary"
+                            <v-btn x-small :disabled="!is24HoursOrMoreBeforeEventStart" icon color="primary"
                               @click="openTicketEditModal(ticket)">
                               <v-icon small>mdi-pencil</v-icon>
                             </v-btn>
@@ -164,7 +145,8 @@
                         </template>
                         <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
                         <span v-else>
-                          Não é possível editar participantes de eventos que já aconteceram ou estão a menos de 24 horas do início
+                          Não é possível editar participantes de eventos que já aconteceram ou estão a menos de 24 horas
+                          do início
                         </span>
                       </v-tooltip>
                     </td>
@@ -176,62 +158,37 @@
           <v-divider />
           <div class="tickets-actions d-flex align-center justify-space-between mt-4">
             <div class="d-flex align-center">
-              <ButtonWithIcon
-                text="Cancelar pedido"
-                outlined
-                color="error"
-                :loading="isCancelling"
-                icon="mdi-cancel"
-                class="ml-2"
-                @click="showCancelConfirmation" />
+              <ButtonWithIcon text="Cancelar pedido" outlined color="error" :loading="isCancelling" icon="mdi-cancel"
+                class="ml-2" @click="showCancelConfirmation" />
             </div>
 
             <div class="d-flex justify-end">
-              <ButtonWithIcon
-                text="Reenviar ingressos"
-                outlined
-                :loading="isResending"
-                icon="mdi-email"
-                class="mr-2"
+              <ButtonWithIcon text="Reenviar ingressos" outlined :loading="isResending" icon="mdi-email" class="mr-2"
                 @click="resendTickets" />
 
-              <ButtonWithIcon
-                text="Imprimir ingressos"
-                outlined
-                :loading="isPrinting"
-                icon="mdi-printer"
+              <ButtonWithIcon text="Imprimir ingressos" outlined :loading="isPrinting" icon="mdi-printer"
                 @click="generatePDF" />
             </div>
           </div>
         </template>
       </v-card-text>
     </v-card>
-    
+
     <!-- Modal de Edição de Campos do Ingresso -->
-    <TicketFieldsEditModal
-      :show="showTicketFieldsEditModal"
-      :customer-ticket-id="selectedTicketId"
-      @update:show="showTicketFieldsEditModal = $event"
-      @fields-updated="handleTicketFieldsUpdated" />
-      
+    <TicketFieldsEditModal :show="showTicketFieldsEditModal" :customer-ticket-id="selectedTicketId"
+      @update:show="showTicketFieldsEditModal = $event" @fields-updated="handleTicketFieldsUpdated" />
+
     <!-- Modal de Confirmação de Cancelamento -->
-    <ConfirmDialog
-      v-model="showCancelDialog"
-      title="Cancelar Pedido"
+    <ConfirmDialog v-model="showCancelDialog" title="Cancelar Pedido"
       message="Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita."
-      confirm-text="Sim, cancelar"
-      cancel-text="Não, voltar"
-      confirm-color="error"
-      :loading="isCancelling"
-      @cancel="showCancelDialog = $event"
-      @confirm="cancelOrder" />
+      confirm-text="Sim, cancelar" cancel-text="Não, voltar" confirm-color="error" :loading="isCancelling"
+      @cancel="showCancelDialog = $event" @confirm="cancelOrder" />
   </v-dialog>
 </template>
 
 <script>
 import { TicketPdfGenerator } from '@/services/pdf/ticketPdfGenerator';
 import { formatDateTimeWithTimezone, formatRealValue } from '@/utils/formatters';
-import { payment, eventCustomerTickets, toast, permissions } from '@/store';
 import { isMobileDevice, getPaymentMethod, is24HoursOrMoreBeforeDate } from '@/utils/utils';
 
 export default {
@@ -261,7 +218,7 @@ export default {
   computed: {
 
     getUserEventPermissions() {
-      return permissions.$eventPermissions;
+      return this.$store.getters['permissions/$eventPermissions'];
     },
 
     canCancelOrder() {
@@ -273,7 +230,7 @@ export default {
     },
 
     getEvent() {
-      const filteredCustomerTicket = eventCustomerTickets.$customerTickets.find(
+      const filteredCustomerTicket = this.$store.getters['eventCustomerTickets/$customerTickets'].find(
         (customerTicket) => customerTicket.payment_id === this.paymentId
       );
 
@@ -286,22 +243,22 @@ export default {
     },
 
     isLoading() {
-      return payment.$isLoading;
+      return this.$store.getters['payment/$isLoading'];
     },
     payment() {
-      return payment.$payment || {};
+      return this.$store.getters['payment/$payment'] || {};
     },
     relatedTickets() {
-      return payment.$relatedTickets;
+      return this.$store.getters['payment/$relatedTickets'];
     },
   },
 
   watch: {
     show(newValue) {
       if (newValue && this.paymentId) {
-        payment.fetchPaymentDetails(this.paymentId);
+        this.$store.dispatch('payment/fetchPaymentDetails', this.paymentId);
       } else if (!newValue) {
-        payment.resetPaymentDetails();
+        this.$store.dispatch('payment/resetPaymentDetails');
       }
     },
   },
@@ -328,14 +285,14 @@ export default {
       try {
         this.isResending = true;
         // @TODO: Implementar lógica de reenvio
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Ingressos reenviados com sucesso!',
           type: 'success',
           time: 5000,
         });
       } catch (error) {
         console.error('Erro ao reenviar ingressos:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao reenviar ingressos',
           type: 'error',
           time: 5000,
@@ -353,7 +310,7 @@ export default {
       try {
         this.isCancelling = true;
         // @TODO: Implementar lógica de cancelamento
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Pedido cancelado com sucesso!',
           type: 'success',
           time: 5000,
@@ -362,7 +319,7 @@ export default {
         this.close();
       } catch (error) {
         console.error('Erro ao cancelar pedido:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao cancelar pedido',
           type: 'error',
           time: 5000,
@@ -383,7 +340,7 @@ export default {
         await pdfGenerator.generate();
       } catch (error) {
         console.error('Erro ao gerar PDF:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao gerar PDF dos ingressos',
           type: 'error',
           time: 5000,
@@ -397,11 +354,11 @@ export default {
       this.selectedTicketId = ticket.id;
       this.showTicketFieldsEditModal = true;
     },
-    
+
     handleTicketFieldsUpdated() {
       // Recarregar os dados do pagamento para refletir as alterações
-      payment.fetchPaymentDetails(this.paymentId);
-      toast.setToast({
+      this.$store.dispatch('payment/fetchPaymentDetails', this.paymentId);
+      this.$store.dispatch('toast/setToast', {
         text: 'Dados do ingresso atualizados com sucesso!',
         type: 'success',
         time: 5000,

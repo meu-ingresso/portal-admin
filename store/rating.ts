@@ -1,48 +1,44 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { SearchPayload } from '~/models';
 
-@Module({
-  name: 'rating',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Rating extends VuexModule {
-  private ratingList = [];
-  private isLoading: boolean = false;
+interface RatingState {
+  ratingList: any[];
+  isLoading: boolean;
+}
 
-  public get $ratingList() {
-    return this.ratingList;
-  }
+export const state = (): RatingState => ({
+  ratingList: [],
+  isLoading: false,
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $ratingList: (state: RatingState) => state.ratingList,
+  $isLoading: (state: RatingState) => state.isLoading,
+};
 
-  @Mutation
-  private SET_RATING_LIST(data: any) {
-    this.ratingList = data;
-  }
+export const mutations = {
+  SET_RATING_LIST(state: RatingState, data: any) {
+    state.ratingList = data;
+  },
 
-  @Mutation
-  private SET_IS_LOADING(value: boolean) {
-    this.isLoading = value;
-  }
+  SET_IS_LOADING(state: RatingState, value: boolean) {
+    state.isLoading = value;
+  },
+};
 
-  @Action
-  public setLoading(value: boolean) {
-    this.context.commit('SET_IS_LOADING', value);
-  }
+export const actions = {
+  setLoading({ commit }: any, value: boolean) {
+    commit('SET_IS_LOADING', value);
+  },
 
-  @Action
-  public async fetchRatings({
+  async fetchRatings({ commit, dispatch }: any, {
     page = 1,
     limit = 12,
     search,
     sortBy,
     sortDesc,
   }: SearchPayload) {
-    this.setLoading(true);
+    dispatch('setLoading', true);
 
     const params = new URLSearchParams();
 
@@ -67,17 +63,17 @@ export default class Rating extends VuexModule {
         if (response.body && response.body.code !== 'SEARCH_SUCCESS')
           throw new Error(response);
 
-        this.setLoading(false);
-        this.context.commit('SET_RATING_LIST', response.body.result.data);
+        dispatch('setLoading', false);
+        commit('SET_RATING_LIST', response.body.result.data);
         return response;
       })
       .catch(() => {
-        this.setLoading(false);
+        dispatch('setLoading', false);
         return {
           data: 'Error',
           code: 'FIND_NOTFOUND',
           total: 0,
         };
       });
-  }
-}
+  },
+};

@@ -40,7 +40,6 @@
 </template>
 
 <script>
-import { loading, eventGeneralInfo } from '@/store';
 import { reportsSideBar } from '@/utils/reports-sidebar';
 import { isMobileDevice } from '@/utils/utils';
 
@@ -85,7 +84,7 @@ export default {
     },
 
     isLoading() {
-      return loading.$isLoading;
+      return this.$store.getters['loading/$isLoading'];
     },
 
     getSelectItems() {
@@ -135,7 +134,8 @@ export default {
       // Se não tiver informações explícitas, vamos checar os eventos com o mesmo grupo
       if (this.selectedEvent.groups && this.selectedEvent.groups.length > 0) {
         const groupId = this.selectedEvent.groups[0].id;
-        const eventsInGroup = eventGeneralInfo.$eventList.filter(event => 
+        const eventList = this.$store.getters['eventGeneralInfo/$eventList'];
+        const eventsInGroup = eventList.filter(event => 
           event.groups && 
           event.groups.length > 0 && 
           event.groups[0].id === groupId

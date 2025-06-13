@@ -1,4 +1,4 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
+
 import { $axios } from '@/utils/nuxt-instance';
 import { handleDeleteResponse, handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 
@@ -15,14 +15,27 @@ export interface UserAddressPayload {
   isApiZipcode?: boolean;
 }
 
-@Module({
-  name: 'userAddress',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class UserAddress extends VuexModule {
-  private isLoading: boolean = false;
-  private address = {
+interface UserAddressState {
+  isLoading: boolean;
+  address: {
+    id: string;
+    street: string;
+    number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipcode: string;
+    latitude: number | null;
+    longitude: number | null;
+    deleted_at: string | null;
+    isApiZipcode: boolean;
+  };
+}
+
+export const state = (): UserAddressState => ({
+  isLoading: false,
+  address: {
     id: '',
     street: '',
     number: '',
@@ -34,43 +47,38 @@ export default class UserAddress extends VuexModule {
     latitude: null,
     longitude: null,
     deleted_at: null,
-    isApiZipcode: false
-  };
+    isApiZipcode: false,
+  },
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
-
-  public get $address() {
-    return this.address;
-  }
-
-  public get $addressIsValid() {
-    const { street, number, neighborhood, city, state, zipcode } = this.address;
+export const getters = {
+  $isLoading: (state: UserAddressState) => state.isLoading,
+  $address: (state: UserAddressState) => state.address,
+  $addressIsValid: (state: UserAddressState) => {
+    const { street, number, neighborhood, city, state: addressState, zipcode } = state.address;
 
     return Boolean(
       street && street !== '' &&
       number && number !== '' &&
       neighborhood && neighborhood !== '' &&
       city && city !== '' &&
-      state && state !== '' &&
+      addressState && addressState !== '' &&
       zipcode && zipcode !== ''
     );
-  }
+  },
+};
 
-  @Mutation
-  private SET_LOADING(payload: boolean) {
-    this.isLoading = payload;
-  }
+export const mutations = {
+  SET_LOADING(state: UserAddressState, payload: boolean) {
+    state.isLoading = payload;
+  },
 
-  @Mutation
-  private SET_ADDRESS(payload: any) {
-    this.address = { ...this.address, ...payload };
-  }
+  SET_ADDRESS(state: UserAddressState, payload: any) {
+    state.address = { ...state.address, ...payload };
+  },
 
-  @Mutation
-  private RESET_ADDRESS() {
-    this.address = {
+  RESET_ADDRESS(state: UserAddressState) {
+    state.address = {
       id: '',
       street: '',
       number: '',
@@ -82,24 +90,23 @@ export default class UserAddress extends VuexModule {
       latitude: null,
       longitude: null,
       deleted_at: null,
-      isApiZipcode: false
+      isApiZipcode: false,
     };
-  }
+  },
+};
 
-  @Action
-  public updateAddress(payload: Partial<UserAddressPayload>) {
-    this.context.commit('SET_ADDRESS', payload);
-  }
+export const actions = {
+  updateAddress({ commit }: any, payload: Partial<UserAddressPayload>) {
+    commit('SET_ADDRESS', payload);
+  },
 
-  @Action
-  public resetAddress() {
-    this.context.commit('RESET_ADDRESS');
-  }
+  resetAddress({ commit }: any) {
+    commit('RESET_ADDRESS');
+  },
 
-  @Action
-  public async fetchUserAddress(peopleId: string) {
+  async fetchUserAddress({ commit, state }: any, peopleId: string) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       if (!peopleId) {
         throw new Error('ID de pessoa não encontrado');
@@ -110,11 +117,11 @@ export default class UserAddress extends VuexModule {
 
       if (data && data.length > 0 && data[0].address) {
         const address = data[0].address;
-        const isApiZipcode = this.address.isApiZipcode !== undefined ? 
-          this.address.isApiZipcode : 
+        const isApiZipcode = state.address.isApiZipcode !== undefined ? 
+          state.address.isApiZipcode : 
           !!address.zipcode;
         
-        this.context.commit('SET_ADDRESS', {
+        commit('SET_ADDRESS', {
           ...address,
           isApiZipcode
         });
@@ -125,14 +132,13 @@ export default class UserAddress extends VuexModule {
       console.error('Erro ao buscar endereço do usuário:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async createUserAddress(payload: UserAddressPayload) {
+  async createUserAddress({ commit }: any, payload: UserAddressPayload) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const { ...addressData } = payload;
 
@@ -163,14 +169,13 @@ export default class UserAddress extends VuexModule {
       console.error('Erro ao criar endereço do usuário:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async updateUserAddress(payload: { addressId: string, data: Partial<UserAddressPayload> }) {
+  async updateUserAddress({ commit }: any, payload: { addressId: string, data: Partial<UserAddressPayload> }) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const { addressId, data } = payload;
 
@@ -185,21 +190,20 @@ export default class UserAddress extends VuexModule {
 
       const result = handleUpdateResponse(addressResponse, 'Falha ao atualizar endereço', null);
 
-      this.context.commit('SET_ADDRESS', result[0]);
+      commit('SET_ADDRESS', result[0]);
 
       return result[0];
     } catch (error) {
       console.error('Erro ao atualizar endereço do usuário:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async deleteUserAddress(addressId: string) {
+  async deleteUserAddress({ commit }: any, addressId: string) {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$delete(`address/${addressId}`);
 
@@ -210,7 +214,7 @@ export default class UserAddress extends VuexModule {
       console.error('Erro ao deletar endereço do usuário:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
-} 
+  },
+}; 
