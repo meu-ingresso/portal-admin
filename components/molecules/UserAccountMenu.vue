@@ -92,7 +92,7 @@ export default Vue.extend({
       // Add vitrine link if enabled
       if (this.showVitrineLink) {
         items.push({
-          title: 'Ir para Vitrine',
+          title: 'Home',
           icon: 'mdi-storefront',
           action: this.goToVitrine,
           external: true
