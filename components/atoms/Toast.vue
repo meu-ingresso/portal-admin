@@ -26,14 +26,15 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { toast } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default Vue.extend({
   name: 'AppToast',
   
   computed: {
-    getToast: () => toast.$single,
+    getToast() {
+      return this.$store.getters['toast/$single'];
+    },
 
     isMobile() {
       return isMobileDevice(this.$vuetify);
@@ -66,7 +67,7 @@ export default Vue.extend({
 
   methods: {
     closeToast() {
-      toast.closeToast();
+      this.$store.dispatch('toast/closeToast');
     },
   },
 });

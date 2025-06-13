@@ -112,7 +112,6 @@
 </template>
 
 <script>
-import { user, userDocuments } from '@/store';
 import { PRODUCER_ROLE, ADMIN_ROLE } from '@/utils/permissions-config';
 
 const PERSON_TYPES = {
@@ -140,16 +139,16 @@ export default {
 
   computed: {
     userEmail() {
-      return user?.$user?.email || '••••••••';
+      return this.$auth.user?.email || '••••••••';
     },
 
     isOrganizer() {
-      const roleName = user?.$user?.role?.name;
+      const roleName = this.$auth.user?.role?.name;
       return roleName === PRODUCER_ROLE;
     },
 
     isAdmin() {
-      const roleName = user?.$user?.role?.name;
+      const roleName = this.$auth.user?.role?.name;
       return roleName === ADMIN_ROLE;
     },
 
@@ -163,23 +162,23 @@ export default {
     },
 
     hasRequiredDocuments() {
-      return userDocuments.$hasRequiredDocuments;
+      return this.$store.getters['userDocuments/$hasRequiredDocuments'];
     },
 
     hasPixInfo() {
-      return userDocuments.$hasPixInfo;
+      return this.$store.getters['userDocuments/$hasPixInfo'];
     },
 
     hasFiscalInfo() {
-      return userDocuments.$hasFiscalInfo;
+      return this.$store.getters['userDocuments/$hasFiscalInfo'];
     },
 
     fiscalInfo() {
-      return userDocuments.$fiscalInfo;
+      return this.$store.getters['userDocuments/$fiscalInfo'];
     },
 
     hasDocumentInfo() {
-      return userDocuments.$documentInfo;
+      return this.$store.getters['userDocuments/$documentInfo'];
     },
 
     hasSubmittedDocuments() {
@@ -187,11 +186,11 @@ export default {
     },
 
     userId() {
-      return user.$user?.id;
+      return this.$auth.user?.id;
     },
 
     isLoading() {
-      return userDocuments.$isLoading;
+      return this.$store.getters['userDocuments/$isLoading'];
     },
   },
 
@@ -201,7 +200,7 @@ export default {
       handler(newValue) {
         if (newValue && newValue !== this.localUserId) {
           this.localUserId = newValue;
-          userDocuments.fetchDocumentStatus(newValue);
+          this.$store.dispatch('userDocuments/fetchDocumentStatus', newValue);
         }
       }
     }
@@ -210,7 +209,7 @@ export default {
   methods: {
     async onDocumentsSubmitted() {
       try {
-        await userDocuments.fetchDocumentStatus(this.userId);
+        await this.$store.dispatch('userDocuments/fetchDocumentStatus', this.userId);
         this.showDocumentDialog = false;
         this.activeTab = 0;
       } catch (error) {

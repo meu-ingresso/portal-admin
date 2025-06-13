@@ -6,11 +6,7 @@
           <h3>Campos Personalizados</h3>
           <p class="subtitle-2">Adicione campos personalizados para o checkout.</p>
         </template>
-        <ButtonWithIcon
-          class="mt-2"
-          text="Campo"
-          direction="left"
-          @click="openNewFieldModal" />
+        <ButtonWithIcon class="mt-2" text="Campo" direction="left" @click="openNewFieldModal" />
       </v-col>
     </v-row>
 
@@ -29,18 +25,11 @@
             </div>
 
             <!-- Linhas dos Campos -->
-            <Container
-              :lock-axis="'y'"
-              :non-drag-area-selector="'.actions'"
-              @drop="onDrop">
-              <Draggable
-                v-for="(field, index) in getNonDeletedCustomFields"
-                :key="index"
-                class="table-row"
-                :class="{
-                  'disabled-row': field.is_default,
-                  'table-row-deleted': field._deleted,
-                }">
+            <Container :lock-axis="'y'" :non-drag-area-selector="'.actions'" @drop="onDrop">
+              <Draggable v-for="(field, index) in getNonDeletedCustomFields" :key="index" class="table-row" :class="{
+                'disabled-row': field.is_default,
+                'table-row-deleted': field._deleted,
+              }">
                 <div class="table-cell hover-icon">
                   <v-icon>mdi-drag-vertical</v-icon>
                 </div>
@@ -54,21 +43,15 @@
                     field.is_default
                       ? 'Todos os ingressos'
                       : getArrayObjectText(
-                          field.tickets.filter((ticket) => !ticket._deleted),
-                          'name'
-                        )
+                        field.tickets.filter((ticket) => !ticket._deleted),
+                        'name'
+                      )
                   }}
                 </div>
                 <div v-if="!field.is_default" class="table-cell actions">
                   <v-tooltip bottom>
                     <template #activator="{ on, attrs }">
-                      <v-btn
-                        icon
-                        small
-                        v-bind="attrs"
-                        class="mr-2"
-                        :disabled="field.is_default"
-                        v-on="on"
+                      <v-btn icon small v-bind="attrs" class="mr-2" :disabled="field.is_default" v-on="on"
                         @click="openEditModal(index)">
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
@@ -77,12 +60,7 @@
                   </v-tooltip>
                   <v-tooltip bottom>
                     <template #activator="{ on, attrs }">
-                      <v-btn
-                        icon
-                        small
-                        v-bind="attrs"
-                        :disabled="field.is_default"
-                        v-on="on"
+                      <v-btn icon small v-bind="attrs" :disabled="field.is_default" v-on="on"
                         @click="handleRemoveField(index)">
                         <v-icon color="red">mdi-delete</v-icon>
                       </v-btn>
@@ -108,10 +86,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
-          <CustomFieldForm
-            v-if="newFieldModal"
-            ref="newFieldForm"
-            :tickets="getTickets" />
+          <CustomFieldForm v-if="newFieldModal" ref="newFieldForm" :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center py-5">
           <v-spacer />
@@ -132,10 +107,7 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4 py-2">
-          <CustomFieldForm
-            v-if="editModal"
-            ref="editFieldForm"
-            :edit-index="selectedFieldIndex"
+          <CustomFieldForm v-if="editModal" ref="editFieldForm" :edit-index="selectedFieldIndex"
             :tickets="getTickets" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-5">
@@ -167,7 +139,6 @@
 <script>
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
-import { toast, eventTickets, eventCustomFields } from '@/store';
 
 export default {
   components: { Container, Draggable },
@@ -188,7 +159,7 @@ export default {
     },
 
     getTickets() {
-      return eventTickets.$tickets.map((ticket, index) => {
+      return this.$store.getters['eventTickets/$tickets'].map((ticket, index) => {
         return {
           id: ticket.id === '-1' ? index : ticket.id,
           name: ticket.name,
@@ -199,7 +170,7 @@ export default {
     },
 
     getNonDeletedCustomFields() {
-      return eventCustomFields.$customFields;
+      return this.$store.getters['eventCustomFields/$customFields'];
     },
   },
 
@@ -212,8 +183,8 @@ export default {
     },
 
     confirmRemoveField() {
-      eventCustomFields.removeField(this.fieldIdxToRemove);
-      toast.setToast({
+      this.$store.dispatch('eventCustomFields/removeField', this.fieldIdxToRemove);
+      this.$store.dispatch('toast/setToast', {
         text: 'Campo removido com sucesso.',
         type: 'success',
         time: 5000,
@@ -251,17 +222,17 @@ export default {
       if (removedIndex !== null && addedIndex !== null) {
         const movedField = this.getNonDeletedCustomFields[removedIndex];
         const targetField = this.getNonDeletedCustomFields[addedIndex];
-        
+
         if (movedField.is_default || targetField.is_default) {
           return;
         }
-        
-        eventCustomFields.swapFieldsOrder({
+
+        this.$store.dispatch('eventCustomFields/swapFieldsOrder', {
           removedIndex,
           addedIndex,
         });
-        
-        toast.setToast({
+
+        this.$store.dispatch('toast/setToast', {
           text: 'Ordem dos campos atualizada com sucesso.',
           type: 'success',
           time: 3000,

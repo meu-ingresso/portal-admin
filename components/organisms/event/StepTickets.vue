@@ -57,13 +57,13 @@
                         <span class="info-label">Início:</span>
                         <span class="info-value">{{
                           formatDateTime(ticket.start_date, ticket.start_time)
-                          }}</span>
+                        }}</span>
                       </div>
                       <div class="info-row">
                         <span class="info-label">Fim:</span>
                         <span class="info-value">{{
                           formatDateTime(ticket.end_date, ticket.end_time)
-                          }}</span>
+                        }}</span>
                       </div>
                       <div class="info-row">
                         <span class="info-label">Vendidos:</span>
@@ -170,7 +170,6 @@
 <script>
 import { Container, Draggable } from 'vue-smooth-dnd';
 import { isMobileDevice } from '@/utils/utils';
-import { toast, eventTickets, eventCustomFields, eventCoupons } from '@/store';
 import { formatPrice, formatDateToBr } from '@/utils/formatters';
 
 export default {
@@ -236,23 +235,23 @@ export default {
     },
 
     getCoupons() {
-      return eventCoupons.$coupons;
+      return this.$store.getters['eventCoupons/$coupons'];
     },
 
     getNonDeletedTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
 
     getCustomFields() {
-      return eventCustomFields.$customFields;
+      return this.$store.getters['eventCustomFields/$customFields'];
     },
 
     getDeletedCategories() {
-      return eventTickets.$deletedCategories;
+      return this.$store.getters['eventTickets/$deletedCategories'];
     },
 
     getNonDeletedCategories() {
-      return eventTickets.$ticketCategories;
+      return this.$store.getters['eventTickets/$ticketCategories'];
     },
   },
 
@@ -299,7 +298,7 @@ export default {
 
         ticketToDuplicate.name = newName;
 
-        eventTickets.addTicket({
+        this.$store.dispatch('eventTickets/addTicket', {
           ...ticketToDuplicate,
           id: '-1',
           display_order: ticketToDuplicate.display_order
@@ -307,7 +306,7 @@ export default {
             : null,
         });
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Ingresso "${newName}" duplicado com sucesso!`,
           type: 'success',
           time: 5000,
@@ -315,7 +314,7 @@ export default {
 
       } catch (error) {
         console.error('Erro ao duplicar ingresso:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Erro ao duplicar ingresso: ${error.message}`,
           type: 'error',
           time: 5000,
@@ -324,12 +323,12 @@ export default {
     },
 
     handleUpdateTicket(ticket, index) {
-      eventTickets.updateTicket({ index, ticket });
+      this.$store.dispatch('eventTickets/updateTicket', { index, ticket });
     },
 
     confirmRemoveTicket() {
       const removedTicket = this.getNonDeletedTickets[this.ticketIdxToRemove];
-      eventTickets.updateTicket({
+      this.$store.dispatch('eventTickets/updateTicket', {
         index: this.ticketIdxToRemove,
         ticket: {
           ...removedTicket,
@@ -350,7 +349,7 @@ export default {
         this.removeCouponsLinkedToTicket(removedTicket.name);
       }
 
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: hasReletedFields
           ? 'Ingresso e seus respectivos campos/cupons removidos com sucesso'
           : 'Ingresso removido com sucesso.',
@@ -424,7 +423,7 @@ export default {
               if (index !== -1) {
                 field.tickets.splice(index, 1);
                 field.tickets.push(updatedTicket.name);
-                eventCustomFields.updateField({ indexField, field });
+                this.$store.dispatch('eventCustomFields/updateField', { indexField, field });
               }
             });
           }
@@ -435,7 +434,7 @@ export default {
               if (index !== -1) {
                 coupon.tickets.splice(index, 1);
                 coupon.tickets.push(updatedTicket.name);
-                eventCoupons.updateCoupon({ indexCoupon, coupon });
+                this.$store.dispatch('eventCoupons/updateCoupon', { indexCoupon, coupon });
               }
             });
           }
@@ -465,7 +464,7 @@ export default {
             { ...ticketToDelete, _deleted: true },
           ];
 
-          eventCustomFields.updateField({
+          this.$store.dispatch('eventCustomFields/updateField', {
             index: indexField,
             field: {
               ...field,
@@ -482,7 +481,7 @@ export default {
         if (index !== -1) {
           const deletedTicket = coupon.tickets[index];
 
-          eventCoupons.updateCoupon({
+          this.$store.dispatch('eventCoupons/updateCoupon', {
             index,
             coupon: {
               ...coupon,
@@ -506,7 +505,7 @@ export default {
 
     onDrop({ removedIndex, addedIndex }) {
       if (removedIndex !== null && addedIndex !== null) {
-        eventTickets.swapTicketsOrder({
+        this.$store.dispatch('eventTickets/swapTicketsOrder', {
           removedIndex,
           addedIndex,
         });

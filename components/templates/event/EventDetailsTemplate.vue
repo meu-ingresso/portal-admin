@@ -6,18 +6,17 @@
 </template>
 
 <script>
-import { eventGeneralInfo, eventTickets, eventCoupons } from '@/store';
 import { formatRealValue } from '~/utils/formatters';
 
 export default {
 
   computed: {
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     getSessions() {
-      return eventGeneralInfo.$eventList;
+      return this.$store.getters['eventGeneralInfo/$eventList'];
     },
 
     getStatistics() {
@@ -26,33 +25,29 @@ export default {
       return [
         {
           title: 'Vendas',
-          value: `${
-            this.getEvent.totalizers.totalSales === 0
+          value: `${this.getEvent.totalizers.totalSales === 0
               ? 'Nenhuma'
               : `${this.getEvent.totalizers.totalSales}`
-          }`,
+            }`,
         },
         {
           title: 'Receita total',
-          value: `${
-            this.getEvent.totalizers.totalSalesAmount === 0
+          value: `${this.getEvent.totalizers.totalSalesAmount === 0
               ? 'Nenhuma'
               : `${formatRealValue(this.getEvent.totalizers.totalSalesAmount)}`
-          }`,
+            }`,
         },
         {
           title: 'Taxa de conversão',
-          value: `${
-            this.getEvent.totalizers.totalViews === 0
+          value: `${this.getEvent.totalizers.totalViews === 0
               ? '0% (0 visitas)'
               : `${(
-                  (this.getEvent.totalizers.totalSales /
-                    this.getEvent.totalizers.totalViews) *
-                  100
-                ).toFixed(0)}% (${this.getEvent.totalizers.totalViews} ${
-                  this.getEvent.totalizers.totalViews === 1 ? 'visita' : 'visitas'
-                })`
-          }`,
+                (this.getEvent.totalizers.totalSales /
+                  this.getEvent.totalizers.totalViews) *
+                100
+              ).toFixed(0)}% (${this.getEvent.totalizers.totalViews} ${this.getEvent.totalizers.totalViews === 1 ? 'visita' : 'visitas'
+              })`
+            }`,
         },
       ];
     },
@@ -72,11 +67,11 @@ export default {
     },
 
     getCoupons() {
-      return eventCoupons.$coupons;
+      return this.$store.getters['eventCoupons/$coupons'];
     },
 
     getTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
 
     hasTickets() {

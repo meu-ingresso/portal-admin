@@ -1,20 +1,11 @@
 <template>
   <div class="ticket-sidebar-wrapper">
-    
-    <div 
-      v-if="show" 
-      class="sidebar-overlay"
-    ></div>
 
-    <v-navigation-drawer
-      :value="show"
-      fixed
-      right
-      width="500"
-      class="ticket-fields-sidebar"
-      :class="{'mobile-sidebar': isMobile}"
-      @input="$emit('update:show', $event)">
-      
+    <div v-if="show" class="sidebar-overlay"></div>
+
+    <v-navigation-drawer :value="show" fixed right width="500" class="ticket-fields-sidebar"
+      :class="{ 'mobile-sidebar': isMobile }" @input="$emit('update:show', $event)">
+
       <v-card flat class="full-height" :tile="isMobile">
         <v-card-title class="d-flex justify-space-between align-center mb-2">
           <h3 class="modalTitle">Editar Dados do Ingresso</h3>
@@ -24,64 +15,41 @@
         </v-card-title>
 
         <v-card-text class="pt-4 sidebar-content">
-          <Lottie
-            v-if="isLoading"
-            path="./animations/loading_default.json"
-            height="300"
-            width="300" />
+          <Lottie v-if="isLoading" path="./animations/loading_default.json" height="300" width="300" />
 
           <template v-else>
             <v-form ref="ticketFieldsForm" v-model="valid">
               <v-row>
                 <v-col v-for="field in processedTicketFields" :key="field.id" cols="12" class="py-0">
-                  <CheckoutFieldInput
-                    ref="fieldInputs"
-                    v-model="formData[field.id]"
-                    :field="field"
-                  />
+                  <CheckoutFieldInput ref="fieldInputs" v-model="formData[field.id]" :field="field" />
                 </v-col>
               </v-row>
             </v-form>
           </template>
         </v-card-text>
-        <v-card-actions
-          v-if="!isLoading" 
-          class="py-4 px-4 sidebar-actions"
-          :class="{
-            'd-flex align-center justify-space-between': $vuetify.breakpoint.mdAndUp,
-            'mobile-actions': $vuetify.breakpoint.smAndDown
-          }"
-        >
-          <DefaultButton
-            text="Cancelar"
-            outlined
-            :class="{
-              'mr-2': $vuetify.breakpoint.mdAndUp,
-              'mb-3': $vuetify.breakpoint.smAndDown,
-              'full-width-mobile': $vuetify.breakpoint.smAndDown
-            }"
-            @click="close" />
+        <v-card-actions v-if="!isLoading" class="py-4 px-4 sidebar-actions" :class="{
+          'd-flex align-center justify-space-between': $vuetify.breakpoint.mdAndUp,
+          'mobile-actions': $vuetify.breakpoint.smAndDown
+        }">
+          <DefaultButton text="Cancelar" outlined :class="{
+            'mr-2': $vuetify.breakpoint.mdAndUp,
+            'mb-3': $vuetify.breakpoint.smAndDown,
+            'full-width-mobile': $vuetify.breakpoint.smAndDown
+          }" @click="close" />
 
-          <DefaultButton
-            text="Salvar"
-            color="primary"
-            :loading="isSaving"
-            :disabled="!valid"
-            :class="{
-              'mb-3': $vuetify.breakpoint.smAndDown,
-              'full-width-mobile': $vuetify.breakpoint.smAndDown
-            }"
-            @click="saveChanges" />
+          <DefaultButton text="Salvar" color="primary" :loading="isSaving" :disabled="!valid" :class="{
+            'mb-3': $vuetify.breakpoint.smAndDown,
+            'full-width-mobile': $vuetify.breakpoint.smAndDown
+          }" @click="saveChanges" />
         </v-card-actions>
       </v-card>
     </v-navigation-drawer>
-    
+
   </div>
 </template>
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { toast, eventCheckout } from '@/store';
 import { isMultiOptionField } from '@/utils/customFieldsHelpers';
 
 export default {
@@ -112,14 +80,14 @@ export default {
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
-    
+
     processedTicketFields() {
 
       if (!this.ticketFields || this.ticketFields.length === 0) return [];
 
       return this.ticketFields.map(field => {
         if (!field.checkoutField) return null;
-        
+
         const processedField = {
           id: field.id,
           name: field.checkoutField.name,
@@ -129,12 +97,12 @@ export default {
           visible_on_ticket: field.checkoutField.visible_on_ticket,
           display_order: field.checkoutField.display_order,
         };
-        
+
         // Adicionar opções para campos especiais
         if (isMultiOptionField(field.checkoutField.type)) {
           processedField.options = this.fieldOptions[field.checkoutField.id] || [];
         }
-        
+
         return processedField;
       }).filter(field => field !== null);
     }
@@ -166,7 +134,7 @@ export default {
 
       try {
         this.isLoading = true;
-        const response = await eventCheckout.getTicketFields(this.customerTicketId);
+        const response = await this.$store.dispatch('eventCheckout/getTicketFields', this.customerTicketId);
 
         if (!response || response.length === 0) return;
 
@@ -175,7 +143,7 @@ export default {
 
         // Inicializar formData com os valores atuais
         this.formData = {};
-        
+
         this.ticketFields.forEach(field => {
           if (field.checkoutField) {
             if (field.checkoutField.type === 'TERMO') {
@@ -195,7 +163,7 @@ export default {
         await this.loadFieldOptions();
       } catch (error) {
         console.error('Erro ao carregar campos do ingresso:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao carregar dados do ingresso',
           type: 'error',
           time: 5000,
@@ -218,13 +186,13 @@ export default {
         for (const field of specialFields) {
           const fieldId = field.checkoutField.id;
           if (!this.fieldOptions[fieldId]) {
-            const options = await eventCheckout.fetchCheckoutFieldOptions(fieldId);
+            const options = await this.$store.dispatch('eventCheckout/fetchCheckoutFieldOptions', fieldId);
             this.$set(this.fieldOptions, fieldId, options);
           }
         }
       } catch (error) {
         console.error('Erro ao carregar opções de campos:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao carregar opções dos campos',
           type: 'error',
           time: 5000,
@@ -239,7 +207,7 @@ export default {
 
     async saveChanges() {
       if (!this.validateForm()) {
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Por favor, corrija os erros no formulário antes de salvar',
           type: 'error',
           time: 5000,
@@ -253,17 +221,17 @@ export default {
         // Preparar dados para envio
         const updateData = Object.keys(this.formData).map(fieldId => {
           let value = this.formData[fieldId];
-          
+
           // Converter arrays para string separada por vírgulas (para campos multi-checkbox)
           if (Array.isArray(value)) {
             value = value.join(',');
           }
-          
+
           // Converter booleanos para string (para campos termo)
           if (typeof value === 'boolean') {
             value = value.toString();
           }
-          
+
           return {
             id: fieldId,
             value: String(value)
@@ -271,14 +239,14 @@ export default {
         });
 
         // Enviar atualização
-        await eventCheckout.updateTicketFields({data: updateData});
+        await this.$store.dispatch('eventCheckout/updateTicketFields', { data: updateData });
 
         // Emitir evento de sucesso
         this.$emit('fields-updated');
         this.close();
       } catch (error) {
         console.error('Erro ao salvar alterações:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao salvar alterações nos dados do ingresso',
           type: 'error',
           time: 5000,
@@ -296,7 +264,7 @@ export default {
   position: relative;
 }
 
-.ticket-sidebar-wrapper .v-card{
+.ticket-sidebar-wrapper .v-card {
   background-color: #fff !important;
 }
 
@@ -343,4 +311,4 @@ export default {
   z-index: 1000;
   pointer-events: auto;
 }
-</style> 
+</style>

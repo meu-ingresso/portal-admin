@@ -1,4 +1,3 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleCreateResponse, handleGetResponse } from '~/utils/responseHelpers';
 import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
@@ -38,125 +37,110 @@ interface CreatePaymentData {
   paid_at?: string;
 }
 
-@Module({
-  name: 'payment',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class Payment extends VuexModule {
-  private isLoading: boolean = false;
-  private isLoadingOrders: boolean = false;
-  private payment: PaymentApiResponse | null = null;
-  private relatedTickets: CustomerTicketApiResponse[] = [];
-  private orders: PaymentApiResponse[] = [];
-  private userOrders: PaymentApiResponse[] = [];
-  
-  private ordersMeta = {
-    total: 0,
-    page: 1,
-    limit: 10,
+interface PaymentState {
+  isLoading: boolean;
+  isLoadingOrders: boolean;
+  payment: PaymentApiResponse | null;
+  relatedTickets: CustomerTicketApiResponse[];
+  orders: PaymentApiResponse[];
+  userOrders: PaymentApiResponse[];
+  ordersMeta: {
+    total: number;
+    page: number;
+    limit: number;
   };
+  userOrdersMeta: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
 
-  private userOrdersMeta = {
+export const state = (): PaymentState => ({
+  isLoading: false,
+  isLoadingOrders: false,
+  payment: null,
+  relatedTickets: [],
+  orders: [],
+  userOrders: [],
+  ordersMeta: {
     total: 0,
     page: 1,
     limit: 10,
-  };  
+  },
+  userOrdersMeta: {
+    total: 0,
+    page: 1,
+    limit: 10,
+  },
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $isLoading: (state: PaymentState) => state.isLoading,
+  $isLoadingOrders: (state: PaymentState) => state.isLoadingOrders,
+  $payment: (state: PaymentState) => state.payment,
+  $relatedTickets: (state: PaymentState) => state.relatedTickets,
+  $orders: (state: PaymentState) => state.orders,
+  $ordersMeta: (state: PaymentState) => state.ordersMeta,
+  $userOrders: (state: PaymentState) => state.userOrders,
+  $userOrdersMeta: (state: PaymentState) => state.userOrdersMeta,
+};
 
-  public get $isLoadingOrders() {
-    return this.isLoadingOrders;
-  }
+export const mutations = {
+  SET_USER_ORDERS(state: PaymentState, orders: PaymentApiResponse[]) {
+    state.userOrders = orders;
+  },
 
-  public get $payment() {
-    return this.payment;
-  }
+  SET_USER_ORDERS_META(state: PaymentState, meta: any) {
+    state.userOrdersMeta = meta;
+  },
 
-  public get $relatedTickets() {
-    return this.relatedTickets;
-  }
+  SET_LOADING(state: PaymentState, loading: boolean) {
+    state.isLoading = loading;
+  },
 
-  public get $orders() {
-    return this.orders;
-  }
+  SET_LOADING_ORDERS(state: PaymentState, loading: boolean) {
+    state.isLoadingOrders = loading;
+  },
 
-  public get $ordersMeta() {
-    return this.ordersMeta;
-  }
+  SET_PAYMENT(state: PaymentState, payment: PaymentApiResponse | null) {
+    state.payment = payment;
+  },
 
-  public get $userOrders() {
-    return this.userOrders;
-  }
+  SET_RELATED_TICKETS(state: PaymentState, tickets: CustomerTicketApiResponse[]) {
+    state.relatedTickets = tickets;
+  },
 
-  public get $userOrdersMeta() {
-    return this.userOrdersMeta;
-  }
+  SET_ORDERS(state: PaymentState, orders: PaymentApiResponse[]) {
+    state.orders = orders;
+  },
 
-  @Mutation
-  private SET_USER_ORDERS(orders: PaymentApiResponse[]) {
-    this.userOrders = orders;
-  }
+  SET_ORDERS_META(state: PaymentState, meta: any) {
+    state.ordersMeta = meta;
+  },
+};
 
-  @Mutation
-  private SET_USER_ORDERS_META(meta: any) {
-    this.userOrdersMeta = meta;
-  }
-
-  @Mutation
-  private SET_LOADING(loading: boolean) {
-    this.isLoading = loading;
-  }
-
-  @Mutation
-  private SET_LOADING_ORDERS(loading: boolean) {
-    this.isLoadingOrders = loading;
-  }
-
-  @Mutation
-  private SET_PAYMENT(payment: PaymentApiResponse | null) {
-    this.payment = payment;
-  }
-
-  @Mutation
-  private SET_RELATED_TICKETS(tickets: CustomerTicketApiResponse[]) {
-    this.relatedTickets = tickets;
-  }
-
-  @Mutation
-  private SET_ORDERS(orders: PaymentApiResponse[]) {
-    this.orders = orders;
-  }
-
-  @Mutation
-  private SET_ORDERS_META(meta: any) {
-    this.ordersMeta = meta;
-  }
-
-  @Action
-  public async fetchPaymentDetails(paymentId: string): Promise<void> {
+export const actions = {
+  async fetchPaymentDetails({ commit, dispatch }: any, paymentId: string): Promise<void> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
 
       const response = await $axios.$get(
         `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people&limit=9999`
       );
       const { data } = handleGetResponse(response, 'Pagamento não encontrado');
 
-      this.context.commit('SET_PAYMENT', data[0]);
-      await this.context.dispatch('fetchRelatedTickets', paymentId);
+      commit('SET_PAYMENT', data[0]);
+      await dispatch('fetchRelatedTickets', paymentId);
     } catch (error) {
       console.error('Erro ao buscar detalhes do pagamento:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchRelatedTickets(paymentId: string): Promise<void> {
+  async fetchRelatedTickets({ commit }: any, paymentId: string): Promise<void> {
     try {
       const response = await $axios.$get('/customer-tickets', {
         params: {
@@ -167,17 +151,16 @@ export default class Payment extends VuexModule {
       });
       const { data } = handleGetResponse(response, 'Ingressos não encontrados');
 
-      this.context.commit('SET_RELATED_TICKETS', data || []);
+      commit('SET_RELATED_TICKETS', data || []);
     } catch (error) {
       console.error('Erro ao buscar ingressos relacionados:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async fetchEventOrders(params: OrderByEventFilters): Promise<void> {
+  async fetchEventOrders({ commit }: any, params: OrderByEventFilters): Promise<void> {
     try {
-      this.context.commit('SET_LOADING_ORDERS', true);
+      commit('SET_LOADING_ORDERS', true);
 
       const queryParams: any = {
         preloads: [
@@ -240,20 +223,19 @@ export default class Payment extends VuexModule {
         return acc;
       }, {});
 
-      this.context.commit('SET_ORDERS', Object.values(groupedOrders));
-      this.context.commit('SET_ORDERS_META', meta);
+      commit('SET_ORDERS', Object.values(groupedOrders));
+      commit('SET_ORDERS_META', meta);
     } catch (error) {
       console.error('Erro ao buscar pedidos do evento:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING_ORDERS', false);
+      commit('SET_LOADING_ORDERS', false);
     }
-  }
+  },
 
-  @Action
-  public async fetchUserOrders(params: OrderByUserFilters): Promise<void> {
+  async fetchUserOrders({ commit }: any, params: OrderByUserFilters): Promise<void> {
     try {
-      this.context.commit('SET_LOADING_ORDERS', true);
+      commit('SET_LOADING_ORDERS', true);
 
       const queryParams: any = {
         preloads: [
@@ -311,18 +293,17 @@ export default class Payment extends VuexModule {
         });
       }
 
-      this.context.commit('SET_USER_ORDERS', Object.values(groupedOrders));
-      this.context.commit('SET_USER_ORDERS_META', meta);
+      commit('SET_USER_ORDERS', Object.values(groupedOrders));
+      commit('SET_USER_ORDERS_META', meta);
     } catch (error) {
       console.error('Erro ao buscar pedidos do usuário:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING_ORDERS', false);
+      commit('SET_LOADING_ORDERS', false);
     }
-  }
+  },
 
-  @Action
-  public async createPayment(paymentData: CreatePaymentData[]): Promise<PaymentApiResponse> {
+  async createPayment(_: any, paymentData: CreatePaymentData[]): Promise<PaymentApiResponse> {
     try {
       const response = await $axios.$post('/payment', {
         data: paymentData
@@ -333,11 +314,10 @@ export default class Payment extends VuexModule {
       console.error('Erro ao criar pagamento:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public resetPaymentDetails(): void {
-    this.context.commit('SET_PAYMENT', null);
-    this.context.commit('SET_RELATED_TICKETS', []);
-  }
-}
+  resetPaymentDetails({ commit }: any): void {
+    commit('SET_PAYMENT', null);
+    commit('SET_RELATED_TICKETS', []);
+  },
+};

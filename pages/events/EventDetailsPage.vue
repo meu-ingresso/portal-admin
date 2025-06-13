@@ -3,11 +3,7 @@
     <v-container>
       <EventDrawer :drawer="drawer" />
 
-      <Lottie
-        v-if="isLoading || isLoadingEvent"
-        path="./animations/loading_default.json"
-        height="300"
-        width="300" />
+      <Lottie v-if="isLoading || isLoadingEvent" path="./animations/loading_default.json" height="300" width="300" />
 
       <div v-else-if="eventInvalid">
         <ValueNoExists text="Evento não encontrado" />
@@ -39,18 +35,6 @@
 </template>
 
 <script>
-import {
-  eventGeneralInfo,
-  eventTickets,
-  eventCoupons,
-  eventCustomFields,
-  eventGuests,
-  eventPdv,
-  eventCollaborators, 
-  user,
-  loading,
-  toast,
-} from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
@@ -69,31 +53,31 @@ export default {
     },
 
     isLoading() {
-      return loading.$isLoading;
+      return this.$store.getters['loading/$isLoading'];
     },
 
     isLoadingEvent() {
-      return eventGeneralInfo.$isLoading;
+      return this.$store.getters['eventGeneralInfo/$isLoading'];
     },
 
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     getTickets() {
-      return eventTickets.$tickets;
+      return this.$store.getters['eventTickets/$tickets'];
     },
 
     getCustomFields() {
-      return eventCustomFields.$customFields;
+      return this.$store.getters['eventCustomFields/$customFields'];
     },
 
     getCoupons() {
-      return eventCoupons.$coupons;
+      return this.$store.getters['eventCoupons/$coupons'];
     },
 
     getGuests() {
-      return eventGuests.$guests;
+      return this.$store.getters['eventGuests/$guests'];
     },
 
     currentRouter() {
@@ -127,17 +111,17 @@ export default {
     isCollaborators() {
       return this.$route.meta.template === 'collaborators';
     },
-    
+
     isPdv() {
       return this.$route.meta.template === 'pdv';
     },
 
     userRole() {
-      return this.$cookies.get('user_role');
+      return this.$store.state.auth.user?.role;
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$auth.user?.id;
     },
 
     isAdmin() {
@@ -176,7 +160,7 @@ export default {
         }
       },
     },
-    
+
     '$route.query': {
       immediate: true,
       handler() {
@@ -193,17 +177,17 @@ export default {
           return;
         }
 
-        loading.setIsLoading(true);
+        this.$store.dispatch('loading/setIsLoading', true);
 
         // Primeiro, busca o evento específico para obter o ID do grupo
-        await eventGeneralInfo.fetchAndPopulateByEventId(this.$route.params.id);
+        await this.$store.dispatch('eventGeneralInfo/fetchAndPopulateByEventId', this.$route.params.id);
 
-        const currentEvent = eventGeneralInfo.$info;
+        const currentEvent = this.$store.getters['eventGeneralInfo/$info'];
         const groupId = currentEvent?.groups?.[0]?.id;
 
         // Se o evento pertence a um grupo, busca todos os eventos relacionados
         if (groupId) {
-          await eventGeneralInfo.fetchEvents({
+          await this.$store.dispatch('eventGeneralInfo/fetchEvents', {
             whereHas: {
               groups: {
                 id: groupId
@@ -214,16 +198,16 @@ export default {
         }
 
         const promises = [
-          eventTickets.fetchAndPopulateByEventId(this.$route.params.id),
-          eventCustomFields.fetchAndPopulateByEventId(this.$route.params.id),
-          eventCoupons.fetchAndPopulateByEventId(this.$route.params.id),
-          eventGuests.fetchGuestListAndPopulateByQuery(
+          this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.$route.params.id),
+          this.$store.dispatch('eventCustomFields/fetchAndPopulateByEventId', this.$route.params.id),
+          this.$store.dispatch('eventCoupons/fetchAndPopulateByEventId', this.$route.params.id),
+          this.$store.dispatch('eventGuests/fetchGuestListAndPopulateByQuery',
             `where[event_id][v]=${this.$route.params.id}&preloads[]=members`
           ),
-          eventPdv.fetchAndPopulateByEventId(this.$route.params.id),
-          user.getAllUsers(),
-          user.getRoles(),
-          eventCollaborators.fetchCollaborators({ eventId: this.$route.params.id }),
+          this.$store.dispatch('eventPdv/fetchAndPopulateByEventId', this.$route.params.id),
+          this.$store.dispatch('user/getAllUsers'),
+          this.$store.dispatch('user/getRoles'),
+          this.$store.dispatch('eventCollaborators/fetchCollaborators', { eventId: this.$route.params.id }),
         ];
 
         await Promise.all(promises);
@@ -231,36 +215,36 @@ export default {
         console.error('Erro ao buscar dados do evento:', error);
         this.eventInvalid = true;
       } finally {
-        loading.setIsLoading(false);
+        this.$store.dispatch('loading/setIsLoading', false);
       }
     },
-    
+
     checkUrlParams() {
       const { noPermission, template } = this.$route.query;
-      
+
       if (noPermission === 'true' && template) {
 
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Você não possui permissão para acessar a seção de ' + this.getTemplateLabel(),
           type: 'error',
           time: 5000
         });
-        
+
         this.attemptedTemplate = template;
-        
+
         // Remover os parâmetros da URL sem recarregar a página
         const query = { ...this.$route.query };
         delete query.noPermission;
         delete query.template;
-        
-        this.$router.replace({ 
+
+        this.$router.replace({
           path: this.$route.path,
-          query 
+          query
         });
       }
     },
-    
-    
+
+
     getTemplateLabel() {
       const templateMap = {
         'tickets': 'Ingressos',
@@ -271,7 +255,7 @@ export default {
         'collaborators': 'Colaboradores',
         'pdv': 'PDV'
       };
-      
+
       return templateMap[this.attemptedTemplate] || this.attemptedTemplate;
     }
   },

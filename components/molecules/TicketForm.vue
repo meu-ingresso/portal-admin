@@ -255,7 +255,6 @@
 import { mask } from 'vue-the-mask';
 import { formatPrice, formatDateToBr } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
-import { eventTickets } from '@/store';
 
 export default {
   directives: {
@@ -473,7 +472,11 @@ export default {
     },
 
     categories() {
-      return eventTickets.$ticketCategories.filter((category) => !category._deleted);
+      return this.$store.getters['eventTickets/$ticketCategories'].filter((category) => !category._deleted);
+    },
+
+    tickets() {
+      return this.$store.getters['eventTickets/$tickets'];
     },
   },
 
@@ -492,7 +495,7 @@ export default {
 
   created() {
     if (this.isEditing) {
-      const ticketToEdit = eventTickets.$tickets[this.editIndex];
+      const ticketToEdit = this.tickets[this.editIndex];
       this.localTicket = { ...ticketToEdit };
     }
   },
@@ -526,18 +529,18 @@ export default {
       try {
         if (this.isEditing && !fetchApi) {
           console.log('[TICKET FORM] - isEditing && !fetchApi');
-          eventTickets.updateTicket({
+          await this.$store.dispatch('eventTickets/updateTicket', {
             index: this.editIndex,
             ticket: this.localTicket,
           });
         } else if (this.isEditing && fetchApi) {
-          await eventTickets.updateSingleTicket({
+          await this.$store.dispatch('eventTickets/updateSingleTicket', {
             ticketId: this.localTicket.id,
             ticket: this.localTicket,
             eventId: this.eventId,
           });
 
-          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+          await this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.eventId);
 
           return {
             success: true,
@@ -545,19 +548,19 @@ export default {
           };
         } else if (fetchApi) {
           // Usa o novo método para criar um ticket individual
-          const ticketId = await eventTickets.createSingleTicket({
+          const ticketId = await this.$store.dispatch('eventTickets/createSingleTicket', {
             eventId: this.eventId,
             ticket: this.localTicket,
           });
 
-          await eventTickets.fetchAndPopulateByEventId(this.eventId);
+          await this.$store.dispatch('eventTickets/fetchAndPopulateByEventId', this.eventId);
           return {
             success: true,
             error: null,
             id: ticketId,
           };
         } else {
-          eventTickets.addTicket(this.localTicket);
+          await this.$store.dispatch('eventTickets/addTicket', this.localTicket);
         }
 
         return {

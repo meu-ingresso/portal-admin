@@ -196,7 +196,6 @@
 <script>
 import { mask } from 'vue-the-mask';
 import { formatDateToBr, formatPrice } from '@/utils/formatters';
-import { eventCoupons } from '@/store';
 
 export default {
   directives: { mask },
@@ -336,6 +335,10 @@ export default {
     };
   },
   computed: {
+    coupons() {
+      return this.$store.getters['eventCoupons/$coupons'];
+    },
+
     formattedStartDate() {
       return this.localCoupon.start_date
         ? formatDateToBr(this.localCoupon.start_date)
@@ -369,7 +372,7 @@ export default {
 
   created() {
     if (this.isEditing) {
-      const couponToEdit = eventCoupons.$coupons[this.editIndex];
+      const couponToEdit = this.coupons[this.editIndex];
       this.localCoupon = { ...couponToEdit };
     }
   },
@@ -409,12 +412,12 @@ export default {
         }
 
         if (this.isEditing && !fetchApi) {
-          eventCoupons.updateCoupon({
+          await this.$store.dispatch('eventCoupons/updateCoupon', {
             index: this.editIndex,
             coupon: this.localCoupon,
           });
         } else if (this.isEditing && fetchApi) {
-          await eventCoupons.updateSingleCoupon({
+          await this.$store.dispatch('eventCoupons/updateSingleCoupon', {
             couponId: this.localCoupon.id,
             coupon: this.localCoupon,
             eventId: this.eventId,
@@ -425,12 +428,12 @@ export default {
             error: null,
           };
         } else if (fetchApi) {
-          const couponId = await eventCoupons.createSingleCoupon({
+          const couponId = await this.$store.dispatch('eventCoupons/createSingleCoupon', {
             eventId: this.eventId,
             coupon: this.localCoupon,
           });
 
-          await eventCoupons.fetchAndPopulateByEventId(this.eventId);
+          await this.$store.dispatch('eventCoupons/fetchAndPopulateByEventId', this.eventId);
 
           return {
             success: true,
@@ -438,7 +441,7 @@ export default {
             id: couponId,
           };
         } else {
-          eventCoupons.addCoupon(this.localCoupon);
+          await this.$store.dispatch('eventCoupons/addCoupon', this.localCoupon);
         }
 
         return {

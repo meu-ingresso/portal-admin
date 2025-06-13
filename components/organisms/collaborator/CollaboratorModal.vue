@@ -1,10 +1,5 @@
 <template>
-  <v-dialog
-    :value="show"
-    max-width="900px"
-    persistent
-    :fullscreen="isMobile"
-    @input="$emit('update:show', $event)">
+  <v-dialog :value="show" max-width="900px" persistent :fullscreen="isMobile" @input="$emit('update:show', $event)">
     <v-card :tile="isMobile" class="form-card">
       <v-card-title class="d-flex justify-space-between align-center form-header">
         <h3>{{ getAddTitle }}</h3>
@@ -18,25 +13,15 @@
       </v-card-subtitle>
 
       <v-card-text class="form-content px-4">
-        <CollaboratorForm
-          v-if="show"
-          ref="collaboratorForm"
-          :event-id="eventId"
+        <CollaboratorForm v-if="show" ref="collaboratorForm" :event-id="eventId"
           @count-changed="collaboratorCount = $event" />
       </v-card-text>
 
       <div :class="['form-actions', { 'form-actions--mobile': isMobile }]">
         <div class="d-flex align-center justify-space-between py-4 px-4 w-100">
-          <DefaultButton
-            outlined
-            text="Cancelar"
-            :disabled="isLoading"
-            @click="handleClose" />
+          <DefaultButton outlined text="Cancelar" :disabled="isLoading" @click="handleClose" />
 
-          <DefaultButton
-            text="Adicionar"
-            :is-loading="isLoading"
-            :disabled="isLoading || collaboratorCount === 0"
+          <DefaultButton text="Adicionar" :is-loading="isLoading" :disabled="isLoading || collaboratorCount === 0"
             @click="handleSubmit" />
         </div>
       </div>
@@ -46,7 +31,6 @@
 
 <script>
 import { isMobileDevice } from '@/utils/utils';
-import { toast } from '@/store';
 
 export default {
   props: {
@@ -72,9 +56,8 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
     getAddTitle() {
-      return `Adicionar ${this.collaboratorCount} ${
-        this.collaboratorCount === 1 ? 'Colaborador' : 'Colaboradores'
-      }`;
+      return `Adicionar ${this.collaboratorCount} ${this.collaboratorCount === 1 ? 'Colaborador' : 'Colaboradores'
+        }`;
     },
   },
 
@@ -115,7 +98,7 @@ export default {
 
         if (success) {
           this.handleClose();
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: `Colaborador adicionado com sucesso!`,
             type: 'success',
             time: 5000,
@@ -126,9 +109,9 @@ export default {
           const hasInvalidEmails = collaboratorForm.collaborators.some(
             c => c.errorMessages?.email === 'Usuário com este e-mail não encontrado no sistema'
           );
-          
+
           if (hasInvalidEmails) {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Um ou mais e-mails não foram encontrados no sistema',
               type: 'error',
               time: 5000,
@@ -137,7 +120,7 @@ export default {
         }
       } catch (error) {
         console.error('Erro ao salvar colaborador:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: `Erro ao adicionar colaborador`,
           type: 'error',
         });

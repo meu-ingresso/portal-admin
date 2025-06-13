@@ -335,7 +335,6 @@ import {
   formatDateTimeToBr,
 } from '@/utils/formatters';
 import { isMobileDevice, isUserAdmin } from '@/utils/utils';
-import { toast, eventGeneralInfo } from '@/store';
 
 export default {
   data() {
@@ -368,15 +367,15 @@ export default {
     },
 
     currentEventType() {
-      return eventGeneralInfo.$info?.event_type;
+      return this.$store.getters['eventGeneralInfo/$info']?.event_type;
     },
 
     getEvent() {
-      return eventGeneralInfo.$info;
+      return this.$store.getters['eventGeneralInfo/$info'];
     },
 
     getEventLocation() {
-      return eventGeneralInfo.$formattedLocation;
+      return this.$store.getters['eventGeneralInfo/$formattedLocation'];
     },
 
     getEventStatus() {
@@ -434,7 +433,7 @@ export default {
     },
 
     showCopyToast(message) {
-      toast.setToast({
+      this.$store.dispatch('toast/setToast', {
         text: message,
         type: 'success',
         time: 5000,
@@ -462,17 +461,17 @@ export default {
 
         try {
           this.isChangingFee = true;
-          await eventGeneralInfo.updatePlatformFee(payload);
+          await this.$store.dispatch('eventGeneralInfo/updatePlatformFee', payload);
 
           this.closeFeeModal();
 
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Taxa negociada atualizada com sucesso!',
             type: 'success',
             time: 5000,
           });
         } catch (error) {
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Erro ao atualizar taxa negociada!',
             type: 'error',
             time: 5000,

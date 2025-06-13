@@ -30,7 +30,6 @@
 </template>
 
 <script>
-import { eventPrincipal } from '@/store';
 import { isMobileDevice } from '@/utils/utils';
 
 export default {
@@ -59,7 +58,7 @@ export default {
     },
 
     isSaving() {
-      return eventPrincipal.$isSaving;
+      return this.$store.getters['eventPrincipal/$isSaving'];
     },
 
     buttonText() {

@@ -84,11 +84,11 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
     userRole() {
-      return this.$cookies.get('user_role');
+      return this.$store.state.auth.user?.role;
     },
 
     userId() {
-      return this.$cookies.get('user_id');
+      return this.$store.state.auth.user?.id;
     },
 
     isAdmin() {

@@ -277,7 +277,6 @@
 <script>
 import { mask } from 'vue-the-mask';
 import { formatDateToBr } from '@/utils/formatters';
-import { eventGeneralInfo } from '@/store';
 
 export default {
   directives: {
@@ -470,8 +469,12 @@ export default {
     };
   },
   computed: {
+    eventInfo() {
+      return this.$store.getters['eventGeneralInfo/$info'];
+    },
+
     eventDates() {
-      return eventGeneralInfo.$info.event_dates || [];
+      return this.eventInfo.event_dates || [];
     },
     // Título dinâmico conforme o número de datas
     titleText() {
@@ -637,7 +640,7 @@ export default {
       this.dateDialog.show = false;
       this.resetForm();
     },
-    saveDate() {
+    async saveDate() {
       // Primeiro validamos o formulário e garantimos que os erros sejam exibidos
       const formRef = this.$refs[`dateForm${this.dateDialog.index !== null ? this.dateDialog.index : 'new'}`];
       
@@ -666,9 +669,9 @@ export default {
       };
 
       if (this.dateDialog.index === null) {
-        eventGeneralInfo.addEventDate(dateObj);
+        await this.$store.dispatch('eventGeneralInfo/addEventDate', dateObj);
       } else {
-        eventGeneralInfo.updateEventDate({
+        await this.$store.dispatch('eventGeneralInfo/updateEventDate', {
           index: this.dateDialog.index,
           eventDate: dateObj
         });
@@ -676,7 +679,7 @@ export default {
 
       this.closeDateDialog();
     },
-    saveInitialDate() {
+    async saveInitialDate() {
       // Forçar validação do formulário para exibir os erros
       if (this.$refs.initialForm) {
         this.$refs.initialForm.validate(true);
@@ -703,19 +706,19 @@ export default {
 
       // Se não tiver datas, adiciona uma nova
       if (this.eventDates.length === 0) {
-        eventGeneralInfo.addEventDate(dateObj);
+        await this.$store.dispatch('eventGeneralInfo/addEventDate', dateObj);
       } 
       // Se já tiver uma data, atualiza a primeira
       else if (this.eventDates.length === 1) {
-        eventGeneralInfo.updateEventDate({
+        await this.$store.dispatch('eventGeneralInfo/updateEventDate', {
           index: 0,
           eventDate: dateObj
         });
       }
     },
-    removeDate() {
+    async removeDate() {
       if (this.dateDialog.index !== null) {
-        eventGeneralInfo.removeEventDate(this.dateDialog.index);
+        await this.$store.dispatch('eventGeneralInfo/removeEventDate', this.dateDialog.index);
         this.closeDateDialog();
       }
     },

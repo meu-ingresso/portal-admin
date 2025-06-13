@@ -1,54 +1,26 @@
 <template>
   <div class="checkin-guests-table">
     <!-- Visão por Lista -->
-    <CheckinGuestsListsTable
-      v-if="viewMode === 'lists'"
-      :lists="guestLists"
-      :loading="isLoading"
-      :total-items="guestListsMeta.total"
-      :options="listOptions"
-      :search="listSearch"
-      :is-mobile="isMobile"
-      @search="handleListSearch"
-      @update:options="handleListOptionsUpdate"
-      @row-click="handleListRowClick"
-    >
+    <CheckinGuestsListsTable v-if="viewMode === 'lists'" :lists="guestLists" :loading="isLoading"
+      :total-items="guestListsMeta.total" :options="listOptions" :search="listSearch" :is-mobile="isMobile"
+      @search="handleListSearch" @update:options="handleListOptionsUpdate" @row-click="handleListRowClick">
       <template #toolbar>
         <v-row class="align-center">
           <v-col :cols="isMobile ? 12 : 6">
-            <v-text-field
-              v-model="listSearch"
+            <v-text-field v-model="listSearch"
               :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
-              prepend-inner-icon="mdi-magnify"
-              clearable
-              hide-details="auto"
-              @input="handleListSearch"
-            />
+              prepend-inner-icon="mdi-magnify" clearable hide-details="auto" @input="handleListSearch" />
           </v-col>
 
           <v-col :cols="isMobile ? 12 : 6" class="d-flex justify-end align-center">
-            <DefaultButton
-              color="error"
-              class="mr-2"
-              text="Limpar Check-ins"
-              is-text
-              @click="showClearCheckinModal = true"
-            />
-            <TableFilter
-              :active-filters-count="activeFiltersCount"
-              :show-clear-filters="false">
+            <DefaultButton color="error" class="mr-2" text="Limpar Check-ins" is-text
+              @click="showClearCheckinModal = true" />
+            <TableFilter :active-filters-count="activeFiltersCount" :show-clear-filters="false">
               <template #filter-content>
                 <v-row>
                   <v-col cols="12">
-                    <v-select
-                      v-model="viewMode"
-                      :items="viewModeOptions"
-                      label="Modo de Visualização"
-                      outlined
-                      dense
-                      hide-details="auto"
-                      @change="handleViewModeChange"
-                    />
+                    <v-select v-model="viewMode" :items="viewModeOptions" label="Modo de Visualização" outlined dense
+                      hide-details="auto" @change="handleViewModeChange" />
                   </v-col>
                 </v-row>
               </template>
@@ -59,55 +31,26 @@
     </CheckinGuestsListsTable>
 
     <!-- Visão por Convidados -->
-    <CheckinGuestsMembersTable
-      v-else
-      :members="guestListMembers"
-      :loading="isLoading"
-      :total-items="guestListMembersMeta.total"
-      :options="memberOptions"
-      :search="memberSearch"
-      :is-mobile="isMobile"
-      @search="handleMemberSearch"
-      @update:options="handleMemberOptionsUpdate"
-      @check-in="handleCheckIn"
-    >
+    <CheckinGuestsMembersTable v-else :members="guestListMembers" :loading="isLoading"
+      :total-items="guestListMembersMeta.total" :options="memberOptions" :search="memberSearch" :is-mobile="isMobile"
+      @search="handleMemberSearch" @update:options="handleMemberOptionsUpdate" @check-in="handleCheckIn">
       <template #toolbar>
         <v-row class="align-center">
           <v-col :cols="isMobile ? 12 : 6">
-            <v-text-field
-              v-model="memberSearch"
+            <v-text-field v-model="memberSearch"
               :label="viewMode === 'lists' ? 'Buscar por nome da lista' : 'Buscar por nome do convidado'"
-              prepend-inner-icon="mdi-magnify"
-              clearable
-              hide-details="auto"
-              class="mr-4"
-              @input="handleMemberSearch"
-            />
+              prepend-inner-icon="mdi-magnify" clearable hide-details="auto" class="mr-4" @input="handleMemberSearch" />
           </v-col>
-          
+
           <v-col :cols="isMobile ? 12 : 6" class="d-flex justify-end align-center">
-            <DefaultButton
-              color="error"
-              class="mr-2"
-              text="Limpar Check-ins"
-              is-text
-              @click="showClearCheckinModal = true"
-            />
-            <TableFilter
-              :active-filters-count="activeFiltersCount"
-              :show-clear-filters="false">
+            <DefaultButton color="error" class="mr-2" text="Limpar Check-ins" is-text
+              @click="showClearCheckinModal = true" />
+            <TableFilter :active-filters-count="activeFiltersCount" :show-clear-filters="false">
               <template #filter-content>
                 <v-row>
                   <v-col cols="12">
-                    <v-select
-                      v-model="viewMode"
-                      :items="viewModeOptions"
-                      label="Modo de Visualização"
-                      outlined
-                      dense
-                      hide-details="auto"
-                      @change="handleViewModeChange"
-                    />
+                    <v-select v-model="viewMode" :items="viewModeOptions" label="Modo de Visualização" outlined dense
+                      hide-details="auto" @change="handleViewModeChange" />
                   </v-col>
                 </v-row>
               </template>
@@ -118,33 +61,19 @@
     </CheckinGuestsMembersTable>
 
     <!-- Modal para listar membros da lista de convidados (usado apenas na visão por lista) -->
-    <CheckinGuestListMembersModal
-      v-if="viewMode === 'lists'"
-      :show.sync="showMembersModal"
-      :title="selectedGuestList ? selectedGuestList.name : 'Convidados'"
-      :members="guestListMembers"
-      :loading="isLoadingMembers"
-      :total-items="guestListMembersMeta.total"
-      :is-mobile="isMobile"
-      @search="handleModalSearch"
-      @update:options="handleModalOptionsUpdate"
-      @check-in="handleCheckIn"
-      @close="handleClose"
-    />
+    <CheckinGuestListMembersModal v-if="viewMode === 'lists'" :show.sync="showMembersModal"
+      :title="selectedGuestList ? selectedGuestList.name : 'Convidados'" :members="guestListMembers"
+      :loading="isLoadingMembers" :total-items="guestListMembersMeta.total" :is-mobile="isMobile"
+      @search="handleModalSearch" @update:options="handleModalOptionsUpdate" @check-in="handleCheckIn"
+      @close="handleClose" />
 
     <!-- Modal para limpar check-ins -->
-    <ClearCheckinModal
-      :show.sync="showClearCheckinModal"
-      :items="guestLists"
-      :loading="isLoading"
-      mode="guests"
-      @clear="handleClearCheckins"
-    />
+    <ClearCheckinModal :show.sync="showClearCheckinModal" :items="guestLists" :loading="isLoading" mode="guests"
+      @clear="handleClearCheckins" />
   </div>
 </template>
 
 <script>
-import { eventGuests, toast } from '@/store';
 import { formatDateTimeWithTimezone } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
 
@@ -172,27 +101,27 @@ export default {
 
   computed: {
     guestLists() {
-      return eventGuests.$guestLists.filter(list => !list.deleted_at);
+      return this.$store.getters['eventGuests/$guestLists'].filter(list => !list.deleted_at);
     },
 
     guestListsMeta() {
-      return eventGuests.$metaGuestList;
+      return this.$store.getters['eventGuests/$metaGuestList'];
     },
 
     guestListMembers() {
-      return eventGuests.$guestListMembers;
+      return this.$store.getters['eventGuests/$guestListMembers'];
     },
 
     guestListMembersMeta() {
-      return eventGuests.$metaGuestListMember;
+      return this.$store.getters['eventGuests/$metaGuestListMember'];
     },
 
     isLoading() {
-      return eventGuests.$isLoading;
+      return this.$store.getters['eventGuests/$isLoading'];
     },
 
     isLoadingMembers() {
-      return eventGuests.$isLoading;
+      return this.$store.getters['eventGuests/$isLoading'];
     },
 
     isMobile() {
@@ -277,7 +206,7 @@ export default {
     async loadGuestLists() {
       try {
         const queryParams = this.buildListQueryParams();
-        await eventGuests.fetchGuestListAndPopulateByQuery(queryParams);
+        await this.$store.dispatch('eventGuests/fetchGuestListAndPopulateByQuery', queryParams);
       } catch (error) {
         console.error('Erro ao carregar listas de convidados:', error);
         this.$toast.error('Erro ao carregar listas de convidados');
@@ -287,7 +216,7 @@ export default {
     async loadAllMembers() {
       try {
         const queryParams = this.buildAllMembersQueryParams();
-        await eventGuests.fetchGuestListMemberAndPopulateByQuery(queryParams);
+        await this.$store.dispatch('eventGuests/fetchGuestListMemberAndPopulateByQuery', queryParams);
       } catch (error) {
         console.error('Erro ao carregar convidados:', error);
         this.$toast.error('Erro ao carregar convidados');
@@ -317,15 +246,15 @@ export default {
     async handleListRowClick(guestList) {
       this.selectedGuestList = guestList;
       this.showMembersModal = true;
-      
+
       try {
         // Limpar dados anteriores antes de buscar novos
-        eventGuests.clearGuestListMembers();
-        
-        await this.fetchMembers({ 
-          page: 1, 
-          itemsPerPage: 10, 
-          sortBy: ['full_name'], 
+        this.$store.dispatch('eventGuests/clearGuestListMembers');
+
+        await this.fetchMembers({
+          page: 1,
+          itemsPerPage: 10,
+          sortBy: ['full_name'],
           sortDesc: [false],
           search: ''
         });
@@ -342,10 +271,10 @@ export default {
 
     async handleCheckIn(validation) {
       try {
-        const response = await eventGuests.validateGuestListMember([validation]);
+        const response = await this.$store.dispatch('eventGuests/validateGuestListMember', [validation]);
 
         if (response) {
-          toast.setToast({
+          this.$store.dispatch('toast/setToast', {
             text: 'Check-in realizado com sucesso!',
             type: 'success',
             time: 5000,
@@ -354,13 +283,13 @@ export default {
           // Recarregar dados gerais
           if (this.viewMode === 'lists') {
             await this.loadGuestLists();
-            
+
             // Se o modal estiver aberto e a validação veio do modal
             if (validation.refreshModalData && this.showMembersModal && this.selectedGuestList) {
-              await this.fetchMembers({ 
-                page: this.options?.page || 1, 
-                itemsPerPage: this.options?.itemsPerPage || 10, 
-                sortBy: this.options?.sortBy || ['full_name'], 
+              await this.fetchMembers({
+                page: this.options?.page || 1,
+                itemsPerPage: this.options?.itemsPerPage || 10,
+                sortBy: this.options?.sortBy || ['full_name'],
                 sortDesc: this.options?.sortDesc || [false],
                 search: ''
               });
@@ -373,7 +302,7 @@ export default {
         }
       } catch (error) {
         console.error('Erro ao realizar check-in:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao realizar check-in',
           type: 'error',
           time: 5000,
@@ -391,7 +320,7 @@ export default {
 
     async fetchMembers(options) {
       const queryParams = this.buildQueryParams(options);
-      await eventGuests.fetchGuestListMemberAndPopulateByQuery(queryParams);
+      await this.$store.dispatch('eventGuests/fetchGuestListMemberAndPopulateByQuery', queryParams);
     },
 
     buildQueryParams(options) {
@@ -431,33 +360,33 @@ export default {
         const { mode, items } = payload;
         const toDelete = [];
 
-         if (mode === 'all') {
+        if (mode === 'all') {
 
           this.guestLists.forEach(list => {
             list.members.forEach(member => {
               member.guestListMemberValidated.forEach(validation => {
 
-                  if (toDelete.includes(validation.id)) {
-                    return;
-                  }
+                if (toDelete.includes(validation.id)) {
+                  return;
+                }
 
-                  toDelete.push(validation.id);
-                });
+                toDelete.push(validation.id);
               });
             });
+          });
 
           if (toDelete.length > 0) {
-            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            const promises = toDelete.map(id => this.$store.dispatch('eventGuests/deleteGuestListMemberValidated', id));
             await Promise.all(promises);
 
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Check-ins limpos com sucesso!',
               type: 'success',
               time: 5000,
             });
 
           } else {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Nenhum check-in para limpar!',
               type: 'info',
               time: 5000,
@@ -481,17 +410,17 @@ export default {
           });
 
           if (toDelete.length > 0) {
-            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            const promises = toDelete.map(id => this.$store.dispatch('eventGuests/deleteGuestListMemberValidated', id));
             await Promise.all(promises);
 
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Check-ins limpos com sucesso!',
               type: 'success',
               time: 5000,
             });
-            
+
           } else {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Nenhum check-in para limpar!',
               type: 'info',
               time: 5000,
@@ -510,7 +439,7 @@ export default {
         const { mode, items } = payload;
         const toDelete = [];
 
-       if (mode === 'all') {
+        if (mode === 'all') {
 
           this.guestListMembers.forEach(member => {
             if (member.guestList) {
@@ -528,17 +457,17 @@ export default {
           });
 
           if (toDelete.length > 0) {
-            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            const promises = toDelete.map(id => this.$store.dispatch('eventGuests/deleteGuestListMemberValidated', id));
             await Promise.all(promises);
 
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Check-ins limpos com sucesso!',
               type: 'success',
               time: 5000,
             });
 
           } else {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Nenhum check-in para limpar!',
               type: 'info',
               time: 5000,
@@ -562,17 +491,17 @@ export default {
           });
 
           if (toDelete.length > 0) {
-            const promises = toDelete.map(id => eventGuests.deleteGuestListMemberValidated(id));
+            const promises = toDelete.map(id => this.$store.dispatch('eventGuests/deleteGuestListMemberValidated', id));
             await Promise.all(promises);
 
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Check-ins limpos com sucesso!',
               type: 'success',
               time: 5000,
             });
-            
+
           } else {
-            toast.setToast({
+            this.$store.dispatch('toast/setToast', {
               text: 'Nenhum check-in para limpar!',
               type: 'info',
               time: 5000,
@@ -596,7 +525,7 @@ export default {
 
       } catch (error) {
         console.error('Erro ao limpar check-ins:', error);
-        toast.setToast({
+        this.$store.dispatch('toast/setToast', {
           text: 'Erro ao limpar check-ins',
           type: 'error',
           time: 5000,

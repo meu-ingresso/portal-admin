@@ -1,10 +1,9 @@
-import { permissions } from '@/utils/store-util';
-
 /**
  * Verifica um conjunto de permissões de uma vez só
  * Agora utiliza a store de permissões como cache
  */
 export async function checkUserPermissionsBatch(
+  store: any,
   roleId: string,
   userId: string,
   eventId?: string
@@ -13,35 +12,43 @@ export async function checkUserPermissionsBatch(
     // Se estamos verificando permissões para um evento específico
     if (eventId) {
       // Verificar se já temos as permissões deste evento em cache
-      if (permissions.$isCacheValid && permissions.$eventPermissions[eventId]) {
+      const eventPermissions = store.getters['permissions/$eventPermissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (isCacheValid && eventPermissions[eventId]) {
         // Converter o array de permissões para um Set para manter compatibilidade
-        return new Set(permissions.$eventPermissions[eventId]);
+        return new Set(eventPermissions[eventId]);
       }
 
       // Se não temos em cache, carregar as permissões do evento
-      await permissions.loadEventPermissions({
+      await store.dispatch('permissions/loadEventPermissions', {
         userId,
         eventId,
         roleId
       });
 
       // Retornar as permissões carregadas
-      return new Set(permissions.$eventPermissions[eventId] || []);
+      const updatedEventPermissions = store.getters['permissions/$eventPermissions'];
+      return new Set(updatedEventPermissions[eventId] || []);
     } else {
       // Verificar se já temos as permissões gerais do usuário em cache
-      if (permissions.$isCacheValid && permissions.$permissions.length > 0) {
+      const permissions = store.getters['permissions/$permissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (isCacheValid && permissions.length > 0) {
         // Converter o array de permissões para um Set para manter compatibilidade
-        return new Set(permissions.$permissions);
+        return new Set(permissions);
       }
 
       // Se não temos em cache, carregar as permissões gerais
-      await permissions.loadUserPermissions({
+      await store.dispatch('permissions/loadUserPermissions', {
         userId,
         roleId
       });
 
       // Retornar as permissões carregadas
-      return new Set(permissions.$permissions);
+      const updatedPermissions = store.getters['permissions/$permissions'];
+      return new Set(updatedPermissions);
     }
   } catch (error) {
     console.error('Erro ao verificar permissões do usuário:', error);
@@ -53,6 +60,7 @@ export async function checkUserPermissionsBatch(
  * Verifica se o usuário tem permissão para ver múltiplos itens do menu de uma vez
  */
 export async function checkMenuItemsPermissions(
+  store: any,
   userRole: any,
   userId: string,
   menuItems: Array<{ permissions?: string[] }>,
@@ -68,14 +76,20 @@ export async function checkMenuItemsPermissions(
   try {
     if (eventId) {
       // Verificar se já temos as permissões do evento em cache
-      if (!permissions.$eventPermissions[eventId] || !permissions.$isCacheValid) {
+      const eventPermissions = store.getters['permissions/$eventPermissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (!eventPermissions[eventId] || !isCacheValid) {
         // Carregar as permissões do evento
-        await permissions.loadEventPermissions({
+        await store.dispatch('permissions/loadEventPermissions', {
           userId,
           eventId,
           roleId: userRole.id
         });
       }
+
+      // Obter as permissões atualizadas
+      const updatedEventPermissions = store.getters['permissions/$eventPermissions'];
 
       // Verificar cada item do menu contra as permissões do evento
       return menuItems.map(item => {
@@ -84,23 +98,29 @@ export async function checkMenuItemsPermissions(
         }
         
         // Verificar permissões do evento
-        if (permissions.$eventPermissions[eventId]?.includes('*')) {
+        if (updatedEventPermissions[eventId]?.includes('*')) {
           return true;
         }
         
         return item.permissions.some(permission => 
-          permissions.$eventPermissions[eventId]?.includes(permission)
+          updatedEventPermissions[eventId]?.includes(permission)
         );
       });
     } else {
       // Verificar se já temos as permissões gerais em cache
-      if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
+      const permissions = store.getters['permissions/$permissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (permissions.length === 0 || !isCacheValid) {
         // Carregar as permissões gerais
-        await permissions.loadUserPermissions({
+        await store.dispatch('permissions/loadUserPermissions', {
           userId,
           roleId: userRole.id
         });
       }
+
+      // Obter as permissões atualizadas
+      const updatedPermissions = store.getters['permissions/$permissions'];
 
       // Verificar cada item do menu contra as permissões gerais
       return menuItems.map(item => {
@@ -109,12 +129,12 @@ export async function checkMenuItemsPermissions(
         }
         
         // Verificar permissões gerais
-        if (permissions.$permissions.includes('*')) {
+        if (updatedPermissions.includes('*')) {
           return true;
         }
         
         return item.permissions.some(permission => 
-          permissions.$permissions.includes(permission)
+          updatedPermissions.includes(permission)
         );
       });
     }
@@ -129,6 +149,7 @@ export async function checkMenuItemsPermissions(
  * Verifica se o usuário tem as permissões necessárias para uma determinada ação
  */
 export async function checkUserPermissions(
+  store: any,
   roleId: string, 
   requiredPermissionNames: string[], 
   userId: string, 
@@ -137,28 +158,34 @@ export async function checkUserPermissions(
   try {
     if (eventId) {
       // Verificar permissões específicas do evento
-      if (!permissions.$eventPermissions[eventId] || !permissions.$isCacheValid) {
-        await permissions.loadEventPermissions({
+      const eventPermissions = store.getters['permissions/$eventPermissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (!eventPermissions[eventId] || !isCacheValid) {
+        await store.dispatch('permissions/loadEventPermissions', {
           userId,
           eventId,
           roleId
         });
       }
       
-      return await permissions.checkEventPermissions({
+      return await store.dispatch('permissions/checkEventPermissions', {
         eventId,
         permissions: requiredPermissionNames
       });
     } else {
       // Verificar permissões gerais
-      if (permissions.$permissions.length === 0 || !permissions.$isCacheValid) {
-        await permissions.loadUserPermissions({
+      const permissions = store.getters['permissions/$permissions'];
+      const isCacheValid = store.getters['permissions/$isCacheValid'];
+      
+      if (permissions.length === 0 || !isCacheValid) {
+        await store.dispatch('permissions/loadUserPermissions', {
           userId,
           roleId
         });
       }
       
-      return await permissions.checkPermissions(requiredPermissionNames);
+      return await store.dispatch('permissions/checkPermissions', requiredPermissionNames);
     }
   } catch (error) {
     console.error('Erro ao verificar permissões:', error);

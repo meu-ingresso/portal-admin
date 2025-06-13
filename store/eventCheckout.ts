@@ -1,30 +1,29 @@
-import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators';
 import { $axios } from '@/utils/nuxt-instance';
 import { handleCreateResponse, handleGetResponse, handleUpdateResponse } from '~/utils/responseHelpers';
 import { CreateCustomerTicketPayload, CustomerTicketApiResponse, CustomFieldOptionApiResponse, CustomFieldTicketApiResponse, TicketFieldApiResponse } from '~/models/event';
 
-@Module({
-  name: 'eventCheckout',
-  stateFactory: true,
-  namespaced: true,
-})
-export default class EventCheckout extends VuexModule {
+interface EventCheckoutState {
+  isLoading: boolean;
+}
 
-  private isLoading: boolean = false;
+export const state = (): EventCheckoutState => ({
+  isLoading: false,
+});
 
-  public get $isLoading() {
-    return this.isLoading;
-  }
+export const getters = {
+  $isLoading: (state: EventCheckoutState) => state.isLoading,
+};
 
-  @Mutation
-  private SET_LOADING(loading: boolean) {
-    this.isLoading = loading;
-  }
+export const mutations = {
+  SET_LOADING(state: EventCheckoutState, loading: boolean) {
+    state.isLoading = loading;
+  },
+};
 
-  @Action
-  public async fetchCheckoutFields(eventId: string): Promise<CustomFieldTicketApiResponse[]> {
+export const actions = {
+  async fetchCheckoutFields({ commit }: any, eventId: string): Promise<CustomFieldTicketApiResponse[]> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
       
       const response = await $axios.$get(`event-checkout-fields-tickets`,
         {
@@ -43,12 +42,11 @@ export default class EventCheckout extends VuexModule {
       console.error('Erro ao buscar campos de checkout:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async getTicketFields(customerTicketId: string): Promise<TicketFieldApiResponse[]> {
+  async getTicketFields(_: any, customerTicketId: string): Promise<TicketFieldApiResponse[]> {
     try {
       const response = await $axios.$get('/ticket-fields', {
         params: {
@@ -65,12 +63,11 @@ export default class EventCheckout extends VuexModule {
       console.error('Erro ao buscar campos do ingresso:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async fetchCheckoutFieldOptions(fieldId: string): Promise<CustomFieldOptionApiResponse[]> {
+  async fetchCheckoutFieldOptions({ commit }: any, fieldId: string): Promise<CustomFieldOptionApiResponse[]> {
     try {
-      this.context.commit('SET_LOADING', true);
+      commit('SET_LOADING', true);
       const response = await $axios.$get(`event-checkout-field-options`,
         {
           params: {
@@ -88,12 +85,11 @@ export default class EventCheckout extends VuexModule {
       console.error('Erro ao buscar opções de campo:', error);
       throw error;
     } finally {
-      this.context.commit('SET_LOADING', false);
+      commit('SET_LOADING', false);
     }
-  }
+  },
 
-  @Action
-  public async createCustomerTicket(customerTicketData: CreateCustomerTicketPayload): Promise<CustomerTicketApiResponse> {
+  async createCustomerTicket(_: any, customerTicketData: CreateCustomerTicketPayload): Promise<CustomerTicketApiResponse> {
     try {
       const response = await $axios.$post('/customer-ticket', customerTicketData);
       const data = handleCreateResponse(response, 'Erro ao criar ingresso');
@@ -102,10 +98,9 @@ export default class EventCheckout extends VuexModule {
       console.error('Erro ao criar ingresso:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async createTicketFields(payload: any): Promise<any> {
+  async createTicketFields(_: any, payload: any): Promise<any> {
     try {
       const response = await $axios.$post(`/ticket-field`, payload);
       const data = handleCreateResponse(response, 'Erro ao criar valores de campos de ticket');
@@ -114,10 +109,9 @@ export default class EventCheckout extends VuexModule {
       console.error('Erro ao criar campos de ticket:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async updateTicketFields(payload: any): Promise<any> {
+  async updateTicketFields(_: any, payload: any): Promise<any> {
     try {
       const response = await $axios.$patch(`/ticket-field`, payload);
       const data = handleUpdateResponse(response, 'Erro ao atualizar valores de campos de ticket');
@@ -126,10 +120,9 @@ export default class EventCheckout extends VuexModule {
       console.error('Erro ao atualizar campos de ticket:', error);
       throw error;
     }
-  }
+  },
 
-  @Action
-  public async updateEventTicketsTotalSold(payload: Array<{ticketId: string, total_sold: number}>): Promise<any> {
+  async updateEventTicketsTotalSold(_: any, payload: Array<{ticketId: string, total_sold: number}>): Promise<any> {
     try {
       const response = await $axios.$patch(`/ticket`, {
         data: payload.map(item => ({
@@ -143,5 +136,5 @@ export default class EventCheckout extends VuexModule {
       console.error('Erro ao atualizar quantidade de ingressos vendidos:', error);
       throw error;
     }
-  }
-}
+  },
+};
