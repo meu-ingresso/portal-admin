@@ -36,9 +36,9 @@ export default {
       if (!ticketAvailableStatus) throw new Error('Status de ingresso disponível não encontrado');
       
       // 3. Obter profile_id do usuário
-      let peopleID = context.$store.state.auth.user?.auth?.people?.id;
+      let peopleID = context.$store.state.auth.user?.people?.id;
       if (!peopleID) {
-        const userId = context.$store.state.auth.user?.auth?.id;
+        const userId = context.$store.state.auth.user?.id;
         if (!userId) throw new Error('ID do usuário não encontrado');
 
         const userResponse = await context.$store.dispatch('user/getById', { user_id: userId, commit: false });
@@ -107,7 +107,7 @@ export default {
       });
       if (!paymentApprovedStatus) throw new Error('Status de pagamento aprovado não encontrado');
       
-      const userId = context.$store.state.auth.user?.auth?.id;
+      const userId = context.$store.state.auth.user?.id;
       if (!userId) throw new Error('ID do usuário não encontrado');
 
       const paymentPayload = {
