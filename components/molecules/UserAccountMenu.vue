@@ -6,7 +6,7 @@
       </v-btn>
     </template>
 
-    <v-list dense>
+    <v-list dense class="user-menu">
       <v-list-item class="px-3 py-2">
         <MUserProfile
 variant="card" :avatar-color="avatarColor" avatar-size="40" name-class="font-weight-medium"
@@ -99,7 +99,7 @@ export default Vue.extend({
       // Vitrine sempre será a primeira opção
       if (this.showVitrineLink) {
         items.push({
-          title: 'Vitrine',
+          title: 'Início',
           icon: 'mdi-storefront',
           action: this.goToVitrine,
           external: true
@@ -320,9 +320,13 @@ export default Vue.extend({
 }
 
 :deep(.v-divider) {
-  margin-top: 4px !important;
-  margin-bottom: 4px !important;
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
   background-color: rgba(0, 0, 0, 0.06) !important;
   opacity: 0.5 !important;
+}
+
+.user-menu {
+  padding-bottom: 0px !important;
 }
 </style>
