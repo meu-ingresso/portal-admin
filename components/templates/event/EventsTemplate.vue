@@ -4,7 +4,8 @@
       <v-col cols="12" md="6" sm="12">
         <div class="events-template-title">Lista de Eventos</div>
       </v-col>
-      <v-col cols="12" md="6" sm="12" class="d-flex"
+      <v-col
+cols="12" md="6" sm="12" class="d-flex"
         :class="{ 'justify-md-end': !isMobile, 'justify-space-between': isMobile }">
         <DefaultButton v-if="canCreateEvent" text="Criar um evento" :block="isMobile" to="/events/create" />
       </v-col>
@@ -13,17 +14,20 @@
       <DataSearch :search="search" place-holder="Encontre seu evento" @do-search="handleSearch" />
     </div>
 
-    <FilterButtons :filters="statusList" :selected="selectedFilter" :is-loading="isLoadingStatus"
+    <FilterButtons
+:filters="statusList" :selected="selectedFilter" :is-loading="isLoadingStatus"
       @filter-selected="handleFilterChange" />
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
-    <EventList :events="groupedEvents" :show-sessions-indicator="showSessionsIndicator"
+    <EventList
+:events="groupedEvents" :show-sessions-indicator="showSessionsIndicator"
       @check-promoter="handleCheckPromoter" />
 
     <!-- Estado vazio -->
     <template v-if="groupedEvents.length === 0 && !isLoadingEvents">
-      <EmptyState title="Ainda não há eventos para esta busca" subtitle="Uma vez criados, seus eventos aparecerão aqui"
+      <EmptyState
+title="Ainda não há eventos para esta busca" subtitle="Uma vez criados, seus eventos aparecerão aqui"
         icon="mdi-calendar-outline" />
     </template>
 
@@ -38,7 +42,7 @@
 </template>
 
 <script>
-import { isMobileDevice, isUserAdmin, isUserManager } from '@/utils/utils';
+import { isMobileDevice } from '@/utils/utils';
 import { checkUserPermissionsBatch } from '@/utils/permissions-util';
 import { EVENT_PERMISSIONS } from '@/utils/permissions-config';
 
