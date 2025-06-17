@@ -69,7 +69,8 @@
                         </p>
                         <p class="mb-0">Após o cadastro completo, seus eventos podem ser publicados.</p>
                       </div>
-                      <DefaultButton color="error" class="mt-4 mt-sm-0" text="Completar cadastro"
+                      <DefaultButton
+color="error" class="mt-4 mt-sm-0" text="Completar cadastro"
                         @click="showDocumentDialog = true" />
                     </div>
                   </div>
@@ -91,7 +92,8 @@
     </v-row>
 
     <!-- Modais -->
-    <RequiredUserDocModal :show-document-dialog="showDocumentDialog" :has-document-info="hasDocumentInfo"
+    <RequiredUserDocModal
+:show-document-dialog="showDocumentDialog" :has-document-info="hasDocumentInfo"
       @close-document-dialog="showDocumentDialog = false" @saved-user-data="onDocumentsSubmitted" />
 
     <v-dialog v-model="showSecurityDialog" max-width="500">
@@ -203,10 +205,56 @@ export default {
           this.$store.dispatch('userDocuments/fetchDocumentStatus', newValue);
         }
       }
+    },
+
+    activeTab(newValue) {
+      // Atualizar a URL quando a aba mudar
+      this.updateUrlTab(newValue);
     }
   },
 
+  mounted() {
+    // Definir a aba ativa baseada no parâmetro da URL
+    this.setActiveTabFromUrl();
+  },
+
   methods: {
+    setActiveTabFromUrl() {
+      const tabParam = this.$route.query.tab;
+      
+      if (tabParam) {
+        switch (tabParam.toLowerCase()) {
+          case 'organizer':
+          case 'organizador':
+            this.activeTab = 0;
+            break;
+          case 'settings':
+          case 'configuracoes':
+          case 'configurações':
+            this.activeTab = 1;
+            break;
+          default:
+            this.activeTab = 0;
+        }
+      }
+    },
+
+    updateUrlTab(tabIndex) {
+      const tabNames = ['organizer', 'settings'];
+      const currentTab = tabNames[tabIndex] || 'organizer';
+      
+      // Atualizar a URL sem recarregar a página
+      if (this.$route.query.tab !== currentTab) {
+        this.$router.replace({
+          path: this.$route.path,
+          query: {
+            ...this.$route.query,
+            tab: currentTab
+          }
+        });
+      }
+    },
+
     async onDocumentsSubmitted() {
       try {
         await this.$store.dispatch('userDocuments/fetchDocumentStatus', this.userId);
@@ -216,7 +264,6 @@ export default {
         console.error('Erro ao atualizar informações:', error);
       }
     },
-
 
     onSecurityFormSaved() {
       this.showSecurityDialog = false;
