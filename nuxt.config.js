@@ -102,18 +102,20 @@ export default {
       logout: '/',
       callback: '/login',
       home: '/'
-    }
+    },
+
+    cookie: {
+      prefix: 'auth.',
+      options: {
+        domain: '.meuingresso.com.br',
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+      }
+    },
   },
 
-  cookie: {
-    prefix: 'auth.',
-    options: {
-      domain: '.meuingresso.com.br',
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-    }
-  },
+
 
   router: {
     base: process.env.ROUTE || '/',
