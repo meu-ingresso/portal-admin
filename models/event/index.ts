@@ -232,6 +232,39 @@ export interface EventDate {
   end_time: string;
 }
 
+export interface PeopleApiResponse {
+  id: string;
+  first_name: string;
+  last_name: string;
+  person_type: PersonType;
+  tax: string;
+  phone: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+export interface RoleApiResponse {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface UserApiResponse {
+  id: string;
+  people_id: string;
+  email: string;
+  alias: string;
+  role_id: string;
+  account_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+  people?: PeopleApiResponse;
+  role?: RoleApiResponse;
+}
+
 export interface Event {
   id?: string;
   name: string;
@@ -252,6 +285,7 @@ export interface Event {
   is_featured: boolean;
   absorb_service_fee: boolean;
   promoter_id?: string;
+  promoter?: UserApiResponse;
   tickets: Ticket[];
   custom_fields: CustomField[];
   coupons: Coupon[];
@@ -353,38 +387,7 @@ export interface StatusApiResponse {
   deleted_at?: string;
 }
 
-export interface PeopleApiResponse {
-  id: string;
-  first_name: string;
-  last_name: string;
-  person_type: PersonType;
-  tax: string;
-  phone: string;
-  email: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-}
 
-export interface RoleApiResponse {
-  id: string;
-  name: string;
-  description: string;
-}
-
-export interface UserApiResponse {
-  id: string;
-  people_id: string;
-  email: string;
-  alias: string;
-  role_id: string;
-  account_verified: boolean;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  people?: PeopleApiResponse;
-  role?: RoleApiResponse;
-}
 
 export interface PDVUserApiResponse {
   id: string;

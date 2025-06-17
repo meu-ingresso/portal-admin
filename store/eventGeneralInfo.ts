@@ -298,6 +298,7 @@ export const actions = {
         'status',
         'fees',
         'groups',
+        'promoter:people',
       ];
 
       const response = await $axios.$get(
@@ -392,6 +393,7 @@ export const actions = {
         link_online: linkOnlineUrl || '',
         link_online_id: linkOnlineId || '',
         promoter_id: event.promoter_id,
+        promoter: event.promoter,
         attachments: event.attachments,
         collaborators: event.collaborators,
         totalizers: event.totalizers,
