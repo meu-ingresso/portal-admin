@@ -106,7 +106,7 @@
 
 <script>
 import { formatRealValue } from '@/utils/formatters';
-import { isMobileDevice, isUserAdmin } from '@/utils/utils';
+import { isMobileDevice } from '@/utils/utils';
 
 export default {
   props: {
