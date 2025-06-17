@@ -2,13 +2,14 @@
   <v-menu bottom left offset-y min-width="250" max-width="250" transition="slide-y-transition">
     <template #activator="{ on, attrs }">
       <v-btn icon :class="buttonClass" v-bind="attrs" v-on="on">
-        <MUserProfile variant="avatar" :avatar-color="avatarColor" :avatar-size="isMobile ? '32' : '48'" />
+        <MUserProfile variant="avatar" :avatar-color="avatarColor" :avatar-size="32" />
       </v-btn>
     </template>
 
     <v-list dense>
       <v-list-item class="px-3 py-2">
-        <MUserProfile variant="card" :avatar-color="avatarColor" avatar-size="40" name-class="font-weight-medium"
+        <MUserProfile
+variant="card" :avatar-color="avatarColor" avatar-size="40" name-class="font-weight-medium"
           email-class="text-caption" />
       </v-list-item>
 
@@ -58,7 +59,7 @@ export default Vue.extend({
     // Avatar customization
     avatarColor: {
       type: String,
-      default: 'grey'
+      default: 'secondary'
     },
     buttonClass: {
       type: String,
@@ -76,29 +77,124 @@ export default Vue.extend({
       return this.$store.state.auth.user?.id || '';
     },
 
+    getUserRole() {
+      return this.$store.state.auth.user?.role;
+    },
+
+    isAdmin() {
+      return this.getUserRole?.name === 'Admin';
+    },
+
+    isProducer() {
+      return this.getUserRole?.name === 'Produtor';
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
 
     menuItems(): MenuItemOrDivider[] {
-      const items: MenuItemOrDivider[] = [
-        {
-          title: 'Minha conta',
-          icon: 'mdi-account-circle',
-          action: () => this.userEdit(this.getUserId)
-        }
-      ];
+      const items: MenuItemOrDivider[] = [];
 
-      // Add vitrine link if enabled
+      // Vitrine sempre será a primeira opção
       if (this.showVitrineLink) {
         items.push({
-          title: 'Home',
+          title: 'Vitrine',
           icon: 'mdi-storefront',
           action: this.goToVitrine,
           external: true
         });
       }
 
+      // Opções comuns para todos os usuários
+      items.push(
+        {
+          title: 'Minha conta',
+          icon: 'mdi-account-circle',
+          action: () => this.userEdit(this.getUserId)
+        },
+        {
+          title: 'Meus ingressos',
+          icon: 'mdi-ticket-confirmation',
+          action: this.goToTickets
+        }
+      );
+
+      // Opções específicas baseadas no role
+      if (this.isProducer) {
+        items.push(
+          { divider: true },
+          {
+            title: 'Meus eventos',
+            icon: 'mdi-calendar-star',
+            action: this.goToMyEvents
+          },
+          {
+            title: 'Relatórios',
+            icon: 'mdi-chart-bar',
+            action: this.goToReports
+          },
+          {
+            title: 'Minha página',
+            icon: 'mdi-web',
+            action: this.goToMyPage
+          },
+          {
+            title: 'Configurações',
+            icon: 'mdi-cog',
+            action: this.goToConfig
+          },
+          { divider: true },
+          {
+            title: 'Ajuda',
+            icon: 'mdi-help-circle',
+            action: this.goToHelp
+          }
+        );
+      } else if (this.isAdmin) {
+        items.push(
+          { divider: true },
+          {
+            title: 'Relatórios',
+            icon: 'mdi-chart-bar',
+            action: this.goToReports
+          },
+          {
+            title: 'Eventos',
+            icon: 'mdi-calendar-star',
+            action: this.goToMyEvents
+          },
+          {
+            title: 'Configurações',
+            icon: 'mdi-cog',
+            action: this.goToConfig
+          },
+          { divider: true },
+          {
+            title: 'Ajuda',
+            icon: 'mdi-help-circle',
+            action: this.goToHelp
+          }
+        );
+      } else {
+        // Usuário comum
+        items.push(
+          { divider: true },
+          {
+            title: 'Publicar evento',
+            icon: 'mdi-calendar-plus',
+            action: this.goToCreateEvent
+          },
+          { divider: true },
+          {
+            title: 'Ajuda',
+            icon: 'mdi-help-circle',
+            action: this.goToHelp
+          }
+        );
+      }
+
+      // Sair sempre será a última opção
       items.push(
         { divider: true },
         {
@@ -136,6 +232,37 @@ export default Vue.extend({
       } else {
         return 'https://vitrine.meuingresso.com.br';
       }
+    },
+
+    goToTickets(): void {
+      // TODO: Implementar página de ingressos do usuário
+      alert('Página "Meus ingressos" em desenvolvimento');
+    },
+
+    goToMyEvents(): void {
+      this.$router.push('/');
+    },
+
+    goToMyPage(): void {
+      this.$router.push('/my-page');
+    },
+
+    goToCreateEvent(): void {
+      this.$router.push('/events/create');
+    },
+
+    goToReports(): void {
+      this.$router.push('/reports');
+    },
+
+    goToConfig(): void {
+      const userId = this.getUserId;
+      this.$router.push(`/user/profile/${userId}?tab=settings`);
+    },
+
+    goToHelp(): void {
+      // TODO: Implementar página de ajuda
+      alert('Página de "Ajuda" em desenvolvimento');
     },
 
     async onLogout() {
@@ -195,5 +322,7 @@ export default Vue.extend({
 :deep(.v-divider) {
   margin-top: 4px !important;
   margin-bottom: 4px !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  opacity: 0.5 !important;
 }
 </style>
