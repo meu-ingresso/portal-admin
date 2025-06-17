@@ -2,11 +2,15 @@
   <img
     v-if="isDark"
     src="~/assets/images/logo_web.png"
+    alt="Meu Ingresso"
+    height="40"
     class="logoMenu"
     @click="handleClick" />
   <img
     v-else
     src="~/assets/images/logo_footer.png"
+    alt="Meu Ingresso"
+    height="40"
     class="logoMenu"
     @click="handleClick" />
 </template>
@@ -36,7 +40,8 @@ export default {
 
 <style scoped>
 .logoMenu {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  cursor: pointer;
 }
 </style>

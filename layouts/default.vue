@@ -6,7 +6,8 @@
         <v-list-item class="drawer-logo">
           <MobileLogo is-dark :click-to-home="true" />
         </v-list-item>
-        <v-list-item v-for="item in filteredInternalTopBarItems" :key="item.title" :to="item.to" router exact
+        <v-list-item
+v-for="item in filteredInternalTopBarItems" :key="item.title" :to="item.to" router exact
           active-class="active-item">
           <v-list-item-icon>
             <v-icon>{{ item.icon }}</v-icon>
@@ -16,7 +17,8 @@
             <v-list-item-title>{{ item.title }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item v-for="item in filteredExternalTopBarItems" :key="'ext-' + item.title" :href="item.to"
+        <v-list-item
+v-for="item in filteredExternalTopBarItems" :key="'ext-' + item.title" :href="item.to"
           :target="item.target" active-class="active-item">
           <v-list-item-icon>
             <v-icon>{{ item.icon }}</v-icon>
@@ -29,25 +31,11 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar color="primary" clipped-left dense fixed app class="header">
+    <v-app-bar color="primary" clipped-left fixed app class="header">
       <div class="header-content">
         <MenuLogo class="header-img" :click-to-home="true" @change-drawer="onChangeDrawer" />
-
-        <!-- Desktop -->
-        <div v-if="!isMobile" class="content-menus">
-          <div v-for="(item, index) in filteredInternalTopBarItems" :key="index" class="topbar-item">
-            <v-btn :to="item.to" class="topbar-button" :title="item.title" depressed plain tile>
-              <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
-            </v-btn>
-          </div>
-          <div v-for="(item, index) in filteredExternalTopBarItems" :key="'ext-' + index" class="topbar-item">
-            <v-btn :href="item.to" :target="item.target" class="topbar-button" :title="item.title" depressed plain tile>
-              <v-icon left>{{ item.icon }}</v-icon> {{ item.title }}
-            </v-btn>
-          </div>
-        </div>
         <v-spacer />
-        <UserAccountMenu v-if="!isLogin" />
+        <UserAccountMenu v-if="!isLogin" avatar-color="grey" />
       </div>
     </v-app-bar>
 
@@ -188,32 +176,25 @@ export default {
 </script>
 
 <style scoped>
+.header {
+  height: 64px !important;
+}
+
 .header-content {
   display: flex;
   flex-direction: row;
   width: 100%;
-  margin-top: 12px;
-  align-items: center;
+  padding: 0 16px;
 }
 
 .header-img {
-  width: 230px;
   display: flex;
-  justify-content: center;
-}
-
-.content-menus {
-  display: flex;
-  flex-direction: row;
   align-items: center;
 }
 
-.topbar-item {
-  margin-right: 16px;
-}
-
-.topbar-button {
-  color: white;
+:deep(.v-toolbar__content) {
+  height: 64px !important;
+  padding: 0 !important;
 }
 
 .navigation-drawer {
