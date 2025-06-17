@@ -5,22 +5,31 @@
       position="bottom"
       variant="card"
     >
-      <div class="promoter-summary d-flex align-center">
+      <div class="promoter-summary d-flex align-center" @click="handlePromoterClick">
         <v-icon class="mr-2 promoter-icon" small>mdi-account-star</v-icon>
         <span class="promoter-text">Produtor {{ promoterInfo.name }}</span>
+        <v-icon v-if="isAdmin" class="ml-2" small>mdi-pencil</v-icon>
       </div>
     </ABaseTooltip>
+
+    <!-- Modal de Edição do Usuário Produtor -->
+    <EditUserModal 
+      v-if="showEditUserModal" 
+      :show.sync="showEditUserModal" 
+      :user="currentEvent.promoter"
+      @saved="handleUserSaved" 
+    />
   </div>
 </template>
 
 <script>
-import ABaseTooltip from '@/components/atoms/ABaseTooltip.vue';
-
 export default {
   name: 'EventPromoterInfo',
 
-  components: {
-    ABaseTooltip,
+  data() {
+    return {
+      showEditUserModal: false,
+    };
   },
 
   computed: {
@@ -56,8 +65,32 @@ export default {
       if (this.promoterInfo.tax) {
         tooltipText += `\n Documento: ${this.promoterInfo.tax}`;
       }
+
+      if (this.isAdmin) {
+        tooltipText += `\n\nClique para editar os dados do produtor`;
+      }
       
       return tooltipText;
+    },
+  },
+
+  methods: {
+    handlePromoterClick() {
+      if (this.isAdmin && this.currentEvent?.promoter) {
+        this.showEditUserModal = true;
+      }
+    },
+
+    handleUserSaved() {
+      this.showEditUserModal = false;
+      // Recarrega os dados do evento para refletir as mudanças
+      this.$store.dispatch('eventGeneralInfo/fetchAndPopulateByEventId', this.currentEvent.id);
+      
+      this.$store.dispatch('toast/setToast', {
+        text: 'Dados do produtor atualizados com sucesso!',
+        type: 'success',
+        time: 3000
+      });
     },
   },
 };
