@@ -411,7 +411,15 @@ export default {
 
       const notAcceptedAttachments = ['pix_key', 'profile_image', 'contact_info', 'fiscal_info', 'rejection_reason', 'account_verification', 'documents_rejection'];
 
-      const filteredAttachments = this.userAttachments.filter(att => !notAcceptedAttachments.includes(att.name));
+      const filteredAttachments = this.userAttachments.filter(att => {
+        // Verifica se o nome não está na lista de não aceitos
+        if (notAcceptedAttachments.includes(att.name)) return false;
+        
+        // Verifica se o nome não contém "temp_" (documentos temporários)
+        if (att.name && att.name.includes('temp_')) return false;
+        
+        return true;
+      });
 
       return filteredAttachments.map(att => ({
         name: att.name,
