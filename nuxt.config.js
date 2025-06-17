@@ -84,7 +84,8 @@ export default {
         token: {
           property: 'body.result.token.token',
           global: true,
-          type: 'Bearer'
+          type: 'Bearer',
+          maxAge: 60 * 60 * 24 * 4, // 4 days
         },
         user: {
           property: 'body.result.auth',
@@ -107,10 +108,11 @@ export default {
     cookie: {
       prefix: 'auth.',
       options: {
-        domain: '.meuingresso.com.br',
-        secure: true,
+        domain: process.env.NODE_ENV === 'development' ? undefined : '.meuingresso.com.br',
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
+        httpOnly: false,
       }
     },
   },

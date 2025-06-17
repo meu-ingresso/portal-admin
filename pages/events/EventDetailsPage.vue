@@ -15,10 +15,15 @@
 
       <div v-else-if="getEvent" class="event-details-page">
 
-        <div class="d-flex justify-space-between" :class="{ 'flex-column': isMobile }">
+        <div class="d-flex justify-space-between mb-6" :class="{ 'flex-column': isMobile }">
           <EventDetailsHeader />
-          <EventSessionSelector />
+          <div class="d-flex justify-space-between flex-column">
+            <EventSessionSelector />
+            <EventPromoterInfo />
+          </div>
         </div>
+
+        
 
         <EventDetailsTemplate v-if="isPanel" />
         <EventDetailsTicketsTemplate v-if="isTickets" />
@@ -193,7 +198,7 @@ export default {
                 id: groupId
               }
             },
-            preloads: ['rating', 'coupons', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups', 'tickets']
+            preloads: ['rating', 'coupons', 'collaborators:user:people', 'collaborators:role', 'views', 'address', 'attachments', 'fees', 'groups', 'tickets', 'promoter']
           });
         }
 

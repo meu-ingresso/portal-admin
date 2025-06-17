@@ -24,6 +24,7 @@
           </template>
           <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
         </v-tooltip>
+
       </div>
 
       <div class="alias d-flex align-center">
@@ -103,7 +104,7 @@
           </v-dialog>
         </div>
 
-        <div class="online-event d-flex align-center mb-2">
+        <div class="online-event d-flex align-center">
           <v-icon class="mr-2 details-icon">mdi-web</v-icon>
 
           <a :href="onlineLink" target="_blank" class="online-link">
@@ -127,7 +128,7 @@
       </template>
 
       <template v-else-if="isOnlineEvent">
-        <div class="online-event d-flex align-center mb-2">
+        <div class="online-event d-flex align-center">
           <v-icon class="mr-2 details-icon">mdi-web</v-icon>
 
           <a :href="onlineLink" target="_blank" class="online-link">
@@ -151,7 +152,7 @@
       </template>
 
       <template v-else>
-        <div class="location d-flex align-center mb-2 cursor-pointer">
+        <div class="location d-flex align-center cursor-pointer">
           <v-icon class="mr-2 details-icon">mdi-map-marker</v-icon>
 
           <p @click="handleMapDialog">{{ getEventLocation }}</p>
@@ -208,6 +209,7 @@
             </template>
             <span> Taxa negociada: {{ getEvent.fees.platform_fee }}% </span>
           </v-tooltip>
+
         </div>
         <div class="event-title is-mobile">{{ getEvent.name }}</div>
 
@@ -334,7 +336,7 @@ import {
   formatHourToBr,
   formatDateTimeToBr,
 } from '@/utils/formatters';
-import { isMobileDevice, isUserAdmin } from '@/utils/utils';
+import { isMobileDevice } from '@/utils/utils';
 
 export default {
   data() {
@@ -352,8 +354,13 @@ export default {
       return isMobileDevice(this.$vuetify);
     },
 
+    userId() {
+      return this.$auth.user?.id;
+    },
+
     isAdmin() {
-      return isUserAdmin(this.$cookies);
+      const role = this.$auth.user?.role;
+      return role && role.name === 'Admin';
     },
 
     onlineLink() {
@@ -486,9 +493,6 @@ export default {
 </script>
 
 <style scoped>
-.event-details-header {
-  margin-bottom: 24px;
-}
 .event-title-wrapper {
   display: flex;
   align-items: center;
