@@ -405,6 +405,14 @@ export const actions = {
         groups: event?.groups,
         event_dates: eventDates,
         group_id: groupId,
+        id_pixel: event.id_pixel,
+        id_tag_manager: event.id_tag_manager,
+        id_analytics: event.id_analytics,
+        id_google_ads: event.id_google_ads,
+        ads_conversion_label: event.ads_conversion_label,
+        // TODO: Verificar se a API retorna esses campos
+        api_token_conversions: event?.api_token_conversions || '',
+        api_test_event_code: event?.api_test_event_code || '',
       });
 
       return event;
@@ -1064,6 +1072,45 @@ export const actions = {
       return response.body.result.data[0];
     } catch (error) {
       console.error('Erro ao buscar status:', error);
+      throw error;
+    }
+  },
+
+  async updateEventIntegrations({ commit }: any, { eventId, integrations }: { eventId: string; integrations: any }) {
+    try {
+      const response = await $axios.$patch('event', {
+        data: [
+          {
+            id: eventId,
+            id_pixel: integrations.id_pixel || null,
+            api_token_conversions: integrations.api_token_conversions || null,
+            api_test_event_code: integrations.api_test_event_code || null,
+            id_tag_manager: integrations.id_tag_manager || null,
+            id_analytics: integrations.id_analytics || null,
+            id_google_ads: integrations.id_google_ads || null,
+            ads_conversion_label: integrations.ads_conversion_label || null,
+          },
+        ],
+      });
+
+      if (!response.body || response.body.code !== 'UPDATE_SUCCESS') {
+        throw new Error('Falha ao atualizar integrações do evento');
+      }
+
+      // Atualizar o estado local
+      commit('UPDATE_INFO', {
+        id_pixel: integrations.id_pixel,
+        api_token_conversions: integrations.api_token_conversions,
+        api_test_event_code: integrations.api_test_event_code,
+        id_tag_manager: integrations.id_tag_manager,
+        id_analytics: integrations.id_analytics,
+        id_google_ads: integrations.id_google_ads,
+        ads_conversion_label: integrations.ads_conversion_label,
+      });
+
+      return response.body.result;
+    } catch (error) {
+      console.error('Erro ao atualizar integrações do evento:', error);
       throw error;
     }
   },
