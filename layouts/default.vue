@@ -198,6 +198,7 @@ export default {
 }
 
 .navigation-drawer {
+  top: 64px !important;
   color: var(--black-text) !important;
   font-weight: 400 !important;
   font-size: 16px !important;

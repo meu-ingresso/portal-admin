@@ -33,6 +33,7 @@
         <EventDetailsOrdersTemplate v-if="isOrders" />
         <EventDetailsCollaboratorsTemplate v-if="isCollaborators" />
         <EventDetailsPdvTemplate v-if="isPdv" />
+        <EventDetailsIntegrationsTemplate v-if="isIntegrations" />
       </div>
     </v-container>
     <Toast />
@@ -119,6 +120,10 @@ export default {
 
     isPdv() {
       return this.$route.meta.template === 'pdv';
+    },
+
+    isIntegrations() {
+      return this.$route.meta.template === 'integrations';
     },
 
     userRole() {
@@ -258,7 +263,8 @@ export default {
         'orders': 'Pedidos',
         'guestlists': 'Listas de Convidados',
         'collaborators': 'Colaboradores',
-        'pdv': 'PDV'
+        'pdv': 'PDV',
+        'integrations': 'Integrações'
       };
 
       return templateMap[this.attemptedTemplate] || this.attemptedTemplate;
