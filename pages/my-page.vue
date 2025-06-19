@@ -48,35 +48,41 @@
         <div class="template-title mb-4">Configurações da página</div>
 
         <!-- Bio Section -->
-        <PageConfigSection icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
+        <PageConfigSection
+icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
           :loading="isLoading" @save="handleSaveBio" @cancel="handleCancelBio">
-          <RichTextEditorV2 ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
+                    <RichTextEditorV2
+ ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
             :disabled="isLoading" :max-length="255" :enable-image-upload="false"
-            :image-upload-handler="handleImageUpload" :max-image-size="2 * 1024 * 1024"
+            :image-upload-handler="handleBiographyImageUpload" :max-image-size="2 * 1024 * 1024"
             :accepted-image-types="['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']"
             @image-upload-start="handleImageUploadStart" @image-uploaded="handleImageUploaded"
             @image-upload-error="handleImageUploadError" />
         </PageConfigSection>
 
         <!-- Social Links Section -->
-        <PageConfigSection icon="mdi-link-variant" title="Links" subtitle="Website & mídias sociais"
+        <PageConfigSection
+icon="mdi-link-variant" title="Links" subtitle="Website & mídias sociais"
           :loading="isLoading" @save="handleSaveSocialLinks" @cancel="handleCancelSocialLinks">
           <SocialMediaLinks v-model="socialLinks" @change="handleSocialLinkChange" />
         </PageConfigSection>
 
         <!-- Contact Info Section -->
-        <PageConfigSection icon="mdi-account-box-outline" title="Informações de contato"
+        <PageConfigSection
+icon="mdi-account-box-outline" title="Informações de contato"
           subtitle="E-mail e telefone para contato" :loading="isLoading" @save="handleSaveContactInfo"
           @cancel="handleCancelContactInfo">
-          <ContactForm ref="contactForm" :contact-email.sync="contactEmail" :contact-phone.sync="contactPhone"
+          <ContactForm
+ref="contactForm" :contact-email.sync="contactEmail" :contact-phone.sync="contactPhone"
             :disabled="isLoading" />
         </PageConfigSection>
       </v-col>
     </v-row>
 
-    <!-- Hidden file input for profile image -->
-    <input ref="fileInput" type="file" accept="image/*" style="display: none"
-      @change="handleImageUpload($event.target.files[0])">
+        <!-- Hidden file input for profile image -->
+    <input
+ ref="fileInput" type="file" accept="image/*" style="display: none"
+      @change="handleProfileImageUpload($event.target.files[0])">
 
     <!-- Loading Overlay -->
     <v-overlay :value="isLoading">
@@ -237,16 +243,71 @@ export default {
 
       } catch (error) {
         console.error('Error fetching user data:', error);
-        this.$store.dispatch('toast/show', {
-          toastText: 'Erro ao carregar dados do usuário',
-          toastType: 'error'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao carregar dados do usuário',
+          type: 'error',
+          time: 5000
         });
       } finally {
         this.isLoading = false;
       }
     },
 
-    async handleImageUpload(file) {
+    // Método específico para upload da imagem de perfil
+    async handleProfileImageUpload(file) {
+      try {
+        this.isLoading = true;
+
+        const userAttachments = this.$store.getters['userDocuments/$userAttachments'];
+        const profileImageDoc = userAttachments.find(doc => doc.name === 'profile_image');
+
+        let imageUrl;
+
+        if (profileImageDoc) {
+          // Se já existe um attachment de profile_image, atualiza ele
+          imageUrl = await this.$store.dispatch('userDocuments/uploadUserDocument', {
+            documentFile: file,
+            attachmentId: profileImageDoc.id
+          });
+        } else {
+          // Se não existe, cria um novo attachment com name 'profile_image'
+          const newImageDoc = await this.$store.dispatch('userDocuments/createUserDocument', {
+            name: 'profile_image',
+            type: 'image',
+            userId: this.userId
+          });
+
+          imageUrl = await this.$store.dispatch('userDocuments/uploadUserDocument', {
+            documentFile: file,
+            attachmentId: newImageDoc.id
+          });
+        }
+
+        // Atualizar a URL da imagem de perfil localmente
+        this.profileImageUrl = imageUrl;
+
+        this.$store.dispatch('toast/setToast', {
+          text: 'Imagem de perfil atualizada com sucesso',
+          type: 'success',
+          time: 5000
+        });
+
+        return imageUrl;
+
+      } catch (error) {
+        console.error('Erro no upload da imagem de perfil:', error);
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao atualizar imagem de perfil',
+          type: 'error',
+          time: 5000
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // Método para upload de imagens na biografia (sistema temporário)
+    async handleBiographyImageUpload(file) {
       try {
         this.isLoading = true;
 
@@ -318,15 +379,17 @@ export default {
         this.originalBiography = this.biography;
         this.isEditingBio = false;
 
-        this.$store.dispatch('toast/show', {
-          toastText: 'Biografia atualizada com sucesso',
-          toastType: 'success'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Biografia atualizada com sucesso',
+          type: 'success',
+          time: 5000
         });
       } catch (error) {
         console.error('Error saving bio:', error);
-        this.$store.dispatch('toast/show', {
-          toastText: 'Erro ao atualizar biografia',
-          toastType: 'error'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao atualizar biografia',
+          type: 'error',
+          time: 5000
         });
       } finally {
         this.isLoading = false;
@@ -346,16 +409,18 @@ export default {
         this.isEditingBio = false;
 
         if (this.tempUploadedImages.length > 0) {
-          this.$store.dispatch('toast/show', {
-            toastText: 'Edição cancelada. Imagens temporárias foram removidas.',
-            toastType: 'info'
+          this.$store.dispatch('toast/setToast', {
+            text: 'Edição cancelada. Imagens temporárias foram removidas.',
+            type: 'info',
+            time: 5000
           });
         }
       } catch (error) {
         console.error('Error canceling bio edit:', error);
-        this.$store.dispatch('toast/show', {
-          toastText: 'Erro ao cancelar edição',
-          toastType: 'error'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao cancelar edição',
+          type: 'error',
+          time: 5000
         });
       }
     },
@@ -381,15 +446,17 @@ export default {
         }
 
         this.originalSocialLinks = { ...this.socialLinks };
-        this.$store.dispatch('toast/show', {
-          toastText: 'Links atualizados com sucesso',
-          toastType: 'success'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Links atualizados com sucesso',
+          type: 'success',
+          time: 5000
         });
       } catch (error) {
         console.error('Error saving social links:', error);
-        this.$store.dispatch('toast/show', {
-          toastText: 'Erro ao atualizar links',
-          toastType: 'error'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao atualizar links',
+          type: 'error',
+          time: 5000
         });
       } finally {
         this.isLoading = false;
@@ -405,9 +472,10 @@ export default {
         // Verificar se o formulário é válido antes de salvar
         const contactForm = this.$refs.contactForm;
         if (!contactForm || !contactForm.isFormValid()) {
-          this.$store.dispatch('toast/show', {
-            toastText: 'Por favor, corrija os erros no formulário antes de salvar',
-            toastType: 'error'
+          this.$store.dispatch('toast/setToast', {
+            text: 'Por favor, corrija os erros no formulário antes de salvar',
+            type: 'error',
+            time: 5000
           });
           return;
         }
@@ -436,15 +504,17 @@ export default {
         }
 
         this.originalContactInfo = { ...contactInfo };
-        this.$store.dispatch('toast/show', {
-          toastText: 'Informações de contato atualizadas com sucesso',
-          toastType: 'success'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Informações de contato atualizadas com sucesso',
+          type: 'success',
+          time: 5000
         });
       } catch (error) {
         console.error('Error saving contact info:', error);
-        this.$store.dispatch('toast/show', {
-          toastText: 'Erro ao atualizar informações de contato',
-          toastType: 'error'
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao atualizar informações de contato',
+          type: 'error',
+          time: 5000
         });
       } finally {
         this.isLoading = false;
@@ -467,17 +537,19 @@ export default {
 
     handleImageUploaded({ file, url }) {
       console.log('Imagem enviada com sucesso:', file.name, url);
-      this.$store.dispatch('toast/show', {
-        toastText: `Imagem "${file.name}" enviada com sucesso`,
-        toastType: 'success'
+      this.$store.dispatch('toast/setToast', {
+        text: `Imagem "${file.name}" enviada com sucesso`,
+        type: 'success',
+        time: 5000
       });
     },
 
     handleImageUploadError({ file, error }) {
       console.error('Erro no upload da imagem:', file?.name, error);
-      this.$store.dispatch('toast/show', {
-        toastText: `Erro ao enviar imagem: ${error}`,
-        toastType: 'error'
+      this.$store.dispatch('toast/setToast', {
+        text: `Erro ao enviar imagem: ${error}`,
+        type: 'error',
+        time: 5000
       });
     },
 
