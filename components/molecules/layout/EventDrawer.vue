@@ -1,14 +1,17 @@
 <template>
-  <v-navigation-drawer v-if="getSidebar && !isMobile" v-model="$_drawer" :mini-variant="$_miniVariant" clipped app
+  <v-navigation-drawer
+v-if="getSidebar && !isMobile" v-model="$_drawer" :mini-variant="$_miniVariant" clipped app
     :class="$vuetify.breakpoint.mobile ? 'navigationMobile' : 'navigation'">
     <v-list class="py-0">
       <v-list-item class="event-detail-image">
         <div class="image-container">
-          <v-img v-if="selectedEventBanner || cachedBanner?.url" class="image"
+          <v-img
+v-if="selectedEventBanner || cachedBanner?.url" class="image"
             :src="selectedEventBanner || cachedBanner?.url">
           </v-img>
 
-          <div v-else class="d-flex justify-center align-center"
+          <div
+v-else class="d-flex justify-center align-center"
             :style="{ margin: '0 auto', height: '100%', width: '100%' }">
             <v-progress-circular indeterminate color="primary" size="48" class="progress-circular" />
           </div>
@@ -72,7 +75,8 @@
           <span> {{ item.title }} </span>
         </v-tooltip>
 
-        <v-list-item v-if="!$_miniVariant" :to="item.to" router exact
+        <v-list-item
+v-if="!$_miniVariant" :to="item.to" router exact
           :class="{ 'active-item': item.to === currentPath }">
           <v-list-item-action v-if="item.icon" class="text-center">
             <v-icon v-if="$route.meta.prefix === item.to || $route.path === item.to">{{
@@ -90,12 +94,14 @@
       </div>
     </v-list>
 
-    <ConfirmDialog v-model="confirmationDialog.visible" :title="confirmationDialog.title"
+    <ConfirmDialog
+v-model="confirmationDialog.visible" :title="confirmationDialog.title"
       :message="confirmationDialog.message" confirm-text="Confirmar" :loading="isChangingStatus"
       @confirm="handleConfirmation" @cancel="confirmationDialog.visible = false" />
   </v-navigation-drawer>
 
-  <v-select v-else-if="getSelectItems && isMobile" v-model="selectedItem" outlined dense return-object hide-details
+  <v-select
+v-else-if="getSelectItems && isMobile" v-model="selectedItem" outlined dense return-object hide-details
     :items="getSelectItems" />
 </template>
 
@@ -436,7 +442,7 @@ export default {
 
 .navigation {
   height: 100vh !important;
-  top: 80px !important;
+  top: 64px !important;
   background-color: var(--tertiary) !important;
   color: var(--black-text) !important;
   font-weight: 400 !important;

@@ -29,6 +29,8 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, store }) => 
   const userId = user?.id;
   const userRole = user?.role;
 
+  // TODO: Verificar as rotas filhas de /events/:id pois o meta esta sendo sobrescrito pela rota pai
+
   // Se a rota só requer autenticação (sem permissões específicas), permite o acesso
   if (route.meta[0]?.requiresAuth && !route.meta[0]?.permissions) {
     return;
