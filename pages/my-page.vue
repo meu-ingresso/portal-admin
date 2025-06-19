@@ -22,8 +22,7 @@
             <div class="d-flex flex-column">
               <div class="text-h6 font-weight-bold">{{ userAlias }}</div>
               <div class="text-body-2 grey--text d-flex align-center">
-                <v-icon small class="mr-1">mdi-link</v-icon>
-                <span class="text-truncate">{{ profileUrl }}</span>
+                <a :href="profileUrl" target="_blank" class="text-truncate">{{ profileUrl }}</a>
               </div>
             </div>
           </v-col>
@@ -157,7 +156,7 @@ export default {
       return this.$store.state.auth.user?.id;
     },
     profileUrl() {
-      return `${window.location.origin}/p/${this.userAlias}`;
+      return `https://vitrine.meuingresso.com.br/produtores/${this.userAlias}`;
     },
     getStatistics() {
       return [
@@ -211,7 +210,7 @@ export default {
         }));
 
         const userAttachments = this.$store.getters['userDocuments/$userAttachments'];
-        const userInfo = this.$store.getters['user/$user'];
+        const userInfo = this.$auth.user;
 
         const bioDoc = userAttachments.find(doc => doc.name === 'biography');
         const profileImageDoc = userAttachments.find(doc => doc.name === 'profile_image');
