@@ -45,6 +45,13 @@ export const eventsSideBar = [
     permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_TICKETS),
   },
   {
+    icon: 'mdi-api',
+    iconActive: 'mdi-api',
+    title: 'Integrações',
+    to: '/events/:id/integrations',
+    permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_INTEGRATIONS),
+  },
+  {
     icon: 'mdi-cart-outline',
     iconActive: 'mdi-cart',
     title: 'Pedidos',

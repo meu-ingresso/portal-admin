@@ -128,6 +128,15 @@ export default [
           permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_PDV),
         },
       },
+      {
+        path: 'integrations',
+        name: 'eventsDetailsIntegrations',
+        meta: {
+          name: 'eventsDetails',
+          template: 'integrations',
+          permissions: requirePermissions(EVENT_PERMISSIONS.VIEW_INTEGRATIONS),
+        },
+      },
     ],
   },
   {
