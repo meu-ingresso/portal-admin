@@ -46,6 +46,7 @@
           <DefaultButton
             text="Salvar"
             :is-loading="loading"
+            :disabled="disabled"
             @click="handleSave"
           />
         </v-card-actions>
@@ -71,6 +72,10 @@ export default {
       default: ''
     },
     loading: {
+      type: Boolean,
+      default: false
+    },
+    disabled: {
       type: Boolean,
       default: false
     }

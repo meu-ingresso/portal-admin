@@ -18,16 +18,19 @@ const PIX_ATTACHMENT_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random'];
 
 interface UserDocumentsState {
   isLoading: boolean;
+  isLoadingAlias: boolean;
   userAttachments: UserAttachment[];
 }
 
 export const state = (): UserDocumentsState => ({
   isLoading: false,
+  isLoadingAlias: false,
   userAttachments: [],
 });
 
 export const getters = {
   $isLoading: (state: UserDocumentsState) => state.isLoading,
+  $isLoadingAlias: (state: UserDocumentsState) => state.isLoadingAlias,
   $userAttachments: (state: UserDocumentsState) => state.userAttachments,
   
   $hasRequiredDocuments: (state: UserDocumentsState, getters: any) => {
@@ -77,11 +80,38 @@ export const getters = {
     }
     return null;
   },
+
+  // Getters para alias customizado
+  $hasCustomAlias: (state: UserDocumentsState) => {
+    return state.userAttachments.some(att => att.name === 'custom_alias');
+  },
+
+  $customAlias: (state: UserDocumentsState, getters: any) => {
+    if (getters.$hasCustomAlias) {
+      return state.userAttachments.find(att => att.name === 'custom_alias')?.value;
+    }
+    return null;
+  },
+
+  $hasDisplayName: (state: UserDocumentsState) => {
+    return state.userAttachments.some(att => att.name === 'display_name');
+  },
+
+  $displayName: (state: UserDocumentsState, getters: any) => {
+    if (getters.$hasDisplayName) {
+      return state.userAttachments.find(att => att.name === 'display_name')?.value;
+    }
+    return null;
+  },
 };
 
 export const mutations = {
   SET_LOADING(state: UserDocumentsState, payload: boolean) {
     state.isLoading = payload;
+  },
+
+  SET_LOADING_ALIAS(state: UserDocumentsState, payload: boolean) {
+    state.isLoadingAlias = payload;
   },
 
   SET_USER_ATTACHMENTS(state: UserDocumentsState, payload: UserAttachment[]) {
@@ -128,6 +158,129 @@ export const actions = {
       throw error;
     } finally {
       commit('SET_LOADING', false);
+    }
+  },
+
+  // Ação para validar alias do usuário
+  async validateUserAlias({ commit }: any, payload: { alias: string, currentUserId?: string } | string) {
+    try {
+      commit('SET_LOADING_ALIAS', true);
+
+      const { alias, currentUserId } = typeof payload === 'string' ? { alias: payload, currentUserId: null } : payload;
+
+      // Buscar usuários com o alias especificado no campo alias padrão
+      const userResponse = await $axios.$get('users', {
+        params: {
+          'where[alias][o]': '=',
+          'where[alias][v]': alias,
+        },
+      });
+      
+      const { data: users } = handleGetResponse(userResponse, 'Falha ao validar alias', null, true);
+      
+      // Buscar user_attachments com custom_alias
+      const attachmentResponse = await $axios.$get('user-attachments', {
+        params: {
+          'where[name][o]': '=',
+          'where[name][v]': 'custom_alias',
+          'where[value][o]': '=',
+          'where[value][v]': alias,
+        },
+      });
+      
+      const { data: attachments } = handleGetResponse(attachmentResponse, 'Falha ao validar alias customizado', null, true);
+      
+      // Verificar se já existe (excluindo o próprio usuário se fornecido)
+      let isValid = true;
+      let conflictReason = '';
+      
+      if (users && users.length > 0) {
+        const conflictUser = users.find(user => user.id !== currentUserId);
+        if (conflictUser) {
+          isValid = false;
+          conflictReason = 'Alias já usado por outro usuário';
+        }
+      }
+      
+      if (isValid && attachments && attachments.length > 0) {
+        const conflictAttachment = attachments.find(att => att.user_id !== currentUserId);
+        if (conflictAttachment) {
+          isValid = false;
+          conflictReason = 'Alias customizado já usado por outro usuário';
+        }
+      }
+      
+      return {
+        is_valid: isValid,
+        alias,
+        message: isValid ? 'Alias disponível' : conflictReason
+      };
+    } catch (error) {
+      console.error('Erro ao validar alias do usuário:', error);
+      return {
+        is_valid: false,
+        alias: typeof payload === 'string' ? payload : payload.alias,
+        message: 'Erro ao validar alias'
+      };
+    } finally {
+      commit('SET_LOADING_ALIAS', false);
+    }
+  },
+
+  // Ação para salvar alias customizado
+  async saveCustomAlias({ state, dispatch }: any, payload: { userId: string, alias: string, displayName?: string }) {
+    try {
+      const { userId, alias, displayName } = payload;
+      
+      if (!userId) {
+        throw new Error('Usuário não encontrado. Por favor, faça login novamente.');
+      }
+      
+      // Salvar o alias customizado
+      let aliasAttachment = state.userAttachments.find(
+        (att: UserAttachment) => att.name === 'custom_alias'
+      );
+      
+      if (aliasAttachment) {
+        await dispatch('updateUserAttachment', {
+          id: aliasAttachment.id,
+          value: alias
+        });
+      } else {
+        const newAliasAttachment = await dispatch('createUserDocument', {
+          userId,
+          name: 'custom_alias',
+          type: 'text',
+          value: alias
+        });
+        aliasAttachment = newAliasAttachment;
+      }
+
+      // Se foi fornecido um displayName, salvá-lo também
+      if (displayName) {
+        const displayNameAttachment = state.userAttachments.find(
+          (att: UserAttachment) => att.name === 'display_name'
+        );
+        
+        if (displayNameAttachment) {
+          await dispatch('updateUserAttachment', {
+            id: displayNameAttachment.id,
+            value: displayName
+          });
+        } else {
+          await dispatch('createUserDocument', {
+            userId,
+            name: 'display_name',
+            type: 'text',
+            value: displayName
+          });
+        }
+      }
+
+      return aliasAttachment;
+    } catch (error) {
+      console.error('Erro ao salvar alias customizado:', error);
+      throw error;
     }
   },
 
@@ -378,5 +531,10 @@ export const actions = {
       console.error('Erro ao deletar documento:', error);
       throw error;
     }
+  },
+
+  // Alias para deleteUserDocument
+  async deleteUserAttachment({ dispatch }: any, attachmentId: string) {
+    return await dispatch('deleteUserDocument', { attachmentId });
   },
 }; 
