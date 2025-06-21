@@ -20,7 +20,7 @@
           </v-col>
           <v-col>
             <div class="d-flex flex-column">
-              <div class="text-h6 font-weight-bold">{{ userAlias }}</div>
+              <div class="text-h6 font-weight-bold">{{ displayedUserName }}</div>
               <div class="text-body-2 grey--text d-flex align-center">
                 <a :href="profileUrl" target="_blank" class="text-truncate">{{ profileUrl }}</a>
               </div>
@@ -46,12 +46,33 @@
       <v-col cols="12">
         <div class="template-title mb-4">Configurações da página</div>
 
+        <!-- Alias e Nome de Exibição Section -->
+        <PageConfigSection
+          icon="mdi-account-edit" 
+          title="Nome e URL da página" 
+          subtitle="Configure como sua página será exibida"
+          :loading="isLoading" 
+          :disabled="!aliasValidation.isValid" 
+                      @save="handleSaveAliasInfo"
+          @cancel="handleCancelAliasInfo"
+        >
+          <UserAliasForm
+            ref="userAliasForm"
+            :user-alias="userAlias"
+            :custom-alias="customAlias"
+            :custom-display-name="customDisplayName"
+            :current-user-id="userId"
+            @change="handleAliasFormChange"
+            @alias-validation="handleAliasValidation"
+          />
+        </PageConfigSection>
+
         <!-- Bio Section -->
         <PageConfigSection
-icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
+          icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
           :loading="isLoading" @save="handleSaveBio" @cancel="handleCancelBio">
-                    <RichTextEditorV2
- ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
+          <RichTextEditorV2
+            ref="bioEditor" v-model="biography" placeholder="Apresente-se em poucas palavras..."
             :disabled="isLoading" :max-length="255" :enable-image-upload="false"
             :image-upload-handler="handleBiographyImageUpload" :max-image-size="2 * 1024 * 1024"
             :accepted-image-types="['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']"
@@ -61,26 +82,26 @@ icon="mdi-text" title="Sobre" subtitle="Crie uma bio para exibir aos clientes"
 
         <!-- Social Links Section -->
         <PageConfigSection
-icon="mdi-link-variant" title="Links" subtitle="Website & mídias sociais"
+          icon="mdi-link-variant" title="Links" subtitle="Website & mídias sociais"
           :loading="isLoading" @save="handleSaveSocialLinks" @cancel="handleCancelSocialLinks">
           <SocialMediaLinks v-model="socialLinks" @change="handleSocialLinkChange" />
         </PageConfigSection>
 
         <!-- Contact Info Section -->
         <PageConfigSection
-icon="mdi-account-box-outline" title="Informações de contato"
+          icon="mdi-account-box-outline" title="Informações de contato"
           subtitle="E-mail e telefone para contato" :loading="isLoading" @save="handleSaveContactInfo"
           @cancel="handleCancelContactInfo">
           <ContactForm
-ref="contactForm" :contact-email.sync="contactEmail" :contact-phone.sync="contactPhone"
+            ref="contactForm" :contact-email.sync="contactEmail" :contact-phone.sync="contactPhone"
             :disabled="isLoading" />
         </PageConfigSection>
       </v-col>
     </v-row>
 
-        <!-- Hidden file input for profile image -->
+    <!-- Hidden file input for profile image -->
     <input
- ref="fileInput" type="file" accept="image/*" style="display: none"
+      ref="fileInput" type="file" accept="image/*" style="display: none"
       @change="handleProfileImageUpload($event.target.files[0])">
 
     <!-- Loading Overlay -->
@@ -96,11 +117,13 @@ ref="contactForm" :contact-email.sync="contactEmail" :contact-phone.sync="contac
 
 <script>
 import RichTextEditorV2 from '@/components/molecules/RichTextEditorV2.vue';
+import UserAliasForm from '@/components/molecules/UserAliasForm.vue';
 import { formatRealValue } from '@/utils/formatters';
 
 export default {
   components: {
     RichTextEditorV2,
+    UserAliasForm,
   },
 
   // Adicionar listener para avisar sobre mudanças não salvas
@@ -148,6 +171,22 @@ export default {
       // Controle de imagens temporárias
       tempUploadedImages: [], // IDs das imagens enviadas durante esta sessão de edição
       isEditingBio: false, // Flag para controlar se está em modo de edição
+      
+      // Dados para alias e nome de exibição
+      customAlias: null,
+      customDisplayName: null,
+      originalAliasInfo: {
+        alias: null,
+        displayName: null
+      },
+      aliasFormData: {
+        displayName: '',
+        alias: ''
+      },
+      aliasValidation: {
+        isValid: false,
+        alias: ''
+      }
     };
   },
 
@@ -155,9 +194,18 @@ export default {
     userId() {
       return this.$store.state.auth.user?.id;
     },
-    profileUrl() {
-      return `https://vitrine.meuingresso.com.br/produtores/${this.userAlias}`;
+
+    // Nome que será exibido no cabeçalho (prioriza o nome customizado)
+    displayedUserName() {
+      return this.customDisplayName || this.userAlias;
     },
+
+    // URL que será usada (prioriza o alias customizado)  
+    profileUrl() {
+      const effectiveAlias = this.customAlias || this.userAlias;
+      return `https://vitrine.meuingresso.com.br/produtores/${effectiveAlias}`;
+    },
+
     getStatistics() {
       return [
         {
@@ -223,6 +271,16 @@ export default {
         this.socialLinks = socialLinksDoc ? JSON.parse(socialLinksDoc.value) : {};
         this.originalSocialLinks = { ...this.socialLinks };
 
+        // Carregar dados de alias e nome de exibição personalizados
+        this.customAlias = this.$store.getters['userDocuments/$customAlias'];
+        this.customDisplayName = this.$store.getters['userDocuments/$displayName'];
+        
+        // Armazenar valores originais para controle de mudanças
+        this.originalAliasInfo = {
+          alias: this.customAlias,
+          displayName: this.customDisplayName
+        };
+
         // Inicializar estado original da biografia
         this.originalBiography = this.biography;
 
@@ -249,6 +307,71 @@ export default {
         });
       } finally {
         this.isLoading = false;
+      }
+    },
+
+    // Manipuladores para alias e nome de exibição
+    handleAliasFormChange(formData) {
+      this.aliasFormData = formData;
+    },
+
+    handleAliasValidation(validation) {
+      this.aliasValidation = validation;
+    },
+
+    async handleSaveAliasInfo() {
+      try {
+        this.isLoading = true;
+
+        // Validar o formulário antes de salvar
+        const validation = this.$refs.userAliasForm.validate();
+        if (!validation.isValid) {
+          this.$store.dispatch('toast/setToast', {
+            text: `Erro na validação: ${validation.errors.join(', ')}`,
+            type: 'error',
+            time: 5000
+          });
+          return;
+        }
+
+        // Salvar as informações usando a store
+        await this.$store.dispatch('userDocuments/saveCustomAlias', {
+          userId: this.userId,
+          alias: this.aliasFormData.alias,
+          displayName: this.aliasFormData.displayName
+        });
+
+        // Atualizar os valores locais
+        this.customAlias = this.aliasFormData.alias;
+        this.customDisplayName = this.aliasFormData.displayName;
+        
+        // Atualizar valores originais após salvamento bem-sucedido
+        this.originalAliasInfo = {
+          alias: this.customAlias,
+          displayName: this.customDisplayName
+        };
+
+        this.$store.dispatch('toast/setToast', {
+          text: 'Nome e URL da página atualizados com sucesso',
+          type: 'success',
+          time: 5000
+        });
+      } catch (error) {
+        console.error('Error saving alias info:', error);
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao atualizar nome e URL da página',
+          type: 'error',
+          time: 5000
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    handleCancelAliasInfo() {
+      // Resetar o formulário aos valores originais
+      if (this.$refs.userAliasForm) {
+        this.$refs.userAliasForm.reset();
       }
     },
 
