@@ -53,7 +53,7 @@
           subtitle="Configure como sua página será exibida"
           :loading="isLoading" 
           :disabled="!aliasValidation.isValid" 
-                      @save="handleSaveAliasInfo"
+          @save="handleSaveAliasInfo"
           @cancel="handleCancelAliasInfo"
         >
           <UserAliasForm
