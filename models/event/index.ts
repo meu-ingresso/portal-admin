@@ -415,10 +415,23 @@ export interface PDVApiResponse {
 }
 
 
+export interface CouponApiResponse {
+  id: string;
+  event_id: string;
+  status_id: string;
+  code: string;
+  discount_type: DiscountType;
+  discount_value: string;
+  max_uses: number;
+  uses: number;
+  start_date: string;
+  end_date: string;
+}
 export interface PaymentApiResponse {
   id: string;
   status_id: string;
-  user_id: string;
+  people_id: string;
+  event_id: string;
   net_value: string;
   gross_value: string;
   coupon_id: string;
@@ -427,7 +440,8 @@ export interface PaymentApiResponse {
   paid_at: string;
   payment_method: string;
   status?: StatusApiResponse;
-  user?: UserApiResponse;
+  people?: PeopleApiResponse;
+  coupon?: CouponApiResponse;
 }
 
 export interface CustomerTicketApiResponse {
@@ -472,18 +486,6 @@ export interface TicketFieldApiResponse {
   checkoutField?: CustomFieldApiResponse;
 }
 
-export interface CouponApiResponse {
-  id: string;
-  event_id: string;
-  status_id: string;
-  code: string;
-  discount_type: DiscountType;
-  discount_value: string;
-  max_uses: number;
-  uses: number;
-  start_date: string;
-  end_date: string;
-}
 export interface CouponTicketApiResponse {
   id: string;
   coupon_id: string;
