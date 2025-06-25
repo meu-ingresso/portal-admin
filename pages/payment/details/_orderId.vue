@@ -445,9 +445,9 @@ export default {
     },
 
     getEventFee() {
-      if (!this.getEvent) return null;
+      if (!this.payment?.event) return 0;
       return this.payment.payment_method !== "PDV"
-        ? this.getEvent?.fees?.platform_fee
+        ? this.payment.event?.fees?.platform_fee || 0
         : 0;
     },
 

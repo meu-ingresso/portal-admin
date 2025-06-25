@@ -126,7 +126,7 @@ export const actions = {
       commit('SET_LOADING', true);
 
       const response = await $axios.$get(
-        `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=people`
+        `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=people&preloads[]=event:fees`
       );
       const { data } = handleGetResponse(response, 'Pagamento não encontrado');
 
