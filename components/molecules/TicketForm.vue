@@ -312,8 +312,8 @@ export default {
         price: [
           (v) => !!v || 'O preço é obrigatório.',
           (v) =>
-            parseFloat(v.replace(',', '.')) >= 0 ||
-            'O preço deve ser maior ou igual a zero.',
+            parseFloat(v.replace(',', '.')) >= 3 ||
+            'O preço deve ser maior ou igual a R$3,00.',
         ],
         total_quantity: [
           (v) => !!v || 'A quantidade é obrigatória.',
