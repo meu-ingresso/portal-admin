@@ -4,7 +4,7 @@ import { PaymentApiResponse, CustomerTicketApiResponse } from '@/models/event';
 
 interface OrderByEventFilters {
   eventId: string;
-  userId?: string;
+  peopleId?: string;
   page?: number;
   limit?: number;
   sort?: string;
@@ -16,7 +16,7 @@ interface OrderByEventFilters {
 }
 
 interface OrderByUserFilters {
-  userId: string;
+  peopleId: string;
   page?: number;
   limit?: number;
   sort?: string;
@@ -28,7 +28,7 @@ interface OrderByUserFilters {
 }
 
 interface CreatePaymentData {
-  user_id: string;
+  people_id: string;
   status_id: string;
   payment_method: string;
   gross_value: string;
@@ -126,7 +126,7 @@ export const actions = {
       commit('SET_LOADING', true);
 
       const response = await $axios.$get(
-        `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=user:people&limit=9999`
+        `/payments?where[id][v]=${paymentId}&preloads[]=status&preloads[]=people&preloads[]=event:fees`
       );
       const { data } = handleGetResponse(response, 'Pagamento não encontrado');
 
@@ -164,66 +164,54 @@ export const actions = {
 
       const queryParams: any = {
         preloads: [
-          'payment:coupon',
-          'payment:user:people',
-          'payment:status',
-          'ticket:event:fees',
+          'coupon',
+          'people',
+          'status',
+          'event:fees',
         ],
-        'whereHas[ticket][event_id][v]': params.eventId,
+        'where[event_id][v]': params.eventId,
         page: params.page || 1,
         limit: params.limit || 10,
         sort: params.sort || '-created_at',
       };
 
-      if (params.userId) {
-        queryParams['whereHas[payment][user_id][v]'] = params.userId;
+      if (params.peopleId) {
+        queryParams['where[people_id][v]'] = params.peopleId;
       }
 
       // Adiciona busca por nome/email do comprador
       if (params.search) {
         queryParams[
-          'whereHas[payment][user][people][or][first_name][ilike]'
+          'whereHas[people][or][first_name][ilike]'
         ] = `%${params.search}%`;
         queryParams[
-          'whereHas[payment][user][people][or][last_name][ilike]'
+          'whereHas[people][or][last_name][ilike]'
         ] = `%${params.search}%`;
-        queryParams['whereHas[payment][user][or][email][ilike]'] = `%${params.search}%`;
+        queryParams['whereHas[people][or][email][ilike]'] = `%${params.search}%`;
       }
 
       // Adiciona filtro por data
       if (params.startDate) {
-        queryParams['whereHas[payment][created_at][gte]'] = params.startDate;
+        queryParams['where[created_at][gte]'] = params.startDate;
       }
       if (params.endDate) {
-        queryParams['whereHas[payment][created_at][lte]'] = params.endDate;
+        queryParams['where[created_at][lte]'] = params.endDate;
       }
 
       // Adiciona filtro por status
       if (params.status) {
-        queryParams['whereHas[payment][status][name][v]'] = params.status;
+        queryParams['whereHas[status][name][v]'] = params.status;
       }
 
       // Adiciona filtro por método de pagamento
       if (params.paymentMethod) {
-        queryParams['whereHas[payment][payment_method][v]'] = params.paymentMethod;
+        queryParams['where[payment_method][v]'] = params.paymentMethod;
       }
 
-      const response = await $axios.$get('/customer-tickets', { params: queryParams });
+      const response = await $axios.$get('/payments', { params: queryParams });
       const { data, meta } = handleGetResponse(response, 'Pedidos não encontrados');
 
-      // Agrupa os tickets por payment_id
-      const groupedOrders = data.reduce((acc: any, ticket: any) => {
-        if (!acc[ticket.payment_id]) {
-          acc[ticket.payment_id] = {
-            ...ticket.payment,
-            tickets: [],
-          };
-        }
-        acc[ticket.payment_id].tickets.push(ticket);
-        return acc;
-      }, {});
-
-      commit('SET_ORDERS', Object.values(groupedOrders));
+      commit('SET_ORDERS', data);
       commit('SET_ORDERS_META', meta);
     } catch (error) {
       console.error('Erro ao buscar pedidos do evento:', error);
@@ -240,11 +228,11 @@ export const actions = {
       const queryParams: any = {
         preloads: [
           'payment:coupon',
-          'payment:user:people',
+          'payment:people',
           'payment:status',
           'ticket:event:fees',
         ],
-        'whereHas[payment][user][id][v]': params.userId,
+        'whereHas[payment][people_id]][v]': params.peopleId,
         page: params.page || 1,
         limit: params.limit || 10,
         sort: params.sort || '-created_at',
@@ -262,9 +250,9 @@ export const actions = {
 
       // Adiciona filtro de busca
       if (params.search) {
-        queryParams['whereHas[payment][user][people][orWhere][first_name][operator][ilike]'] = `%${params.search}%`;
-        queryParams['whereHas[payment][user][people][orWhere][last_name][operator][ilike]'] = `%${params.search}%`;
-        queryParams['whereHas[payment][user][orWhere][email][operator][ilike]'] = `%${params.search}%`;
+        queryParams['whereHas[payment][people][orWhere][first_name][operator][ilike]'] = `%${params.search}%`;
+        queryParams['whereHas[payment][people][orWhere][last_name][operator][ilike]'] = `%${params.search}%`;
+         queryParams['whereHas[payment][people][orWhere][email][operator][ilike]'] = `%${params.search}%`;
       }
 
       // Adiciona filtro por data inicial

@@ -76,17 +76,16 @@
                         mdi-information-outline
                       </v-icon>
                     </template>
-                    <!-- @TODO: Adicionar Calculo -->
                     <span>Valor bruto - Desconto</span>
                   </v-tooltip>
                 </div>
                 <div class="info-value">
-                  {{ formatRealValue(payment.gross_value) }}
+                  {{ formatRealValue(getTotalValue) }}
                 </div>
               </v-col>
               <v-col cols="6">
                 <div class="info-label">Taxa</div>
-                <div class="info-value">{{ formatRealValue(payment.fee_value) }}</div>
+                <div class="info-value">{{ getEventFeePercentage }}%</div>
               </v-col>
               <v-col cols="6">
                 <div class="info-label">
@@ -98,11 +97,10 @@
                         mdi-information-outline
                       </v-icon>
                     </template>
-                    <!-- @TODO: Adicionar Calculo -->
-                    <span>Valor Total - Taxa</span>
+                    <span>Valor original do ingresso (antes da taxa)</span>
                   </v-tooltip>
                 </div>
-                <div class="info-value">{{ formatRealValue(payment.net_value) }}</div>
+                <div class="info-value">{{ formatRealValue(getNetValueWithoutFee) }}</div>
               </v-col>
             </v-row>
           </div>
@@ -250,6 +248,29 @@ export default {
     },
     relatedTickets() {
       return this.$store.getters['payment/$relatedTickets'];
+    },
+
+    getTotalValue() {
+      if (!this.payment) return 0;
+      const grossValue = parseFloat(this.payment.gross_value) || 0;
+      const discountValue = parseFloat(this.payment.discount_value) || 0;
+      return grossValue - discountValue;
+    },
+
+    getEventFeePercentage() {
+      if (!this.payment?.event) return 0;
+      return this.payment.payment_method !== "PDV"
+        ? this.payment.event?.fees?.platform_fee || 0
+        : 0;
+    },
+
+    getNetValueWithoutFee() {
+      if (!this.payment) return 0;
+      const netValue = parseFloat(this.payment.net_value) || 0;
+      const fee = this.getEventFeePercentage;
+      // O netValue já inclui a taxa, então precisamos calcular o valor original
+      // Fórmula: valorOriginal = valorComTaxa / (1 + taxa/100)
+      return fee > 0 ? netValue / (1 + fee / 100) : netValue;
     },
   },
 

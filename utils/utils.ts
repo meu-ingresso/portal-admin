@@ -131,6 +131,7 @@ export const getPaymentMethod = (payment: string): string => {
     case 'billet':
       return 'Boleto';
     case 'credit':
+    case 'credit_card':
       return 'Cartão de Crédito';
     case 'debit':
       return 'Cartão de Débito';
