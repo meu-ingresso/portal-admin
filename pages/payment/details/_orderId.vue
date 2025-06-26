@@ -76,7 +76,7 @@
                   </v-row>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <div class="info-label font-weight-bold">Valor bruto</div>
+                      <div class="info-label font-weight-bold">Valor total</div>
                       <div class="info-value">
                         {{ formatRealValue(payment.gross_value) }}
                       </div>
@@ -91,7 +91,7 @@
                   <v-row>
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">
-                        Valor total
+                        Valor pago
 
                         <v-tooltip bottom>
                           <template #activator="{ on, attrs }">
@@ -108,13 +108,15 @@
                     </v-col>
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">Taxa</div>
-                      <div class="info-value">{{ getEventFee }}%</div>
+                      <div class="info-value">
+                        {{ formatRealValue(getOrderFee) }}
+                      </div>
                     </v-col>
                   </v-row>
                   <v-row>
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">
-                        Valor líquido
+                        Valor a receber
 
                         <v-tooltip bottom>
                           <template #activator="{ on, attrs }">
@@ -449,6 +451,13 @@ export default {
       return this.payment.payment_method !== "PDV"
         ? this.payment.event?.fees?.platform_fee || 0
         : 0;
+    },
+
+    // retorna a comissão da plataforma
+    // Valor pago * taxa do evento
+    getOrderFee() {
+      if (!this.payment?.event) return 0;
+      return this.getTotalValue * (this.getEventFee / 100);
     },
 
     isLoading() {
