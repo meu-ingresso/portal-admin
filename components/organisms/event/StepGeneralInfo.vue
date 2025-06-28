@@ -10,8 +10,8 @@
         <!-- Nome do Evento -->
         <v-row>
           <v-col cols="12" md="12" sm="12" class="pb-0">
-            <v-text-field ref="name" v-model="formData.name" label="Nome do Evento*" outlined counter="60" dense
-              placeholder="Digite o nome do evento" required :rules="validationRules.name" @input="onEventNameChange" />
+            <v-text-field ref="name" :value="formData.name" label="Nome do Evento*" outlined counter="60" dense
+              placeholder="Digite o nome do evento" required :rules="validationRules.name" @input="onNameChange" />
           </v-col>
         </v-row>
 
@@ -35,7 +35,7 @@
                   https://meuingresso.com.br/event/
                 </p>
 
-                <v-text-field v-if="editAlias" ref="aliasInput" v-model="formData.alias"
+                <v-text-field v-if="editAlias" ref="aliasInput" :value="formData.alias"
                   :class="!isMobile ? 'alias-input' : 'alias-input-mobile'" dense
                   placeholder="Digite o identificador do evento" hide-details="auto" @input="onAliasChange" />
 
@@ -59,7 +59,7 @@
                   https://meuingresso.com.br/event/
                 </p>
 
-                <v-text-field v-if="editAlias" ref="aliasInput" v-model="formData.alias"
+                <v-text-field v-if="editAlias" ref="aliasInput" :value="formData.alias"
                   :class="!isMobile ? 'alias-input' : 'alias-input-mobile'" dense
                   placeholder="Digite o identificador do evento" hide-details="auto" @input="onAliasChange" />
 
@@ -80,36 +80,38 @@
         <v-row class="mb-4">
           <!-- Categoria -->
           <v-col cols="12" md="4" sm="12">
-            <v-autocomplete ref="category" v-model="formData.category" label="Categoria*" :items="categories" outlined
-              dense return-object hide-details="auto" required :rules="validationRules.category" />
+            <v-autocomplete ref="category" :value="formData.category" label="Categoria*" :items="categories" outlined
+              dense return-object hide-details="auto" required :rules="validationRules.category"
+              @change="onCategoryChange" />
           </v-col>
 
           <!-- Tipo do Evento -->
           <v-col cols="12" md="4" sm="12">
-            <v-autocomplete ref="event_type" v-model="formData.event_type" label="Tipo do Evento*" :items="types"
+            <v-autocomplete ref="event_type" :value="formData.event_type" label="Tipo do Evento*" :items="types"
               outlined dense hide-details="auto" required :disabled="nomenclature === 'Doação'"
-              :rules="validationRules.event_type" />
+              :rules="validationRules.event_type" @change="onEventTypeChange" />
           </v-col>
 
           <!-- Classificação Indicativa -->
           <v-col cols="12" md="4" sm="12">
-            <RatingSelect ref="rating" v-model="formData.rating" :value="formData.rating" :ratings="ratings" />
+            <RatingSelect ref="rating" :value="formData.rating" :ratings="ratings" @input="onRatingChange" />
           </v-col>
 
           <v-col v-if="isEventOnlineOrHibrido" cols="12" md="12" sm="12">
-            <v-text-field ref="link_online" v-model="formData.link_online" label="Link do Evento*" outlined dense
-              placeholder="Digite o link do evento" hide-details="auto" :rules="validationRules.link_online" />
+            <v-text-field ref="link_online" :value="formData.link_online" label="Link do Evento*" outlined dense
+              placeholder="Digite o link do evento" hide-details="auto" :rules="validationRules.link_online"
+              @input="onLinkOnlineChange" />
           </v-col>
 
           <!-- Descrição do Evento -->
           <v-col cols="12" md="12" sm="12">
 
-            <RichTextEditorV2 ref="bioEditor" v-model="formData.general_information"
+            <RichTextEditorV2 ref="bioEditor" :value="formData.general_information"
               placeholder="Digite uma descrição para o evento" :disabled="isImprovingDescription" :max-length="255"
               :enable-image-upload="true" :image-upload-handler="handleImageUpload" :max-image-size="2 * 1024 * 1024"
               :accepted-image-types="['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']"
               @image-upload-start="handleImageUploadStart" @image-uploaded="handleImageUploaded"
-              @image-upload-error="handleImageUploadError" />
+              @image-upload-error="handleImageUploadError" @input="onGeneralInformationChange" />
 
             <div class="d-flex justify-end ma-0 pa-0">
               <v-btn color="primary" text outlined class="mt-4" :disabled="isImprovingDescription"
@@ -150,9 +152,9 @@
               </div>
             </div>
             <input ref="hiddenFileInput" type="file" accept="image/*" class="d-none" @change="onFileSelected" />
-            <v-file-input v-if="!imagePreview" v-model="formData.banner" label="Selecionar imagem" accept="image/*"
+            <v-file-input v-if="!imagePreview" :value="formData.banner" label="Selecionar imagem" accept="image/*"
               outlined hide-input dense prepend-icon="mdi-image-plus" hide-details="auto" show-size
-              class="custom-file-input" @change="validateImageDimensions" />
+              class="custom-file-input" @change="onBannerChange" />
           </v-col>
           <v-col cols="12" md="5" sm="12" class="d-flex align-center">
             <div class="image-instructions">
@@ -188,8 +190,9 @@
       <v-card-text>
         <v-row class="d-flex align-start">
           <v-col cols="12" md="6" sm="12">
-            <v-select v-model="formData.availability" label="Visibilidade" :items="availabilityOptions" persistent-hint
-              :hint="getHintByAvailability" outlined dense hide-details="auto" required />
+            <v-select :value="formData.availability" label="Visibilidade" :items="availabilityOptions" persistent-hint
+              :hint="getHintByAvailability" outlined dense hide-details="auto" required
+              @change="onAvailabilityChange" />
           </v-col>
 
           <v-col cols="12" md="6" sm="12" class="d-flex align-center">
@@ -394,14 +397,14 @@ export default {
   watch: {
     nomenclature(value) {
       // Atualiza o tipo de venda do evento
-      this.formData.sale_type = value;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { sale_type: value });
 
       if (value === 'Ingresso') {
         this.$emit('update:nomenclature', 'Ingressos');
       } else if (value === 'Inscrição') {
         this.$emit('update:nomenclature', 'Inscrições');
       } else if (value === 'Doação') {
-        this.formData.event_type = 'Online';
+        this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { event_type: 'Online' });
         this.$emit('update:nomenclature', 'Doações');
       }
     },
@@ -411,7 +414,7 @@ export default {
     this.debouncerAlias = new Debounce(this.validateAlias, 300);
 
     if (!this.isEditing) {
-      this.formData.promoter_id = this.userId;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { promoter_id: this.userId });
     } else {
       this.imagePreview = this.formData.banner;
     }
@@ -429,6 +432,45 @@ export default {
   },
 
   methods: {
+    // Métodos para manipular eventos dos campos do formulário
+    onNameChange(value) {
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { name: value });
+      this.onEventNameChange();
+    },
+
+    onCategoryChange(value) {
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { category: value });
+    },
+
+    onEventTypeChange(value) {
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { event_type: value });
+    },
+
+    onRatingChange(value) {
+      console.log('Rating changed:', value);
+      // Atualiza a classificação do evento no store
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { rating: value });
+    },
+
+    onLinkOnlineChange(value) {
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { link_online: value });
+    },
+
+    onGeneralInformationChange(value) {
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { general_information: value });
+    },
+
+    onAvailabilityChange(value) {
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { availability: value });
+    },
+
+    onBannerChange(value) {
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { banner: value });
+      if (value) {
+        this.validateImageDimensions(value);
+      }
+    },
+
     onAliasChange(value) {
       const formattedValue = value
         .toLowerCase()
@@ -436,7 +478,7 @@ export default {
         .replace(/[^a-z0-9-]/g, '')
         .replace(/-+/g, '-');
 
-      this.formData.alias = formattedValue;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { alias: formattedValue });
     },
 
     async handleSaveNewAlias() {
@@ -454,18 +496,18 @@ export default {
       const result = await this.$store.dispatch('openAI/improveDescription', payload);
 
       if (result?.body?.code === 'IMPROVE_SUCCESS') {
-        this.formData.general_information = result.body.result;
+        this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { general_information: result.body.result });
       }
 
       this.isImprovingDescription = false;
     },
 
     handleToggleFeatured() {
-      this.formData.is_featured = !this.formData.is_featured;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { is_featured: !this.formData.is_featured });
     },
 
     handleAbsorbServiceFee() {
-      this.formData.absorb_service_fee = !this.formData.absorb_service_fee;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { absorb_service_fee: !this.formData.absorb_service_fee });
     },
 
     canProceed(callback) {
@@ -564,15 +606,17 @@ export default {
         eventName = this.formData.name.substring(0, maxLength);
       }
 
-      this.formData.alias = eventName
+      const alias = eventName
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
+
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { alias });
     },
     setAliasValidation(isValid, alias) {
       this.$set(this.aliasValidation, 'isValid', isValid);
       this.$set(this.aliasValidation, 'alias', alias);
-      this.formData.alias = alias;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { alias });
     },
     validateImageDimensions(file) {
       if (!file) {
@@ -607,11 +651,11 @@ export default {
 
       // Atualiza a prévia da imagem
       this.imagePreview = objectUrl;
-      this.formData.banner = file;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { banner: file });
     },
     onClearBanner() {
       this.imagePreview = null;
-      this.formData.banner = null;
+      this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { banner: null });
     },
 
     validateForm() {
@@ -948,7 +992,7 @@ export default {
         }
 
         // Restaurar conteúdo original
-        this.formData.general_information = this.originalDescription;
+        this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', { general_information: this.originalDescription });
         this.isEditingDescription = false;
       } catch (error) {
         console.error('Erro ao cancelar edição da descrição:', error);

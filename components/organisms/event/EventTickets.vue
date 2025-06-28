@@ -11,9 +11,11 @@
 
     <v-col cols="12" md="12" sm="12">
       <Container v-if="!disableHover" :lock-axis="'y'" :non-drag-area-selector="'.is-swapping'" @drop="onDrop">
-        <Draggable v-for="ticket in displayedTickets" :key="ticket.id" class="pt-4 draggable-ticket"
+        <Draggable
+v-for="ticket in displayedTickets" :key="ticket.id" class="pt-4 draggable-ticket"
           :class="{ 'is-swapping': isSwapping }">
-          <TicketRow :id="ticket.id" :disable-menu="disableMenu" :is-swapping="isSwapping" :name="ticket.name"
+          <TicketRow
+:id="ticket.id" :disable-menu="disableMenu" :is-swapping="isSwapping" :name="ticket.name"
             :price="ticket.price" :status="ticket?.status?.name" :sold="ticket.total_sold"
             :total="ticket.total_quantity" :event-promoter="getEventPromoter" @click="handleEditTicket(ticket.id)"
             @delete="handleDeleteTicket" @duplicate="handleDuplicateTicket" @stop-sales="handleStopSales(ticket)" />
@@ -22,7 +24,8 @@
         <v-skeleton-loader v-if="isDuplicating" class="mx-auto" max-height="74" type="card"></v-skeleton-loader>
       </Container>
       <template v-else>
-        <TicketRow v-for="ticket in displayedTickets" :id="ticket.id" :key="ticket.id" class="mt-1"
+        <TicketRow
+v-for="ticket in displayedTickets" :id="ticket.id" :key="ticket.id" class="mt-1"
           :disable-menu="disableMenu" :disable-hover="disableHover" :name="ticket.name" :price="ticket.price"
           :status="ticket?.status?.name" :sold="ticket.total_sold" :total="ticket.total_quantity"
           :event-promoter="getEventPromoter" @delete="handleDeleteTicket" @click="handleEditTicket(ticket.id)"
@@ -40,7 +43,8 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="px-4">
-          <TicketForm v-if="showEditDialog" ref="ticketEditForm" :edit-index="selectedTicketIndex" :event-id="eventId"
+          <TicketForm
+v-if="showEditDialog" ref="ticketEditForm" :edit-index="selectedTicketIndex" :event-id="eventId"
             :nomenclature="'Ingresso'" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
