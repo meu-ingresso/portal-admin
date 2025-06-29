@@ -4,11 +4,7 @@
     <v-card flat class="mb-8">
       <v-card-title class="d-flex justify-space-between align-center">
         <p class="subtitle-1 mb-0">{{ titleText }}</p>
-        <v-btn 
-          color="primary" 
-          outlined
-          small 
-          @click="handleAddDateClick">
+        <v-btn color="primary" outlined small @click="handleAddDateClick">
           <v-icon left>mdi-plus</v-icon>
           Adicionar Data
         </v-btn>
@@ -20,98 +16,44 @@
             <v-row>
               <!-- Data de Início -->
               <v-col cols="12" md="3" sm="6">
-                <v-menu
-                  v-model="initialDateMenu.start"
-                  :close-on-content-click="false"
-                  transition="scale-transition"
-                  offset-y
-                  min-width="auto">
+                <v-menu v-model="initialDateMenu.start" :close-on-content-click="false" transition="scale-transition"
+                  offset-y min-width="auto">
                   <template #activator="{ on, attrs }">
-                    <v-text-field
-                      :value="formattedInitialStartDate"
-                      label="Data de Início*"
-                      prepend-inner-icon="mdi-calendar"
-                      readonly
-                      outlined
-                      dense
-                      required
-                      hide-details="auto"
-                      :rules="rules.start_date"
-                      v-bind="attrs"
-                      v-on="on" />
+                    <v-text-field :value="formattedInitialStartDate" label="Data de Início*"
+                      prepend-inner-icon="mdi-calendar" readonly outlined dense required hide-details="auto"
+                      :rules="rules.start_date" v-bind="attrs" v-on="on" />
                   </template>
-                  <v-date-picker
-                    v-model="initialFormData.start_date"
-                    locale="pt-br"
-                    no-title
-                    dense
-                    :min="minDate"
+                  <v-date-picker v-model="initialFormData.start_date" locale="pt-br" no-title dense :min="minDate"
                     @input="initialDateMenu.start = false" />
                 </v-menu>
               </v-col>
 
               <!-- Horário de Início -->
               <v-col cols="12" md="3" sm="6">
-                <v-text-field
-                  v-model="initialFormData.start_time"
-                  v-mask="'##:##'"
-                  label="Horário de Início*"
-                  prepend-inner-icon="mdi-clock-outline"
-                  placeholder="21:30"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  required
-                  :rules="rules.start_time"
-                  @input="validateTime($event, 'start_time', 'initial')" />
+                <v-text-field v-model="initialFormData.start_time" v-mask="'##:##'" label="Horário de Início*"
+                  prepend-inner-icon="mdi-clock-outline" placeholder="21:30" outlined dense hide-details="auto" required
+                  :rules="rules.start_time" @input="validateTime($event, 'start_time', 'initial')" />
               </v-col>
 
               <!-- Data de Término -->
               <v-col cols="12" md="3" sm="6">
-                <v-menu
-                  v-model="initialDateMenu.end"
-                  :close-on-content-click="false"
-                  transition="scale-transition"
-                  offset-y
-                  min-width="auto">
+                <v-menu v-model="initialDateMenu.end" :close-on-content-click="false" transition="scale-transition"
+                  offset-y min-width="auto">
                   <template #activator="{ on, attrs }">
-                    <v-text-field
-                      :value="formattedInitialEndDate"
-                      label="Data de Término*"
-                      prepend-inner-icon="mdi-calendar"
-                      readonly
-                      outlined
-                      dense
-                      required
-                      hide-details="auto"
-                      :rules="rules.end_date"
-                      v-bind="attrs"
-                      v-on="on" />
+                    <v-text-field :value="formattedInitialEndDate" label="Data de Término*"
+                      prepend-inner-icon="mdi-calendar" readonly outlined dense required hide-details="auto"
+                      :rules="rules.end_date" v-bind="attrs" v-on="on" />
                   </template>
-                  <v-date-picker
-                    v-model="initialFormData.end_date"
-                    locale="pt-br"
-                    dense
-                    no-title
-                    :min="initialFormData.start_date || minDate"
-                    @input="initialDateMenu.end = false" />
+                  <v-date-picker v-model="initialFormData.end_date" locale="pt-br" dense no-title
+                    :min="initialFormData.start_date || minDate" @input="initialDateMenu.end = false" />
                 </v-menu>
               </v-col>
 
               <!-- Horário de Término -->
               <v-col cols="12" md="3" sm="6">
-                <v-text-field
-                  v-model="initialFormData.end_time"
-                  v-mask="'##:##'"
-                  label="Horário de Término*"
-                  prepend-inner-icon="mdi-clock-outline"
-                  placeholder="00:00"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  required
-                  :rules="rules.end_time"
-                  @input="validateTime($event, 'end_time', 'initial')" />
+                <v-text-field v-model="initialFormData.end_time" v-mask="'##:##'" label="Horário de Término*"
+                  prepend-inner-icon="mdi-clock-outline" placeholder="00:00" outlined dense hide-details="auto" required
+                  :rules="rules.end_time" @input="validateTime($event, 'end_time', 'initial')" />
               </v-col>
 
               <v-col v-if="getEventDuration(initialFormData)" cols="12">
@@ -158,98 +100,44 @@
             <v-row>
               <!-- Data de Início -->
               <v-col cols="12" md="6" sm="12">
-                <v-menu
-                  v-model="dateMenu.start"
-                  :close-on-content-click="false"
-                  transition="scale-transition"
-                  offset-y
+                <v-menu v-model="dateMenu.start" :close-on-content-click="false" transition="scale-transition" offset-y
                   min-width="auto">
                   <template #activator="{ on, attrs }">
-                    <v-text-field
-                      :value="formattedStartDate"
-                      label="Data de Início*"
-                      prepend-inner-icon="mdi-calendar"
-                      readonly
-                      outlined
-                      dense
-                      required
-                      hide-details="auto"
-                      :rules="rules.start_date"
-                      v-bind="attrs"
+                    <v-text-field :value="formattedStartDate" label="Data de Início*" prepend-inner-icon="mdi-calendar"
+                      readonly outlined dense required hide-details="auto" :rules="rules.start_date" v-bind="attrs"
                       v-on="on" />
                   </template>
-                  <v-date-picker
-                    v-model="formData.start_date"
-                    locale="pt-br"
-                    no-title
-                    dense
-                    :min="minDate"
+                  <v-date-picker v-model="formData.start_date" locale="pt-br" no-title dense :min="minDate"
                     @input="dateMenu.start = false" />
                 </v-menu>
               </v-col>
 
               <!-- Horário de Início -->
               <v-col cols="12" md="6" sm="12">
-                <v-text-field
-                  v-model="formData.start_time"
-                  v-mask="'##:##'"
-                  label="Horário de Início*"
-                  prepend-inner-icon="mdi-clock-outline"
-                  placeholder="21:30"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  required
-                  :rules="rules.start_time"
-                  @input="validateTime($event, 'start_time')" />
+                <v-text-field v-model="formData.start_time" v-mask="'##:##'" label="Horário de Início*"
+                  prepend-inner-icon="mdi-clock-outline" placeholder="21:30" outlined dense hide-details="auto" required
+                  :rules="rules.start_time" @input="validateTime($event, 'start_time')" />
               </v-col>
 
               <!-- Data de Término -->
               <v-col cols="12" md="6" sm="12">
-                <v-menu
-                  v-model="dateMenu.end"
-                  :close-on-content-click="false"
-                  transition="scale-transition"
-                  offset-y
+                <v-menu v-model="dateMenu.end" :close-on-content-click="false" transition="scale-transition" offset-y
                   min-width="auto">
                   <template #activator="{ on, attrs }">
-                    <v-text-field
-                      :value="formattedEndDate"
-                      label="Data de Término*"
-                      prepend-inner-icon="mdi-calendar"
-                      readonly
-                      outlined
-                      dense
-                      required
-                      hide-details="auto"
-                      :rules="rules.end_date"
-                      v-bind="attrs"
+                    <v-text-field :value="formattedEndDate" label="Data de Término*" prepend-inner-icon="mdi-calendar"
+                      readonly outlined dense required hide-details="auto" :rules="rules.end_date" v-bind="attrs"
                       v-on="on" />
                   </template>
-                  <v-date-picker
-                    v-model="formData.end_date"
-                    locale="pt-br"
-                    dense
-                    no-title
-                    :min="formData.start_date || minDate"
-                    @input="dateMenu.end = false" />
+                  <v-date-picker v-model="formData.end_date" locale="pt-br" dense no-title
+                    :min="formData.start_date || minDate" @input="dateMenu.end = false" />
                 </v-menu>
               </v-col>
 
               <!-- Horário de Término -->
               <v-col cols="12" md="6" sm="12">
-                <v-text-field
-                  v-model="formData.end_time"
-                  v-mask="'##:##'"
-                  label="Horário de Término*"
-                  prepend-inner-icon="mdi-clock-outline"
-                  placeholder="00:00"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  required
-                  :rules="rules.end_time"
-                  @input="validateTime($event, 'end_time')" />
+                <v-text-field v-model="formData.end_time" v-mask="'##:##'" label="Horário de Término*"
+                  prepend-inner-icon="mdi-clock-outline" placeholder="00:00" outlined dense hide-details="auto" required
+                  :rules="rules.end_time" @input="validateTime($event, 'end_time')" />
               </v-col>
 
               <v-col cols="12">
@@ -264,10 +152,7 @@
             <v-icon left small>mdi-delete</v-icon>
             Remover
           </v-btn>
-          <DefaultButton
-            text="Adicionar"
-            @click="saveDate"
-          />
+          <DefaultButton text="Adicionar" @click="saveDate" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -316,6 +201,7 @@ export default {
       },
       isFormValid: false,
       isInitialFormValid: false,
+      isInitializing: true,
       minDate,
       rules: {
         start_date: [
@@ -343,10 +229,10 @@ export default {
               return 'A data de início não pode ser anterior à data atual.';
 
             return true;
-          },      
+          },
         ],
         start_time: [
-         (value) => !!value || 'A hora de início é obrigatória.',
+          (value) => !!value || 'A hora de início é obrigatória.',
           (value) => {
             if (!value) return true;
             const [hours, minutes] = value.split(':').map(Number);
@@ -421,7 +307,7 @@ export default {
           },
         ],
         end_time: [
-         (value) => !!value || 'A hora de término é obrigatória.',
+          (value) => !!value || 'A hora de término é obrigatória.',
           (value) => {
             if (!value) return true;
             const [hours, minutes] = value.split(':').map(Number);
@@ -493,13 +379,29 @@ export default {
       return this.initialFormData.end_date ? formatDateToBr(this.initialFormData.end_date) : '';
     },
   },
+
   watch: {
     eventDates: {
-      handler(newDates) {
-        // Se não houver datas, resetar o formulário
+      handler(newDates, oldDates) {
+        // Evitar reset desnecessário se os dados não mudaram realmente
+        if (JSON.stringify(newDates) === JSON.stringify(oldDates)) {
+          return;
+        }
+
+        // Se não houver datas, resetar o formulário apenas se não estivermos
+        // no processo de criação inicial do componente com dados já preenchidos
         if (newDates.length === 0) {
-          this.resetInitialForm();
-        } 
+          // Só reseta se o formulário não tem dados preenchidos pelo usuário
+          // E se não estivermos na inicialização do componente
+          const hasUserData = this.initialFormData.start_date ||
+            this.initialFormData.start_time ||
+            this.initialFormData.end_date ||
+            this.initialFormData.end_time;
+
+          if (!hasUserData && !this.isInitializing) {
+            this.resetInitialForm();
+          }
+        }
         // Se tiver exatamente uma data, preencher o formulário com ela
         else if (newDates.length === 1) {
           const firstDate = newDates[0];
@@ -515,58 +417,65 @@ export default {
       immediate: true
     }
   },
+
+  mounted() {
+    // Após o componente ser montado, marcar como não sendo mais inicialização
+    this.$nextTick(() => {
+      this.isInitializing = false;
+    });
+  },
   methods: {
     // Método de validação para ser chamado pelo componente pai
     validate(showErrors = false) {
       let hasErrors = false;
-      
+
       // Se tivermos datas múltiplas, verificamos se há pelo menos uma data
       if (this.eventDates.length > 1) {
         // Já temos várias datas cadastradas, então está válido
         return false; // Retorna false para indicar que não há erros
-      } 
+      }
       // Se tivermos 0 ou 1 data, validamos o formulário inicial
       else if (this.$refs.initialForm) {
-          if (showErrors) {
-            this.$refs.initialForm.validate();
-          }
-          
-          if (!this.isInitialFormValid) {
-            hasErrors = true;
-          }
-          
-          // Verificamos se todos os campos estão preenchidos
-          if (!this.initialFormData.start_date || 
-              !this.initialFormData.start_time || 
-              !this.initialFormData.end_date || 
-              !this.initialFormData.end_time) {
-            hasErrors = true;
-          }
-          
-          // Se for válido e tivermos 0 datas, vamos salvar a primeira data
-          if (!hasErrors && this.eventDates.length === 0) {
-            this.saveInitialDate();
-          } 
-          // Se for válido e tivermos 1 data, vamos atualizá-la
-          else if (!hasErrors && this.eventDates.length === 1) {
-            this.saveInitialDate();
-          }
-        } else {
+        if (showErrors) {
+          this.$refs.initialForm.validate();
+        }
+
+        if (!this.isInitialFormValid) {
           hasErrors = true;
         }
-      
+
+        // Verificamos se todos os campos estão preenchidos
+        if (!this.initialFormData.start_date ||
+          !this.initialFormData.start_time ||
+          !this.initialFormData.end_date ||
+          !this.initialFormData.end_time) {
+          hasErrors = true;
+        }
+
+        // Se for válido e tivermos 0 datas, vamos salvar a primeira data
+        if (!hasErrors && this.eventDates.length === 0) {
+          this.saveInitialDate();
+        }
+        // Se for válido e tivermos 1 data, vamos atualizá-la
+        else if (!hasErrors && this.eventDates.length === 1) {
+          this.saveInitialDate();
+        }
+      } else {
+        hasErrors = true;
+      }
+
       return hasErrors; // Retorna true se houver erros, false caso contrário
     },
-    
+
     handleAddDateClick() {
       // Se não tiver datas ou tiver apenas uma, valida e salva o formulário
       if (this.eventDates.length <= 1 && this.$refs.initialForm) {
         // Forçar validação do formulário para exibir os erros
         this.$refs.initialForm.validate(true);
-        
+
         if (this.isInitialFormValid && this.allFieldsFilled(this.initialFormData)) {
           this.saveInitialDate();
-          
+
           // Se já tiver salvo uma data, abrir modal para adicionar a segunda
           if (this.eventDates.length === 1) {
             this.openAddDateModal();
@@ -602,10 +511,10 @@ export default {
           this.formData[field] = value;
         }
       } else if (formType === 'initial') {
-          this.initialFormData[field] = '';
-        } else {
-          this.formData[field] = '';
-        }
+        this.initialFormData[field] = '';
+      } else {
+        this.formData[field] = '';
+      }
 
       // Força revalidação do formulário se necessário
       this.$nextTick(() => {
@@ -617,10 +526,10 @@ export default {
       });
     },
     allFieldsFilled(formData) {
-      return formData.start_date && 
-             formData.start_time && 
-             formData.end_date && 
-             formData.end_time;
+      return formData.start_date &&
+        formData.start_time &&
+        formData.end_date &&
+        formData.end_time;
     },
     editDate(index) {
       const date = this.eventDates[index];
@@ -643,16 +552,16 @@ export default {
     async saveDate() {
       // Primeiro validamos o formulário e garantimos que os erros sejam exibidos
       const formRef = this.$refs[`dateForm${this.dateDialog.index !== null ? this.dateDialog.index : 'new'}`];
-      
+
       if (formRef) {
         // Forçar validação do formulário para exibir os erros
         formRef.validate(true);
-        
+
         // Verificar se todos os campos obrigatórios estão preenchidos
         if (!this.allFieldsFilled(this.formData)) {
           return; // Não prossegue se campos obrigatórios estiverem vazios
         }
-        
+
         // Verificar se o formulário está válido após a validação
         if (!this.isFormValid) {
           return; // Não prossegue se o formulário tiver erros de validação
@@ -683,12 +592,12 @@ export default {
       // Forçar validação do formulário para exibir os erros
       if (this.$refs.initialForm) {
         this.$refs.initialForm.validate(true);
-        
+
         // Verificar se todos os campos obrigatórios estão preenchidos
         if (!this.allFieldsFilled(this.initialFormData)) {
           return; // Não prossegue se campos obrigatórios estiverem vazios
         }
-        
+
         // Verificar se o formulário está válido após a validação
         if (!this.isInitialFormValid) {
           return; // Não prossegue se o formulário tiver erros de validação
@@ -707,7 +616,7 @@ export default {
       // Se não tiver datas, adiciona uma nova
       if (this.eventDates.length === 0) {
         await this.$store.dispatch('eventGeneralInfo/addEventDate', dateObj);
-      } 
+      }
       // Se já tiver uma data, atualiza a primeira
       else if (this.eventDates.length === 1) {
         await this.$store.dispatch('eventGeneralInfo/updateEventDate', {
@@ -736,15 +645,15 @@ export default {
       if (!date.start_date || !date.start_time || !date.end_date || !date.end_time) return '';
 
       let startDateTime, endDateTime;
-      
+
       try {
         startDateTime = new Date(`${date.start_date}T${date.start_time}:00`);
         endDateTime = new Date(`${date.end_date}T${date.end_time}:00`);
-        
+
         if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime()) || endDateTime <= startDateTime) {
           return '';
         }
-        
+
         const durationMs = endDateTime - startDateTime;
         const totalMinutes = Math.floor(durationMs / (1000 * 60));
         const days = Math.floor(totalMinutes / (60 * 24));
@@ -769,7 +678,7 @@ export default {
         end_time: '',
       };
       this.isFormValid = false;
-      
+
       // Resetar validação do formulário se existir
       this.$nextTick(() => {
         const formRef = this.$refs[`dateForm${this.dateDialog.index !== null ? this.dateDialog.index : 'new'}`];
@@ -786,7 +695,7 @@ export default {
         end_time: '',
       };
       this.isInitialFormValid = false;
-      
+
       // Resetar validação do formulário se existir
       this.$nextTick(() => {
         if (this.$refs.initialForm) {
