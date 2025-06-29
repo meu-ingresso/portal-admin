@@ -108,6 +108,7 @@ export default {
     return {
       currentStep: 1,
       showProgressDialog: false,
+      storesInitialized: false,
     };
   },
 
@@ -198,7 +199,12 @@ export default {
   },
 
   created() {
-    this.resetStores();
+    // Só reseta os stores se não estivermos editando um evento existente
+    // e se os stores ainda não foram inicializados
+    if (!this.isEditing && !this.storesInitialized) {
+      this.resetStores();
+      this.storesInitialized = true;
+    }
   },
 
   async mounted() {

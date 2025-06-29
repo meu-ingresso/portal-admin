@@ -206,7 +206,7 @@ export default {
     },
 
     people() {
-      return this.$store.getters['user/$people'];
+      return this.$store.state.auth.user?.people || {};
     },
 
     stepTitle() {
