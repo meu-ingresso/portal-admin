@@ -16,10 +16,12 @@
             @change-event="onChangeEvent" />
         </div>
 
+        <!--
         <ReportsOverviewTemplate v-if="isOverview" />
         <ReportsSalesTemplate v-if="isSales" />
         <ReportsTicketsTemplate v-if="isTickets" />
         <ReportsAttendanceTemplate v-if="isAttendance" />
+        -->
         <ReportsUsersTemplate v-if="isUsers" />
       </div>
     </v-container>
