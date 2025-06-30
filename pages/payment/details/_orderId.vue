@@ -14,12 +14,7 @@
         <v-col cols="12">
           <v-card outlined>
             <v-card-text class="pt-4">
-              <Lottie
-                v-if="isLoading"
-                path="./animations/loading_default.json"
-                height="300"
-                width="300"
-              />
+              <Lottie v-if="isLoading" path="./animations/loading_default.json" height="300" width="300" />
 
               <template v-else>
                 <!-- Informações do Pagamento -->
@@ -35,11 +30,7 @@
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">Status</div>
                       <div class="info-value">
-                        <v-chip
-                          small
-                          :color="getStatusColor(payment.status?.name)"
-                          text-color="white"
-                        >
+                        <v-chip small :color="getStatusColor(payment.status?.name)" text-color="white">
                           {{ payment.status?.name }}
                         </v-chip>
                       </div>
@@ -63,7 +54,7 @@
                   <v-row>
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">Método</div>
-                      <div class="info-value text-capitalize">
+                      <div class="info-value">
                         {{ getPaymentMethod(payment.payment_method) }}
                       </div>
                     </v-col>
@@ -161,22 +152,14 @@
                             {{ defaultFields?.[ticket.id]?.[0]?.value }} <br />
                             {{ defaultFields?.[ticket.id]?.[1]?.value }}
                           </td>
-                          <td>{{ ticket.ticket?.name }}</td>
-                          <td>{{ formatRealValue(ticket.ticket?.price) }}</td>
+                          <td>{{ ticket.paymentTickets.ticket?.name }}</td>
+                          <td>{{ formatRealValue(ticket.paymentTickets.ticket_original_price) }}</td>
                           <td>{{ getEventFee }}%</td>
                           <td>
-                            {{
-                              formatRealValue(
-                                ticket.ticket?.price * (1 + (getEventFee || 0) / 100)
-                              )
-                            }}
+                            {{ formatRealValue(ticket.paymentTickets.ticket_final_price) }}
                           </td>
                           <td>
-                            <v-chip
-                              x-small
-                              :color="ticket.validated ? 'green' : 'orange'"
-                              text-color="white"
-                            >
+                            <v-chip x-small :color="ticket.validated ? 'green' : 'orange'" text-color="white">
                               {{ ticket.validated ? "Validado" : "Não Validado" }}
                             </v-chip>
                           </td>
@@ -191,20 +174,13 @@
                             <v-tooltip bottom>
                               <template #activator="{ on, attrs }">
                                 <div v-bind="attrs" v-on="on">
-                                  <v-btn
-                                    x-small
-                                    icon
-                                    :disabled="!is24HoursOrMoreBeforeEventStart"
-                                    color="primary"
-                                    @click="openTicketEditModal(ticket)"
-                                  >
+                                  <v-btn x-small icon :disabled="!is24HoursOrMoreBeforeEventStart" color="primary"
+                                    @click="openTicketEditModal(ticket)">
                                     <v-icon small>mdi-pencil</v-icon>
                                   </v-btn>
                                 </div>
                               </template>
-                              <span v-if="is24HoursOrMoreBeforeEventStart"
-                                >Editar participante</span
-                              >
+                              <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
                               <span v-else>
                                 Não é possível editar participantes de eventos que já
                                 aconteceram ou estão a menos de 24 horas do início
@@ -218,12 +194,7 @@
 
                   <!-- Versão Mobile (cards) -->
                   <div v-else class="ticket-cards">
-                    <v-card
-                      v-for="ticket in relatedTickets"
-                      :key="ticket.id"
-                      outlined
-                      class="mb-3 ticket-card"
-                    >
+                    <v-card v-for="ticket in relatedTickets" :key="ticket.id" outlined class="mb-3 ticket-card">
                       <v-card-text>
                         <div class="d-flex justify-space-between align-center mb-2">
                           <div>
@@ -236,20 +207,13 @@
                           <v-tooltip bottom>
                             <template #activator="{ on, attrs }">
                               <div v-bind="attrs" v-on="on">
-                                <v-btn
-                                  small
-                                  icon
-                                  color="primary"
-                                  :disabled="!is24HoursOrMoreBeforeEventStart"
-                                  @click="openTicketEditModal(ticket)"
-                                >
+                                <v-btn small icon color="primary" :disabled="!is24HoursOrMoreBeforeEventStart"
+                                  @click="openTicketEditModal(ticket)">
                                   <v-icon small>mdi-pencil</v-icon>
                                 </v-btn>
                               </div>
                             </template>
-                            <span v-if="is24HoursOrMoreBeforeEventStart"
-                              >Editar participante</span
-                            >
+                            <span v-if="is24HoursOrMoreBeforeEventStart">Editar participante</span>
                             <span v-else>
                               Não é possível editar participantes de eventos que já
                               aconteceram ou estão a menos de 24 horas do início
@@ -268,11 +232,7 @@
                           <div class="mb-2">
                             <div class="caption grey--text">Status</div>
                             <div>
-                              <v-chip
-                                x-small
-                                :color="ticket.validated ? 'green' : 'orange'"
-                                text-color="white"
-                              >
+                              <v-chip x-small :color="ticket.validated ? 'green' : 'orange'" text-color="white">
                                 {{ ticket.validated ? "Validado" : "Não Validado" }}
                               </v-chip>
                             </div>
@@ -296,55 +256,31 @@
 
                 <!-- Ações -->
                 <v-divider />
-                <div
-                  class="tickets-actions mt-4"
-                  :class="{
-                    'd-flex align-center justify-space-between':
-                      $vuetify.breakpoint.mdAndUp,
-                    'mobile-actions': $vuetify.breakpoint.smAndDown,
-                  }"
-                >
+                <div class="tickets-actions mt-4" :class="{
+                  'd-flex align-center justify-space-between':
+                    $vuetify.breakpoint.mdAndUp,
+                  'mobile-actions': $vuetify.breakpoint.smAndDown,
+                }">
                   <div :class="{ 'd-flex align-center': $vuetify.breakpoint.mdAndUp }">
-                    <ButtonWithIcon
-                      v-if="canCancelOrder"
-                      text="Cancelar pedido"
-                      outlined
-                      color="error"
-                      :loading="isCancelling"
-                      icon="mdi-cancel"
-                      :class="{
+                    <ButtonWithIcon v-if="canCancelOrder" text="Cancelar pedido" outlined color="error"
+                      :loading="isCancelling" icon="mdi-cancel" :class="{
                         'ml-2': $vuetify.breakpoint.mdAndUp,
                         'mb-3': $vuetify.breakpoint.smAndDown,
                         'full-width-mobile': $vuetify.breakpoint.smAndDown,
-                      }"
-                      @click="showCancelConfirmation"
-                    />
+                      }" @click="showCancelConfirmation" />
                   </div>
 
                   <div :class="{ 'd-flex justify-end': $vuetify.breakpoint.mdAndUp }">
-                    <ButtonWithIcon
-                      v-if="canResendTickets"
-                      text="Reenviar ingressos"
-                      outlined
-                      :loading="isResending"
-                      icon="mdi-email"
-                      :class="{
+                    <ButtonWithIcon v-if="canResendTickets" text="Reenviar ingressos" outlined :loading="isResending"
+                      icon="mdi-email" :class="{
                         'mr-2': $vuetify.breakpoint.mdAndUp,
                         'mb-3': $vuetify.breakpoint.smAndDown,
                         'full-width-mobile': $vuetify.breakpoint.smAndDown,
-                      }"
-                      @click="resendTickets"
-                    />
+                      }" @click="resendTickets" />
 
-                    <ButtonWithIcon
-                      v-if="canPrintTickets"
-                      text="Imprimir ingressos"
-                      outlined
-                      :loading="isPrinting"
-                      icon="mdi-printer"
-                      :class="{ 'full-width-mobile': $vuetify.breakpoint.smAndDown }"
-                      @click="generatePDF"
-                    />
+                    <ButtonWithIcon v-if="canPrintTickets" text="Imprimir ingressos" outlined :loading="isPrinting"
+                      icon="mdi-printer" :class="{ 'full-width-mobile': $vuetify.breakpoint.smAndDown }"
+                      @click="generatePDF" />
                   </div>
                 </div>
               </template>
@@ -355,25 +291,14 @@
     </v-container>
 
     <!-- Modal de Edição de Campos do Ingresso -->
-    <TicketFieldsEditModal
-      :show.sync="showTicketFieldsEditModal"
-      :customer-ticket-id="selectedTicketId"
-      @update:show="showTicketFieldsEditModal = $event"
-      @fields-updated="handleTicketFieldsUpdated"
-    />
+    <TicketFieldsEditModal :show.sync="showTicketFieldsEditModal" :customer-ticket-id="selectedTicketId"
+      @update:show="showTicketFieldsEditModal = $event" @fields-updated="handleTicketFieldsUpdated" />
 
     <!-- Modal de Confirmação de Cancelamento -->
-    <ConfirmDialog
-      v-model="showCancelDialog"
-      title="Cancelar Pedido"
+    <ConfirmDialog v-model="showCancelDialog" title="Cancelar Pedido"
       message="Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita."
-      confirm-text="Sim, cancelar"
-      cancel-text="Não, voltar"
-      confirm-color="error"
-      :loading="isCancelling"
-      @cancel="showCancelDialog = $event"
-      @confirm="cancelOrder"
-    />
+      confirm-text="Sim, cancelar" cancel-text="Não, voltar" confirm-color="error" :loading="isCancelling"
+      @cancel="showCancelDialog = $event" @confirm="cancelOrder" />
   </div>
 </template>
 

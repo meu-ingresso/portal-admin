@@ -1,6 +1,5 @@
 <template>
-  <v-dialog
-:value="show" max-width="960px" :fullscreen="isMobile" persistent content-class="secondary-dialog"
+  <v-dialog :value="show" max-width="960px" :fullscreen="isMobile" persistent content-class="secondary-dialog"
     @input="$emit('update:show', $event)">
     <v-card :tile="isMobile">
       <v-card-title class="d-flex justify-space-between align-center">
@@ -35,14 +34,14 @@
               <v-col cols="6">
                 <div class="info-label">Titular da compra</div>
                 <div class="info-value">
-                  {{ payment.user?.people?.first_name }}
-                  {{ payment.user?.people?.last_name }}
+                  {{ payment.people?.first_name }}
+                  {{ payment.people?.last_name }}
                 </div>
               </v-col>
               <v-col cols="6">
                 <div class="info-label">Email</div>
                 <div class="info-value">
-                  {{ payment.user?.people?.email }}
+                  {{ payment.people?.email }}
                 </div>
               </v-col>
               <v-col cols="6">
@@ -64,7 +63,7 @@
               <v-col cols="6">
                 <div class="info-label">Desconto</div>
                 <div class="info-value">
-                  {{ formatRealValue(payment.discount_value) }}
+                  {{ formatRealValue(getDiscountValue) }}
                 </div>
               </v-col>
               <v-col cols="6">
@@ -122,7 +121,7 @@
                 </thead>
                 <tbody>
                   <tr v-for="ticket in relatedTickets" :key="ticket.id">
-                    <td>{{ ticket.ticket?.name }}</td>
+                    <td>{{ ticket.paymentTickets.ticket?.name }}</td>
                     <td>{{ ticket.ticket_identifier }}</td>
                     <td>
                       <v-chip x-small :color="ticket.validated ? 'green' : 'orange'" text-color="white">
@@ -136,8 +135,7 @@
                       <v-tooltip bottom>
                         <template #activator="{ on, attrs }">
                           <div v-bind="attrs" v-on="on">
-                            <v-btn
-x-small :disabled="!is24HoursOrMoreBeforeEventStart" icon color="primary"
+                            <v-btn x-small :disabled="!is24HoursOrMoreBeforeEventStart" icon color="primary"
                               @click="openTicketEditModal(ticket)">
                               <v-icon small>mdi-pencil</v-icon>
                             </v-btn>
@@ -158,18 +156,15 @@ x-small :disabled="!is24HoursOrMoreBeforeEventStart" icon color="primary"
           <v-divider />
           <div class="tickets-actions d-flex align-center justify-space-between mt-4">
             <div class="d-flex align-center">
-              <ButtonWithIcon
-text="Cancelar pedido" outlined color="error" :loading="isCancelling" icon="mdi-cancel"
+              <ButtonWithIcon text="Cancelar pedido" outlined color="error" :loading="isCancelling" icon="mdi-cancel"
                 class="ml-2" @click="showCancelConfirmation" />
             </div>
 
             <div class="d-flex justify-end">
-              <ButtonWithIcon
-text="Reenviar ingressos" outlined :loading="isResending" icon="mdi-email" class="mr-2"
+              <ButtonWithIcon text="Reenviar ingressos" outlined :loading="isResending" icon="mdi-email" class="mr-2"
                 @click="resendTickets" />
 
-              <ButtonWithIcon
-text="Imprimir ingressos" outlined :loading="isPrinting" icon="mdi-printer"
+              <ButtonWithIcon text="Imprimir ingressos" outlined :loading="isPrinting" icon="mdi-printer"
                 @click="generatePDF" />
             </div>
           </div>
@@ -178,13 +173,11 @@ text="Imprimir ingressos" outlined :loading="isPrinting" icon="mdi-printer"
     </v-card>
 
     <!-- Modal de Edição de Campos do Ingresso -->
-    <TicketFieldsEditModal
-:show="showTicketFieldsEditModal" :customer-ticket-id="selectedTicketId"
+    <TicketFieldsEditModal :show="showTicketFieldsEditModal" :customer-ticket-id="selectedTicketId"
       @update:show="showTicketFieldsEditModal = $event" @fields-updated="handleTicketFieldsUpdated" />
 
     <!-- Modal de Confirmação de Cancelamento -->
-    <ConfirmDialog
-v-model="showCancelDialog" title="Cancelar Pedido"
+    <ConfirmDialog v-model="showCancelDialog" title="Cancelar Pedido"
       message="Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita."
       confirm-text="Sim, cancelar" cancel-text="Não, voltar" confirm-color="error" :loading="isCancelling"
       @cancel="showCancelDialog = $event" @confirm="cancelOrder" />
@@ -222,6 +215,11 @@ export default {
 
   computed: {
 
+    getDiscountValue() {
+      if (!this.payment) return 0;
+      return parseFloat(this.payment.gross_value) - parseFloat(this.payment.net_value);
+    },
+
     getUserEventPermissions() {
       return this.$store.getters['permissions/$eventPermissions'];
     },
@@ -235,11 +233,9 @@ export default {
     },
 
     getEvent() {
-      const filteredCustomerTicket = this.$store.getters['eventCustomerTickets/$customerTickets'].find(
-        (customerTicket) => customerTicket.payment_id === this.paymentId
-      );
+      if (!this.payment?.event) return null;
 
-      return filteredCustomerTicket?.ticket?.event;
+      return this?.payment?.event;
     },
 
     is24HoursOrMoreBeforeEventStart() {
@@ -259,9 +255,7 @@ export default {
 
     getTotalValue() {
       if (!this.payment) return 0;
-      const grossValue = parseFloat(this.payment.gross_value) || 0;
-      const discountValue = parseFloat(this.payment.discount_value) || 0;
-      return grossValue - discountValue;
+      return parseFloat(this.payment.net_value);
     },
 
     getEventFeePercentage() {
