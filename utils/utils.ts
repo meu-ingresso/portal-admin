@@ -131,10 +131,11 @@ export const getPaymentMethod = (payment: string): string => {
     case 'billet':
       return 'Boleto';
     case 'credit':
+    case 'card':
     case 'credit_card':
-      return 'Cartão de Crédito';
+      return 'Cartão de crédito';
     case 'debit':
-      return 'Cartão de Débito';
+      return 'Cartão de débito';
     case 'PDV':
       return 'PDV (Ponto de Venda)';
     default:
