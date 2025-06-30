@@ -144,8 +144,8 @@ export const actions = {
     try {
       const response = await $axios.$get('/customer-tickets', {
         params: {
-          'where[payment_id][v]': paymentId,
-          'preloads[]': ['ticket', 'ticket:event:fees'],
+          'whereHas[paymentTickets][payment_id][v]': paymentId,
+          'preloads[]': ['paymentTickets:ticket', 'paymentTickets:ticket:event:fees'],
           'limit': 9999,
         },
       });
