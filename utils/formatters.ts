@@ -61,6 +61,11 @@ export const formatDollarValue = (value: number): string => {
 
 export const formatRealValue = (value: number): string => {
   if (value === null || value === undefined) return '';
+
+  if (typeof value === 'string') {
+    value = parseFloat(value);
+  }
+
   return `R$ ${value.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
