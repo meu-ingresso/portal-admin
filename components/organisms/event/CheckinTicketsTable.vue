@@ -102,13 +102,14 @@
 
       <!-- Tipo do Ingresso -->
       <template #[`item.ticket_type`]="{ item }">
-        {{ item.ticket?.name }}
+        {{ item.paymentTickets?.ticket_original_name }}
       </template>
 
       <!-- Pedido -->
       <template #[`item.payment_id`]="{ item }">
-        <span v-if="item.payment?.id" class="payment-link" @click="openPaymentDetails(item.payment.id)">
-          {{ item.payment.id }}
+        <span v-if="item.paymentTickets?.payment_id" class="payment-link"
+          @click="openPaymentDetails(item.paymentTickets.payment_id)">
+          {{ item.paymentTickets.payment_id }}
         </span>
         <span v-else>-</span>
       </template>
@@ -243,7 +244,7 @@ export default {
     },
     ticketTypeOptions() {
       return this.customerTickets
-        .map((ticket) => ticket.ticket?.name)
+        .map((ticket) => ticket.paymentTickets?.ticket_original_name)
         .filter((name, index, self) => name && self.indexOf(name) === index)
         .map((name) => ({ text: name, value: name }));
     },
@@ -334,7 +335,7 @@ export default {
 
 
       const ticketTypeQuery = this.filters.ticketType
-        ? `&where[ticket][name][v]=${this.filters.ticketType}`
+        ? `&whereHas[paymentTickets][ticket][name][v]=${this.filters.ticketType}`
         : '';
       const dateQuery = this.buildDateQuery();
       const checkinStatusQuery = this.filters.checkinStatus
@@ -342,7 +343,7 @@ export default {
         : '';
 
       await this.$store.dispatch('eventCustomerTickets/fetchAndPopulateByQuery',
-        `${query}${searchQuery}${ticketTypeQuery}${dateQuery}${checkinStatusQuery}&preloads[]=ticketFields:checkoutField&preloads[]=ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=payment:status&whereHas[ticket][event_id][v]=${this.eventId}`
+        `${query}${searchQuery}${ticketTypeQuery}${dateQuery}${checkinStatusQuery}&preloads[]=ticketFields:checkoutField&preloads[]=paymentTickets:ticket:event&preloads[]=validatedBy:people&preloads[]=currentOwner&preloads[]=paymentTickets:payment:status&whereHas[paymentTickets][ticket][event_id][v]=${this.eventId}`
       );
     },
 
