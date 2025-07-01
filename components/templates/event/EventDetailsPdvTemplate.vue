@@ -2,7 +2,8 @@
   <div class="event-details-wrapper">
     <!-- Estado vazio -->
     <template v-if="getPdvs?.length === 0">
-      <EmptyState title="Ainda não há PDVs" subtitle="Uma vez criados, seus PDVs aparecerão aqui"
+      <EmptyState
+title="Ainda não há PDVs" subtitle="Uma vez criados, seus PDVs aparecerão aqui"
         icon="mdi-point-of-sale">
         <template #action>
           <DefaultButton text="Adicionar" icon="mdi-plus" class="mt-6" @click="openAddPdvModal" />
@@ -20,7 +21,8 @@
       </div>
 
       <!-- Tabela de PDVs -->
-      <v-data-table :headers="headers" :items="getPdvs" :items-per-page="10" class="pdv-table" :loading="isLoading"
+      <v-data-table
+:headers="headers" :items="getPdvs" :items-per-page="10" class="pdv-table" :loading="isLoading"
         no-data-text="Nenhum PDV encontrado" :footer-props="{
           'items-per-page-options': [5, 10, 15, 20],
           'items-per-page-text': 'PDVs por página',
@@ -85,7 +87,8 @@
           <div class="d-flex justify-center">
             <v-tooltip bottom>
               <template #activator="{ on }">
-                <v-btn icon color="primary" class="mr-2" :loading="item.isLoading" @click.stop="togglePdvStatus(item)"
+                <v-btn
+icon color="primary" class="mr-2" :loading="item.isLoading" @click.stop="togglePdvStatus(item)"
                   v-on="on">
                   <v-icon>{{ getPdvStatusIcon(item) }}</v-icon>
                 </v-btn>
@@ -117,14 +120,17 @@
         </v-card-title>
         <v-card-text>
           <v-form ref="addPdvForm" v-model="addPdvFormValid" lazy-validation>
-            <v-text-field v-model="newPdv.name" label="Nome do PDV" :rules="[v => !!v || 'Nome é obrigatório']" required
+            <v-text-field
+v-model="newPdv.name" label="Nome do PDV" :rules="[v => !!v || 'Nome é obrigatório']" required
               outlined dense></v-text-field>
 
-            <AdvancedAutocomplete v-model="selectedUsers" :items="availableUsers"
+            <AdvancedAutocomplete
+v-model="selectedUsers" :items="availableUsers"
               :disabled-tooltip-text="`Este usuário já está associado a outro PDV`" label="Usuários (opcional)"
               item-text="name" item-value="id" item-subtitle="email" more-label="usuários" />
 
-            <AdvancedAutocomplete v-model="selectedTickets" :items="getTickets" label="Ingressos (opcional)"
+            <AdvancedAutocomplete
+v-model="selectedTickets" :items="getTickets" label="Ingressos (opcional)"
               item-text="name" item-value="id" more-label="ingressos" />
           </v-form>
         </v-card-text>
@@ -148,18 +154,21 @@
           <v-form ref="editPdvForm" v-model="editPdvFormValid" lazy-validation>
             <v-row>
               <v-col cols="12" md="12">
-                <v-text-field v-model="editingPdv.name" label="Nome do PDV" :rules="[v => !!v || 'Nome é obrigatório']"
+                <v-text-field
+v-model="editingPdv.name" label="Nome do PDV" :rules="[v => !!v || 'Nome é obrigatório']"
                   required outlined dense />
               </v-col>
 
               <v-col cols="12" md="12">
-                <AdvancedAutocomplete v-model="editUserSelection" :items="availableUsers"
+                <AdvancedAutocomplete
+v-model="editUserSelection" :items="availableUsers"
                   :disabled-tooltip-text="`Este usuário já está associado a outro PDV`" label="Usuários associados"
                   item-text="name" item-value="id" item-subtitle="email" more-label="usuários" />
               </v-col>
 
               <v-col cols="12" md="12">
-                <AdvancedAutocomplete v-model="editTicketSelection" :items="getTickets" label="Ingressos associados"
+                <AdvancedAutocomplete
+v-model="editTicketSelection" :items="getTickets" label="Ingressos associados"
                   item-text="name" item-value="id" more-label="ingressos" />
               </v-col>
             </v-row>
@@ -179,7 +188,8 @@
           Adicionar Usuários
         </v-card-title>
         <v-card-text>
-          <AdvancedAutocomplete v-model="userToAdd" :items="availableUsers"
+          <AdvancedAutocomplete
+v-model="userToAdd" :items="availableUsers"
             :disabled-tooltip-text="`Este usuário já está associado a outro PDV`" label="Selecione os usuários"
             item-text="name" item-value="id" item-subtitle="email" more-label="usuários" />
         </v-card-text>
@@ -197,7 +207,8 @@
           Adicionar Ingressos
         </v-card-title>
         <v-card-text>
-          <AdvancedAutocomplete v-model="ticketToAdd" :items="getTickets" label="Selecione os ingressos"
+          <AdvancedAutocomplete
+v-model="ticketToAdd" :items="getTickets" label="Selecione os ingressos"
             item-text="name" item-value="id" more-label="ingressos" />
         </v-card-text>
         <v-card-actions class="d-flex align-center justify-space-between py-4 px-4">
@@ -208,7 +219,8 @@
     </v-dialog>
 
     <!-- Modal para confirmação de exclusão -->
-    <ConfirmDialog v-model="deleteConfirmDialog" title="Excluir PDV"
+    <ConfirmDialog
+v-model="deleteConfirmDialog" title="Excluir PDV"
       :message="`Tem certeza que deseja excluir o PDV '${pdvToDelete?.name}'?`" confirm-text="Excluir"
       cancel-text="Cancelar" :loading="isDeleting" @confirm="deletePdv" @cancel="closeDeletePdvModal" />
   </div>
@@ -290,7 +302,7 @@ export default {
         id: user.id,
         name: user.people?.first_name + ' ' + user.people?.last_name || user.email || 'Usuário sem nome',
         email: user.email,
-        _disabled: this.$store.getters['eventPdv/$pdvs'].some(pdv => pdv.users.some(u => u.user_id === user.id && u.pdv_id !== this.editingPdv?.id))
+        _disabled: this.$store.getters['eventPdv/$pdvs'].some(pdv => pdv?.users?.some(u => u.user_id === user.id && u.pdv_id !== this.editingPdv?.id))
       }));
 
       return mappedUsers;
