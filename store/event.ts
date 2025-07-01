@@ -157,16 +157,22 @@ export const getters = {
 
 export const mutations = {
   SET_EVENT_LIST(state: EventState, data: any) {
-    state.eventList = data.map((event: any) => ({
-      ...event,
-      location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
+    state.eventList = data.map((group: any) => ({
+      ...group,
+      events: group.events.map((event: any) => ({
+        ...event,
+        location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
+      })),
     }));
   },
 
   APPEND_TO_EVENT_LIST(state: EventState, data: any) {
-    const mappedData = data.map((event: any) => ({
-      ...event,
-      location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
+    const mappedData = data.map((group: any) => ({
+      ...group,
+      events: group.events.map((event: any) => ({
+        ...event,
+        location: event.address ? `${event.address.street}, ${event.address.number} - ${event.address.neighborhood}, ${event.address.city} - ${event.address.state}` : '',
+      })),
     }));
     state.eventList = [...state.eventList, ...mappedData];
   },
@@ -375,15 +381,14 @@ export const actions = {
     dispatch('setLoading', true);
 
     const preloads = [
-      'rating',
-      'tickets:status',
-      'status',
-      'address',
-      'category',
-      'attachments',
-      'coupons',
-      'collaborators:role',
-      'groups'
+      'events:rating',
+      'events:tickets:status',
+      'events:status',
+      'events:address',
+      'events:category',
+      'events:attachments',
+      'events:coupons',
+      'events:collaborators:role'
     ];
 
     const params = new URLSearchParams();
@@ -391,41 +396,36 @@ export const actions = {
     params.append('page', page.toString());
     params.append('limit', limit.toString());
 
-    sortBy.forEach((field: string, index: number) => {
-      const order = sortDesc[index] ? 'desc' : 'asc';
-      params.append('orderBy[]', `${field}:${order}`);
-    });
-
     if (search) {
-      params.append('search[name][o]', '_LIKE_');
-      params.append('search[name][v]', encodeURIComponent(String(search)));
+      params.append('search[events][name][o]', '_LIKE_');
+      params.append('search[events][name][v]', encodeURIComponent(String(search)));
     }
 
     if (status && status !== 'Todos') {
-      params.append('whereHas[status][name]', status);
+      params.append('whereHas[events][status][name]', status);
     }
 
     if (promoterId) {
-      params.append('where[promoter_id][v]', promoterId);
+      params.append('whereHas[events][promoter_id][v]', promoterId);
     }
 
     preloads.forEach((preload) => params.append('preloads[]', preload));
 
-    const response = await $axios.$get(`events?${params.toString()}`);
+    const response = await $axios.$get(`event-groups?${params.toString()}`);
 
-    const { data: events, meta } = handleGetResponse(response, 'Eventos não encontrados', null, filterDeleted);
+    const { data: groups, meta } = handleGetResponse(response, 'Eventos não encontrados', null, filterDeleted);
 
     dispatch('setLoading', false);
     
     if (append) {
-      commit('APPEND_TO_EVENT_LIST', events);
+      commit('APPEND_TO_EVENT_LIST', groups);
     } else {
-      commit('SET_EVENT_LIST', events);
+      commit('SET_EVENT_LIST', groups);
     }
     
     commit('SET_PAGINATION_META', meta);
 
-    return { events, meta };
+    return { groups, meta };
   },
 
   async getById({ commit, dispatch }: any, eventId: string) {
