@@ -9,6 +9,7 @@
       </v-card-title>
 
       <v-stepper v-model="currentStep" flat class="bg-beige">
+        <!-- Header normal do stepper -->
         <v-stepper-header class="bg-white no-box-shadow">
           <template v-for="(step) in checkoutSteps">
             <v-stepper-step :key="step.step" :complete="currentStep > step.step" :step="step.step">
@@ -41,10 +42,11 @@
 
           <!-- Etapa 3: Pagamento -->
           <v-stepper-content step="3" class="bg-transparent px-0 py-0 fixed-height-content">
+            <!-- Conteúdo normal quando não está processando -->
             <PaymentStep :selected-tickets="selectedTickets" :total-amount="totalAmount" :calculate-fee="calculateFee"
               :net-amount="netAmount" :event-fee-percentage="eventFeePercentage" :payment-method="paymentMethod"
               :is-processing="isProcessing" @update:payment-method="paymentMethod = $event"
-              @previous-step="previousStep" @process-payment="processPdvPayment" />
+              @previous-step="previousStep" @process-payment="processPdvPaymentV2" />
           </v-stepper-content>
         </v-stepper-items>
       </v-stepper>
@@ -202,13 +204,7 @@ export default {
     async loadData() {
       try {
 
-        if (this.isAdminOrManager) {
-          console.log('Carregando ingressos para admins');
-          await this.loadTicketsForAdmins();
-        } else {
-          console.log('Carregando ingressos para usuários disponíveis para PDV');
-          await this.loadTicketsForAvailableUsers();
-        }
+        await this.loadTicketsForAvailableUsers();
 
         const categoryCount = Object.keys(this.groupedTickets).length;
         if (categoryCount > 0) {
@@ -268,6 +264,12 @@ export default {
 
           // Sabendo que o usuário só tem um PDV, pegamos o primeiro
           this.pdvId = openPdv.id;
+
+          this.$store.dispatch('toast/setToast', {
+            text: 'PDV disponível encontrado!',
+            type: 'info',
+            time: 3000
+          });
 
           openPdv.pdvTickets.forEach(pdvTicket => {
             this.pdvTickets.push(pdvTicket.ticket);
@@ -482,6 +484,57 @@ export default {
       } finally {
         this.isProcessing = false;
       }
+    },
+
+    async processPdvPaymentV2() {
+      if (this.selectedTickets.length === 0) {
+        this.$store.dispatch('toast/setToast', {
+          text: 'Selecione pelo menos um ingresso para continuar.',
+          type: 'error',
+          time: 3000
+        });
+        return;
+      }
+
+      if (!this.validateCheckoutFields()) {
+        this.$store.dispatch('toast/setToast', {
+          text: 'Por favor, preencha todos os campos obrigatórios.',
+          type: 'error',
+          time: 3000
+        });
+        return;
+      }
+
+      try {
+        this.isProcessing = true;
+
+        await checkoutService.processPdvPaymentV2(this, {
+          tickets: this.selectedTickets,
+          ticketFormGroups: this.ticketFormGroups,
+          checkoutFields: this.checkoutFields,
+          totalAmount: this.totalAmount,
+          netAmount: this.netAmount,
+          pdvId: this.pdvId,
+          eventId: this.eventId
+        });
+
+        this.$store.dispatch('toast/setToast', {
+          text: 'Pedido PDV realizado com sucesso!',
+          type: 'success',
+          time: 3000
+        });
+        this.close();
+        this.$emit('order-created');
+      } catch (error) {
+        console.error('Erro ao processar PDV V2:', error);
+        this.$store.dispatch('toast/setToast', {
+          text: 'Erro ao processar pedido PDV: ' + (error.message || 'Erro desconhecido'),
+          type: 'error',
+          time: 3000
+        });
+      } finally {
+        this.isProcessing = false;
+      }
     }
   }
 };
@@ -500,5 +553,88 @@ export default {
   font-weight: 700;
   color: var(--primary);
   font-family: var(--font-family-inter-bold);
+}
+
+/* Estilos para o loading diferenciado do PDV */
+.pdv-loading-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  position: relative;
+}
+
+.pdv-loading-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+.pdv-loading-icon {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+.pdv-progress-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pdv-loading-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-family-inter-bold);
+}
+
+.pdv-loading-subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.pdv-loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  animation: bounce 1.4s ease-in-out infinite both;
+}
+
+.dot-1 {
+  animation-delay: -0.32s;
+}
+
+.dot-2 {
+  animation-delay: -0.16s;
+}
+
+.dot-3 {
+  animation-delay: 0s;
+}
+
+@keyframes bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
