@@ -18,16 +18,16 @@
 
     <v-divider class="mb-8 mt-8"></v-divider>
 
-    <EventList :events="groupedEvents" :show-sessions-indicator="showSessionsIndicator"
+    <EventList :events="groups" :show-sessions-indicator="showSessionsIndicator"
       @check-promoter="handleCheckPromoter" />
 
     <!-- Estado vazio -->
-    <template v-if="groupedEvents.length === 0 && !isLoadingEvents">
+    <template v-if="groups.length === 0 && !isLoadingEvents">
       <EmptyState title="Ainda não há eventos para esta busca" subtitle="Uma vez criados, seus eventos aparecerão aqui"
         icon="mdi-calendar-outline" />
     </template>
 
-    <v-row v-if="groupedEvents.length > 0 && !isLoadingEvents">
+    <v-row v-if="groups.length > 0 && !isLoadingEvents">
       <v-col cols="12" class="text-center">
         <v-btn v-if="hasEvents" color="primary" text :disabled="!hasMorePages" @click="loadMore">
           {{ loadMoreButtonText }}
@@ -44,8 +44,7 @@ import { EVENT_PERMISSIONS } from '@/utils/permissions-config';
 
 export default {
   props: {
-    groupedEvents: { type: Array, required: true },
-    events: { type: Array, required: true },
+    groups: { type: Array, required: true },
     showSessionsIndicator: { type: Boolean, default: false },
     paginationMeta: {
       type: Object,
@@ -102,7 +101,7 @@ export default {
     },
 
     hasEvents() {
-      return this.groupedEvents.length > 0;
+      return this.groups.length > 0;
     },
 
     hasMorePages() {

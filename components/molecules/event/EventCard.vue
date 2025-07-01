@@ -2,11 +2,12 @@
   <NuxtLink :to="`/events/${event.id}`">
     <v-card class="event-card mb-2" flat>
       <div class="event-date">
-        <div class="date-day">{{ formatDay(event.start_date) }}</div>
-        <div class="date-month">{{ formatMonth(event.start_date) }}</div>
+        <div class="date-day">{{ displayDay }}</div>
+        <div class="date-month">{{ displayMonth }}</div>
       </div>
       <div class="event-details">
         <div class="event-name">{{ event.name }}</div>
+        <div class="event-date-range">{{ formattedDateRange }}</div>
         <div class="event-location">
           <template v-if="event.event_type === 'Online'">
             <v-icon small class="mr-1">mdi-web</v-icon>
@@ -32,7 +33,7 @@
 </template>
 
 <script>
-import { formatDateTimeToBr, formatRealValue, formatMonth } from '@/utils/formatters';
+import { formatDateTimeToBr, formatRealValue, formatMonth, formatDateRange, formatShortDate } from '@/utils/formatters';
 export default {
   props: {
     event: { type: Object, required: true },
@@ -44,6 +45,40 @@ export default {
     formattedDate() {
       return formatDateTimeToBr(this.date);
     },
+
+    formattedDateRange() {
+      if (this.event.hasSessions && this.event.sessionIds && this.event.sessionIds.length > 1) {
+        // Calcular range de datas usando as informações do dateRange já processado
+        if (this.event.dateRange && this.event.dateRange.isMultiSession) {
+          const startDate = new Date(this.event.dateRange.startDate);
+          const endDate = new Date(this.event.dateRange.endDate);
+
+          return formatDateRange(startDate, endDate);
+        }
+      }
+
+      // Se for um evento único no grupo
+      return formatShortDate(this.event.start_date);
+    },
+
+    displayDay() {
+      // Para eventos multi-sessão, mostra o dia da primeira sessão
+      const dateToUse = this.event.hasSessions && this.event.dateRange
+        ? this.event.dateRange.startDate
+        : this.event.start_date;
+
+      const date = new Date(dateToUse);
+      return date.getDate();
+    },
+
+    displayMonth() {
+      // Para eventos multi-sessão, mostra o mês da primeira sessão
+      const dateToUse = this.event.hasSessions && this.event.dateRange
+        ? this.event.dateRange.startDate
+        : this.event.start_date;
+
+      return formatMonth(dateToUse);
+    }
   },
 
   methods: {
@@ -108,9 +143,24 @@ export default {
   max-width: 180px;
 }
 
+.event-date-range {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
 .event-location {
   font-size: 0.75rem;
   color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.event-sessions {
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   margin-bottom: 4px;

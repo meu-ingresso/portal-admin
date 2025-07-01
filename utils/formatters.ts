@@ -169,3 +169,27 @@ export const joinDateTime = (date: string, time: string) => {
   if (!date || !time) return null;
   return moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DDTHH:mm:00.000Z');
 };
+
+/**
+ * Formata uma data para o formato "DD de MMM" (ex: 16 de Out)
+ * @param date Data a ser formatada
+ * @returns String no formato DD de MMM
+ */
+export function formatShortDate(date: string | Date): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  const day = dateObj.getDate()
+  const month = dateObj.toLocaleDateString('pt-BR', { month: 'short' })
+  return `${day} de ${month.charAt(0).toUpperCase() + month.slice(1, 3)}`
+}
+
+/**
+ * Formata um intervalo de datas no formato "DD de MMM a DD de MMM"
+ * @param startDate Data de início
+ * @param endDate Data de fim
+ * @returns String no formato "DD de MMM a DD de MMM"
+ */
+export function formatDateRange(startDate: string | Date, endDate: string | Date): string {
+  const formattedStartDate = formatShortDate(startDate)
+  const formattedEndDate = formatShortDate(endDate)
+  return `${formattedStartDate} a ${formattedEndDate}`
+}

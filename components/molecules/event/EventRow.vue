@@ -1,20 +1,12 @@
 <template>
-  <v-row
-    class="event-row cursor-pointer"
-    :class="{ deleted: event?.deleted_at !== null }"
-    @click="goToEventDetail">
+  <v-row class="event-row cursor-pointer" :class="{ deleted: event?.deleted_at !== null }" @click="goToEventDetail">
     <v-col sm="12" md="2" class="event-status">
       <StatusBadge :text="event?.deleted_at !== null ? 'Excluído' : event.status.name" />
     </v-col>
 
     <v-col sm="12" md="2" class="position-relative">
       <v-img :src="getImage" class="event-image"></v-img>
-      <v-chip
-        v-if="showSessionsIndicator && event.hasSessions"
-        color="primary"
-        small
-        class="sessions-chip ma-2"
-        dark>
+      <v-chip v-if="showSessionsIndicator && event.hasSessions" color="primary" small class="sessions-chip ma-2" dark>
         {{ event.sessionsCount }} datas disponíveis
       </v-chip>
     </v-col>
@@ -51,13 +43,8 @@
       <div v-else class="d-flex justify-center align-center">
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
-            <v-btn
-              v-if="canManageEvent && event.status.name === 'Em Análise'"
-              class="approve-icon"
-              icon
-              v-bind="attrs"
-              v-on="on"
-              @click.stop="confirmAction('approve')">
+            <v-btn v-if="canManageEvent && event.status.name === 'Em Análise'" class="approve-icon" icon v-bind="attrs"
+              v-on="on" @click.stop="confirmAction('approve')">
               <v-icon> mdi-check </v-icon>
             </v-btn>
           </template>
@@ -66,13 +53,8 @@
 
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
-            <v-btn
-              v-if="canManageEvent && event.status.name === 'Em Análise'"
-              class="reject-icon"
-              icon
-              v-bind="attrs"
-              v-on="on"
-              @click.stop="confirmAction('reject')">
+            <v-btn v-if="canManageEvent && event.status.name === 'Em Análise'" class="reject-icon" icon v-bind="attrs"
+              v-on="on" @click.stop="confirmAction('reject')">
               <v-icon> mdi-close </v-icon>
             </v-btn>
           </template>
@@ -81,12 +63,7 @@
 
         <v-tooltip bottom>
           <template #activator="{ on, attrs }">
-            <v-btn
-              v-if="canManageEvent && event.deleted_at === null"
-              class="delete-icon"
-              icon
-              v-bind="attrs"
-              v-on="on"
+            <v-btn v-if="canManageEvent && event.deleted_at === null" class="delete-icon" icon v-bind="attrs" v-on="on"
               @click.stop="confirmAction('delete')">
               <v-icon> mdi-delete </v-icon>
             </v-btn>
@@ -96,22 +73,17 @@
       </div>
     </v-col>
 
-    <ConfirmDialog
-      v-model="confirmationDialog.visible"
-      :title="confirmationDialog.title"
-      :message="confirmationDialog.message"
-      confirm-text="Confirmar"
-      :loading="isChangingStatus"
-      @confirm="handleConfirmation"
-      @cancel="confirmationDialog.visible = false" />
+    <ConfirmDialog v-model="confirmationDialog.visible" :title="confirmationDialog.title"
+      :message="confirmationDialog.message" confirm-text="Confirmar" :loading="isChangingStatus"
+      @confirm="handleConfirmation" @cancel="confirmationDialog.visible = false" />
   </v-row>
 </template>
 
 <script>
 import {
-  formatHourToBr,
   formatRealValue,
-  formatDateToCustomString,
+  formatDateRange,
+  formatShortDate,
 } from '@/utils/formatters';
 
 export default {
@@ -137,9 +109,18 @@ export default {
 
   computed: {
     formattedDate() {
-      return `${formatDateToCustomString(this.event.start_date)} - ${formatHourToBr(
-        this.event.start_date
-      )}`;
+      if (this.event.hasSessions && this.event.sessionIds && this.event.sessionIds.length > 1) {
+        // Calcular range de datas usando as informações do dateRange já processado
+        if (this.event.dateRange && this.event.dateRange.isMultiSession) {
+          const startDate = new Date(this.event.dateRange.startDate);
+          const endDate = new Date(this.event.dateRange.endDate);
+
+          return formatDateRange(startDate, endDate);
+        }
+      }
+
+      // Se for um evento único no grupo
+      return formatShortDate(this.event.start_date);
     },
 
     getImage() {
@@ -298,14 +279,21 @@ export default {
   align-items: center;
   justify-content: center;
 }
+
 .event-image {
   border-radius: 8px;
-  aspect-ratio: 954/500; /* Mantém a proporção exata */
-  width: 100%; /* Ocupa toda a largura da coluna */
-  height: auto; /* Altura ajustada automaticamente */
-  object-fit: cover; /* Garante que a imagem cubra todo o espaço sem distorção */
-  max-height: 120px; /* Limita a altura máxima na listagem */
+  aspect-ratio: 954/500;
+  /* Mantém a proporção exata */
+  width: 100%;
+  /* Ocupa toda a largura da coluna */
+  height: auto;
+  /* Altura ajustada automaticamente */
+  object-fit: cover;
+  /* Garante que a imagem cubra todo o espaço sem distorção */
+  max-height: 120px;
+  /* Limita a altura máxima na listagem */
 }
+
 .event-title {
   font-size: 16px;
   font-weight: bold;
@@ -317,12 +305,21 @@ export default {
   font-weight: bold;
   color: var(--font-black);
 }
+
 .event-date,
 .event-location,
 .event-revenue-today,
 .event-tickets-today {
   font-size: 14px;
   color: gray;
+}
+
+.event-sessions-info {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 
 .approve-icon {
