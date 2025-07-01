@@ -91,6 +91,161 @@ export default {
       throw error;
     }
   },
+
+  /**
+   * Processa um pagamento PDV usando a nova estrutura e endpoint
+   * @param {Object} context - Contexto do componente (this)
+   * @param {Object} payload - Dados para processamento
+   * @returns {Promise<boolean>}
+   */
+  async processPdvPaymentV2(context, payload) {
+    const { 
+      tickets, 
+      ticketFormGroups, 
+      checkoutFields, 
+      totalAmount,
+      netAmount,
+      pdvId,
+      eventId
+    } = payload;
+    
+    try {
+      // 1. Obter people_id do usuário
+      let peopleId = context.$store.state.auth.user?.people?.id;
+      if (!peopleId) {
+        const userId = context.$store.state.auth.user?.id;
+        if (!userId) throw new Error('ID do usuário não encontrado');
+
+        const userResponse = await context.$store.dispatch('user/getById', { user_id: userId, commit: false });
+        if (!userResponse || !userResponse?.people || !userResponse?.people?.id) {
+          throw new Error('Dados do usuário não encontrados');
+        }
+        peopleId = userResponse.people.id;
+      }
+
+      if (!peopleId) throw new Error('ID do perfil não encontrado');
+      
+      // 2. Preparar tickets com campos
+      const formattedTickets = this.prepareTicketsForPdvV2(tickets, ticketFormGroups, checkoutFields);
+      
+      // 3. Montar payload para a nova API
+      const pdvPayload = {
+        event_id: eventId,
+        people_id: peopleId,
+        pdv_id: pdvId,
+        description: "Venda PDV",
+        transaction_amount: totalAmount,
+        gross_value: totalAmount,
+        net_value: netAmount,
+        tickets: formattedTickets
+      };
+
+      // 4. Chamar o novo endpoint
+      const response = await this.callPdvPaymentApi(context, pdvPayload);
+      
+      if (!response || response.body.code !== 'PDV_PAYMENT_SUCCESS') {
+        throw new Error('Falha no processamento do pagamento PDV');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Erro no processamento do PDV V2:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Prepara os tickets no formato da nova API
+   * @param {Array} tickets - Tickets selecionados
+   * @param {Array} ticketFormGroups - Grupos de formulários de tickets
+   * @param {Array} checkoutFields - Campos de checkout
+   * @returns {Array} Tickets formatados
+   */
+  prepareTicketsForPdvV2(tickets, ticketFormGroups, checkoutFields) {
+    const formattedTickets = [];
+    
+    try {
+      for (const ticket of tickets) {
+        // Encontrar o grupo de formulário correspondente
+        const formGroup = ticketFormGroups.find(group => group.ticketId === ticket.id);
+        
+        if (!formGroup) {
+          // Se não há formulário, criar ticket simples
+          formattedTickets.push({
+            ticket_id: ticket.id,
+            quantity: ticket.quantity,
+            ticket_fields: []
+          });
+          continue;
+        }
+        
+        // Para cada instância no grupo, preparar os campos
+        const allTicketFields = [];
+        
+        for (const instance of formGroup.instances) {
+          const ticketFields = [];
+          
+          // Para cada campo preenchido na instância
+          Object.keys(instance.fields).forEach(fieldId => {
+            const fieldValue = instance.fields[fieldId];
+            
+            if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+              let value;
+              
+              // Encontrar informações do campo para saber seu tipo
+              const fieldInfo = checkoutFields.find(field => 
+                field.eventCheckoutField.id === fieldId
+              )?.eventCheckoutField;
+              
+              if (fieldInfo && ['MENU_DROPDOWN', 'MULTI_CHECKBOX'].includes(fieldInfo.type)) {
+                if (Array.isArray(fieldValue)) {
+                  value = fieldValue.join(',');
+                } else {
+                  value = fieldValue.toString();
+                }
+              } else {
+                value = fieldValue.toString();
+              }
+              
+              ticketFields.push({
+                field_id: fieldId,
+                value
+              });
+            }
+          });
+          
+          allTicketFields.push(...ticketFields);
+        }
+        
+        formattedTickets.push({
+          ticket_id: ticket.id,
+          quantity: ticket.quantity,
+          ticket_fields: allTicketFields
+        });
+      }
+      
+      return formattedTickets;
+    } catch (error) {
+      console.error('Erro ao preparar tickets para PDV V2:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Chama a nova API de pagamento PDV
+   * @param {Object} context - Contexto do componente
+   * @param {Object} payload - Dados do pagamento
+   * @returns {Promise<Object>}
+   */
+  async callPdvPaymentApi(context, payload) {
+    try {
+      const response = await context.$axios.post('/payment/pdv', payload);
+      return response.data;
+    } catch (error) {
+      console.error('Erro na chamada da API PDV:', error);
+      throw error;
+    }
+  },
   
   /**
    * Cria um registro de pagamento

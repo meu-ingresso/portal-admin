@@ -154,7 +154,7 @@
                           </td>
                           <td>{{ ticket.paymentTickets.ticket?.name }}</td>
                           <td>{{ formatRealValue(ticket.paymentTickets.ticket_original_price) }}</td>
-                          <td>{{ getEventFee }}%</td>
+                          <td>{{ getAppliedFeeOnTicket(ticket.paymentTickets) }}</td>
                           <td>
                             {{ formatRealValue(ticket.paymentTickets.ticket_final_price) }}
                           </td>
@@ -373,7 +373,7 @@ export default {
 
     getEventFee() {
       if (!this.payment?.event) return 0;
-      return this.payment.payment_method !== "PDV"
+      return this.payment.payment_method !== "pdv"
         ? this.payment.event?.fees?.platform_fee || 0
         : 0;
     },
@@ -382,6 +382,12 @@ export default {
     // Valor pago * taxa do evento
     getOrderFee() {
       if (!this.payment?.event) return 0;
+
+      // Se o pagamento for PDV, não há comissão
+      if (this.payment.payment_method === 'pdv') {
+        return 0;
+      }
+
       return this.getTotalValue * (this.getEventFee / 100);
     },
 
@@ -396,7 +402,11 @@ export default {
     },
     getDiscountValue() {
       if (!this.payment) return 0;
-      return parseFloat(this.payment.gross_value) - parseFloat(this.payment.net_value);
+
+      // Retorna um somatorio de todos os descontos por ingresso
+      return this.relatedTickets.reduce((acc, ticket) => {
+        return acc + parseFloat(ticket.paymentTickets.total_coupon_discount);
+      }, 0);
     },
     getTotalValue() {
       if (!this.payment) return 0;
@@ -405,6 +415,12 @@ export default {
     getNetValueWithoutFee() {
       if (!this.payment) return 0;
       const netValue = parseFloat(this.payment.net_value);
+
+      // Se o pagamento for PDV, o valor já é o valor original
+      if (this.payment.payment_method === 'pdv') {
+        return netValue;
+      }
+
       const fee = this.getEventFee || 0;
       // O netValue já inclui a taxa, então precisamos calcular o valor original
       // Fórmula: valorOriginal = valorComTaxa / (1 + taxa/100)
@@ -567,6 +583,20 @@ export default {
         type: "success",
         time: 5000,
       });
+    },
+
+    getAppliedFeeOnTicket(ticket) {
+      if (!this.payment) return 0;
+      if (this.payment.payment_method === 'pdv') {
+        return formatRealValue(0);
+      }
+
+      // Se o ingresso custa mais de 30 reais a taxa é o valor original * a taxa do evento
+      if (ticket.ticket_original_price > 30) {
+        return formatRealValue(ticket.ticket_original_price * (this.getEventFee / 100));
+      } else {
+        return formatRealValue(3);
+      }
     },
 
     goBack() {
