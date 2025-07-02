@@ -69,7 +69,7 @@
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">Valor total</div>
                       <div class="info-value">
-                        {{ formatRealValue(payment.gross_value) }}
+                        {{ formatRealValue(payment.net_value) }}
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
@@ -90,7 +90,7 @@
                               mdi-information-outline
                             </v-icon>
                           </template>
-                          <span>Valor bruto - Desconto</span>
+                          <span>Valor total - Desconto</span>
                         </v-tooltip>
                       </div>
                       <div class="info-value">
@@ -156,7 +156,7 @@
                           <td>{{ formatRealValue(ticket.paymentTickets.ticket_original_price) }}</td>
                           <td>{{ getAppliedFeeOnTicket(ticket.paymentTickets) }}</td>
                           <td>
-                            {{ formatRealValue(ticket.paymentTickets.ticket_final_price) }}
+                            {{ getTicketTotalValue(ticket.paymentTickets) }}
                           </td>
                           <td>
                             <v-chip x-small :color="ticket.validated ? 'green' : 'orange'" text-color="white">
@@ -388,7 +388,18 @@ export default {
         return 0;
       }
 
-      return this.getTotalValue * (this.getEventFee / 100);
+      const totalTaxes = this.relatedTickets.reduce((acc, ticket) => {
+
+        const hasFixedFee = ticket.paymentTickets.service_fee_fixed;
+
+        if (hasFixedFee) {
+          return acc + (parseFloat(ticket.paymentTickets.service_fee_applied) * ticket.paymentTickets.quantity);
+        } else {
+          return acc + (ticket.paymentTickets.ticket_price_after_coupon * (this.getEventFee / 100));
+        }
+      }, 0);
+
+      return totalTaxes;
     },
 
     isLoading() {
@@ -421,10 +432,7 @@ export default {
         return netValue;
       }
 
-      const fee = this.getEventFee || 0;
-      // O netValue já inclui a taxa, então precisamos calcular o valor original
-      // Fórmula: valorOriginal = valorComTaxa / (1 + taxa/100)
-      return netValue / (1 + fee / 100);
+      return netValue - this.getOrderFee;
     },
   },
 
@@ -596,6 +604,18 @@ export default {
         return formatRealValue(ticket.ticket_original_price * (this.getEventFee / 100));
       } else {
         return formatRealValue(3);
+      }
+    },
+
+    getTicketTotalValue(ticket) {
+      if (!ticket) return 0;
+
+      const absorveFee = ticket.event_absorb_service_fee;
+
+      if (absorveFee) {
+        return formatRealValue(ticket.ticket_price_after_coupon);
+      } else {
+        return formatRealValue(ticket.ticket_final_price);
       }
     },
 
