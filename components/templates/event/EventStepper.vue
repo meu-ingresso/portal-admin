@@ -118,6 +118,10 @@ export default {
       return this.$store.state.auth.user?.id;
     },
 
+    userRole() {
+      return this.$store.state.auth.user?.role?.name;
+    },
+
     isMobile() {
       return isMobileDevice(this.$vuetify);
     },
@@ -334,16 +338,15 @@ export default {
             });
           }, 500);
         } else {
-
-          if (status !== 'draft' && (!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo)) {
-            this.$store.dispatch('eventGeneralInfo/setEventStatus', 'Aguardando');
-          } else {
+          // Se o usuário é um admin ele pode criar o evento direto como publicado
+          if (this.userRole === 'Admin') {
+            status = 'Publicado';
             this.$store.dispatch('eventGeneralInfo/setEventStatus', status);
+          } else if (status !== 'draft' && (!this.hasRequiredDocuments || !this.hasPixInfo || !this.hasFiscalInfo)) {
+            this.$store.dispatch('eventGeneralInfo/setEventStatus', 'Aguardando');
           }
 
           const createdEventResults = await this.$store.dispatch('eventPrincipal/createEvent');
-
-          console.log('createdEventResults', createdEventResults);
 
           // Migrar imagens da descrição de userDocuments para eventAttachments
           if (this.$refs['step-1'] && this.$refs['step-1'].hasPendingUserDocuments()) {
@@ -404,7 +407,7 @@ export default {
       } finally {
         this.showProgressDialog = false;
       }
-    },
+    }
   },
 };
 </script>

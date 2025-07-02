@@ -167,6 +167,7 @@ export const actions = {
           'coupon',
           'people',
           'status',
+          'paymentTickets:ticket',
           'event:fees',
         ],
         'where[event_id][v]': params.eventId,
