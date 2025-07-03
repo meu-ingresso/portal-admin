@@ -8,8 +8,7 @@
 
     <v-list dense class="user-menu">
       <v-list-item class="px-3 py-2">
-        <MUserProfile
-variant="card" :avatar-color="avatarColor" avatar-size="40" name-class="font-weight-medium"
+        <MUserProfile variant="card" :avatar-color="avatarColor" avatar-size="40" name-class="font-weight-medium"
           email-class="text-caption" />
       </v-list-item>
 
@@ -268,10 +267,14 @@ export default Vue.extend({
     async onLogout() {
       try {
         await this.$auth.logout();
-        this.$router.replace('/login');
+        // Redirecionar para a vitrine do portal-web
+        const vitrineUrl = this.getVitrineUrl();
+        window.location.href = vitrineUrl;
       } catch (error) {
         // console.error('Erro no logout:', error);
-        this.$router.replace('/login');
+        // Mesmo em caso de erro, redirecionar para a vitrine
+        const vitrineUrl = this.getVitrineUrl();
+        window.location.href = vitrineUrl;
       }
     }
   }
