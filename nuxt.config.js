@@ -100,7 +100,7 @@ export default {
     },
     redirect: {
       login: '/login',
-      logout: '/',
+      logout: false,
       callback: '/login',
       home: '/'
     },
