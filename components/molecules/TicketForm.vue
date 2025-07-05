@@ -2,63 +2,31 @@
   <v-form ref="form" v-model="isFormValid">
     <v-row>
       <v-col cols="12" md="6" sm="12">
-        <v-text-field
-          ref="name"
-          v-model="localTicket.name"
-          :label="
-            nomenclature === 'Doação'
-              ? 'Nome da doação'
-              : `Nome do ${nomenclature?.toLowerCase()}`
-          "
-          placeholder="Ex: Ingresso VIP"
-          required
-          outlined
-          dense
-          hide-details="auto"
-          :rules="validationRules.name" />
+        <v-text-field ref="name" v-model="localTicket.name" :label="nomenclature === 'Doação'
+          ? 'Nome da doação'
+          : `Nome do ${nomenclature?.toLowerCase()}`
+          " placeholder="Ex: Ingresso VIP" required outlined dense hide-details="auto" :rules="validationRules.name" />
       </v-col>
       <v-col cols="12" md="6" sm="12">
-        <GenericAutocomplete
-          :value="localTicket.category"
-          :items="categories"
+        <GenericAutocomplete :value="localTicket.category" :items="categories"
           :label="`Grupo de ${nomenclature?.toLowerCase()}`"
-          :placeholder="`Crie categorias para agrupar ${nomenclature?.toLowerCase()}`"
-          @input="onCategoryChange" />
+          :placeholder="`Crie categorias para agrupar ${nomenclature?.toLowerCase()}`" @input="onCategoryChange" />
       </v-col>
 
       <!-- Para casos de doação, não exibir os campos de preço e quantidade -->
-      <v-col cols="12" md="6" sm="12">
-        <v-text-field
-          ref="price"
-          v-model="localTicket.price"
-          label="Preço"
-          required
-          outlined
-          dense
-          prefix="R$"
-          hide-details="auto"
-          :rules="validationRules.price"
-          @input="onPriceChange"
-          @keypress="onPriceKeyPress" />
-      </v-col>
-      <v-col cols="12" md="6" sm="12">
-        <v-text-field
-          ref="total_quantity"
-          v-model="localTicket.total_quantity"
-          :value="localTicket.total_quantity"
-          label="Quantidade"
-          placeholder="Ex.: 400"
-          type="number"
-          min="0"
-          required
-          outlined
-          dense
-          hide-details="auto"
-          :rules="validationRules.total_quantity"
-          @keypress="onNumerFieldChange" />
-      </v-col>
+      <template v-if="!isDonation">
+        <v-col cols="12" md="6" sm="12">
+          <AMoneyInput v-model="localTicket.price" label="Preço" :min-value="3" required hide-details="auto"
+            @input="onPriceChange" />
+        </v-col>
+        <v-col cols="12" md="6" sm="12">
+          <v-text-field ref="total_quantity" v-model="localTicket.total_quantity" :value="localTicket.total_quantity"
+            label="Quantidade" placeholder="Ex.: 400" type="number" min="0" required outlined dense hide-details="auto"
+            :rules="validationRules.total_quantity" @keypress="onNumerFieldChange" />
+        </v-col>
+      </template>
 
-      <template v-if="nomenclature != 'Doação' && !isMobile">
+      <template v-if="!isDonation && !isMobile">
         <v-col cols="12" md="12" sm="12" class="py-0 my-4">
           <div class="d-flex align-center" style="padding: 0px 4px 0px">
             <h4 class="mr-2">Quantidade permitida por compra</h4>
@@ -72,138 +40,57 @@
         </v-col>
 
         <v-col cols="12" md="6" sm="12">
-          <v-text-field
-            ref="min_purchase"
-            v-model="localTicket.min_purchase"
-            label="Mínima"
-            type="number"
-            min="0"
-            outlined
-            dense
-            required
-            hide-details="auto"
-            :rules="validationRules.min_purchase"
+          <v-text-field ref="min_purchase" v-model="localTicket.min_purchase" label="Mínima" type="number" min="0"
+            outlined dense required hide-details="auto" :rules="validationRules.min_purchase"
             @keypress="onNumerFieldChange" />
         </v-col>
         <v-col cols="12" md="6" sm="12">
-          <v-text-field
-            ref="max_purchase"
-            v-model="localTicket.max_purchase"
-            label="Máxima"
-            type="number"
-            min="0"
-            outlined
-            dense
-            required
-            hide-details="auto"
-            :rules="validationRules.max_purchase" />
+          <v-text-field ref="max_purchase" v-model="localTicket.max_purchase" label="Máxima" type="number" min="0"
+            outlined dense required hide-details="auto" :rules="validationRules.max_purchase" />
         </v-col>
       </template>
 
       <v-col cols="12" md="3" sm="12">
-        <v-menu
-          v-model="openDateMenu"
-          :close-on-content-click="false"
-          transition="scale-transition"
-          offset-y
+        <v-menu v-model="openDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y
           min-width="auto">
           <template #activator="{ on, attrs }">
-            <v-text-field
-              :value="formattedOpenDate"
-              label="Início das Vendas"
-              prepend-inner-icon="mdi-calendar"
-              readonly
-              v-bind="attrs"
-              outlined
-              dense
-              required
-              hide-details="auto"
-              :rules="validationRules.start_date"
+            <v-text-field :value="formattedOpenDate" label="Início das Vendas" prepend-inner-icon="mdi-calendar"
+              readonly v-bind="attrs" outlined dense required hide-details="auto" :rules="validationRules.start_date"
               v-on="on" />
           </template>
-          <v-date-picker
-            v-model="localTicket.start_date"
-            locale="pt-br"
-            no-title
-            dense
-            :min="minDate"
+          <v-date-picker v-model="localTicket.start_date" locale="pt-br" no-title dense :min="minDate"
             @input="onDateChange('start_date', $event)" />
         </v-menu>
       </v-col>
       <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localTicket.start_time"
-          v-mask="'##:##'"
-          label="Horário de Início"
-          prepend-inner-icon="mdi-clock-outline"
-          placeholder="21:30"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.start_time"
-          @input="validateTime($event, 'start_time')" />
+        <v-text-field v-model="localTicket.start_time" v-mask="'##:##'" label="Horário de Início"
+          prepend-inner-icon="mdi-clock-outline" placeholder="21:30" outlined dense hide-details="auto" required
+          :rules="validationRules.start_time" @input="validateTime($event, 'start_time')" />
       </v-col>
       <v-col cols="12" md="3" sm="12">
-        <v-menu
-          v-model="closeDateMenu"
-          :close-on-content-click="false"
-          transition="scale-transition"
-          offset-y
+        <v-menu v-model="closeDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y
           min-width="auto">
           <template #activator="{ on, attrs }">
-            <v-text-field
-              :value="formattedCloseDate"
-              label="Término das Vendas"
-              prepend-inner-icon="mdi-calendar"
-              readonly
-              v-bind="attrs"
-              outlined
-              dense
-              required
-              hide-details="auto"
-              :rules="validationRules.end_date"
+            <v-text-field :value="formattedCloseDate" label="Término das Vendas" prepend-inner-icon="mdi-calendar"
+              readonly v-bind="attrs" outlined dense required hide-details="auto" :rules="validationRules.end_date"
               v-on="on" />
           </template>
-          <v-date-picker
-            v-model="localTicket.end_date"
-            locale="pt-br"
-            dense
-            no-title
+          <v-date-picker v-model="localTicket.end_date" locale="pt-br" dense no-title
             :min="localTicket.start_date ? localTicket.start_date : minDate"
             @input="onDateChange('end_date', $event)" />
         </v-menu>
       </v-col>
       <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localTicket.end_time"
-          v-mask="'##:##'"
-          label="Horário de Término"
-          prepend-inner-icon="mdi-clock-outline"
-          placeholder="00:00"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.end_time"
-          @input="validateTime($event, 'end_time')" />
+        <v-text-field v-model="localTicket.end_time" v-mask="'##:##'" label="Horário de Término"
+          prepend-inner-icon="mdi-clock-outline" placeholder="00:00" outlined dense hide-details="auto" required
+          :rules="validationRules.end_time" @input="validateTime($event, 'end_time')" />
       </v-col>
       <v-col cols="12" md="6" sm="12">
-        <v-select
-          ref="availability"
-          v-model="localTicket.availability"
-          :items="availabilityList"
-          label="Disponibilidade"
-          outlined
-          placeholder="Selecione a disponibilidade"
-          persistent-hint
-          :hint="getHintByAvailability"
-          required
-          dense
-          :rules="validationRules.availability"
-          hide-details="auto" />
+        <v-select ref="availability" v-model="localTicket.availability" :items="availabilityList"
+          label="Disponibilidade" outlined placeholder="Selecione a disponibilidade" persistent-hint
+          :hint="getHintByAvailability" required dense :rules="validationRules.availability" hide-details="auto" />
       </v-col>
-      <template v-if="nomenclature != 'Doação' && isMobile">
+      <template v-if="!isDonation && isMobile">
         <v-col cols="12" md="12" sm="12" class="py-0 my-2">
           <div class="d-flex align-center" style="padding: 0px 4px 0px">
             <h4 class="mr-2">Quantidade permitida por compra</h4>
@@ -211,40 +98,20 @@
               <template #activator="{ on, attrs }">
                 <v-icon v-bind="attrs" v-on="on">mdi-help-circle</v-icon>
               </template>
-              <span
-                >Limite a quantidade permitida por compra com quantidade mínima e
-                máxima</span
-              >
+              <span>Limite a quantidade permitida por compra com quantidade mínima e
+                máxima</span>
             </v-tooltip>
           </div>
         </v-col>
 
         <v-col cols="12" md="6" sm="12">
-          <v-text-field
-            ref="min_purchase"
-            v-model="localTicket.min_purchase"
-            label="Compra Mínima"
-            type="number"
-            min="0"
-            outlined
-            dense
-            required
-            hide-details="auto"
-            :rules="validationRules.min_purchase"
+          <v-text-field ref="min_purchase" v-model="localTicket.min_purchase" label="Compra Mínima" type="number"
+            min="0" outlined dense required hide-details="auto" :rules="validationRules.min_purchase"
             @keypress="onNumerFieldChange" />
         </v-col>
         <v-col cols="12" md="6" sm="12">
-          <v-text-field
-            ref="max_purchase"
-            v-model="localTicket.max_purchase"
-            label="Compra Máxima"
-            type="number"
-            min="0"
-            outlined
-            dense
-            required
-            hide-details="auto"
-            :rules="validationRules.max_purchase" />
+          <v-text-field ref="max_purchase" v-model="localTicket.max_purchase" label="Compra Máxima" type="number"
+            min="0" outlined dense required hide-details="auto" :rules="validationRules.max_purchase" />
         </v-col>
       </template>
     </v-row>
@@ -253,10 +120,15 @@
 
 <script>
 import { mask } from 'vue-the-mask';
-import { formatPrice, formatDateToBr } from '@/utils/formatters';
+import { formatDateToBr } from '@/utils/formatters';
 import { isMobileDevice } from '@/utils/utils';
+import AMoneyInput from '@/components/atoms/AMoneyInput.vue';
 
 export default {
+  components: {
+    AMoneyInput,
+  },
+
   directives: {
     mask,
   },
@@ -286,7 +158,7 @@ export default {
         id: '-1',
         name: '',
         category: null,
-        price: '',
+        price: 0,
         total_quantity: '',
         min_purchase: 1,
         max_purchase: '',
@@ -308,12 +180,6 @@ export default {
         name: [
           (v) => !!v || 'O nome é obrigatório.',
           (v) => v.length <= 60 || 'O nome deve ter no máximo 60 caracteres.',
-        ],
-        price: [
-          (v) => !!v || 'O preço é obrigatório.',
-          (v) =>
-            parseFloat(v.replace(',', '.')) >= 3 ||
-            'O preço deve ser maior ou igual a R$3,00.',
         ],
         total_quantity: [
           (v) => !!v || 'A quantidade é obrigatória.',
@@ -427,10 +293,16 @@ export default {
       return this.localTicket.end_date ? formatDateToBr(this.localTicket.end_date) : '';
     },
 
+    isDonation() {
+      // Verifica se o evento é de doação baseado no sale_type da store
+      const eventInfo = this.$store.getters['eventGeneralInfo/$info'];
+      return eventInfo?.sale_type === 'Doação' || this.nomenclature === 'Doação';
+    },
+
     getHintByAvailability() {
       switch (this.localTicket.availability) {
         case 'Publico':
-          if (this.nomenclature === 'Doação') {
+          if (this.isDonation) {
             return 'A doação ficará visível para todos que acessarem a página de vendas.';
           } else if (this.nomenclature === 'Ingresso') {
             return 'O ingresso ficará visível para todos que acessarem a página de vendas.';
@@ -439,7 +311,7 @@ export default {
           }
 
         case 'Privado':
-          if (this.nomenclature === 'Doação') {
+          if (this.isDonation) {
             return 'Um link será criado e somente pessoas que acessarem através dele poderão fazer doações.';
           } else if (this.nomenclature === 'Ingresso') {
             return 'Um link será criado e somente pessoas que acessarem através dele poderão comprar o ingresso.';
@@ -447,7 +319,7 @@ export default {
             return 'Um link será criado e somente pessoas que acessarem através dele poderão comprar a inscrição.';
           }
         case 'PDV':
-          if (this.nomenclature === 'Doação') {
+          if (this.isDonation) {
             return 'Somente o proprietário do evento e pessoas autorizadas da equipe poderão ver e emitir doações através do PDV';
           } else if (this.nomenclature === 'Ingresso') {
             return 'Somente o proprietário do evento e pessoas autorizadas da equipe poderão ver e emitir ingressos através do PDV';
@@ -587,24 +459,9 @@ export default {
       this.localTicket.category = value;
     },
 
-    onPriceKeyPress(event) {
-      const charCode = event.charCode || event.keyCode;
-      const char = String.fromCharCode(charCode);
-
-      if (!/[0-9]/.test(char)) {
-        event.preventDefault();
-      }
-    },
     onPriceChange(value) {
-      if (!value) {
-        this.localTicket.price = '';
-        return;
-      }
-
-      const numericValue = value.replace(/\D/g, '');
-      const floatValue = parseFloat(numericValue) / 100;
-
-      this.localTicket.price = formatPrice(floatValue);
+      // O componente AMoneyInput já cuida da formatação
+      this.localTicket.price = value;
     },
     onNumerFieldChange(event) {
       const charCode = event.charCode || event.keyCode;
@@ -629,7 +486,7 @@ export default {
           id: '-1',
           name: '',
           category: null,
-          price: '',
+          price: 0,
           total_quantity: '',
           min_purchase: 1,
           max_purchase: '',

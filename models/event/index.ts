@@ -279,6 +279,7 @@ export interface Event {
   banner_id?: string;
   link_online?: string;
   link_online_id?: string;
+  location_name?: string;
   address?: EventAddress;
   sale_type: string;
   availability: 'Publico' | 'Privado';

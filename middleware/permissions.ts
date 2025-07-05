@@ -74,11 +74,12 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, store }) => 
       const isCacheValid = store.getters['permissions/$isCacheValid'];
       
       if (!eventPermissions[eventId] || !isCacheValid) {
-        await store.dispatch('permissions/loadEventPermissions', {
+        const permissionEventListFromAPI =await store.dispatch('permissions/loadEventPermissions', {
           userId,
           eventId,
           roleId: userRole.id
         });
+        console.log('permissionEventListFromAPI', permissionEventListFromAPI);
       }
 
       // Verificar permissões para o evento
@@ -108,10 +109,17 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, store }) => 
       const isCacheValid = store.getters['permissions/$isCacheValid'];
       
       if (permissions.length === 0 || !isCacheValid) {
-        await store.dispatch('permissions/loadUserPermissions', {
+        const permissionUserListFromAPI = await store.dispatch('permissions/loadUserPermissions', {
           userId,
           roleId: userRole.id
         });
+        
+        // Se o usuario nao tem permissao nenhuma, ele ainda é um cliente. Retorna para a vitrine
+        // TODO: Adicionar a lógica da vitrine para um arquivo utils
+        if (permissionUserListFromAPI.length === 0) {
+          return redirect('https://vitrine.meuingresso.com.br');
+        }
+
       }
 
       // Verificar permissões gerais
@@ -119,6 +127,9 @@ const permissionsMiddleware: Middleware = async ({ route, redirect, store }) => 
         await store.dispatch('permissions/checkPermissions', requiredPermissions);
 
       if (!hasPermission) {
+
+        
+
         // Redirecionar para a página inicial se não tem permissão
         return redirect('/');
       }

@@ -119,6 +119,9 @@ export default Vue.extend({
         }
       );
 
+      // Se ele tem eventos sendo produzidos, ele pode ver os eventos
+
+
       // Opções específicas baseadas no role
       if (this.isProducer) {
         items.push(
@@ -221,6 +224,7 @@ export default Vue.extend({
       window.location.href = vitrineUrl;
     },
 
+    // TODO: Adicionar a lógica da vitrine para um arquivo utils
     getVitrineUrl(): string {
       // Check current environment to determine vitrine URL
       const isLocal = typeof window !== 'undefined' &&
