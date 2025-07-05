@@ -62,7 +62,7 @@ export default {
     disableMenu: { type: Boolean, required: false, default: false },
     isSwapping: { type: Boolean, required: false, default: false },
     name: { type: String, required: true },
-    price: { type: String, required: true },
+    price: { type: Number, required: true },
     status: { type: String, required: true },
     sold: { type: Number, required: true },
     total: { type: Number, required: true },

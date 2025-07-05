@@ -483,10 +483,15 @@ export const actions = {
         const startDateTime = splitDateTime(ticket.start_date);
         const endDateTime = splitDateTime(ticket.end_date);
 
+        // Normalizar o preço: converter de string "10.50" para número 10.5
+        const normalizedPrice = typeof ticket.price === 'string' 
+          ? parseFloat(ticket.price) || 0
+          : ticket.price || 0;
+
         return {
           id: ticket.id,
           name: ticket.name,
-          price: ticket.price,
+          price: normalizedPrice,
           total_quantity: ticket.total_quantity,
           total_sold: ticket.total_sold,
           min_purchase: ticket.min_quantity_per_user,

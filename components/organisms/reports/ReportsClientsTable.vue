@@ -100,7 +100,7 @@
       <!-- Ações -->
       <template #[`item.actions`]="{ item }">
         <ActionsMenu :show-edit="isAdmin" :show-delete="false" :show-duplicate="false" :show-activate-deactivate="true"
-          :is-inactive="!!item.deleted_at" icon="mdi-dots-horizontal" @edit="editUser(item)"
+          :show-view-orders="true" :is-inactive="!!item.deleted_at" icon="mdi-dots-horizontal" @edit="editUser(item)"
           @view-orders="viewOrders(item)" @activate="activateUser(item)" @deactivate="deactivateUser(item)" />
       </template>
     </v-data-table>

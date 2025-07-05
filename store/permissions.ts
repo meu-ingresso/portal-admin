@@ -55,7 +55,8 @@ export const actions = {
       }
 
       // Admin e Gerente têm acesso a tudo
-      if (payload.roleId && ['1c279e46-7105-4e3b-964b-2d8104254dec', '5388c6fa-2653-4c27-9cc8-a8d79ff59802'].includes(payload.roleId)) {
+      // TODO melhorar essa lógica pois está com o id hardcoded
+      if (payload.roleId && ['21ef3067-9b36-4302-987f-e7c67f4c93d4', '24a68e45-bb44-4707-8de0-46e61db159a9'].includes(payload.roleId)) {
         const allPermissions = ['*'];
         commit('SET_USER_PERMISSIONS', allPermissions);
         return allPermissions;
@@ -93,7 +94,8 @@ export const actions = {
       }
 
       // Admin e Gerente têm acesso a tudo
-      if (payload.roleId && ['1c279e46-7105-4e3b-964b-2d8104254dec', '5388c6fa-2653-4c27-9cc8-a8d79ff59802'].includes(payload.roleId)) {
+      // TODO melhorar essa lógica pois está com o id hardcoded
+      if (payload.roleId && ['21ef3067-9b36-4302-987f-e7c67f4c93d4', '24a68e45-bb44-4707-8de0-46e61db159a9'].includes(payload.roleId)) {
         const allPermissions = ['*'];
         commit('SET_EVENT_PERMISSIONS', { 
           eventId: payload.eventId, 
