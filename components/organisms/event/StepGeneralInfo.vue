@@ -329,8 +329,12 @@ export default {
 
   computed: {
 
+    isSaving() {
+      return this.$store.getters['eventPrincipal/$isSaving'];
+    },
+
     canShowAddressForm() {
-      return this.isEventPresencialOrHibrito && this.nomenclature !== 'Doação';
+      return !this.isSaving && this.isEventPresencialOrHibrito && this.nomenclature !== 'Doação';
     },
 
 

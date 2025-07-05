@@ -7,12 +7,14 @@
     </template>
     <v-list dense>
       <!-- Opção de Ver Pedidos -->
-      <v-list-item @click="$emit('view-orders')">
-        <v-list-item-icon class="mr-2">
-          <v-icon>mdi-cart</v-icon>
-        </v-list-item-icon>
-        <v-list-item-title>Ver pedidos</v-list-item-title>
-      </v-list-item>
+      <template v-if="showViewOrders">
+        <v-list-item @click="$emit('view-orders')">
+          <v-list-item-icon class="mr-2">
+            <v-icon>mdi-cart</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Ver pedidos</v-list-item-title>
+        </v-list-item>
+      </template>
 
       <!-- Opção de Editar -->
       <template v-if="showEdit">
@@ -59,11 +61,11 @@
         <v-list-item @click="$emit(isInactive ? 'activate' : 'deactivate')">
           <v-list-item-icon class="mr-2">
             <v-icon>
-            {{ isInactive ? 'mdi-account-check' : 'mdi-account-off' }}
+              {{ isInactive ? 'mdi-account-check' : 'mdi-account-off' }}
             </v-icon>
           </v-list-item-icon>
           <v-list-item-title>
-          {{ isInactive ? 'Ativar' : 'Inativar' }}
+            {{ isInactive ? 'Ativar' : 'Inativar' }}
           </v-list-item-title>
         </v-list-item>
       </template>
@@ -138,6 +140,10 @@ export default {
       default: false,
     },
     showReject: {
+      type: Boolean,
+      default: false,
+    },
+    showViewOrders: {
       type: Boolean,
       default: false,
     },
