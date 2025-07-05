@@ -11,28 +11,16 @@
             <!-- Lado esquerdo: Campos de entrada -->
             <v-col cols="12" md="6" sm="12" order="1" order-md="1">
               <div class="autocomplete-container mb-4">
-                <v-text-field
-                  ref="googleAutocomplete"
-                  v-model="googleSearchQuery"
-                  label="Endereço completo*"
-                  outlined
-                  dense
-                  hide-details="auto"
-                  :loading="isFetchingAddress"
-                  :disabled="isFetchingAddress"
-                  append-icon="mdi-close-circle"
-                  append-inner-icon="mdi-magnify"
-                  placeholder="Comece a digitar o endereço..."
-                  @focus="showAutocompleteResults = true"
-                  @input="onGoogleSearchInput"
-                  @click:append="clearAddress" />
-                  
+                <v-text-field ref="googleAutocomplete" v-model="googleSearchQuery" label="Endereço completo*" outlined
+                  dense hide-details="auto" :loading="isFetchingAddress" :disabled="isFetchingAddress"
+                  append-icon="mdi-close-circle" append-inner-icon="mdi-magnify"
+                  placeholder="Comece a digitar o endereço..." @focus="showAutocompleteResults = true"
+                  @input="onGoogleSearchInput" @click:append="clearAddress" />
+
                 <!-- Lista de sugestões do autocomplete -->
                 <div v-if="showAutocompleteResults && autocompleteResults.length > 0" class="autocomplete-results">
                   <v-list dense>
-                    <v-list-item
-                      v-for="(result, index) in autocompleteResults"
-                      :key="index"
+                    <v-list-item v-for="(result, index) in autocompleteResults" :key="index"
                       @click="selectAutocompleteResult(result)">
                       <v-list-item-icon class="mr-2">
                         <v-icon small>mdi-map-marker</v-icon>
@@ -44,59 +32,21 @@
                   </v-list>
                 </div>
               </div>
-                    
-              <v-text-field
-                v-if="needsManualZipcode"
-                ref="zipcode"
-                v-model="localZipcode"
-                label="CEP*"
-                outlined
-                dense
-                hide-details="auto"
-                required
-                placeholder="00000-000"
-                :rules="rules.zipcode"
-                class="mb-4"
+
+              <v-text-field v-if="needsManualZipcode" ref="zipcode" v-model="localZipcode" label="CEP*" outlined dense
+                hide-details="auto" required placeholder="00000-000" :rules="rules.zipcode" class="mb-4"
                 @input="onZipcodeInput" />
 
-              <v-text-field
-                ref="location_name"
-                v-model="localLocationName"
-                label="Local do Evento*"
-                outlined
-                dense
-                hide-details="auto"
-                required
-                placeholder="Digite o local do evento"
-                :rules="rules?.location_name"
+              <v-text-field ref="location_name" v-model="localLocationName" label="Local do Evento*" outlined dense
+                hide-details="auto" required placeholder="Digite o local do evento" :rules="rules?.location_name"
                 class="mb-4" />
 
-              <v-text-field
-                v-if="needsManualNumber"
-                ref="number"
-                v-model="localNumber"
-                label="Número*"
-                type="number"
-                outlined
-                dense
-                hide-details="auto"
-                min="0"
-                required
-                placeholder="Digite o número"
-                :rules="rules?.number"
-                class="mb-4"
-                />
+              <v-text-field ref="number" v-model="localNumber" label="Número*" type="number" outlined dense
+                hide-details="auto" min="0" required placeholder="Digite o número" :rules="rules?.number"
+                class="mb-4" />
 
-              <v-text-field
-                v-if="needsManualComplement"
-                v-model="localComplement"
-                label="Complemento"
-                outlined
-                dense
-                hide-details="auto"
-                placeholder="Digite o complemento" 
-                class="mb-4"
-                />
+              <v-text-field v-model="localComplement" label="Complemento" outlined dense hide-details="auto"
+                placeholder="Digite o complemento" class="mb-4" />
 
 
             </v-col>
@@ -108,7 +58,7 @@
                 <v-progress-circular indeterminate color="primary" class="mr-2" size="20" width="2" />
                 <p class="mb-0">Buscando endereço...</p>
               </div>
-            
+
               <!-- Error state -->
               <v-card v-else-if="addressError" outlined class="status-card error-card flex-grow-1">
                 <v-card-text class="py-3">
@@ -125,20 +75,14 @@
                 <div class="map-container-clean">
                   <div id="google-map" class="google-map"></div>
                   <div class="map-actions-clean">
-                    <v-btn 
-                      x-small 
-                      outlined 
-                      color="primary" 
-                      class="mt-2"
-                      :href="googleMapsUrl" 
-                      target="_blank">
+                    <v-btn x-small outlined color="primary" class="mt-2" :href="googleMapsUrl" target="_blank">
                       <v-icon left small>mdi-open-in-new</v-icon>
                       Ver no Google Maps
                     </v-btn>
                   </div>
                 </div>
               </div>
-              
+
               <!-- Estado vazio (sem endereço) -->
               <div v-else class="empty-address-placeholder d-flex flex-column justify-center align-center flex-grow-1">
                 <v-icon color="grey lighten-1" size="48">mdi-map-marker-outline</v-icon>
@@ -176,8 +120,6 @@ export default {
       placesService: null,
       autocompleteDebounceTimeout: null,
       needsManualZipcode: false,
-      needsManualNumber: false,
-      needsManualComplement: false,
       rules: {
         location_name: [(v) => !!v || 'Local do evento é obrigatório'],
         number: [(v) => !!v || 'Número é obrigatório'],
@@ -187,8 +129,8 @@ export default {
         state: [(v) => !!v || 'Estado é obrigatório'],
         zipcode: [
           (v) => {
-            // Se não tem CEP na store e campo manual está vazio, é obrigatório
-            if (!this.formData.zipcode && !v) {
+            // Se o campo manual está ativo e vazio, é obrigatório
+            if (this.needsManualZipcode && !v) {
               return 'CEP é obrigatório';
             }
             // Se há valor no campo manual, validar formato
@@ -220,8 +162,7 @@ export default {
         this.formData.street !== '' &&
         this.formData.neighborhood !== '' &&
         this.formData.city !== '' &&
-        this.formData.state !== '' &&
-        this.formData.zipcode !== ''
+        this.formData.state !== ''
       );
     },
 
@@ -240,23 +181,30 @@ export default {
 
     fullAddressText() {
       if (!this.isAddressFilled) return '';
-      
+
       const { street, neighborhood, city, state, number, complement } = this.formData;
+      const locationName = this.localLocationName || this.eventInfo.location_name;
+
       let fullAddress = `${street}, ${neighborhood}, ${city} - ${state}`;
-      
+
       if (number) {
         fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ''}, ${neighborhood}, ${city} - ${state}`;
       }
-      
+
+      // Adicionar o nome do local se disponível
+      if (locationName) {
+        fullAddress = `${locationName}, ${fullAddress}`;
+      }
+
       return fullAddress;
     },
 
     googleMapsUrl() {
       if (!this.isAddressFilled) return '';
-      
+
       const { latitude, longitude } = this.formData;
       if (!latitude || !longitude) return '';
-      
+
       return `https://www.google.com/maps?q=${latitude},${longitude}`;
     },
 
@@ -273,7 +221,13 @@ export default {
     localLocationName: {
       immediate: true,
       handler(newValue) {
-        if (newValue !== this.eventInfo.address.location_name) {
+        const currentLocationName = this.eventInfo.location_name;
+        if (newValue !== currentLocationName && newValue !== '') {
+          // Atualizar no nível do evento (prioridade)
+          this.$store.dispatch('eventGeneralInfo/updateGeneralInfo', {
+            location_name: newValue
+          });
+          // Também manter sincronizado no endereço por compatibilidade
           this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
             location_name: newValue
           });
@@ -283,7 +237,7 @@ export default {
     localNumber: {
       immediate: true,
       handler(newValue) {
-        if (newValue !== this.eventInfo.address.number) {
+        if (newValue !== this.eventInfo.address.number && newValue !== '') {
           this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
             number: newValue
           });
@@ -293,7 +247,7 @@ export default {
     localComplement: {
       immediate: true,
       handler(newValue) {
-        if (newValue !== this.eventInfo.address.complement) {
+        if (newValue !== this.eventInfo.address.complement && newValue !== '') {
           this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
             complement: newValue
           });
@@ -303,19 +257,20 @@ export default {
     localZipcode: {
       immediate: true,
       handler(newValue) {
-        if (newValue) {
+        if (newValue && newValue !== '') {
           const formatted = this.formatZipcode(newValue);
           if (formatted !== newValue) {
             this.localZipcode = formatted;
             return;
           }
-          
+
           if (formatted !== this.eventInfo.address.zipcode) {
             this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
               zipcode: formatted
             });
           }
-        } else {
+        } else if (this.needsManualZipcode) {
+          // Só limpa se estivermos em modo manual
           this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
             zipcode: ''
           });
@@ -327,6 +282,7 @@ export default {
       handler(filled) {
         if (filled) {
           this.googleSearchQuery = this.fullAddressText;
+          this.initializeEditMode();
         }
       }
     },
@@ -337,6 +293,11 @@ export default {
           this.$nextTick(() => {
             this.updateGoogleMap();
           });
+        }
+
+        // Atualizar o campo de busca se o endereço foi carregado
+        if (this.isAddressFilled && !this.googleSearchQuery) {
+          this.googleSearchQuery = this.fullAddressText;
         }
       }
     },
@@ -351,6 +312,28 @@ export default {
           this.localNumber = newAddress.number || '';
           this.localComplement = newAddress.complement || '';
           this.localZipcode = newAddress.zipcode || '';
+
+          // Se o endereço está preenchido, inicializar modo de edição
+          if (this.isAddressFilled) {
+            this.$nextTick(() => {
+              this.initializeEditMode();
+            });
+          }
+        }
+      }
+    },
+
+    // Watcher para preencher o campo de busca com endereço completo quando dados existem
+    'eventInfo': {
+      immediate: true,
+      deep: true,
+      handler(newEventInfo) {
+        if (newEventInfo && newEventInfo.location_name) {
+          // Se há um location_name, significa que o evento já tem dados salvos
+          // Preencher o campo de busca apenas se ainda não foi preenchido
+          if (!this.googleSearchQuery && this.isAddressFilled) {
+            this.googleSearchQuery = this.fullAddressText;
+          }
         }
       }
     }
@@ -363,7 +346,15 @@ export default {
   mounted() {
     // Inicializar campos locais com valores da store
     this.syncLocalFieldsWithStore();
-    
+
+    // Sincronizar location_name se disponível
+    if (this.eventInfo.location_name) {
+      this.localLocationName = this.eventInfo.location_name;
+    }
+
+    // Inicializar modo de edição se necessário
+    this.initializeEditMode();
+
     // Adicionamos um click handler ao documento para fechar as sugestões quando o usuário clicar fora
     document.addEventListener('click', this.handleClickOutside);
   },
@@ -375,10 +366,55 @@ export default {
   methods: {
     syncLocalFieldsWithStore() {
       const address = this.eventInfo.address;
-      this.localLocationName = address.location_name || '';
+      const eventInfo = this.eventInfo;
+
+      // Priorizar location_name do evento sobre o do endereço
+      this.localLocationName = eventInfo.location_name || address.location_name || '';
       this.localNumber = address.number || '';
       this.localComplement = address.complement || '';
       this.localZipcode = address.zipcode || '';
+    },
+
+    initializeEditMode() {
+      // Método para configurar o estado adequado quando editando evento existente
+      const address = this.formData;
+      const eventInfo = this.eventInfo;
+
+      // Se há endereço válido, configurar estado apropriado
+      if (this.isAddressFilled) {
+        // Se há dados existentes da API, usar esses dados diretamente
+        if (eventInfo && eventInfo.location_name) {
+          console.log('Dados existentes encontrados na API:', {
+            location_name: eventInfo.location_name,
+            address
+          });
+
+          // Garantir que os campos locais estão sincronizados com os dados da API
+          this.localLocationName = eventInfo.location_name || '';
+          this.localNumber = address.number || '';
+          this.localComplement = address.complement || '';
+          this.localZipcode = address.zipcode || '';
+
+          // Preencher o campo de busca com o endereço completo
+          this.googleSearchQuery = this.fullAddressText;
+
+          // Não marcar CEP como manual se já existe na API
+          this.needsManualZipcode = !address.zipcode;
+        } else if (!address.zipcode) {
+          // Se não há dados na API, verificar se precisamos de entrada manual para o CEP
+          this.needsManualZipcode = true;
+        }
+
+        // Inicializar mapa se temos coordenadas
+        if (address.latitude && address.longitude) {
+          this.showMap = true;
+          if (this.googleApiLoaded) {
+            this.$nextTick(() => {
+              this.initGoogleMap();
+            });
+          }
+        }
+      }
     },
 
     clearAddress() {
@@ -390,15 +426,15 @@ export default {
       this.showMap = false;
       this.autocompleteResults = [];
       this.showAutocompleteResults = false;
-      
+
       if (this.googleMap) {
         this.googleMap = null;
       }
-      
+
       if (this.googleMapMarker) {
         this.googleMapMarker = null;
       }
-      
+
       this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
         street: '',
         neighborhood: '',
@@ -416,25 +452,24 @@ export default {
     validateForm() {
       // Validar o formulário base do Vuetify
       const isVuetifyFormValid = this.$refs.form.validate();
-      
+
       // Se o evento é online, não precisa de endereço completo
       if (!this.needsAddress) {
         this.isFormValid = isVuetifyFormValid;
         return isVuetifyFormValid;
       }
-      
+
       // Para eventos presenciais/híbridos, verificar se o endereço está completo
       const isAddressComplete = this.isAddressFilled &&
         this.localLocationName &&
-        this.localNumber &&
-        this.localZipcode;
-      
+        this.localNumber;
+
       // Se o endereço não estiver completo, marcar como inválido
       if (!isAddressComplete) {
         this.isFormValid = false;
         return false;
       }
-      
+
       // Retornar o resultado da validação do Vuetify
       this.isFormValid = isVuetifyFormValid;
       return isVuetifyFormValid;
@@ -442,7 +477,7 @@ export default {
 
     validate() {
       const isValid = this.validateForm();
-      
+
       // Se o evento não precisa de endereço (Online), sempre validar como válido
       if (!this.needsAddress) {
         return {
@@ -450,7 +485,7 @@ export default {
           message: null
         };
       }
-      
+
       // Para eventos presenciais/híbridos, validar se endereço está completo
       if (!this.isAddressFilled) {
         return {
@@ -458,7 +493,7 @@ export default {
           message: 'É necessário buscar e selecionar um endereço válido para eventos presenciais ou híbridos.'
         };
       }
-      
+
       // Se local do evento não estiver preenchido
       if (!this.localLocationName) {
         return {
@@ -466,7 +501,7 @@ export default {
           message: 'O local do evento é obrigatório.'
         };
       }
-      
+
       // Se número não estiver preenchido
       if (!this.localNumber) {
         return {
@@ -474,7 +509,7 @@ export default {
           message: 'O número do endereço é obrigatório.'
         };
       }
-      
+
       return {
         hasErrors: !isValid,
         message: !isValid ? 'Verifique os campos obrigatórios do endereço.' : null
@@ -496,18 +531,18 @@ export default {
     // Formatar CEP brasileiro (00000-000)
     formatZipcode(value) {
       if (!value) return '';
-      
+
       // Remove tudo que não é número
       const numbers = value.replace(/\D/g, '');
-      
+
       // Limita a 8 dígitos
       const limited = numbers.substring(0, 8);
-      
+
       // Adiciona hífen se tem mais de 5 dígitos
       if (limited.length > 5) {
         return `${limited.substring(0, 5)}-${limited.substring(5)}`;
       }
-      
+
       return limited;
     },
 
@@ -528,7 +563,7 @@ export default {
       if (this.autocompleteDebounceTimeout) {
         clearTimeout(this.autocompleteDebounceTimeout);
       }
-      
+
       this.autocompleteDebounceTimeout = setTimeout(() => {
         this.fetchAutocompletePredictions();
       }, 300);
@@ -579,9 +614,7 @@ export default {
       this.localLocationName = '';
       this.localZipcode = '';
       this.needsManualZipcode = false;
-      this.needsManualNumber = false;
-      this.needsManualComplement = false;
-      
+
       try {
         if (!this.placesService) {
           const mapDiv = document.createElement('div');
@@ -603,9 +636,9 @@ export default {
 
         const position = placeDetails.geometry.location;
         const addressComponents = this.parseGoogleAddressComponents(placeDetails.address_components);
-        
+
         const number = addressComponents.number || this.localNumber;
-        
+
         await this.$store.dispatch('eventGeneralInfo/updateGeneralInfoAddress', {
           street: addressComponents.street || '',
           neighborhood: addressComponents.neighborhood || '',
@@ -618,34 +651,29 @@ export default {
           number: number || '',
           complement: this.localComplement || '',
         });
-        
-        // Se o número não vier do Google, marcar como manual
+
+        // Preencher campos com dados do Google quando disponíveis
         if (addressComponents.number) {
           this.localNumber = addressComponents.number;
-        } else {
-          this.needsManualNumber = true;
         }
 
         // Se o CEP não vier do Google, marcar como manual
         if (addressComponents.zipcode) {
           this.localZipcode = addressComponents.zipcode;
-        } else {  
+        } else {
           this.needsManualZipcode = true;
         }
 
-        // Se o complemento não vier do Google, marcar como manual
         if (addressComponents.complement) {
           this.localComplement = addressComponents.complement;
-        } else {
-          this.needsManualComplement = true;
         }
-        
+
         // Forçar a atualização do mapa
         this.showMap = false;
         this.$nextTick(() => {
           this.showMap = true;
           this.initGoogleMap();
-          
+
           this.$nextTick(() => {
             this.validateForm();
           });
@@ -671,37 +699,37 @@ export default {
       }
 
       // Carrega a API do Google Maps dinamicamente
-      const apiKey = 'AIzaSyAtFS9cuqhd4j5sihXFlfRgLMAgll8TOfk'; 
+      const apiKey = 'AIzaSyAtFS9cuqhd4j5sihXFlfRgLMAgll8TOfk';
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
-      
+
       script.onload = () => {
         this.googleApiLoaded = true;
-        if (this.isAddressFilled) {
+        if (this.isAddressFilled && this.formData.latitude && this.formData.longitude) {
           this.$nextTick(() => {
             this.initGoogleMap();
           });
         }
       };
-      
+
       document.head.appendChild(script);
     },
-    
+
     initGoogleMap() {
       if (!this.googleApiLoaded || !this.isAddressFilled) return;
-      
+
       this.showMap = true;
-      
+
       // Aguardar o DOM ser atualizado para ter o elemento do mapa disponível
       this.$nextTick(() => {
         const mapElement = document.getElementById('google-map');
         if (!mapElement) return;
-        
+
         const { latitude, longitude } = this.formData;
         const position = { lat: latitude || -23.5505, lng: longitude || -46.6333 }; // Default: São Paulo
-        
+
         // Criar o mapa
         this.googleMap = new google.maps.Map(mapElement, {
           center: position,
@@ -710,7 +738,7 @@ export default {
           streetViewControl: false,
           fullscreenControl: false,
         });
-        
+
         // Adicionar marcador
         this.googleMapMarker = new google.maps.Marker({
           position,
@@ -720,15 +748,15 @@ export default {
         });
       });
     },
-    
+
     updateGoogleMap() {
       if (!this.googleApiLoaded || !this.isAddressFilled) return;
-      
+
       const { latitude, longitude } = this.formData;
       if (!latitude || !longitude) return;
-      
+
       const position = { lat: parseFloat(latitude), lng: parseFloat(longitude) };
-      
+
       if (this.googleMap && this.googleMapMarker) {
         // Atualizar posição existente
         this.googleMap.setCenter(position);
@@ -738,7 +766,7 @@ export default {
         this.initGoogleMap();
       }
     },
-    
+
     parseGoogleAddressComponents(addressComponents) {
       const result = {
         street: '',
@@ -749,12 +777,12 @@ export default {
         zipcode: '',
         number: '',
       };
-      
+
       if (!addressComponents || !addressComponents.length) return result;
-      
+
       addressComponents.forEach(component => {
         const types = component.types;
-        
+
         if (types.includes('route')) {
           result.street = component.long_name;
         } else if (types.includes('sublocality_level_1') || types.includes('sublocality')) {
@@ -766,14 +794,14 @@ export default {
           result.state_name = component.long_name;
         } else if (types.includes('postal_code')) {
           result.zipcode = component.long_name.replace(/\D/g, '');
-          result.zipcode = result.zipcode.length === 8 ? 
-            `${result.zipcode.substring(0, 5)}-${result.zipcode.substring(5)}` : 
+          result.zipcode = result.zipcode.length === 8 ?
+            `${result.zipcode.substring(0, 5)}-${result.zipcode.substring(5)}` :
             result.zipcode;
         } else if (types.includes('street_number')) {
           result.number = component.long_name;
         }
       });
-      
+
       return result;
     },
   },
@@ -791,7 +819,8 @@ export default {
   border-left: 4px solid #FFC107;
 }
 
-.address-display-card, .google-search-card {
+.address-display-card,
+.google-search-card {
   height: 100%;
   border-radius: 4px;
   box-shadow: none !important;
@@ -800,7 +829,8 @@ export default {
   transition: box-shadow 0.2s ease;
 }
 
-.address-display-card:hover, .google-search-card:hover {
+.address-display-card:hover,
+.google-search-card:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 

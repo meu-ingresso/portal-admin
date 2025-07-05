@@ -9,85 +9,85 @@
  * Permissões relacionadas a eventos e suas funcionalidades/templates
  */
 export const EVENT_PERMISSIONS = {
-  VIEW: 'view_event',
-  CREATE: 'create_event',
-  EDIT: 'edit_event',
-  DELETE: 'delete_event',
-  EXPORT: 'export_event_data',
-  ADD_TICKETS: 'add_event_tickets',
-  ADD_COUPONS: 'add_event_coupons',
-  ADD_COLLABORATORS: 'add_event_collaborators',
-  ADD_GUESTLIST: 'add_event_guestlist',
-  ADD_ORDERS: 'add_event_orders',
-  DO_CHECKIN: 'do_event_checkin',
-  UNDO_CHECKIN: 'undo_event_checkin',
-  ADD_PDV: 'add_event_pdv',
-  ADD_ORDERS_PDV: 'add_event_orders_pdv',
-  EDIT_TICKETS: 'edit_event_tickets',
-  EDIT_COUPONS: 'edit_event_coupons',
-  EDIT_COLLABORATORS: 'edit_event_collaborators',
-  EDIT_GUESTLIST: 'edit_event_guestlist',
-  EDIT_ORDERS: 'edit_event_orders',
-  EDIT_PDV: 'edit_event_pdv',
-  EDIT_ORDERS_PDV: 'edit_event_orders_pdv',
-  DELETE_TICKETS: 'delete_event_tickets',
-  DELETE_COUPONS: 'delete_event_coupons',
-  DELETE_COLLABORATORS: 'delete_event_collaborators',
-  DELETE_GUESTLIST: 'delete_event_guestlist',
-  DELETE_ORDERS: 'delete_event_orders',
-  DELETE_PDV: 'delete_event_pdv',
-  DELETE_ORDERS_PDV: 'delete_event_orders_pdv',
-  VIEW_TICKETS: 'view_event_tickets',
-  VIEW_COUPONS: 'view_event_coupons',
-  VIEW_COLLABORATORS: 'view_event_collaborators',
-  VIEW_GUESTLIST: 'view_event_guestlist',
-  VIEW_ORDERS: 'view_event_orders',
-  VIEW_CHECKIN: 'view_event_checkin',
-  VIEW_PDV: 'view_event_pdv',
-  VIEW_ORDERS_PDV: 'view_event_orders_pdv',
-  VIEW_INTEGRATIONS: 'view_event_integrations',
-  EDIT_INTEGRATIONS: 'edit_event_integrations',
-  RESEND_TICKETS_FROM_ORDERS: 'resend_event_tickets_from_orders',
-  PRINT_TICKETS_FROM_ORDERS: 'print_event_tickets_from_orders',
-  CANCEL_ORDERS: 'cancel_event_orders',
+  VIEW: 'view-events',
+  CREATE: 'create-events',
+  EDIT: 'edit-events',
+  DELETE: 'delete-events',
+  EXPORT: 'export-events-data',
+  ADD_TICKETS: 'add-events-tickets',
+  ADD_COUPONS: 'add-events-coupons',
+  ADD_COLLABORATORS: 'add-events-collaborators',
+  ADD_GUESTLIST: 'add-events-guestlist',
+  ADD_ORDERS: 'add-events-orders',
+  DO_CHECKIN: 'do-events-checkin',
+  UNDO_CHECKIN: 'undo-events-checkin',
+  ADD_PDV: 'add-events-pdv',
+  ADD_ORDERS_PDV: 'add-events-orders-pdv',
+  EDIT_TICKETS: 'edit-events-tickets',
+  EDIT_COUPONS: 'edit-events-coupons',
+  EDIT_COLLABORATORS: 'edit-events-collaborators',
+  EDIT_GUESTLIST: 'edit-events-guestlist',
+  EDIT_ORDERS: 'edit-events-orders',
+  EDIT_PDV: 'edit-events-pdv',
+  EDIT_ORDERS_PDV: 'edit-events-orders-pdv',
+  DELETE_TICKETS: 'delete-events-tickets',
+  DELETE_COUPONS: 'delete-events-coupons',
+  DELETE_COLLABORATORS: 'delete-events-collaborators',
+  DELETE_GUESTLIST: 'delete-events-guestlist',
+  DELETE_ORDERS: 'delete-events-orders',
+  DELETE_PDV: 'delete-events-pdv',
+  DELETE_ORDERS_PDV: 'delete-events-orders-pdv',
+  VIEW_TICKETS: 'view-events-tickets',
+  VIEW_COUPONS: 'view-events-coupons',
+  VIEW_COLLABORATORS: 'view-events-collaborators',
+  VIEW_GUESTLIST: 'view-events-guestlist',
+  VIEW_ORDERS: 'view-events-orders',
+  VIEW_CHECKIN: 'view-events-checkin',
+  VIEW_PDV: 'view-events-pdv',
+  VIEW_ORDERS_PDV: 'view-events-orders-pdv',
+  VIEW_INTEGRATIONS: 'view-events-integrations',
+  EDIT_INTEGRATIONS: 'edit-events-integrations',
+  RESEND_TICKETS_FROM_ORDERS: 'resend-events-tickets-from-orders',
+  PRINT_TICKETS_FROM_ORDERS: 'print-events-tickets-from-orders',
+  CANCEL_ORDERS: 'cancel-events-orders',
 };
 
 /**
  * Permissões relacionadas a usuários
  */
 export const USER_PERMISSIONS = {
-  VIEW: 'view_user',
-  CREATE: 'create_user',
-  EDIT: 'edit_user',
-  DELETE: 'delete_user',
-  MANAGE_ROLES: 'manage_user_roles',
+  VIEW: 'view-users',
+  CREATE: 'create-users',
+  EDIT: 'edit-users',
+  DELETE: 'delete-users',
+  MANAGE_ROLES: 'manage-users-roles',
 };
 
 /**
  * Permissões relacionadas a relatórios
  */
 export const REPORT_PERMISSIONS = {
-  VIEW_EVENT_GENERAL: 'view_event_general_reports',
-  VIEW_SALES: 'view_sales_reports',
-  VIEW_CHECKIN: 'view_checkin_reports',
-  VIEW_TICKETS: 'view_tickets_reports',
-  VIEW_USERS: 'view_users_reports',
+  VIEW_EVENT_GENERAL: 'view-events-general-reports',
+  VIEW_SALES: 'view-sales-reports',
+  VIEW_CHECKIN: 'view-checkin-reports',
+  VIEW_TICKETS: 'view-tickets-reports',
+  VIEW_USERS: 'view-users-reports',
 };
 
 /**
  * Permissões relacionadas a configurações do sistema
  */
 export const SYSTEM_PERMISSIONS = {
-  MANAGE_SETTINGS: 'manage_system_settings',
-  MANAGE_PERMISSIONS: 'manage_permissions',
+  MANAGE_SETTINGS: 'manage-settings',
+  MANAGE_PERMISSIONS: 'manage-permissions',
 };
 
 /**
  * Permissões relacionadas a produtores de eventos
  */
 export const PRODUCER_PERMISSIONS = {
-  VIEW: 'view_producer_page',
-  EDIT: 'edit_producer_page',
+  VIEW: 'view-producer-page',
+  EDIT: 'edit-producer-page',
 };
 
 /**
@@ -100,9 +100,9 @@ export const OPERATOR_ROLE = 'Operador';
 export const CLIENT_ROLE = 'Cliente';
 export const PRODUCER_ROLE = 'Produtor';
 export const MANAGER_ROLE = 'Gerente';
-export const CHECKIN_COORDINATOR_ROLE = 'Coordenador de check-in';
+export const CHECKIN_COORDINATOR_ROLE = 'Coordenador de Check-in';
 export const CHECKIN_ROLE = 'Check-in';
-export const PDV_ROLE = 'PDV';
+export const PDV_ROLE = 'PDV (Ponto de venda)';
 export const VISUALIZATION_ROLE = 'Visualização';
 
 

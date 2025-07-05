@@ -101,6 +101,7 @@ export default {
         action: null,
         title: '',
         message: '',
+        messageTitle: '',
       },
       isChangingStatus: false,
       isDeleting: false,
@@ -141,18 +142,21 @@ export default {
     },
 
     confirmAction(action) {
-      let title, message;
+      let title, message, messageTitle;
 
       if (action === 'approve') {
         title = 'Aprovar Evento';
         message = 'Tem certeza que deseja aprovar este evento?';
+        messageTitle = 'aprovado';
       } else if (action === 'reject') {
         title = 'Reprovar Evento';
         message = 'Tem certeza que deseja reprovar este evento?';
+        messageTitle = 'reprovado';
       } else if (action === 'delete') {
         title = 'Deletar Evento';
         message =
           'Tem certeza que deseja deletar este evento? Esta ação não poderá ser desfeita.';
+        messageTitle = 'deletado';
       }
 
       this.confirmationDialog = {
@@ -160,11 +164,12 @@ export default {
         action,
         title,
         message,
+        messageTitle,
       };
     },
 
     async handleConfirmation() {
-      const { action } = this.confirmationDialog;
+      const { action, messageTitle } = this.confirmationDialog;
       this.confirmationDialog.visible = false;
 
       try {
@@ -181,7 +186,7 @@ export default {
         this.isChangingStatus = false;
 
         this.$store.dispatch('toast/setToast', {
-          text: `Evento ${action} com sucesso!`,
+          text: `Evento ${messageTitle} com sucesso!`,
           type: 'success',
           time: 5000,
         });
@@ -193,7 +198,7 @@ export default {
         this.isChangingStatus = false;
 
         this.$store.dispatch('toast/setToast', {
-          text: `Falha ao ${action} o evento. Tente novamente.`,
+          text: `Falha ao ${messageTitle} o evento. Tente novamente.`,
           type: 'danger',
           time: 5000,
         });

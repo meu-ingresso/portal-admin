@@ -3,177 +3,77 @@
     <v-row>
       <!-- Código do Cupom -->
       <v-col cols="12" md="6" sm="12">
-        <v-text-field
-          ref="code"
-          v-model.trim="localCoupon.code"
-          label="Código do Cupom"
-          placeholder="Ex: DESCONTO10"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.code"
-          :counter="20"
+        <v-text-field ref="code" v-model.trim="localCoupon.code" label="Código do Cupom" placeholder="Ex: DESCONTO10"
+          outlined dense hide-details="auto" required :rules="validationRules.code" :counter="20"
           @input="onCodeInput" />
       </v-col>
 
       <!-- Tipo de Desconto -->
       <v-col cols="12" md="6" sm="12">
-        <v-select
-          ref="discount_type"
-          v-model="localCoupon.discount_type"
-          :items="discountTypes"
-          label="Tipo de Desconto"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.discount_type" />
+        <v-select ref="discount_type" v-model="localCoupon.discount_type" :items="discountTypes"
+          label="Tipo de Desconto" outlined dense hide-details="auto" required :rules="validationRules.discount_type" />
       </v-col>
 
       <!-- Valor do Desconto -->
       <v-col cols="12" md="6" sm="12">
-        <v-text-field
-          ref="discount_value"
-          v-model="localCoupon.discount_value"
-          :label="discountValueLabel"
+        <v-text-field ref="discount_value" v-model="localCoupon.discount_value" :label="discountValueLabel"
           :prefix="localCoupon.discount_type === 'FIXED' ? 'R$' : ''"
-          :suffix="localCoupon.discount_type === 'PERCENTAGE' ? '%' : ''"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.discount_value"
-          @input="onDiscountValueChange"
-          @keypress="onDiscountValueKeyPress" />
+          :suffix="localCoupon.discount_type === 'PERCENTAGE' ? '%' : ''" outlined dense hide-details="auto" required
+          :rules="validationRules.discount_value" @input="onDiscountValueChange" @keypress="onDiscountValueKeyPress" />
       </v-col>
 
       <!-- Máximo de Usos -->
       <v-col cols="12" md="6" sm="12">
-        <v-text-field
-          ref="max_uses"
-          v-model="localCoupon.max_uses"
-          label="Quantidade"
-          placeholder="Ex: 100"
-          type="number"
-          min="1"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.max_uses"
+        <v-text-field ref="max_uses" v-model="localCoupon.max_uses" label="Quantidade" placeholder="Ex: 100"
+          type="number" min="1" outlined dense hide-details="auto" required :rules="validationRules.max_uses"
           @keypress="onNumberFieldChange" />
       </v-col>
 
       <!-- Data e Hora de Início -->
       <v-col cols="12" md="3" sm="12">
-        <v-menu
-          v-model="startDateMenu"
-          :close-on-content-click="false"
-          transition="scale-transition"
-          offset-y
+        <v-menu v-model="startDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y
           min-width="auto">
           <template #activator="{ on, attrs }">
-            <v-text-field
-              :value="formattedStartDate"
-              label="Data de início"
-              prepend-inner-icon="mdi-calendar"
-              readonly
-              v-bind="attrs"
-              outlined
-              dense
-              required
-              hide-details="auto"
-              :rules="validationRules.start_date"
+            <v-text-field :value="formattedStartDate" label="Data de início" prepend-inner-icon="mdi-calendar" readonly
+              v-bind="attrs" outlined dense required hide-details="auto" :rules="validationRules.start_date"
               v-on="on" />
           </template>
-          <v-date-picker
-            v-model="localCoupon.start_date"
-            locale="pt-br"
-            no-title
-            dense
-            :min="minDate"
+          <v-date-picker v-model="localCoupon.start_date" locale="pt-br" no-title dense :min="minDate"
             @input="onDateChange('start_date', $event)" />
         </v-menu>
       </v-col>
 
       <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localCoupon.start_time"
-          v-mask="'##:##'"
-          label="Horário de início"
-          prepend-inner-icon="mdi-clock-outline"
-          placeholder="21:30"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.start_time"
-          @input="validateTime($event, 'start_time')" />
+        <v-text-field v-model="localCoupon.start_time" v-mask="'##:##'" label="Horário de início"
+          prepend-inner-icon="mdi-clock-outline" placeholder="21:30" outlined dense hide-details="auto" required
+          :rules="validationRules.start_time" @input="validateTime($event, 'start_time')" />
       </v-col>
 
       <!-- Data e Hora de Término -->
       <v-col cols="12" md="3" sm="12">
-        <v-menu
-          v-model="endDateMenu"
-          :close-on-content-click="false"
-          transition="scale-transition"
-          offset-y
+        <v-menu v-model="endDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y
           min-width="auto">
           <template #activator="{ on, attrs }">
-            <v-text-field
-              :value="formattedEndDate"
-              label="Data de término"
-              prepend-inner-icon="mdi-calendar"
-              readonly
-              v-bind="attrs"
-              outlined
-              dense
-              required
-              hide-details="auto"
-              :rules="validationRules.end_date"
-              v-on="on" />
+            <v-text-field :value="formattedEndDate" label="Data de término" prepend-inner-icon="mdi-calendar" readonly
+              v-bind="attrs" outlined dense required hide-details="auto" :rules="validationRules.end_date" v-on="on" />
           </template>
-          <v-date-picker
-            v-model="localCoupon.end_date"
-            locale="pt-br"
-            no-title
-            dense
+          <v-date-picker v-model="localCoupon.end_date" locale="pt-br" no-title dense
             :min="localCoupon.start_date ? localCoupon.start_date : minDate"
             @input="onDateChange('end_date', $event)" />
         </v-menu>
       </v-col>
 
       <v-col cols="12" md="3" sm="12">
-        <v-text-field
-          v-model="localCoupon.end_time"
-          v-mask="'##:##'"
-          label="Horário de término"
-          prepend-inner-icon="mdi-clock-outline"
-          placeholder="23:59"
-          outlined
-          dense
-          hide-details="auto"
-          required
-          :rules="validationRules.end_time"
-          @input="validateTime($event, 'end_time')" />
+        <v-text-field v-model="localCoupon.end_time" v-mask="'##:##'" label="Horário de término"
+          prepend-inner-icon="mdi-clock-outline" placeholder="23:59" outlined dense hide-details="auto" required
+          :rules="validationRules.end_time" @input="validateTime($event, 'end_time')" />
       </v-col>
 
       <!-- Ingressos Associados -->
       <v-col cols="12">
-        <v-select
-          v-model="localCoupon.tickets"
-          :items="tickets"
-          :item-value="(item) => item.id"
-          :item-text="(item) => item.name"
-          label="Ingressos aplicáveis"
-          placeholder="Selecione o(s) ingresso(s)"
-          no-data-text="Nenhum ingresso cadastrado"
-          outlined
-          dense
-          multiple
-          hide-details="auto"
-          return-object>
+        <v-select v-model="localCoupon.tickets" :items="tickets" :item-value="(item) => item.id"
+          :item-text="(item) => item.name" label="Ingressos aplicáveis" placeholder="Selecione o(s) ingresso(s)"
+          no-data-text="Nenhum ingresso cadastrado" outlined dense multiple hide-details="auto" return-object>
           <template v-if="tickets.length" #prepend-item>
             <v-list-item ripple @mousedown.prevent @click="toggleAllTickets">
               <v-list-item-action>
@@ -472,9 +372,38 @@ export default {
       }
 
       if (this.localCoupon.discount_type === 'FIXED') {
-        const numericValue = value.replace(/\D/g, '');
-        const floatValue = parseFloat(numericValue) / 100;
-        this.localCoupon.discount_value = formatPrice(floatValue);
+        // Remove espaços e caracteres especiais, mas preserva vírgulas
+        let cleanValue = value.replace(/[^\d,]/g, '');
+
+        // Se já contém vírgula, trata como valor decimal formatado
+        if (cleanValue.includes(',')) {
+          // Remove vírgulas extras (mantém apenas a primeira)
+          const parts = cleanValue.split(',');
+          if (parts.length > 2) {
+            cleanValue = parts[0] + ',' + parts.slice(1).join('');
+          }
+
+          // Limita a 2 casas decimais
+          if (parts[1] && parts[1].length > 2) {
+            cleanValue = parts[0] + ',' + parts[1].substring(0, 2);
+          }
+
+          // Converte para float para validação
+          const floatValue = parseFloat(cleanValue.replace(',', '.'));
+
+          // Se é um valor válido, formata
+          if (!isNaN(floatValue)) {
+            this.localCoupon.discount_value = formatPrice(floatValue);
+          } else {
+            this.localCoupon.discount_value = cleanValue;
+          }
+        } else {
+          // Se não tem vírgula, assume que são centavos (lógica original)
+          const numericValue = cleanValue;
+          const floatValue = parseFloat(numericValue) / 100;
+
+          this.localCoupon.discount_value = formatPrice(floatValue);
+        }
       } else {
         const numericValue = value.replace(/[^\d,]/g, '');
         this.localCoupon.discount_value = numericValue;
@@ -483,7 +412,12 @@ export default {
 
     onDiscountValueKeyPress(event) {
       const char = String.fromCharCode(event.charCode);
-      if (!/[0-9]/.test(char)) {
+      // Permite números e vírgula para descontos fixos, só números para porcentagem
+      if (this.localCoupon.discount_type === 'FIXED') {
+        if (!/[0-9,]/.test(char)) {
+          event.preventDefault();
+        }
+      } else if (!/[0-9]/.test(char)) {
         event.preventDefault();
       }
     },

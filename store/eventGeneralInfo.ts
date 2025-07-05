@@ -25,6 +25,7 @@ const defaultInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
   is_featured: false,
   absorb_service_fee: false,
   banner: null,
+  location_name: '',
   address: {
     street: '',
     number: '',
@@ -77,6 +78,7 @@ const mockInfo: Omit<Event, 'tickets' | 'custom_fields' | 'coupons'> = {
   is_featured: false,
   absorb_service_fee: false,
   banner: null,
+  location_name: 'MeuIngresso',
   address: {
     street: 'Rua da Alegria',
     number: '100',
@@ -152,6 +154,7 @@ export const mutations = {
   },
 
   UPDATE_INFO(state: EventGeneralInfoState, payload: Partial<Event>) {
+    console.log('UPDATE_INFO', payload);
     state.info = { ...state.info, ...payload };
   },
 
@@ -367,6 +370,7 @@ export const actions = {
         availability: event.availability,
         is_featured: event.is_featured,
         absorb_service_fee: event.absorb_service_fee,
+        location_name: event.location_name || '',
         address:
           event?.address && event?.address?.deleted_at === null
             ? {
@@ -491,7 +495,7 @@ export const actions = {
           address_id: addressId,
           status_id: eventStatus.id,
           link_online: state.info.link_online,
-          location_name: state.info.address?.location_name,
+          location_name: state.info.location_name || state.info.address?.location_name,
           promoter_id: state.info.promoter_id,
           sale_type: state.info.sale_type,
           availability: state.info.availability,
@@ -646,7 +650,7 @@ export const actions = {
             start_date: startDate.toISOString().replace('Z', '-0300'),
             end_date: endDate.toISOString().replace('Z', '-0300'),
             link_online: state.info.link_online,
-            location_name: state.info.address?.location_name,
+            location_name: state.info.location_name || state.info.address?.location_name,
             sale_type: state.info.sale_type,
             availability: state.info.availability,
             is_featured: state.info.is_featured,
@@ -689,6 +693,7 @@ export const actions = {
       availability: 'Publico',
       is_featured: false,
       absorb_service_fee: false,
+      location_name: '',
       address: null,
       link_online: '',
       banner: null,
