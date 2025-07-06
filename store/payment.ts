@@ -182,13 +182,23 @@ export const actions = {
 
       // Adiciona busca por nome/email do comprador
       if (params.search) {
+        
+        // Procura pelo identificador do pedido
         queryParams[
-          'whereHas[people][or][first_name][ilike]'
-        ] = `%${params.search}%`;
+          'search[identifier][o]'
+        ] = `_LIKE_`;
+                queryParams[
+          'search[identifier][v]'
+                ] = `${params.search}`;
+        
+        // Procura pela people
         queryParams[
-          'whereHas[people][or][last_name][ilike]'
-        ] = `%${params.search}%`;
-        queryParams['whereHas[people][or][email][ilike]'] = `%${params.search}%`;
+          'search[people][email:first_name:last_name][o]'
+        ] = `_LIKE_`;
+                queryParams[
+          'search[people][email:first_name:last_name][v]'
+                ] = `${params.search}`;
+      
       }
 
       // Adiciona filtro por data
