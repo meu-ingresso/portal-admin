@@ -137,6 +137,7 @@ export const getPaymentMethod = (payment: string): string => {
     case 'debit':
       return 'Cartão de débito';
     case 'PDV':
+    case 'pdv':
       return 'PDV (Ponto de Venda)';
     default:
       return payment;
