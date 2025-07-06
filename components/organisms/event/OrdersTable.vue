@@ -20,8 +20,9 @@
           <v-row>
             <v-col cols="6">
               <!-- Campo de busca -->
-              <v-text-field v-model="filters.search" label="Buscar por nome ou email" prepend-inner-icon="mdi-magnify"
-                clearable hide-details="auto" class="mr-4" @input="handleFiltersChange" />
+              <v-text-field v-model="filters.search" label="Buscar por nome/email ou nº do pedido"
+                prepend-inner-icon="mdi-magnify" clearable hide-details="auto" class="mr-4"
+                @input="handleFiltersChange" />
             </v-col>
             <v-col cols="6" class="text-right">
               <TableFilter :active-filters-count="activeFiltersCount" @clear-filters="clearFilters">
