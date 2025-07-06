@@ -32,6 +32,10 @@ export default {
       return this.$store.getters['eventCollaborators/$collaborators'];
     },
 
+    getEvent() {
+      return this.$store.getters['eventGeneralInfo/$info'];
+    },
+
     userRole() {
       return this.$auth.user?.role;
     },
@@ -46,11 +50,16 @@ export default {
     },
 
     canCreatePaymentPDV() {
-      return this.isAdminOrManager || this.isCollaborator;
+      return this.isAdminOrManager || this.isCollaborator || this.isPromoter;
     },
 
     isCollaborator() {
       return this.getCollaborators.some(collaborator => collaborator.user_id === this.userId && collaborator.role.name === PDV_ROLE);
+    },
+
+    isPromoter() {
+      if (!this.getEvent) return false;
+      return this.getEvent.promoter_id === this.userId;
     },
   },
 

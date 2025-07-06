@@ -69,7 +69,7 @@
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">Valor total</div>
                       <div class="info-value">
-                        {{ formatRealValue(payment.net_value) }}
+                        {{ formatRealValue(payment.gross_value) }}
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
@@ -421,18 +421,13 @@ export default {
     },
     getTotalValue() {
       if (!this.payment) return 0;
-      return parseFloat(this.payment.net_value);
+      return parseFloat(this.payment.gross_value);
     },
     getNetValueWithoutFee() {
       if (!this.payment) return 0;
       const netValue = parseFloat(this.payment.net_value);
 
-      // Se o pagamento for PDV, o valor já é o valor original
-      if (this.payment.payment_method === 'pdv') {
-        return netValue;
-      }
-
-      return netValue - this.getOrderFee;
+      return netValue
     },
   },
 
