@@ -435,57 +435,6 @@ export default {
       return this.$refs.buyerInfoStep.validateFields();
     },
 
-    async processPdvPayment() {
-      if (this.selectedTickets.length === 0) {
-        this.$store.dispatch('toast/setToast', {
-          text: 'Selecione pelo menos um ingresso para continuar.',
-          type: 'error',
-          time: 3000
-        });
-        return;
-      }
-
-      if (!this.validateCheckoutFields()) {
-        this.$store.dispatch('toast/setToast', {
-          text: 'Por favor, preencha todos os campos obrigatórios.',
-          type: 'error',
-          time: 3000
-        });
-        return;
-      }
-
-      try {
-        this.isProcessing = true;
-
-        await checkoutService.processPdvPayment(this, {
-          tickets: this.selectedTickets,
-          ticketFormGroups: this.ticketFormGroups,
-          checkoutFields: this.checkoutFields,
-          checkoutFieldOptions: this.checkoutFieldOptions,
-          totalAmount: this.totalAmount,
-          netAmount: this.netAmount,
-          pdvId: this.pdvId
-        });
-
-        this.$store.dispatch('toast/setToast', {
-          text: 'Pedido PDV realizado com sucesso!',
-          type: 'success',
-          time: 3000
-        });
-        this.close();
-        this.$emit('order-created');
-      } catch (error) {
-        console.error('Erro ao processar PDV:', error);
-        this.$store.dispatch('toast/setToast', {
-          text: 'Erro ao processar pedido PDV: ' + (error.message || 'Erro desconhecido'),
-          type: 'error',
-          time: 3000
-        });
-      } finally {
-        this.isProcessing = false;
-      }
-    },
-
     async processPdvPaymentV2() {
       if (this.selectedTickets.length === 0) {
         this.$store.dispatch('toast/setToast', {

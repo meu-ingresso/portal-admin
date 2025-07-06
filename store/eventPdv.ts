@@ -348,7 +348,34 @@ export const actions = {
       const result = handleGetResponse(response, 'PDVs não encontrados', eventId, true);
 
       if (result && result.data) {
-        return { success: true, data: result.data };
+
+        // Se eu nao sou um usuário do PDV, procuro se sou promotor do evento
+        if (result.data.length === 0) {
+
+          const preloads = [
+            'event',
+            'status',
+            'pdvTickets:ticket:status',
+            'pdvUsers'
+          ];
+
+          const params = new URLSearchParams();
+
+          params.append('where[event_id][v]', eventId);
+          params.append('whereHas[event][promoter_id][v]', userId);
+          params.append('limit', '9999');
+
+          preloads.forEach(preload => params.append('preloads[]', preload));
+
+          const promoterPdv = await $axios.$get(`/pdvs?${params.toString()}`);
+          const promoterPdvData = handleGetResponse(promoterPdv, 'PDV não encontrado', eventId, true);
+
+          if (promoterPdvData && promoterPdvData.data) {
+            return { success: true, data: promoterPdvData.data };
+          }
+
+          return { success: false, error: 'Falha ao buscar PDV' };
+        }
       }
 
       return { success: false, error: 'Falha ao buscar PDV' };

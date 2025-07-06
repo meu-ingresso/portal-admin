@@ -106,8 +106,8 @@
       </template>
 
       <!-- Valor -->
-      <template #[`item.net_value`]="{ item }">
-        {{ formatRealValue(item.net_value) }}
+      <template #[`item.gross_value`]="{ item }">
+        {{ formatRealValue(item.gross_value) }}
 
         <v-tooltip v-if="item.coupon_id" bottom>
           <template #activator="{ on, attrs }">
@@ -175,7 +175,7 @@ export default {
           sortable: true,
           width: "5%",
         },
-        { text: "Valor Total", value: "net_value", sortable: true, width: "5%" },
+        { text: "Valor Total", value: "gross_value", sortable: true, width: "5%" },
         { text: "Taxa", value: "fee", sortable: true, width: "10%" },
         { text: "Valor líquido", value: "receipt_value", sortable: true, width: "5%" },
         { text: "Status", value: "status", sortable: true, width: "5%" },
@@ -199,15 +199,15 @@ export default {
       startDateMenu: false,
       endDateMenu: false,
       statusOptions: [
-        { text: "Aprovado", value: "approved" },
-        { text: "Pendente", value: "pending" },
-        { text: "Cancelado", value: "cancelled" },
+        { text: "Aprovado", value: "Aprovado" },
+        { text: "Pendente", value: "Pendente" },
+        { text: "Cancelado", value: "Cancelado" },
+        { text: "Estornado", value: "Estornado" },
       ],
       paymentMethodOptions: [
-        { text: "Cartão de Crédito", value: "credit_card" },
+        { text: "Cartão de Crédito", value: "card" },
         { text: "PIX", value: "pix" },
-        { text: "Boleto", value: "bank_slip" },
-        { text: "PDV", value: "PDV" },
+        { text: "PDV", value: "pdv" },
       ],
       debounceTimer: null,
       showFilters: false,
@@ -294,7 +294,7 @@ export default {
         return formatRealValue(order.gross_value - (order.gross_value * (eventFee / 100)));
       }
 
-      return formatRealValue(order.gross_value);
+      return formatRealValue(order.net_value);
 
     },
 
@@ -379,6 +379,7 @@ export default {
           ? `${this.filters.endDate}T23:59:59.999Z`
           : undefined,
         status: this.filters.status || undefined,
+        paymentMethod: this.filters.paymentMethod || undefined,
         peopleId: this.filterPeopleId || undefined,
       };
     },
