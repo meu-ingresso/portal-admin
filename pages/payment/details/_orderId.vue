@@ -24,7 +24,7 @@
                     <v-col cols="12" md="6">
                       <div class="info-label font-weight-bold">Pedido</div>
                       <div class="info-value primary--text font-weight-bold">
-                        {{ payment.id }}
+                        {{ payment.identifier }}
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
